@@ -1,0 +1,41 @@
+version: '2'
+services:
+  web:
+    build:
+      context: ./dockerfile-tt-web
+      dockerfile: Dockerfile
+    restart: always
+    hostname: tt_web
+    container_name: tt_web_01
+    networks:
+      - timetrex-network
+    ports:
+     - "8686:80"
+    volumes:
+      - ./timetrex_files:/var/www/html/timetrex
+    depends_on:
+     - db
+  db:
+    build:
+      context: ./dockerfile-tt-db
+      dockerfile: Dockerfile
+    restart: always
+    environment:
+      - POSTGRES_USER=timetrex
+      - POSTGRES_DB=timetrex
+      - POSTGRES_PASSWORD=013Nep@!2018
+      - POSTGRES_BACKUP_DIR=/pg_backups
+    hostname: db
+    container_name: tt_postgres_01
+    networks:
+      - timetrex-network
+     # command: ./run_db.sh
+    volumes:
+      - ./db_backup:/pg_backups
+      - ./src:/src
+    expose:
+      - "5432"
+
+networks:
+  timetrex-network:
+    driver: bridge
