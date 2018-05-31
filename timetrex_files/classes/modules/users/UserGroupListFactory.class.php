@@ -1,7 +1,7 @@
 <?php
 /*********************************************************************************
  * TimeTrex is a Workforce Management program developed by
- * TimeTrex Software Inc. Copyright (C) 2003 - 2018 TimeTrex Software Inc.
+ * TimeTrex Software Inc. Copyright (C) 2003 - 2017 TimeTrex Software Inc.
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Affero General Public License version 3 as published by
@@ -39,14 +39,7 @@
  * @package Modules\Users
  */
 class UserGroupListFactory extends UserGroupFactory implements IteratorAggregate {
-	/**
-	 * @param int $limit Limit the number of records returned
-	 * @param int $page Page number of records to return for pagination
-	 * @param array $where Additional SQL WHERE clause in format of array( $column => $filter, ... ). ie: array( 'id' => 1, ... )
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return $this
-	 */
-	function getAll( $limit = NULL, $page = NULL, $where = NULL, $order = NULL) {
+	function getAll($limit = NULL, $page = NULL, $where = NULL, $order = NULL) {
 		$query = '
 					select	*
 					from	'. $this->getTable() .'
@@ -59,19 +52,13 @@ class UserGroupListFactory extends UserGroupFactory implements IteratorAggregate
 		return $this;
 	}
 
-	/**
-	 * @param string $id UUID
-	 * @param array $where Additional SQL WHERE clause in format of array( $column => $filter, ... ). ie: array( 'id' => 1, ... )
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return bool|UserGroupListFactory
-	 */
-	function getById( $id, $where = NULL, $order = NULL) {
+	function getById($id, $where = NULL, $order = NULL) {
 		if ( $id == '' ) {
 			return FALSE;
 		}
 
 		$ph = array(
-					'id' => TTUUID::castUUID($id),
+					'id' => (int)$id,
 					);
 
 		$query = '
@@ -87,14 +74,7 @@ class UserGroupListFactory extends UserGroupFactory implements IteratorAggregate
 		return $this;
 	}
 
-	/**
-	 * @param string $id UUID
-	 * @param string $company_id UUID
-	 * @param array $where Additional SQL WHERE clause in format of array( $column => $filter, ... ). ie: array( 'id' => 1, ... )
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return bool|UserGroupListFactory
-	 */
-	function getByIdAndCompanyId( $id, $company_id, $where = NULL, $order = NULL) {
+	function getByIdAndCompanyId($id, $company_id, $where = NULL, $order = NULL) {
 		if ( $id == '' ) {
 			return FALSE;
 		}
@@ -104,8 +84,8 @@ class UserGroupListFactory extends UserGroupFactory implements IteratorAggregate
 		}
 
 		$ph = array(
-					'company_id' => TTUUID::castUUID($company_id),
-					'id' => TTUUID::castUUID($id),
+					'company_id' => (int)$company_id,
+					'id' => (int)$id,
 					);
 
 		$query = '
@@ -124,19 +104,13 @@ class UserGroupListFactory extends UserGroupFactory implements IteratorAggregate
 		return $this;
 	}
 
-	/**
-	 * @param string $id UUID
-	 * @param array $where Additional SQL WHERE clause in format of array( $column => $filter, ... ). ie: array( 'id' => 1, ... )
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return bool|UserGroupListFactory
-	 */
-	function getByCompanyId( $id, $where = NULL, $order = NULL) {
+	function getByCompanyId($id, $where = NULL, $order = NULL) {
 		if ( $id == '' ) {
 			return FALSE;
 		}
 
 		$ph = array(
-					'id' => TTUUID::castUUID($id),
+					'id' => (int)$id,
 					);
 
 
@@ -154,100 +128,72 @@ class UserGroupListFactory extends UserGroupFactory implements IteratorAggregate
 		return $this;
 	}
 
-	/**
-	 * @param string $id UUID
-	 * @param string $parent_id UUID
-	 * @param array $where Additional SQL WHERE clause in format of array( $column => $filter, ... ). ie: array( 'id' => 1, ... )
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return bool|UserGroupListFactory
-	 */
-	function getByCompanyIdAndParentId( $id, $parent_id, $where = NULL, $order = NULL) {
-		if ( $id == '' ) {
-			return FALSE;
-		}
+	function getByCompanyIdArray( $id ) {
+		$this->getFastTreeObject()->setTree( $id );
 
-		if ( $parent_id == '' ) {
-			return FALSE;
-		}
+		$children = $this->getFastTreeObject()->getAllChildren(NULL, 'RECURSE');
 
-		$ph = array(
-				'id' => TTUUID::castUUID( $id ),
-				'parent_id' => TTUUID::castUUID( $parent_id ),
-		);
+		
+		if ( $children !== FALSE ) {
+			$uglf = new UserGroupListFactory();
 
+			$nodes = array();
+			foreach ($children as $object_id => $level ) {
 
-		$query = '
-					select	*
-					from	'. $this->getTable() .'
-					where	company_id = ?
-						AND parent_id = ?
-						AND deleted = 0
-				';
-		$query .= $this->getWhereSQL( $where );
-		$query .= $this->getSortSQL( $order );
+				if ( $object_id !== 0 ) {
+					$obj = $uglf->getById ( $object_id )->getCurrent();
 
-		$this->ExecuteSQL( $query, $ph );
-
-		return $this;
+					$nodes[] = array(
+									'id' => $object_id,
+									'name' => $obj->getName(),
+									'level' => $level
+									);
 				}
 
-	/**
-	 * @param string $id UUID
-	 * @return array|bool
-	 */
-	function getByCompanyIdArray( $id ) {
-		$lf = new UserGroupListFactory();
-		$lf->getAPISearchByCompanyIdAndArrayCriteria($id, array());
-		if ( $lf->getRecordCount() > 0 ) {
-			$nodes = array();
-			foreach ( $lf as $obj ) {
-				$nodes[] = $obj->getObjectAsArray(); //this needs to have created and updated info for the audit tab.
 			}
 
-
-			$retarr = TTTree::flattenArray( TTTree::FormatArray( $nodes ) );
-
-			return $retarr;
+			if ( empty($nodes) == FALSE ) {
+				return $nodes;
+			}
 		}
 
 		return FALSE;
 	}
 
-	/**
-	 * @param string $id UUID
-	 * @param string $group_id UUID
-	 * @param bool $include_sub_groups
-	 * @return array|bool
-	 */
-	function getByCompanyIdAndGroupIdAndSubGroupsArray( $id, $group_id, $include_sub_groups = TRUE ) {
-		$lf = new UserGroupListFactory();
-		$lf->getByCompanyId( $id );
-		if ( $lf->getRecordCount() > 0 ) {
-			foreach ( $lf as $obj ) {
-				$nodes[] = array('id' => $obj->getId(), 'name' => $obj->getName(), 'parent_id' => $obj->getParent());
+	function getByCompanyIdAndGroupIdAndSubGroupsArray($id, $group_id, $include_sub_groups = TRUE ) {
+		$this->getFastTreeObject()->setTree( $id );
+
+		if ( $include_sub_groups == TRUE ) {
+			$recurse = 'RECURSE';
+		} else {
+			$recurse = FALSE;
 		}
 
-			$retarr = TTTree::getElementFromNodes( TTTree::flattenArray( TTTree::createNestedArrayWithDepth( $nodes, $group_id ) ), 'id' );
+		$children = $this->getFastTreeObject()->getAllChildren( $group_id, $recurse);
 
-			return $retarr;
+		if ( $children !== FALSE ) {
+			$nodes = array();
+			foreach ($children as $object_id => $level ) {
+				$nodes[] = $object_id;
+			}
+			unset($level); //code standards
+
+			if ( empty($nodes) == FALSE ) {
+				return $nodes;
+			}
 		}
 
 		return FALSE;
 	}
 
-	/**
-	 * @param $lf
-	 * @param bool $include_blank
-	 * @return array|bool
-	 */
-	function getArrayByListFactory( $lf, $include_blank = TRUE ) {
+	function getArrayByListFactory($lf, $include_blank = TRUE ) {
 		if ( !is_object($lf) ) {
 			return FALSE;
 		}
 
 		$list = array();
 		if ( $include_blank == TRUE ) {
-			$list[TTUUID::getZeroID()] = '--';
+			$list[0] = '--';
 		}
 
 		foreach ($lf as $obj) {
@@ -261,15 +207,32 @@ class UserGroupListFactory extends UserGroupFactory implements IteratorAggregate
 		return FALSE;
 	}
 
-	/**
-	 * @param string $company_id UUID
-	 * @param $filter_data
-	 * @param int $limit Limit the number of records returned
-	 * @param int $page Page number of records to return for pagination
-	 * @param array $where Additional SQL WHERE clause in format of array( $column => $filter, ... ). ie: array( 'id' => 1, ... )
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return bool|UserGroupListFactory
-	 */
+	function getArrayByNodes($nodes, $include_blank = TRUE, $sort_prefix = FALSE ) {
+		if ( !is_array( $nodes ) ) {
+			return FALSE;
+		}
+
+		$prefix = NULL;
+		$i = 0;
+		$retarr = array();
+		foreach($nodes as $node) {
+			if ( $sort_prefix == TRUE ) {
+				$prefix = '-'.str_pad( $i, 4, 0, STR_PAD_LEFT).'-';
+			}
+
+			$retarr[$prefix.$node['id']] = $node['text'];
+
+			$i++;
+		}
+
+
+		if ( empty($retarr) == FALSE ) {
+			return $retarr;
+		}
+
+		return FALSE;
+	}
+
 	function getAPISearchByCompanyIdAndArrayCriteria( $company_id, $filter_data, $limit = NULL, $page = NULL, $where = NULL, $order = NULL ) {
 		if ( $company_id == '') {
 			return FALSE;
@@ -299,7 +262,7 @@ class UserGroupListFactory extends UserGroupFactory implements IteratorAggregate
 		$uf = new UserFactory();
 
 		$ph = array(
-					'company_id' => TTUUID::castUUID($company_id),
+					'company_id' => (int)$company_id,
 					);
 
 		$query = '
@@ -316,10 +279,10 @@ class UserGroupListFactory extends UserGroupFactory implements IteratorAggregate
 					where	a.company_id = ?
 					';
 
-		$query .= ( isset($filter_data['permission_children_ids']) ) ? $this->getWhereClauseSQL( 'a.created_by', $filter_data['permission_children_ids'], 'uuid_list', $ph ) : NULL;
-		$query .= ( isset($filter_data['id']) ) ? $this->getWhereClauseSQL( 'a.id', $filter_data['id'], 'uuid_list', $ph ) : NULL;
-		$query .= ( isset($filter_data['exclude_id']) ) ? $this->getWhereClauseSQL( 'a.id', $filter_data['exclude_id'], 'not_uuid_list', $ph ) : NULL;
-
+		$query .= ( isset($filter_data['permission_children_ids']) ) ? $this->getWhereClauseSQL( 'a.created_by', $filter_data['permission_children_ids'], 'numeric_list', $ph ) : NULL;
+		$query .= ( isset($filter_data['id']) ) ? $this->getWhereClauseSQL( 'a.id', $filter_data['id'], 'numeric_list', $ph ) : NULL;
+		$query .= ( isset($filter_data['exclude_id']) ) ? $this->getWhereClauseSQL( 'a.id', $filter_data['exclude_id'], 'not_numeric_list', $ph ) : NULL;
+		
 		$query .= ( isset($filter_data['name']) ) ? $this->getWhereClauseSQL( 'a.name', $filter_data['name'], 'text', $ph ) : NULL;
 
 		$query .= ( isset($filter_data['created_by']) ) ? $this->getWhereClauseSQL( array('a.created_by', 'y.first_name', 'y.last_name'), $filter_data['created_by'], 'user_id_or_name', $ph ) : NULL;

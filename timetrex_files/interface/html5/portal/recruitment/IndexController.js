@@ -78,8 +78,13 @@ var ApplicationRouter = Backbone.Router.extend( {
 				},4000);
 			}
 		}
+		var reg = new RegExp( '^[0-9]*$' );
 
-		edit_id = args.id;
+		if ( reg.test( args.id ) ) {
+			edit_id = parseInt( args.id );
+		} else {
+			edit_id = args.id; //Accrual balance go here, because it's id is combined. x_x
+		}
 
 		action = args.a;
 
@@ -245,7 +250,6 @@ var ApplicationRouter = Backbone.Router.extend( {
 				Global.topContainer().css('display', 'block');
 				Global.bottomContainer().css( 'display', 'block' );
 			}, 50);
-
 			Global.loadViewSource( view_id, view_id + 'ViewController.js', function() {
 				PortalBaseViewController.loadView( view_id );
 			} );

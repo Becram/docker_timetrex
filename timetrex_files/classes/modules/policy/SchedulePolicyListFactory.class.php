@@ -1,7 +1,7 @@
 <?php
 /*********************************************************************************
  * TimeTrex is a Workforce Management program developed by
- * TimeTrex Software Inc. Copyright (C) 2003 - 2018 TimeTrex Software Inc.
+ * TimeTrex Software Inc. Copyright (C) 2003 - 2017 TimeTrex Software Inc.
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Affero General Public License version 3 as published by
@@ -40,14 +40,7 @@
  */
 class SchedulePolicyListFactory extends SchedulePolicyFactory implements IteratorAggregate {
 
-	/**
-	 * @param int $limit Limit the number of records returned
-	 * @param int $page Page number of records to return for pagination
-	 * @param array $where Additional SQL WHERE clause in format of array( $column => $filter, ... ). ie: array( 'id' => 1, ... )
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return $this
-	 */
-	function getAll( $limit = NULL, $page = NULL, $where = NULL, $order = NULL) {
+	function getAll($limit = NULL, $page = NULL, $where = NULL, $order = NULL) {
 		$query = '
 					select	*
 					from	'. $this->getTable() .'
@@ -60,13 +53,7 @@ class SchedulePolicyListFactory extends SchedulePolicyFactory implements Iterato
 		return $this;
 	}
 
-	/**
-	 * @param string $id UUID
-	 * @param array $where Additional SQL WHERE clause in format of array( $column => $filter, ... ). ie: array( 'id' => 1, ... )
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return bool|SchedulePolicyListFactory
-	 */
-	function getById( $id, $where = NULL, $order = NULL) {
+	function getById($id, $where = NULL, $order = NULL) {
 		if ( $id == '') {
 			return FALSE;
 		}
@@ -75,7 +62,7 @@ class SchedulePolicyListFactory extends SchedulePolicyFactory implements Iterato
 		if ( $this->rs === FALSE ) {
 
 			$ph = array(
-						'id' => TTUUID::castUUID($id),
+						'id' => (int)$id,
 						);
 
 			$query = '
@@ -94,14 +81,7 @@ class SchedulePolicyListFactory extends SchedulePolicyFactory implements Iterato
 		return $this;
 	}
 
-	/**
-	 * @param string $id UUID
-	 * @param string $company_id UUID
-	 * @param array $where Additional SQL WHERE clause in format of array( $column => $filter, ... ). ie: array( 'id' => 1, ... )
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return bool|SchedulePolicyListFactory
-	 */
-	function getByIdAndCompanyId( $id, $company_id, $where = NULL, $order = NULL) {
+	function getByIdAndCompanyId($id, $company_id, $where = NULL, $order = NULL) {
 		if ( $id == '') {
 			return FALSE;
 		}
@@ -111,7 +91,7 @@ class SchedulePolicyListFactory extends SchedulePolicyFactory implements Iterato
 		}
 
 		$ph = array(
-					'company_id' => TTUUID::castUUID($company_id),
+					'company_id' => (int)$company_id,
 					);
 
 		$query = '
@@ -119,7 +99,7 @@ class SchedulePolicyListFactory extends SchedulePolicyFactory implements Iterato
 					from	'. $this->getTable() .'
 					where
 						company_id = ?
-						AND	id in ('. $this->getListSQL( $id, $ph, 'uuid' ) .')
+						AND	id in ('. $this->getListSQL( $id, $ph, 'int' ) .')
 						AND deleted = 0';
 		$query .= $this->getWhereSQL( $where );
 		$query .= $this->getSortSQL( $order );
@@ -129,13 +109,7 @@ class SchedulePolicyListFactory extends SchedulePolicyFactory implements Iterato
 		return $this;
 	}
 
-	/**
-	 * @param string $id UUID
-	 * @param array $where Additional SQL WHERE clause in format of array( $column => $filter, ... ). ie: array( 'id' => 1, ... )
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return bool|SchedulePolicyListFactory
-	 */
-	function getByCompanyId( $id, $where = NULL, $order = NULL) {
+	function getByCompanyId($id, $where = NULL, $order = NULL) {
 		if ( $id == '') {
 			return FALSE;
 		}
@@ -148,7 +122,7 @@ class SchedulePolicyListFactory extends SchedulePolicyFactory implements Iterato
 		}
 
 		$ph = array(
-					'id' => TTUUID::castUUID($id),
+					'id' => (int)$id,
 					);
 
 
@@ -165,15 +139,6 @@ class SchedulePolicyListFactory extends SchedulePolicyFactory implements Iterato
 		return $this;
 	}
 
-	/**
-	 * @param string $company_id UUID
-	 * @param $filter_data
-	 * @param int $limit Limit the number of records returned
-	 * @param int $page Page number of records to return for pagination
-	 * @param array $where Additional SQL WHERE clause in format of array( $column => $filter, ... ). ie: array( 'id' => 1, ... )
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return bool|SchedulePolicyListFactory
-	 */
 	function getAPISearchByCompanyIdAndArrayCriteria( $company_id, $filter_data, $limit = NULL, $page = NULL, $where = NULL, $order = NULL ) {
 		if ( $company_id == '') {
 			return FALSE;
@@ -210,7 +175,7 @@ class SchedulePolicyListFactory extends SchedulePolicyFactory implements Iterato
 		$cgmf = new CompanyGenericMapFactory();
 
 		$ph = array(
-					'company_id' => TTUUID::castUUID($company_id),
+					'company_id' => (int)$company_id,
 					);
 
 		$query = '
@@ -231,17 +196,17 @@ class SchedulePolicyListFactory extends SchedulePolicyFactory implements Iterato
 					where	a.company_id = ?
 					';
 
-		$query .= ( isset($filter_data['permission_children_ids']) ) ? $this->getWhereClauseSQL( 'a.created_by', $filter_data['permission_children_ids'], 'uuid_list', $ph ) : NULL;
-		$query .= ( isset($filter_data['id']) ) ? $this->getWhereClauseSQL( 'a.id', $filter_data['id'], 'uuid_list', $ph ) : NULL;
-		$query .= ( isset($filter_data['exclude_id']) ) ? $this->getWhereClauseSQL( 'a.id', $filter_data['exclude_id'], 'not_uuid_list', $ph ) : NULL;
+		$query .= ( isset($filter_data['permission_children_ids']) ) ? $this->getWhereClauseSQL( 'a.created_by', $filter_data['permission_children_ids'], 'numeric_list', $ph ) : NULL;
+		$query .= ( isset($filter_data['id']) ) ? $this->getWhereClauseSQL( 'a.id', $filter_data['id'], 'numeric_list', $ph ) : NULL;
+		$query .= ( isset($filter_data['exclude_id']) ) ? $this->getWhereClauseSQL( 'a.id', $filter_data['exclude_id'], 'not_numeric_list', $ph ) : NULL;
 
 		$query .= ( isset($filter_data['name']) ) ? $this->getWhereClauseSQL( 'a.name', $filter_data['name'], 'text', $ph ) : NULL;
 
-		$query .= ( isset($filter_data['meal_policy_id']) ) ? ' AND ( a.id in ( SELECT object_id FROM '. $cgmf->getTable() .' as k WHERE a.id = k.object_id AND k.company_id = a.company_id AND k.object_type_id = 155 '. $this->getWhereClauseSQL( 'k.map_id', $filter_data['meal_policy_id'], 'uuid_list', $ph ) .' ) ) ' : NULL;
-		$query .= ( isset($filter_data['break_policy_id']) ) ? ' AND ( a.id in ( SELECT object_id FROM '. $cgmf->getTable() .' as l WHERE a.id = l.object_id AND l.company_id = a.company_id AND l.object_type_id = 165 '. $this->getWhereClauseSQL( 'l.map_id', $filter_data['break_policy_id'], 'uuid_list', $ph ) .' ) ) ' : NULL;
+		$query .= ( isset($filter_data['meal_policy_id']) ) ? ' AND ( a.id in ( SELECT object_id FROM '. $cgmf->getTable() .' as k WHERE a.id = k.object_id AND k.company_id = a.company_id AND k.object_type_id = 155 '. $this->getWhereClauseSQL( 'k.map_id', $filter_data['meal_policy_id'], 'numeric_list', $ph ) .' ) ) ' : NULL;
+		$query .= ( isset($filter_data['break_policy_id']) ) ? ' AND ( a.id in ( SELECT object_id FROM '. $cgmf->getTable() .' as l WHERE a.id = l.object_id AND l.company_id = a.company_id AND l.object_type_id = 165 '. $this->getWhereClauseSQL( 'l.map_id', $filter_data['break_policy_id'], 'numeric_list', $ph ) .' ) ) ' : NULL;
 
-		$query .= ( isset($filter_data['full_shift_absence_policy_id']) ) ? $this->getWhereClauseSQL( 'a.full_shift_absence_policy_id', $filter_data['full_shift_absence_policy_id'], 'uuid_list', $ph ) : NULL;
-		$query .= ( isset($filter_data['partial_shift_absence_policy_id']) ) ? $this->getWhereClauseSQL( 'a.partial_shift_absence_policy_id', $filter_data['partial_shift_absence_policy_id'], 'uuid_list', $ph ) : NULL;
+		$query .= ( isset($filter_data['full_shift_absence_policy_id']) ) ? $this->getWhereClauseSQL( 'a.full_shift_absence_policy_id', $filter_data['full_shift_absence_policy_id'], 'numeric_list', $ph ) : NULL;
+		$query .= ( isset($filter_data['partial_shift_absence_policy_id']) ) ? $this->getWhereClauseSQL( 'a.partial_shift_absence_policy_id', $filter_data['partial_shift_absence_policy_id'], 'numeric_list', $ph ) : NULL;
 
 		$query .= ( isset($filter_data['created_by']) ) ? $this->getWhereClauseSQL( array('a.created_by', 'y.first_name', 'y.last_name'), $filter_data['created_by'], 'user_id_or_name', $ph ) : NULL;
 		$query .= ( isset($filter_data['updated_by']) ) ? $this->getWhereClauseSQL( array('a.updated_by', 'z.first_name', 'z.last_name'), $filter_data['updated_by'], 'user_id_or_name', $ph ) : NULL;
@@ -255,19 +220,14 @@ class SchedulePolicyListFactory extends SchedulePolicyFactory implements Iterato
 		return $this;
 	}
 
-	/**
-	 * @param string $company_id UUID
-	 * @param bool $include_blank
-	 * @return array|bool
-	 */
-	function getByCompanyIdArray( $company_id, $include_blank = TRUE) {
+	function getByCompanyIdArray($company_id, $include_blank = TRUE) {
 
 		$splf = new SchedulePolicyListFactory();
 		$splf->getByCompanyId($company_id);
 
 		$list = array();
 		if ( $include_blank == TRUE ) {
-			$list[TTUUID::getZeroID()] = '--';
+			$list[0] = '--';
 		}
 
 		foreach ($splf as $sp_obj) {
@@ -281,19 +241,14 @@ class SchedulePolicyListFactory extends SchedulePolicyFactory implements Iterato
 		return FALSE;
 	}
 
-	/**
-	 * @param $lf
-	 * @param bool $include_blank
-	 * @return array|bool
-	 */
-	function getArrayByListFactory( $lf, $include_blank = TRUE ) {
+	function getArrayByListFactory($lf, $include_blank = TRUE ) {
 		if ( !is_object($lf) ) {
 			return FALSE;
 		}
 
 		$list = array();
 		if ( $include_blank == TRUE ) {
-			$list[TTUUID::getZeroID()] = '--';
+			$list[0] = '--';
 		}
 
 		foreach ($lf as $obj) {

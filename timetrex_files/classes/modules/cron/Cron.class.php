@@ -1,7 +1,7 @@
 <?php
 /*********************************************************************************
  * TimeTrex is a Workforce Management program developed by
- * TimeTrex Software Inc. Copyright (C) 2003 - 2018 TimeTrex Software Inc.
+ * TimeTrex Software Inc. Copyright (C) 2003 - 2017 TimeTrex Software Inc.
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Affero General Public License version 3 as published by
@@ -48,11 +48,6 @@ class Cron {
 							'day_of_week' => array('min' => 0, 'max' => 7 ),
 					);
 
-	/**
-	 * @param $name
-	 * @param int $interval
-	 * @return array|bool
-	 */
 	static function getOptions( $name, $interval = 1 ) {
 		$all_array_option = array( '*' => TTi18n::getText('-- All --') );
 
@@ -84,11 +79,6 @@ class Cron {
 		return $retval;
 	}
 
-	/**
-	 * @param $value_arr
-	 * @param $type
-	 * @return bool
-	 */
 	static function isValidLimit( $value_arr, $type ) {
 		if ( isset(self::$limits[$type]) ) {
 			$limit_arr = self::$limits[$type];
@@ -119,14 +109,9 @@ class Cron {
 		return FALSE;
 	}
 
-	/**
-	 * @param $arr
-	 * @param $type
-	 * @return bool|string
-	 */
 	static function arrayToScheduleString( $arr, $type ) {
 		if ( !is_array($arr) ) {
-			if ( $arr !== 0 AND $arr !== '0' AND empty($arr) ) {
+			if ( $arr == '' ) {
 				$arr = '*';
 			}
 			$arr = array($arr);
@@ -153,13 +138,8 @@ class Cron {
 	//ie: converts:		0-59 to an array of: 0, 1, 2, 3, 4, 5, 6, ...
 	//					0-2, 16, 18 to array of 0, 1, 2, 16, 18
 	//					*/2 to array of 0, 2, 4, 6, 8, ...
-	/**
-	 * @param $str
-	 * @param $type
-	 * @return array
-	 */
 	static function parseScheduleString( $str, $type ) {
-		if ( $str !== 0 AND $str !== '0' AND empty($str) ) {
+		if ( $str == '' ) {
 			$str = '*';
 		}
 
@@ -210,15 +190,6 @@ class Cron {
 		return $retarr;
 	}
 
-	/**
-	 * @param $min_col
-	 * @param $hour_col
-	 * @param $dom_col
-	 * @param $month_col
-	 * @param $dow_col
-	 * @param int $epoch EPOCH
-	 * @return false|int|null
-	 */
 	static function getNextScheduleDate( $min_col, $hour_col, $dom_col, $month_col, $dow_col, $epoch = NULL ) {
 		if ( $epoch == '' ) {
 			$epoch = 0;
@@ -274,16 +245,6 @@ class Cron {
 	}
 
 
-	/**
-	 * @param $min_col
-	 * @param $hour_col
-	 * @param $dom_col
-	 * @param $month_col
-	 * @param $dow_col
-	 * @param int $epoch EPOCH
-	 * @param int $last_run_date EPOCH
-	 * @return bool
-	 */
 	static function isScheduledToRun( $min_col, $hour_col, $dom_col, $month_col, $dow_col, $epoch = NULL, $last_run_date = NULL ) {
 		//Debug::text('Checking if Cron Job is scheduled to run: '. self::getName(), __FILE__, __LINE__, __METHOD__, 10);
 		if ( $epoch == '' ) {

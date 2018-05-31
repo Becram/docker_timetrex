@@ -1,17 +1,15 @@
 ScheduleSummaryReportViewController = ReportBaseViewController.extend( {
 
-	_required_files: {
-		10: ['APIScheduleSummaryReport', 'APISchedule' ,'APIAbsencePolicy'],
-		20: ['APIJob', 'APIJobGroup', 'APIJobItemGroup', 'APIJobItem']
-	},
-
-	initReport: function( options ) {
+	initialize: function( options ) {
+		this.__super( 'initialize', options );
 		this.script_name = 'ScheduleSummaryReport';
 		this.viewId = 'ScheduleSummaryReport';
 		this.context_menu_name = $.i18n._( 'Schedule Summary' );
 		this.navigation_label = $.i18n._( 'Saved Report' ) +':';
 		this.view_file = 'ScheduleSummaryReportView.html';
 		this.api = new (APIFactory.getAPIClass( 'APIScheduleSummaryReport' ))();
+		this.buildContextMenu();
+
 	},
 
 	openEditView: function() {
@@ -37,7 +35,7 @@ ScheduleSummaryReportViewController = ReportBaseViewController.extend( {
 				var edit_item;
 				if ( LocalCacheData.default_edit_id_for_next_open_edit_view ) {
 					for ( var i = 0; i < result.length; i++ ) {
-						if ( result[i].id === LocalCacheData.default_edit_id_for_next_open_edit_view ) {
+						if ( result[i].id === parseInt( LocalCacheData.default_edit_id_for_next_open_edit_view ) ) {
 							edit_item = result[i];
 						}
 					}

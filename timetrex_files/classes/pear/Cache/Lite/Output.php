@@ -7,6 +7,7 @@
 * Technical choices are described in the 'docs/technical' file
 *
 * @package Cache_Lite
+* @version $Id: Output.php,v 1.4 2006/01/29 00:22:07 fab Exp $
 * @author Fabien MARTY <fab@php.net>
 */
 
@@ -28,17 +29,7 @@ class Cache_Lite_Output extends Cache_Lite
     */
     function __construct($options)
     {
-        parent::__construct($options);
-    }
-
-    /**
-     * PHP4 constructor for backwards compatibility with older code
-     *
-     * @param array $options Options
-     */
-    function Cache_Lite_Output($options = array(NULL))
-    {
-        self::__construct($options);
+        $this->Cache_Lite($options);
     }
 
     /**
@@ -76,3 +67,6 @@ class Cache_Lite_Output extends Cache_Lite
     }
 
 }
+
+
+?>

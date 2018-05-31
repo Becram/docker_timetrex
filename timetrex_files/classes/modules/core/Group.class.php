@@ -1,7 +1,7 @@
 <?php
 /*********************************************************************************
  * TimeTrex is a Workforce Management program developed by
- * TimeTrex Software Inc. Copyright (C) 2003 - 2018 TimeTrex Software Inc.
+ * TimeTrex Software Inc. Copyright (C) 2003 - 2017 TimeTrex Software Inc.
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Affero General Public License version 3 as published by
@@ -43,12 +43,6 @@ class Group {
 	// Aggregate values: 'count', 'sum', 'min', 'max', 'avg'
 	//
 	//
-	/**
-	 * @param $array
-	 * @param $cols
-	 * @param bool $subtotal
-	 * @return array
-	 */
 	static function GroupBy( $array, $cols, $subtotal = FALSE ) {
 		global $profiler;
 		$profiler->startTimer( 'Group()' );
@@ -163,11 +157,6 @@ class Group {
 	}
 
 	//Need to use bcmath for large numbers, especially on 32bit PHP installs.
-
-	/**
-	 * @param $array
-	 * @return int|string
-	 */
 	static function arraySum( $array ) {
 		$retval = 0;
 		foreach( $array as $value ) {
@@ -177,12 +166,6 @@ class Group {
 		return $retval;
 	}
 
-	/**
-	 * @param $array
-	 * @param $type
-	 * @param bool $subtotal
-	 * @return float|int|mixed|string
-	 */
 	static function aggregate( $array, $type, $subtotal = FALSE ) {
 		switch( $type ) {
 			default:
@@ -234,10 +217,6 @@ class Group {
 		return $retarr;
 	}
 
-	/**
-	 * @param $values
-	 * @return mixed
-	 */
 	static function MinNotNull( $values ) {
 		return @min( array_diff( array_map('intval', $values), array(0) ) ); //If array() OR array(0) is passed in it could cause a PHP warning for min()
 	}

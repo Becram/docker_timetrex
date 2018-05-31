@@ -1,7 +1,5 @@
 PayrollExportReportViewController = ReportBaseViewController.extend( {
 
-	_required_files: ['APIPayrollExportReport', 'APITimeSheetVerify', 'APICurrency'],
-
 	export_type_array: null,
 
 	export_policy_array: null,
@@ -16,7 +14,8 @@ PayrollExportReportViewController = ReportBaseViewController.extend( {
 
 	save_export_setup_data: {},
 
-	initReport: function( options ) {
+	initialize: function( options ) {
+		this.__super( 'initialize', options );
 		this.script_name = 'PayrollExportReport';
 		this.viewId = 'PayrollExportReport';
 		this.context_menu_name = $.i18n._( 'Payroll Export' );
@@ -25,6 +24,9 @@ PayrollExportReportViewController = ReportBaseViewController.extend( {
 		this.api = new (APIFactory.getAPIClass( 'APIPayrollExportReport' ))();
 		this.include_form_setup = true;
 		this.export_setup_data = {};
+
+		this.buildContextMenu();
+
 	},
 
 	initOptions: function( callBack ) {
@@ -185,27 +187,22 @@ PayrollExportReportViewController = ReportBaseViewController.extend( {
 			this.select_grid_last_row = null;
 		}
 
-		var message_override = $.i18n._( 'Setup data for this report has not been configured yet. Please click on the Export Setup tab to do so now.' )
-
 		switch ( id ) {
 			case ContextMenuIconName.view:
-				ProgressBar.showOverlay();
-				this.onViewClick(null, false, message_override);
+				this.onViewClick();
 				break;
 			case ContextMenuIconName.view_html:
-				ProgressBar.showOverlay();
-				this.onViewClick( 'html', false, message_override );
+
+				this.onViewClick( 'html' );
 				break;
-				ProgressBar.showOverlay();
 			case ContextMenuIconName.view_html_new_window:
-				this.onViewClick( 'html', false, message_override );
+				this.onViewClick( 'html', true );
 				break;
 			case ContextMenuIconName.export_excel:
-				this.onViewExcelClick(message_override);
+				this.onViewExcelClick();
 				break;
 			case ContextMenuIconName.export_export:
-				ProgressBar.showOverlay();
-				this.onViewClick( 'payroll_export', false, message_override );
+				this.onViewClick( 'payroll_export' );
 				break;
 			case ContextMenuIconName.cancel:
 				this.onCancelClick();
@@ -217,11 +214,9 @@ PayrollExportReportViewController = ReportBaseViewController.extend( {
 				this.onSaveNewReportClick();
 				break;
 			case ContextMenuIconName.timesheet_view: //All report view
-				ProgressBar.showOverlay();
 				this.onViewClick( 'pdf_timesheet' );
 				break;
 			case ContextMenuIconName.timesheet_view_detail: //All report view
-				ProgressBar.showOverlay();
 				this.onViewClick( 'pdf_timesheet_detail' );
 				break;
 			case ContextMenuIconName.save_setup: //All report view
@@ -646,7 +641,7 @@ PayrollExportReportViewController = ReportBaseViewController.extend( {
 				var column_id = row.label;
 				var export_column_value = export_columns[row.value];
 				// Error: Uncaught TypeError: Cannot read property 'hour_column' of undefined in /interface/html5/#!m=Exception&sm=PayrollExportReport&sid=1726 line 523
-				if ( Global.isSet(export_column_value) == false ) {
+				if ( !export_column_value ) {
 					if ( default_columns && row.value && default_columns[row.value] ) {
 						export_column_value = default_columns[row.value]
 					} else {
@@ -1847,21 +1842,19 @@ PayrollExportReportViewController = ReportBaseViewController.extend( {
 
 		var columns = {};
 
-		if ( this.export_grid ) { //#2490 - can't return export columns if there's no export grid.
-			var source = this.export_grid.getGridParam('data');
+		var source = this.export_grid.getGridParam( 'data' );
 
-			var len = source.length;
+		var len = source.length;
 
-			for (var i = 0; i < len; i++) {
-				var item = source[i];
-				columns[item.column_id_key] = {};
-				columns[item.column_id_key].hour_code = item.hour_code;
+		for ( var i = 0; i < len; i++ ) {
+			var item = source[i];
+			columns[item.column_id_key] = {};
+			columns[item.column_id_key].hour_code = item.hour_code;
 
-				if (type === 'adp' || type === 'adp_advanced' || type === 'adp_resource' || type === 'accero' || type === 'va_munis' || type === 'cms_pbj') {
-					columns[item.column_id_key].hour_column = item.hour_column;
-				}
-
+			if ( type === 'adp' || type === 'adp_advanced' || type === 'adp_resource' || type === 'accero' || type === 'va_munis' || type === 'cms_pbj' ) {
+				columns[item.column_id_key].hour_column = item.hour_column;
 			}
+
 		}
 
 		return columns;

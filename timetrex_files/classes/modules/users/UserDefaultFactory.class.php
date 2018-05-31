@@ -1,7 +1,7 @@
 <?php
 /*********************************************************************************
  * TimeTrex is a Workforce Management program developed by
- * TimeTrex Software Inc. Copyright (C) 2003 - 2018 TimeTrex Software Inc.
+ * TimeTrex Software Inc. Copyright (C) 2003 - 2017 TimeTrex Software Inc.
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Affero General Public License version 3 as published by
@@ -47,54 +47,10 @@ class UserDefaultFactory extends Factory {
 
 	protected $city_validator_regex = '/^[a-zA-Z0-9-,_\.\'#\ |\x{0080}-\x{FFFF}]{1,250}$/iu';
 
-	/**
-	 * @param $name
-	 * @param null $parent
-	 * @return array|null
-	 */
-	function _getFactoryOptions( $name, $parent = NULL ) {
-
-		$retval = NULL;
-		switch( $name ) {
-			case 'columns':
-				$retval = array(
-						'-1090-title' => TTi18n::gettext('Title'),
-						'-1102-default_branch' => TTi18n::gettext('Branch'),
-						'-1103-default_department' => TTi18n::gettext('Department'),
-						'-1104-default_job' => TTi18n::gettext('Job'),
-						'-1105-default_job_item' => TTi18n::gettext('Task'),
-						'-1106-currency' => TTi18n::gettext('Currency'),
-
-						'-1108-permission_control' => TTi18n::gettext('Permission Group'),
-						'-1110-pay_period_schedule' => TTi18n::gettext('Pay Period Schedule'),
-						'-1112-policy_group' => TTi18n::gettext('Policy Group'),
-
-
-						'-1150-city' => TTi18n::gettext('City'),
-						'-1160-province' => TTi18n::gettext('Province/State'),
-						'-1170-country' => TTi18n::gettext('Country'),
-						'-1190-work_phone' => TTi18n::gettext('Work Phone'),
-						'-1191-work_phone_ext' => TTi18n::gettext('Work Phone Ext'),
-						'-1240-work_email' => TTi18n::gettext('Work Email'),
-						'-2000-created_by' => TTi18n::gettext('Created By'),
-						'-2010-created_date' => TTi18n::gettext('Created Date'),
-						'-2020-updated_by' => TTi18n::gettext('Updated By'),
-						'-2030-updated_date' => TTi18n::gettext('Updated Date'),
-				);
-				break;
-		}
-
-		return $retval;
-	}
-	/**
-	 * @param $data
-	 * @return array
-	 */
 	function _getVariableToFunctionMap( $data ) {
 			$variable_function_map = array(
 											'id' => 'ID',
 											'company_id' => 'Company',
-											'legal_entity_id' => 'LegalEntity',
 											'permission_control_id' => 'PermissionControl',
 											'pay_period_schedule_id' => 'PayPeriodSchedule',
 											'policy_group_id' => 'PolicyGroup',
@@ -128,27 +84,17 @@ class UserDefaultFactory extends Factory {
 			return $variable_function_map;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function getCompanyObject() {
 		return $this->getGenericObject( 'CompanyListFactory', $this->getCompany(), 'company_obj' );
 	}
 
-	/**
-	 * @return bool
-	 */
 	function getTitleObject() {
 		return $this->getGenericObject( 'UserTitleListFactory', $this->getTitle(), 'title_obj' );
 	}
 
-	/**
-	 * @param string $company_id UUID
-	 * @return bool
-	 */
-	function isUniqueCompany( $company_id) {
+	function isUniqueCompany($company_id) {
 		$ph = array(
-					'company_id' => TTUUID::castUUID($company_id),
+					'company_id' => (int)$company_id,
 					);
 
 		$query = 'select id from '. $this->getTable() .' where company_id = ? AND deleted=0';
@@ -166,284 +112,446 @@ class UserDefaultFactory extends Factory {
 		return FALSE;
 	}
 
-	/**
-	 * @return bool|mixed
-	 */
 	function getCompany() {
-		return $this->getGenericDataValue( 'company_id' );
+		if ( isset($this->data['company_id']) ) {
+			return (int)$this->data['company_id'];
+		}
+
+		return FALSE;
+	}
+	function setCompany($id) {
+		$id = trim($id);
+
+		Debug::Text('Company ID: '. $id, __FILE__, __LINE__, __METHOD__, 10);
+		$clf = TTnew( 'CompanyListFactory' );
+
+		if (	$this->Validator->isResultSetWithRows(	'company',
+														$clf->getByID($id),
+														TTi18n::gettext('Company is invalid')
+				AND
+				$this->Validator->isTrue(		'company',
+												$this->isUniqueCompany($id),
+												TTi18n::gettext('Default settings for this company already exist') )
+													) ) {
+
+			$this->data['company_id'] = $id;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @param string $value UUID
-	 * @return bool
-	 */
-	function setCompany( $value ) {
-		$value = TTUUID::castUUID( $value );
-		Debug::Text('Company ID: '. $value, __FILE__, __LINE__, __METHOD__, 10);
-		return $this->setGenericDataValue( 'company_id', $value );
-	}
-
-	/**
-	 * @return bool|mixed
-	 */
-	function getLegalEntity() {
-		return $this->getGenericDataValue( 'legal_entity_id' );
-	}
-
-	/**
-	 * @param string $value UUID
-	 * @return bool
-	 */
-	function setLegalEntity( $value ) {
-		$value = TTUUID::castUUID( $value );
-		Debug::Text('Legal Entity ID: '. $value, __FILE__, __LINE__, __METHOD__, 10);
-		return $this->setGenericDataValue( 'legal_entity_id', $value );
-	}
-
-	/**
-	 * @return bool|mixed
-	 */
 	function getPermissionControl() {
-		return $this->getGenericDataValue( 'permission_control_id' );
+		if ( isset($this->data['permission_control_id']) ) {
+			return (int)$this->data['permission_control_id'];
+		}
+
+		return FALSE;
+	}
+	function setPermissionControl($id) {
+		$id = trim($id);
+
+		$pclf = TTnew( 'PermissionControlListFactory' );
+
+		if (  $this->Validator->isResultSetWithRows(		'permission_control_id',
+															$pclf->getByID($id),
+															TTi18n::gettext('Permission Group is invalid')
+															) ) {
+			$this->data['permission_control_id'] = $id;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @param string $value UUID
-	 * @return bool
-	 */
-	function setPermissionControl( $value ) {
-		$value = TTUUID::castUUID( $value );
-		return $this->setGenericDataValue( 'permission_control_id', $value );
-	}
-
-	/**
-	 * @return bool|mixed
-	 */
 	function getPayPeriodSchedule() {
-		return $this->getGenericDataValue( 'pay_period_schedule_id' );
+		if ( isset($this->data['pay_period_schedule_id']) ) {
+			return (int)$this->data['pay_period_schedule_id'];
+		}
+
+		return FALSE;
+	}
+	function setPayPeriodSchedule($id) {
+		$id = trim($id);
+
+		$ppslf = TTnew( 'PayPeriodScheduleListFactory' );
+
+		if ( $id == 0
+				OR $this->Validator->isResultSetWithRows(	'pay_period_schedule_id',
+															$ppslf->getByID($id),
+															TTi18n::gettext('Pay Period schedule is invalid')
+															) ) {
+			$this->data['pay_period_schedule_id'] = $id;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @param string $value UUID
-	 * @return bool
-	 */
-	function setPayPeriodSchedule( $value ) {
-		$value = TTUUID::castUUID( $value );
-		return $this->setGenericDataValue( 'pay_period_schedule_id', $value );
-	}
-
-	/**
-	 * @return bool|mixed
-	 */
 	function getPolicyGroup() {
-		return $this->getGenericDataValue( 'policy_group_id' );
+		if ( isset($this->data['policy_group_id']) ) {
+			return (int)$this->data['policy_group_id'];
+		}
+
+		return FALSE;
+	}
+	function setPolicyGroup($id) {
+		$id = trim($id);
+
+		$pglf = TTnew( 'PolicyGroupListFactory' );
+
+		if ( $id == 0
+				OR $this->Validator->isResultSetWithRows(	'policy_group_id',
+															$pglf->getByID($id),
+															TTi18n::gettext('Policy Group is invalid')
+															) ) {
+			$this->data['policy_group_id'] = $id;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @param string $value UUID
-	 * @return bool
-	 */
-	function setPolicyGroup( $value ) {
-		$value = TTUUID::castUUID( $value );
-		return $this->setGenericDataValue( 'policy_group_id', $value );
-	}
-
-	/**
-	 * @return bool|mixed
-	 */
 	function getEmployeeNumber() {
-		return $this->getGenericDataValue( 'employee_number' );
-	}
+		if ( isset($this->data['employee_number']) ) {
+			return $this->data['employee_number'];
+		}
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setEmployeeNumber( $value) {
+		return FALSE;
+	}
+	function setEmployeeNumber($value) {
 		$value = trim($value);
-		return $this->setGenericDataValue( 'employee_number', $value );
+
+		if	(
+				$value == ''
+				OR
+					$this->Validator->isLength(		'employee_number',
+													$value,
+													TTi18n::gettext('Employee number is too short or too long'),
+													1,
+													100) ) {
+
+			$this->data['employee_number'] = $value;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @return bool|mixed
-	 */
 	function getTitle() {
-		return $this->getGenericDataValue( 'title_id' );
+		if ( isset($this->data['title_id']) ) {
+			return (int)$this->data['title_id'];
+		}
+
+		return FALSE;
+	}
+	function setTitle($id) {
+		$id = trim($id);
+
+		Debug::Text('Title ID: '. $id, __FILE__, __LINE__, __METHOD__, 10);
+		$utlf = TTnew( 'UserTitleListFactory' );
+
+		if (
+				$id == 0
+				OR
+				$this->Validator->isResultSetWithRows(	'title',
+														$utlf->getByID($id),
+														TTi18n::gettext('Title is invalid')
+													) ) {
+
+			$this->data['title_id'] = $id;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @param string $value UUID
-	 * @return bool
-	 */
-	function setTitle( $value ) {
-		$value = TTUUID::castUUID( $value );
-		Debug::Text('Title ID: '. $value, __FILE__, __LINE__, __METHOD__, 10);
-		return $this->setGenericDataValue( 'title_id', $value );
-	}
-
-	/**
-	 * @return bool|mixed
-	 */
 	function getDefaultBranch() {
-		return $this->getGenericDataValue( 'default_branch_id' );
+		if ( isset($this->data['default_branch_id']) ) {
+			return (int)$this->data['default_branch_id'];
+		}
+
+		return FALSE;
+	}
+	function setDefaultBranch($id) {
+		$id = trim($id);
+
+		Debug::Text('Branch ID: '. $id, __FILE__, __LINE__, __METHOD__, 10);
+		$blf = TTnew( 'BranchListFactory' );
+
+		if (
+				$id == 0
+				OR
+				$this->Validator->isResultSetWithRows(	'default_branch',
+														$blf->getByID($id),
+														TTi18n::gettext('Invalid Default Branch')
+													) ) {
+
+			$this->data['default_branch_id'] = $id;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @param string $value UUID
-	 * @return bool
-	 */
-	function setDefaultBranch( $value ) {
-		$value = TTUUID::castUUID( $value );
-		Debug::Text('Branch ID: '. $value, __FILE__, __LINE__, __METHOD__, 10);
-		return $this->setGenericDataValue( 'default_branch_id', $value );
-	}
-
-	/**
-	 * @return bool|mixed
-	 */
 	function getDefaultDepartment() {
-		return $this->getGenericDataValue( 'default_department_id' );
+		if ( isset($this->data['default_department_id']) ) {
+			return (int)$this->data['default_department_id'];
+		}
+
+		return FALSE;
+	}
+	function setDefaultDepartment($id) {
+		$id = trim($id);
+
+		Debug::Text('Department ID: '. $id, __FILE__, __LINE__, __METHOD__, 10);
+		$dlf = TTnew( 'DepartmentListFactory' );
+
+		if (
+				$id == 0
+				OR
+				$this->Validator->isResultSetWithRows(	'default_department',
+														$dlf->getByID($id),
+														TTi18n::gettext('Invalid Default Department')
+													) ) {
+
+			$this->data['default_department_id'] = $id;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @param string $value UUID
-	 * @return bool
-	 */
-	function setDefaultDepartment( $value ) {
-		$value = TTUUID::castUUID( $value );
-		Debug::Text('Department ID: '. $value, __FILE__, __LINE__, __METHOD__, 10);
-		return $this->setGenericDataValue( 'default_department_id', $value );
-	}
-
-	/**
-	 * @return bool|mixed
-	 */
 	function getCurrency() {
-		return $this->getGenericDataValue( 'currency_id' );
+		if ( isset($this->data['currency_id']) ) {
+			return (int)$this->data['currency_id'];
+		}
+
+		return FALSE;
+	}
+	function setCurrency($id) {
+		$id = trim($id);
+
+		Debug::Text('Currency ID: '. $id, __FILE__, __LINE__, __METHOD__, 10);
+		$culf = TTnew( 'CurrencyListFactory' );
+
+		if (
+				$this->Validator->isResultSetWithRows(	'currency',
+														$culf->getByID($id),
+														TTi18n::gettext('Invalid Currency')
+													) ) {
+
+			$this->data['currency_id'] = $id;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @param string $value UUID
-	 * @return bool
-	 */
-	function setCurrency( $value ) {
-		$value = TTUUID::castUUID( $value );
-		Debug::Text('Currency ID: '. $value, __FILE__, __LINE__, __METHOD__, 10);
-		return $this->setGenericDataValue( 'currency_id', $value );
-	}
-
-	/**
-	 * @return bool|mixed
-	 */
 	function getCity() {
-		return $this->getGenericDataValue( 'city' );
+		if ( isset($this->data['city']) ) {
+			return $this->data['city'];
+		}
+
+		return FALSE;
+	}
+	function setCity($city) {
+		$city = trim($city);
+
+		if	(
+				$city == ''
+				OR
+				(
+				$this->Validator->isRegEx(		'city',
+												$city,
+												TTi18n::gettext('City contains invalid characters'),
+												$this->city_validator_regex)
+				AND
+					$this->Validator->isLength(		'city',
+													$city,
+													TTi18n::gettext('City name is too short or too long'),
+													2,
+													250)
+				)
+				) {
+
+			$this->data['city'] = $city;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setCity( $value ) {
-		$value = trim($value);
-		return $this->setGenericDataValue( 'city', $value );
-	}
-
-	/**
-	 * @return bool|mixed
-	 */
 	function getCountry() {
-		return $this->getGenericDataValue( 'country' );
+		if ( isset($this->data['country']) ) {
+			return $this->data['country'];
+		}
+
+		return FALSE;
+	}
+	function setCountry($country) {
+		$country = trim($country);
+
+		$cf = TTnew( 'CompanyFactory' );
+
+		if ( $this->Validator->inArrayKey(		'country',
+												$country,
+												TTi18n::gettext('Invalid Country'),
+												$cf->getOptions('country') ) ) {
+
+			$this->data['country'] = $country;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setCountry( $value ) {
-		$value = trim($value);
-		return $this->setGenericDataValue( 'country', $value );
-	}
-
-	/**
-	 * @return bool|mixed
-	 */
 	function getProvince() {
-		return $this->getGenericDataValue( 'province' );
-	}
+		if ( isset($this->data['province']) ) {
+			return $this->data['province'];
+		}
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setProvince( $value  ) {
-		$value = trim($value);
-		Debug::Text('Country: '. $this->getCountry() .' Province: '. $value, __FILE__, __LINE__, __METHOD__, 10);
+		return FALSE;
+	}
+	function setProvince($province) {
+		$province = trim($province);
+
+		Debug::Text('Country: '. $this->getCountry() .' Province: '. $province, __FILE__, __LINE__, __METHOD__, 10);
+
+		$cf = TTnew( 'CompanyFactory' );
+
+		$options_arr = $cf->getOptions('province');
+		if ( isset($options_arr[$this->getCountry()]) ) {
+			$options = $options_arr[$this->getCountry()];
+		} else {
+			$options = array();
+		}
+
 		//If country isn't set yet, accept the value and re-validate on save.
-		return $this->setGenericDataValue( 'province', $value );
+		if ( $this->getCountry() == FALSE
+				OR
+				$this->Validator->inArrayKey(	'province',
+												$province,
+												TTi18n::gettext('Invalid Province/State'),
+												$options ) ) {
+
+			$this->data['province'] = $province;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @return bool|mixed
-	 */
 	function getWorkPhone() {
-		return $this->getGenericDataValue( 'work_phone' );
+		if ( isset($this->data['work_phone']) ) {
+			return $this->data['work_phone'];
+		}
+
+		return FALSE;
+	}
+	function setWorkPhone($work_phone) {
+		$work_phone = trim($work_phone);
+
+		if	(
+				$work_phone == ''
+				OR
+				$this->Validator->isPhoneNumber(		'work_phone',
+														$work_phone,
+														TTi18n::gettext('Work phone number is invalid')) ) {
+
+			$this->data['work_phone'] = $work_phone;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setWorkPhone( $value ) {
-		$value = trim($value);
-		return $this->setGenericDataValue( 'work_phone', $value );
-	}
-
-	/**
-	 * @return bool|mixed
-	 */
 	function getWorkPhoneExt() {
-		return $this->getGenericDataValue( 'work_phone_ext' );
+		if ( isset($this->data['work_phone_ext']) ) {
+			return $this->data['work_phone_ext'];
+		}
+
+		return FALSE;
+	}
+	function setWorkPhoneExt($work_phone_ext) {
+		$work_phone_ext = $this->Validator->stripNonNumeric( trim($work_phone_ext) );
+
+		if (	$work_phone_ext == ''
+				OR $this->Validator->isLength(		'work_phone_ext',
+													$work_phone_ext,
+													TTi18n::gettext('Work phone number extension is too short or too long'),
+													2,
+													10) ) {
+
+			$this->data['work_phone_ext'] = $work_phone_ext;
+
+			return TRUE;
+		}
+
+		return FALSE;
+
 	}
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setWorkPhoneExt( $value ) {
-		$value = $this->Validator->stripNonNumeric( trim($value) );
-		return $this->setGenericDataValue( 'work_phone_ext', $value );
-
-	}
-
-	/**
-	 * @return bool|mixed
-	 */
 	function getWorkEmail() {
-		return $this->getGenericDataValue( 'work_email' );
+		if ( isset($this->data['work_email']) ) {
+			return $this->data['work_email'];
+		}
+
+		return FALSE;
+	}
+	function setWorkEmail($work_email) {
+		$work_email = trim($work_email);
+
+		if	(	$work_email == ''
+					OR	$this->Validator->isEmail(	'work_email',
+													$work_email,
+													TTi18n::gettext('Work Email address is invalid')) ) {
+
+			$this->data['work_email'] = $work_email;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setWorkEmail( $value ) {
-		$value = trim($value);
-		return $this->setGenericDataValue( 'work_email', $value );
-	}
-
-	/**
-	 * @return bool|mixed
-	 */
 	function getHireDate() {
-		return $this->getGenericDataValue( 'hire_date' );
-	}
+		if ( isset($this->data['hire_date']) ) {
+			return $this->data['hire_date'];
+		}
 
-	/**
-	 * @param int $value EPOCH
-	 * @return bool
-	 */
-	function setHireDate( $value ) {
-		return $this->setGenericDataValue( 'hire_date', $value );
+		return FALSE;
+	}
+	function setHireDate($epoch) {
+		if ( empty($epoch) ) {
+			$epoch = NULL;
+		}
+
+		if	(	$epoch == ''
+				OR
+				$this->Validator->isDate(		'hire_date',
+												$epoch,
+												TTi18n::gettext('Hire date is invalid')) ) {
+
+			$this->data['hire_date'] = $epoch;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
 	/*
@@ -451,201 +559,236 @@ class UserDefaultFactory extends Factory {
 		User Preferences
 
 	*/
-	/**
-	 * @return bool|mixed
-	 */
 	function getLanguage() {
-		return $this->getGenericDataValue( 'language' );
-	}
+		if ( isset($this->data['language']) ) {
+			return $this->data['language'];
+		}
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setLanguage( $value ) {
+		return FALSE;
+	}
+	function setLanguage($value) {
 		$value = trim($value);
-		return $this->setGenericDataValue( 'language', $value );
+
+		$language_options = TTi18n::getLanguageArray();
+
+		if ( $this->Validator->inArrayKey(	'language',
+											$value,
+											TTi18n::gettext('Incorrect language'),
+											$language_options ) ) {
+
+			$this->data['language'] = $value;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @return bool|mixed
-	 */
 	function getDateFormat() {
-		return $this->getGenericDataValue( 'date_format' );
+		if ( isset($this->data['date_format']) ) {
+			return $this->data['date_format'];
+		}
+
+		return FALSE;
+	}
+	function setDateFormat($date_format) {
+		$date_format = trim($date_format);
+		$upf = TTnew( 'UserPreferenceFactory' );
+
+		if ( $this->Validator->inArrayKey(	'date_format',
+											$date_format,
+											TTi18n::gettext('Incorrect date format'),
+											Misc::trimSortPrefix( $upf->getOptions('date_format') )) ) {
+
+			$this->data['date_format'] = $date_format;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @param int $value EPOCH
-	 * @return bool
-	 */
-	function setDateFormat( $value ) {
-		$value = trim($value);
-		return $this->setGenericDataValue( 'date_format', $value );
-	}
-
-	/**
-	 * @return bool|mixed
-	 */
 	function getTimeFormat() {
-		return $this->getGenericDataValue( 'time_format' );
+		if ( isset($this->data['time_format']) ) {
+			return $this->data['time_format'];
+		}
+
+		return FALSE;
+	}
+	function setTimeFormat($time_format) {
+		$time_format = trim($time_format);
+
+		$upf = TTnew( 'UserPreferenceFactory' );
+
+		if ( $this->Validator->inArrayKey(	'time_format',
+											$time_format,
+											TTi18n::gettext('Incorrect time format'),
+											$upf->getOptions('time_format')) ) {
+
+			$this->data['time_format'] = $time_format;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setTimeFormat( $value ) {
-		$value = trim($value);
-		return $this->setGenericDataValue( 'time_format', $value );
-	}
-
-	/**
-	 * @return bool|mixed
-	 */
 	function getTimeZone() {
-		return $this->getGenericDataValue( 'time_zone' );
+		if ( isset($this->data['time_zone']) ) {
+			return $this->data['time_zone'];
+		}
+
+		return FALSE;
+	}
+	function setTimeZone($time_zone) {
+		$time_zone = Misc::trimSortPrefix( trim($time_zone) );
+
+		$upf = TTnew( 'UserPreferenceFactory' );
+		if ( $this->Validator->inArrayKey(	'time_zone',
+											$time_zone,
+											TTi18n::gettext('Incorrect time zone'),
+											Misc::trimSortPrefix( $upf->getOptions('time_zone') ) ) ) {
+
+			$this->data['time_zone'] = $time_zone;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setTimeZone( $value ) {
-		$value = Misc::trimSortPrefix( trim($value) );
-		return $this->setGenericDataValue( 'time_zone', $value );
-	}
-
-	/**
-	 * @return mixed
-	 */
 	function getTimeUnitFormatExample() {
 		$options = $this->getOptions('time_unit_format');
 
 		return $options[$this->getTimeUnitFormat()];
 	}
-
-	/**
-	 * @return bool|mixed
-	 */
 	function getTimeUnitFormat() {
-		return $this->getGenericDataValue( 'time_unit_format' );
+		if ( isset($this->data['time_unit_format']) ) {
+		return $this->data['time_unit_format'];
 	}
-
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setTimeUnitFormat( $value ) {
-		$value = trim($value);
-		return $this->setGenericDataValue( 'time_unit_format', $value );
+		
+		return FALSE;
 	}
+	function setTimeUnitFormat($time_unit_format) {
+		$time_unit_format = trim($time_unit_format);
 
-	/**
-	 * @return bool|mixed
-	 */
+		$upf = TTnew( 'UserPreferenceFactory' );
+		if ( $this->Validator->inArrayKey(	'time_unit_format',
+											$time_unit_format,
+											TTi18n::gettext('Incorrect time units'),
+											$upf->getOptions('time_unit_format')) ) {
+
+			$this->data['time_unit_format'] = $time_unit_format;
+
+			return TRUE;
+		}
+
+		return FALSE;
+	}
 	function getDistanceFormat() {
-		return $this->getGenericDataValue( 'distance_format' );
+		if ( isset($this->data['distance_format']) ) {
+			return $this->data['distance_format'];
+		}
+
+		return FALSE;
+	}
+	function setDistanceFormat($distance_format) {
+		$distance_format = trim($distance_format);
+
+		$upf = TTnew( 'UserPreferenceFactory' );
+		if ( $this->Validator->inArrayKey(	'distance_format',
+			$distance_format,
+			TTi18n::gettext('Incorrect distance units'),
+			$upf->getOptions('distance_format')) ) {
+
+			$this->data['distance_format'] = $distance_format;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setDistanceFormat( $value ) {
-		$value = trim($value);
-		return $this->setGenericDataValue( 'distance_format', $value );
-	}
-
-	/**
-	 * @return bool|mixed
-	 */
 	function getItemsPerPage() {
-		return $this->getGenericDataValue( 'items_per_page' );
+		if ( isset($this->data['items_per_page']) ) {
+			return $this->data['items_per_page'];
+		}
+
+		return FALSE;
+	}
+	function setItemsPerPage($items_per_page) {
+		$items_per_page = trim($items_per_page);
+
+		if	($items_per_page != '' AND $items_per_page >= 1 AND $items_per_page <= 200) {
+
+			$this->data['items_per_page'] = $items_per_page;
+
+			return TRUE;
+		} else {
+
+			$this->Validator->isTrue(		'items_per_page',
+											FALSE,
+											TTi18n::gettext('Items per page must be between 10 and 200'));
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setItemsPerPage( $value ) {
-		$value = trim($value);
-		return $this->setGenericDataValue( 'items_per_page', $value );
-	}
-
-	/**
-	 * @return bool|mixed
-	 */
 	function getStartWeekDay() {
-		return $this->getGenericDataValue( 'start_week_day' );
-	}
+		if ( isset($this->data['start_week_day']) ) {
+			return $this->data['start_week_day'];
+		}
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setStartWeekDay( $value) {
+		return FALSE;
+	}
+	function setStartWeekDay($value) {
 		$value = trim($value);
-		return $this->setGenericDataValue( 'start_week_day', $value );
+
+		$upf = TTnew( 'UserPreferenceFactory' );
+		if ( $this->Validator->inArrayKey(	'start_week_day',
+											$value,
+											TTi18n::gettext('Incorrect day to start a week on'),
+											$upf->getOptions('start_week_day')) ) {
+
+			$this->data['start_week_day'] = $value;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function getEnableEmailNotificationException() {
-		return $this->fromBool( $this->getGenericDataValue( 'enable_email_notification_exception' ) );
+		return $this->fromBool( $this->data['enable_email_notification_exception'] );
 	}
+	function setEnableEmailNotificationException($bool) {
+		$this->data['enable_email_notification_exception'] = $this->toBool($bool);
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setEnableEmailNotificationException( $value ) {
-		return $this->setGenericDataValue( 'enable_email_notification_exception', $this->toBool($value) );
+		return TRUE;
 	}
-
-	/**
-	 * @return bool
-	 */
 	function getEnableEmailNotificationMessage() {
-		return $this->fromBool( $this->getGenericDataValue( 'enable_email_notification_message' ) );
+		return $this->fromBool( $this->data['enable_email_notification_message'] );
 	}
+	function setEnableEmailNotificationMessage($bool) {
+		$this->data['enable_email_notification_message'] = $this->toBool($bool);
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setEnableEmailNotificationMessage( $value) {
-		return $this->setGenericDataValue( 'enable_email_notification_message', $this->toBool($value) );
+		return TRUE;
 	}
-
-	/**
-	 * @return bool
-	 */
 	function getEnableEmailNotificationPayStub() {
-		return $this->fromBool( $this->getGenericDataValue( 'enable_email_notification_pay_stub' ) );
+		return $this->fromBool( $this->data['enable_email_notification_pay_stub'] );
 	}
+	function setEnableEmailNotificationPayStub($bool) {
+		$this->data['enable_email_notification_pay_stub'] = $this->toBool($bool);
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setEnableEmailNotificationPayStub( $value) {
-		return $this->setGenericDataValue( 'enable_email_notification_pay_stub', $this->toBool($value) );
+		return TRUE;
 	}
-
-	/**
-	 * @return bool
-	 */
 	function getEnableEmailNotificationHome() {
-		return $this->fromBool( $this->getGenericDataValue( 'enable_email_notification_home' ) );
+		return $this->fromBool( $this->data['enable_email_notification_home'] );
 	}
+	function setEnableEmailNotificationHome($bool) {
+		$this->data['enable_email_notification_home'] = $this->toBool($bool);
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setEnableEmailNotificationHome( $value) {
-		return $this->setGenericDataValue( 'enable_email_notification_home', $this->toBool($value) );
+		return TRUE;
 	}
 
 	/*
@@ -653,13 +796,10 @@ class UserDefaultFactory extends Factory {
 		Company Deductions
 
 	*/
-	/**
-	 * @return array|bool
-	 */
 	function getCompanyDeduction() {
 		$udcdlf = TTnew( 'UserDefaultCompanyDeductionListFactory' );
 		$udcdlf->getByUserDefaultId( $this->getId() );
-
+		
 		$list = array();
 		foreach ($udcdlf as $obj) {
 			$list[] = $obj->getCompanyDeduction();
@@ -671,12 +811,7 @@ class UserDefaultFactory extends Factory {
 
 		return FALSE;
 	}
-
-	/**
-	 * @param string $ids UUID
-	 * @return bool
-	 */
-	function setCompanyDeduction( $ids) {
+	function setCompanyDeduction($ids) {
 		Debug::text('Setting Company Deduction IDs : ', __FILE__, __LINE__, __METHOD__, 10);
 
 		if ( $ids == '' ) {
@@ -733,220 +868,7 @@ class UserDefaultFactory extends Factory {
 		return FALSE;
 	}
 
-	/**
-	 * @param bool $ignore_warning
-	 * @return bool
-	 */
 	function Validate( $ignore_warning = TRUE ) {
-		//
-		// BELOW: Validation code moved from set*() functions.
-		//
-		// Company
-		$clf = TTnew( 'CompanyListFactory' );
-		$this->Validator->isResultSetWithRows(	'company',
-													$clf->getByID($this->getCompany()),
-													TTi18n::gettext('Company is invalid')
-												);
-		if ( $this->Validator->isError('company') == FALSE ) {
-			$this->Validator->isTrue(		'company',
-													$this->isUniqueCompany($this->getCompany()),
-													TTi18n::gettext('Default settings for this company already exist')
-												);
-		}
-		// Legal entity
-		$clf = TTnew( 'LegalEntityListFactory' );
-		$this->Validator->isResultSetWithRows(	'legal_entity_id',
-														$clf->getByID($this->getLegalEntity()),
-														TTi18n::gettext('Legal entity is invalid')
-													);
-		// Permission Group
-		if ( $this->getPermissionControl() != '' AND $this->getPermissionControl() != TTUUID::getZeroID() ) {
-			$pclf = TTnew( 'PermissionControlListFactory' );
-			$this->Validator->isResultSetWithRows( 'permission_control_id',
-												   $pclf->getByID( $this->getPermissionControl() ),
-												   TTi18n::gettext( 'Permission Group is invalid' )
-			);
-		}
-
-		// Pay Period schedule
-		if ( $this->getPayPeriodSchedule() != '' AND $this->getPayPeriodSchedule() != TTUUID::getZeroID() ) {
-			$ppslf = TTnew( 'PayPeriodScheduleListFactory' );
-			$this->Validator->isResultSetWithRows(	'pay_period_schedule_id',
-															$ppslf->getByID($this->getPayPeriodSchedule()),
-															TTi18n::gettext('Pay Period schedule is invalid')
-														);
-		}
-		// Policy Group
-		if ( $this->getPolicyGroup() != '' AND $this->getPolicyGroup() != TTUUID::getZeroID() ) {
-			$pglf = TTnew( 'PolicyGroupListFactory' );
-			$this->Validator->isResultSetWithRows(	'policy_group_id',
-															$pglf->getByID($this->getPolicyGroup()),
-															TTi18n::gettext('Policy Group is invalid')
-														);
-		}
-		// Employee number
-		if ( $this->getEmployeeNumber() != '' ) {
-			$this->Validator->isLength(		'employee_number',
-													$this->getEmployeeNumber(),
-													TTi18n::gettext('Employee number is too short or too long'),
-													1,
-													100
-												);
-		}
-		// Title
-		if ( $this->getTitle() != '' AND $this->getTitle() != TTUUID::getZeroID() ) {
-			$utlf = TTnew( 'UserTitleListFactory' );
-			$this->Validator->isResultSetWithRows(	'title',
-															$utlf->getByID($this->getTitle()),
-															TTi18n::gettext('Title is invalid')
-														);
-		}
-		// Default Branch
-		if ( $this->getDefaultBranch() != '' AND $this->getDefaultBranch() != TTUUID::getZeroID() ) {
-			$blf = TTnew( 'BranchListFactory' );
-			$this->Validator->isResultSetWithRows(	'default_branch',
-															$blf->getByID($this->getDefaultBranch()),
-															TTi18n::gettext('Invalid Default Branch')
-														);
-		}
-		// Default Department
-		if ( $this->getDefaultDepartment() != '' AND $this->getDefaultDepartment() != TTUUID::getZeroID() ) {
-			$dlf = TTnew( 'DepartmentListFactory' );
-			$this->Validator->isResultSetWithRows(	'default_department',
-															$dlf->getByID($this->getDefaultDepartment()),
-															TTi18n::gettext('Invalid Default Department')
-														);
-		}
-		// Currency
-		if ( $this->getCurrency() != '' AND $this->getCurrency() != TTUUID::getZeroID() ) {
-			$culf = TTnew( 'CurrencyListFactory' );
-			$this->Validator->isResultSetWithRows( 'currency',
-												   $culf->getByID( $this->getCurrency() ),
-												   TTi18n::gettext( 'Invalid Currency' )
-			);
-		}
-		// City
-		if ( $this->getCity() != '' ) {
-			$this->Validator->isRegEx(		'city',
-													$this->getCity(),
-													TTi18n::gettext('City contains invalid characters'),
-													$this->city_validator_regex
-												);
-			if ( $this->Validator->isError('city') == FALSE ) {
-				$this->Validator->isLength(		'city',
-														$this->getCity(),
-														TTi18n::gettext('City name is too short or too long'),
-														2,
-														250
-													);
-			}
-		}
-		// Country
-		$cf = TTnew( 'CompanyFactory' );
-		$this->Validator->inArrayKey(		'country',
-													$this->getCountry(),
-													TTi18n::gettext('Invalid Country'),
-													$cf->getOptions('country')
-												);
-		// Province/State
-		if ( $this->getCountry() !== FALSE ) {
-			$options_arr = $cf->getOptions('province');
-			if ( isset($options_arr[$this->getCountry()]) ) {
-				$options = $options_arr[$this->getCountry()];
-			} else {
-				$options = array();
-			}
-			$this->Validator->inArrayKey(	'province',
-													$this->getProvince(),
-													TTi18n::gettext('Invalid Province/State'),
-													$options
-												);
-		}
-		// Work phone
-		if ( $this->getWorkPhone() != '' ) {
-			$this->Validator->isPhoneNumber(		'work_phone',
-															$this->getWorkPhone(),
-															TTi18n::gettext('Work phone number is invalid')
-														);
-		}
-		// Work phone number extension
-		if ( $this->getWorkPhoneExt() != '' ) {
-			$this->Validator->isLength(		'work_phone_ext',
-													$this->getWorkPhoneExt(),
-													TTi18n::gettext('Work phone number extension is too short or too long'),
-													2,
-													10
-												);
-		}
-		// Work Email address
-		if ( $this->getWorkEmail() != '' ) {
-			$this->Validator->isEmail(	'work_email',
-												$this->getWorkEmail(),
-												TTi18n::gettext('Work Email address is invalid')
-											);
-		}
-		// Hire date
-		if ( $this->getHireDate() != '' ) {
-			$this->Validator->isDate(		'hire_date',
-													$this->getHireDate(),
-													TTi18n::gettext('Hire date is invalid')
-												);
-		}
-		// Language
-		$language_options = TTi18n::getLanguageArray();
-		$this->Validator->inArrayKey(	'language',
-												$this->getLanguage(),
-												TTi18n::gettext('Incorrect language'),
-												$language_options
-											);
-		// Date format
-		$upf = TTnew( 'UserPreferenceFactory' );
-		$this->Validator->inArrayKey(	'date_format',
-												$this->getDateFormat(),
-												TTi18n::gettext('Incorrect date format'),
-												Misc::trimSortPrefix( $upf->getOptions('date_format') )
-											);
-		// Time format
-		$this->Validator->inArrayKey(	'time_format',
-												$this->getTimeFormat(),
-												TTi18n::gettext('Incorrect time format'),
-												$upf->getOptions('time_format')
-											);
-		// Time zone
-		$this->Validator->inArrayKey(	'time_zone',
-												$this->getTimeZone(),
-												TTi18n::gettext('Incorrect time zone'),
-												Misc::trimSortPrefix( $upf->getOptions('time_zone') )
-											);
-		// time units
-		$this->Validator->inArrayKey(	'time_unit_format',
-												$this->getTimeUnitFormat(),
-												TTi18n::gettext('Incorrect time units'),
-												$upf->getOptions('time_unit_format')
-											);
-		// Distance units
-		$this->Validator->inArrayKey(	'distance_format',
-												$this->getDistanceFormat(),
-												TTi18n::gettext('Incorrect distance units'),
-												$upf->getOptions('distance_format')
-											);
-		// Items per page
-		if ( $this->getItemsPerPage() == '' OR $this->getItemsPerPage() < 1 OR $this->getItemsPerPage() > 200 ) {
-			$this->Validator->isTrue(		'items_per_page',
-											FALSE,
-											TTi18n::gettext('Items per page must be between 10 and 200')
-										);
-		}
-		// Day to start a week on
-		$this->Validator->inArrayKey(	'start_week_day',
-												$this->getStartWeekDay(),
-												TTi18n::gettext('Incorrect day to start a week on'),
-												$upf->getOptions('start_week_day')
-											);
-
-		//
-		// ABOVE: Validation code moved from set*() functions.
-		//
 		if ( $this->getCompany() == FALSE ) {
 			$this->Validator->isTrue(		'company',
 											FALSE,
@@ -956,19 +878,12 @@ class UserDefaultFactory extends Factory {
 		return TRUE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function postSave() {
 		return TRUE;
 	}
 
 	//Support setting created_by, updated_by especially for importing data.
 	//Make sure data is set based on the getVariableToFunctionMap order.
-	/**
-	 * @param $data
-	 * @return bool
-	 */
 	function setObjectFromArray( $data ) {
 		if ( is_array( $data ) ) {
 			$variable_function_map = $this->getVariableToFunctionMap();
@@ -998,10 +913,6 @@ class UserDefaultFactory extends Factory {
 	}
 
 
-	/**
-	 * @param null $include_columns
-	 * @return array
-	 */
 	function getObjectAsArray( $include_columns = NULL ) {
 		$data = array();
 		$variable_function_map = $this->getVariableToFunctionMap();
@@ -1028,10 +939,6 @@ class UserDefaultFactory extends Factory {
 		return $data;
 	}
 
-	/**
-	 * @param $log_action
-	 * @return bool
-	 */
 	function addLog( $log_action ) {
 		return TTLog::addEntry( $this->getId(), $log_action, TTi18n::getText('Employee Default Information'), NULL, $this->getTable(), $this );
 	}

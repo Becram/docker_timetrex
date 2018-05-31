@@ -1,7 +1,7 @@
 <?php
 /*********************************************************************************
  * TimeTrex is a Workforce Management program developed by
- * TimeTrex Software Inc. Copyright (C) 2003 - 2018 TimeTrex Software Inc.
+ * TimeTrex Software Inc. Copyright (C) 2003 - 2017 TimeTrex Software Inc.
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Affero General Public License version 3 as published by
@@ -40,14 +40,7 @@
  */
 class BankAccountListFactory extends BankAccountFactory implements IteratorAggregate {
 
-	/**
-	 * @param int $limit Limit the number of records returned
-	 * @param int $page Page number of records to return for pagination
-	 * @param array $where Additional SQL WHERE clause in format of array( $column => $filter, ... ). ie: array( 'id' => 1, ... )
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return $this
-	 */
-	function getAll( $limit = NULL, $page = NULL, $where = NULL, $order = NULL) {
+	function getAll($limit = NULL, $page = NULL, $where = NULL, $order = NULL) {
 		$query = '
 					select	*
 					from	'. $this->getTable() .'
@@ -60,19 +53,13 @@ class BankAccountListFactory extends BankAccountFactory implements IteratorAggre
 		return $this;
 	}
 
-	/**
-	 * @param string $id UUID
-	 * @param array $where Additional SQL WHERE clause in format of array( $column => $filter, ... ). ie: array( 'id' => 1, ... )
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return BankAccountListFactory|bool
-	 */
-	function getById( $id, $where = NULL, $order = NULL) {
+	function getById($id, $where = NULL, $order = NULL) {
 		if ( $id == '') {
 			return FALSE;
 		}
 
 		$ph = array(
-					'id' => TTUUID::castUUID($id),
+					'id' => (int)$id,
 					);
 
 
@@ -89,16 +76,7 @@ class BankAccountListFactory extends BankAccountFactory implements IteratorAggre
 		return $this;
 	}
 
-	/**
-	 * @param string $id UUID
-	 * @param string $company_id UUID
-	 * @param int $limit Limit the number of records returned
-	 * @param int $page Page number of records to return for pagination
-	 * @param array $where Additional SQL WHERE clause in format of array( $column => $filter, ... ). ie: array( 'id' => 1, ... )
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return BankAccountListFactory|bool
-	 */
-	function getByIdAndCompanyId( $id, $company_id, $limit = NULL, $page = NULL, $where = NULL, $order = NULL) {
+	function getByIdAndCompanyId($id, $company_id, $limit = NULL, $page = NULL, $where = NULL, $order = NULL) {
 		if ( $id == '') {
 			return FALSE;
 		}
@@ -115,14 +93,14 @@ class BankAccountListFactory extends BankAccountFactory implements IteratorAggre
 		}
 
 		$ph = array(
-					'company_id' => TTUUID::castUUID($company_id),
+					'company_id' => (int)$company_id,
 					);
 
 		$query = '
 					select	*
 					from	'. $this->getTable() .'
 					where	company_id = ?
-						AND	id in ('. $this->getListSQL( $id, $ph, 'uuid' ) .')
+						AND	id in ('. $this->getListSQL( $id, $ph, 'int' ) .')
 						AND deleted = 0';
 		$query .= $this->getWhereSQL( $where );
 		$query .= $this->getSortSQL( $order, $strict );
@@ -134,19 +112,13 @@ class BankAccountListFactory extends BankAccountFactory implements IteratorAggre
 		return $this;
 	}
 
-	/**
-	 * @param string $id UUID
-	 * @param array $where Additional SQL WHERE clause in format of array( $column => $filter, ... ). ie: array( 'id' => 1, ... )
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return BankAccountListFactory|bool
-	 */
-	function getByUserId( $id, $where = NULL, $order = NULL) {
+	function getByUserId($id, $where = NULL, $order = NULL) {
 		if ( $id == '') {
 			return FALSE;
 		}
 
 		$ph = array(
-					'id' => TTUUID::castUUID($id),
+					'id' => (int)$id,
 					);
 
 
@@ -163,19 +135,13 @@ class BankAccountListFactory extends BankAccountFactory implements IteratorAggre
 		return $this;
 	}
 
-	/**
-	 * @param string $id UUID
-	 * @param array $where Additional SQL WHERE clause in format of array( $column => $filter, ... ). ie: array( 'id' => 1, ... )
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return BankAccountListFactory|bool
-	 */
-	function getByCompanyId( $id, $where = NULL, $order = NULL) {
+	function getByCompanyId($id, $where = NULL, $order = NULL) {
 		if ( $id == '') {
 			return FALSE;
 		}
 
 		$ph = array(
-					'id' => TTUUID::castUUID($id),
+					'id' => (int)$id,
 					);
 
 
@@ -192,19 +158,13 @@ class BankAccountListFactory extends BankAccountFactory implements IteratorAggre
 		return $this;
 	}
 
-	/**
-	 * @param string $id UUID
-	 * @param array $where Additional SQL WHERE clause in format of array( $column => $filter, ... ). ie: array( 'id' => 1, ... )
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return BankAccountListFactory|bool
-	 */
-	function getCompanyAccountByCompanyId( $id, $where = NULL, $order = NULL) {
+	function getCompanyAccountByCompanyId($id, $where = NULL, $order = NULL) {
 		if ( $id == '') {
 			return FALSE;
 		}
 
 		$ph = array(
-					'id' => TTUUID::castUUID($id),
+					'id' => (int)$id,
 					);
 
 
@@ -212,7 +172,7 @@ class BankAccountListFactory extends BankAccountFactory implements IteratorAggre
 					select	*
 					from	'. $this->getTable() .'
 					where	company_id = ?
-						AND ( user_id = \''. TTUUID::getZeroID() .'\' OR user_id is NULL )
+						AND ( user_id = 0 OR user_id is NULL )
 						AND deleted = 0';
 		$query .= $this->getWhereSQL( $where );
 		$query .= $this->getSortSQL( $order );
@@ -222,14 +182,7 @@ class BankAccountListFactory extends BankAccountFactory implements IteratorAggre
 		return $this;
 	}
 
-	/**
-	 * @param string $company_id UUID
-	 * @param string $id UUID
-	 * @param array $where Additional SQL WHERE clause in format of array( $column => $filter, ... ). ie: array( 'id' => 1, ... )
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return BankAccountListFactory|bool
-	 */
-	function getUserAccountByCompanyIdAndUserId( $company_id, $id, $where = NULL, $order = NULL) {
+	function getUserAccountByCompanyIdAndUserId($company_id, $id, $where = NULL, $order = NULL) {
 		if ( $id == '') {
 			return FALSE;
 		}
@@ -239,8 +192,8 @@ class BankAccountListFactory extends BankAccountFactory implements IteratorAggre
 		}
 
 		$ph = array(
-					'company_id' => TTUUID::castUUID($company_id),
-					'id' => TTUUID::castUUID($id),
+					'company_id' => (int)$company_id,
+					'id' => (int)$id,
 					);
 
 		$query = '
@@ -257,15 +210,6 @@ class BankAccountListFactory extends BankAccountFactory implements IteratorAggre
 		return $this;
 	}
 
-	/**
-	 * @param string $company_id UUID
-	 * @param $filter_data
-	 * @param int $limit Limit the number of records returned
-	 * @param int $page Page number of records to return for pagination
-	 * @param array $where Additional SQL WHERE clause in format of array( $column => $filter, ... ). ie: array( 'id' => 1, ... )
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return BankAccountListFactory|bool
-	 */
 	function getAPISearchByCompanyIdAndArrayCriteria( $company_id, $filter_data, $limit = NULL, $page = NULL, $where = NULL, $order = NULL ) {
 		if ( $company_id == '') {
 			return FALSE;
@@ -300,7 +244,7 @@ class BankAccountListFactory extends BankAccountFactory implements IteratorAggre
 		$cf = new CurrencyFactory();
 
 		$ph = array(
-					'company_id' => TTUUID::castUUID($company_id),
+					'company_id' => (int)$company_id,
 					);
 
 		//Since company bank accounts don't have user_ids set, we have to make the LEFT JOIN optional on deleted = 0.
@@ -343,26 +287,26 @@ class BankAccountListFactory extends BankAccountFactory implements IteratorAggre
 					where	a.company_id = ?
 					';
 
-		$query .= ( isset($filter_data['permission_children_ids']) ) ? $this->getWhereClauseSQL( 'a.user_id', $filter_data['permission_children_ids'], 'uuid_list', $ph ) : NULL;
-		$query .= ( isset($filter_data['id']) ) ? $this->getWhereClauseSQL( 'a.id', $filter_data['id'], 'uuid_list', $ph ) : NULL;
-		$query .= ( isset($filter_data['exclude_id']) ) ? $this->getWhereClauseSQL( 'a.id', $filter_data['exclude_id'], 'not_uuid_list', $ph ) : NULL;
+		$query .= ( isset($filter_data['permission_children_ids']) ) ? $this->getWhereClauseSQL( 'a.user_id', $filter_data['permission_children_ids'], 'numeric_list', $ph ) : NULL;
+		$query .= ( isset($filter_data['id']) ) ? $this->getWhereClauseSQL( 'a.id', $filter_data['id'], 'numeric_list', $ph ) : NULL;
+		$query .= ( isset($filter_data['exclude_id']) ) ? $this->getWhereClauseSQL( 'a.id', $filter_data['exclude_id'], 'not_numeric_list', $ph ) : NULL;
 
-		if ( isset($filter_data['user_id']) AND $filter_data['user_id'] != '' AND !in_array( TTUUID::getNotExistID(), (array)$filter_data['user_id']) ) {
-			$query	.=	' AND a.user_id in ('. $this->getListSQL($filter_data['user_id'], $ph, 'uuid') .') ';
+		if ( isset($filter_data['user_id']) AND $filter_data['user_id'] != '' AND !in_array(-1, (array)$filter_data['user_id']) ) {
+			$query	.=	' AND a.user_id in ('. $this->getListSQL($filter_data['user_id'], $ph, 'int') .') ';
 		} elseif ( isset($filter_data['user_id']) AND $filter_data['user_id'] == '' ) {
-			$query	.=	' AND ( a.user_id is NULL OR a.user_id = \''. TTUUID::getZeroID() .'\' )';
+			$query	.=	' AND ( a.user_id is NULL OR a.user_id = 0 )';
 		} else {
-			$query	.=	' AND ( a.user_id is NOT NULL AND a.user_id != \''. TTUUID::getZeroID() .'\' )';
+			$query	.=	' AND ( a.user_id is NOT NULL AND a.user_id != 0 )';
 		}
-
+		
 		$query .= ( isset($filter_data['first_name']) ) ? $this->getWhereClauseSQL( 'b.first_name', $filter_data['first_name'], 'text_metaphone', $ph ) : NULL;
 		$query .= ( isset($filter_data['last_name']) ) ? $this->getWhereClauseSQL( 'b.last_name', $filter_data['last_name'], 'text_metaphone', $ph ) : NULL;
 
 		$query .= ( isset($filter_data['status_id']) ) ? $this->getWhereClauseSQL( 'b.status_id', $filter_data['status_id'], 'numeric_list', $ph ) : NULL;
-		$query .= ( isset($filter_data['group_id']) ) ? $this->getWhereClauseSQL( 'b.group_id', $filter_data['group_id'], 'uuid_list', $ph ) : NULL;
-		$query .= ( isset($filter_data['default_branch_id']) ) ? $this->getWhereClauseSQL( 'b.default_branch_id', $filter_data['default_branch_id'], 'uuid_list', $ph ) : NULL;
-		$query .= ( isset($filter_data['default_department_id']) ) ? $this->getWhereClauseSQL( 'b.default_department_id', $filter_data['default_department_id'], 'uuid_list', $ph ) : NULL;
-		$query .= ( isset($filter_data['title_id']) ) ? $this->getWhereClauseSQL( 'b.title_id', $filter_data['title_id'], 'uuid_list', $ph ) : NULL;
+		$query .= ( isset($filter_data['group_id']) ) ? $this->getWhereClauseSQL( 'b.group_id', $filter_data['group_id'], 'numeric_list', $ph ) : NULL;
+		$query .= ( isset($filter_data['default_branch_id']) ) ? $this->getWhereClauseSQL( 'b.default_branch_id', $filter_data['default_branch_id'], 'numeric_list', $ph ) : NULL;
+		$query .= ( isset($filter_data['default_department_id']) ) ? $this->getWhereClauseSQL( 'b.default_department_id', $filter_data['default_department_id'], 'numeric_list', $ph ) : NULL;
+		$query .= ( isset($filter_data['title_id']) ) ? $this->getWhereClauseSQL( 'b.title_id', $filter_data['title_id'], 'numeric_list', $ph ) : NULL;
 
 		$query .= ( isset($filter_data['country']) ) ? $this->getWhereClauseSQL( 'b.country', $filter_data['country'], 'upper_text_list', $ph ) : NULL;
 		$query .= ( isset($filter_data['province']) ) ? $this->getWhereClauseSQL( 'b.province', $filter_data['province'], 'upper_text_list', $ph ) : NULL;

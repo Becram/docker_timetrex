@@ -1,7 +1,7 @@
 <?php
 /*********************************************************************************
  * TimeTrex is a Workforce Management program developed by
- * TimeTrex Software Inc. Copyright (C) 2003 - 2018 TimeTrex Software Inc.
+ * TimeTrex Software Inc. Copyright (C) 2003 - 2017 TimeTrex Software Inc.
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Affero General Public License version 3 as published by
@@ -50,9 +50,6 @@ class RateLimit {
 
 	protected $memory = NULL;
 
-	/**
-	 * RateLimit constructor.
-	 */
 	function __construct() {
 		try {
 			$this->memory = new SharedMemory();
@@ -63,18 +60,10 @@ class RateLimit {
 		}
 	}
 
-	/**
-	 * @return int
-	 */
 	function getID() {
 		return $this->id;
 	}
-
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setID( $value) {
+	function setID($value) {
 		if ( $value != '' ) {
 			$this->id = $value;
 
@@ -85,19 +74,10 @@ class RateLimit {
 	}
 
 	//Define the number of calls to check() allowed over a given time frame.
-
-	/**
-	 * @return int
-	 */
 	function getAllowedCalls() {
 		return $this->allowed_calls;
 	}
-
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setAllowedCalls( $value) {
+	function setAllowedCalls($value) {
 		if ( $value != '' ) {
 			$this->allowed_calls = $value;
 
@@ -107,18 +87,10 @@ class RateLimit {
 		return FALSE;
 	}
 
-	/**
-	 * @return int
-	 */
 	function getTimeFrame() {
 		return $this->time_frame;
 	}
-
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setTimeFrame( $value) {
+	function setTimeFrame($value) {
 		if ( $value != '' ) {
 			$this->time_frame = $value;
 
@@ -128,10 +100,6 @@ class RateLimit {
 		return FALSE;
 	}
 
-	/**
-	 * @param $data
-	 * @return bool
-	 */
 	function setRateData( $data ) {
 		if ( is_object($this->memory) ) {
 			try {
@@ -144,10 +112,6 @@ class RateLimit {
 
 		return FALSE;
 	}
-
-	/**
-	 * @return bool
-	 */
 	function getRateData() {
 		if ( is_object($this->memory) ) {
 			try {
@@ -157,13 +121,10 @@ class RateLimit {
 				return FALSE;
 			}
 		}
-
+		
 		return FALSE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function getAttempts() {
 		$rate_data = $this->getRateData();
 		if ( isset($rate_data['attempts']) ) {
@@ -173,9 +134,6 @@ class RateLimit {
 		return FALSE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function check() {
 		if ( $this->getID() != '' ) {
 			$rate_data = $this->getRateData();
@@ -202,9 +160,6 @@ class RateLimit {
 		return TRUE; //Return TRUE is no ID is specified, so it fails "OPEN".
 	}
 
-	/**
-	 * @return bool
-	 */
 	function delete() {
 		if ( is_object($this->memory) ) {
 			try {

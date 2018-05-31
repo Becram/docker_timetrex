@@ -1,7 +1,7 @@
 <?php
 /*********************************************************************************
  * TimeTrex is a Workforce Management program developed by
- * TimeTrex Software Inc. Copyright (C) 2003 - 2018 TimeTrex Software Inc.
+ * TimeTrex Software Inc. Copyright (C) 2003 - 2017 TimeTrex Software Inc.
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Affero General Public License version 3 as published by
@@ -51,11 +51,6 @@ class ContributingShiftPolicyFactory extends Factory {
 	protected $job_item_group_map = NULL;
 	protected $job_item_map = NULL;
 
-	/**
-	 * @param $name
-	 * @param null $parent
-	 * @return array|null
-	 */
 	function _getFactoryOptions( $name, $parent = NULL ) {
 		$retval = NULL;
 		switch( $name ) {
@@ -183,10 +178,6 @@ class ContributingShiftPolicyFactory extends Factory {
 		return $retval;
 	}
 
-	/**
-	 * @param $data
-	 * @return array
-	 */
 	function _getVariableToFunctionMap( $data ) {
 		$variable_function_map = array(
 										'id' => 'ID',
@@ -244,50 +235,48 @@ class ContributingShiftPolicyFactory extends Factory {
 		return $variable_function_map;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function getCompanyObject() {
 		return $this->getGenericObject( 'CompanyListFactory', $this->getCompany(), 'company_obj' );
 	}
 
-	/**
-	 * @return bool
-	 */
 	function getContributingPayCodePolicyObject() {
 		return $this->getGenericObject( 'ContributingPayCodePolicyListFactory', $this->getContributingPayCodePolicy(), 'contributing_pay_code_policy_obj' );
 	}
 
-	/**
-	 * @return bool|mixed
-	 */
 	function getCompany() {
-		return $this->getGenericDataValue( 'company_id' );
+		if ( isset($this->data['company_id']) ) {
+			return (int)$this->data['company_id'];
+		}
+
+		return FALSE;
+	}
+	function setCompany($id) {
+		$id = trim($id);
+
+		Debug::Text('Company ID: '. $id, __FILE__, __LINE__, __METHOD__, 10);
+		$clf = TTnew( 'CompanyListFactory' );
+
+		if ( $this->Validator->isResultSetWithRows(	'company',
+													$clf->getByID($id),
+													TTi18n::gettext('Company is invalid')
+													) ) {
+
+			$this->data['company_id'] = $id;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @param string $value UUID
-	 * @return bool
-	 */
-	function setCompany( $value) {
-		$value = TTUUID::castUUID( $value );
-
-		Debug::Text('Company ID: '. $value, __FILE__, __LINE__, __METHOD__, 10);
-		return $this->setGenericDataValue( 'company_id', $value );
-	}
-
-	/**
-	 * @param $name
-	 * @return bool
-	 */
-	function isUniqueName( $name) {
+	function isUniqueName($name) {
 		$name = trim($name);
 		if ( $name == '' ) {
 			return FALSE;
 		}
 
 		$ph = array(
-					'company_id' => TTUUID::castUUID($this->getCompany()),
+					'company_id' => (int)$this->getCompany(),
 					'name' => TTi18n::strtolower($name),
 					);
 
@@ -305,205 +294,279 @@ class ContributingShiftPolicyFactory extends Factory {
 
 		return FALSE;
 	}
-
-	/**
-	 * @return bool|mixed
-	 */
 	function getName() {
-		return $this->getGenericDataValue( 'name' );
+		if ( isset($this->data['name']) ) {
+			return $this->data['name'];
+		}
+
+		return FALSE;
+	}
+	function setName($name) {
+		$name = trim($name);
+		if (	$this->Validator->isLength(	'name',
+											$name,
+											TTi18n::gettext('Name is too short or too long'),
+											2, 75)
+				AND
+				$this->Validator->isTrue(	'name',
+											$this->isUniqueName($name),
+											TTi18n::gettext('Name is already in use') )
+						) {
+
+			$this->data['name'] = $name;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setName( $value) {
-		$value = trim($value);
-		return $this->setGenericDataValue( 'name', $value );
-	}
-
-	/**
-	 * @return bool|mixed
-	 */
 	function getDescription() {
-		return $this->getGenericDataValue( 'description' );
+		if ( isset($this->data['description']) ) {
+			return $this->data['description'];
+		}
+
+		return FALSE;
+	}
+	function setDescription($description) {
+		$description = trim($description);
+
+		if (	$description == ''
+				OR $this->Validator->isLength(	'description',
+												$description,
+												TTi18n::gettext('Description is invalid'),
+												1, 250) ) {
+
+			$this->data['description'] = $description;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setDescription( $value) {
-		$value = trim($value);
-		return $this->setGenericDataValue( 'description', $value );
-	}
-
-	/**
-	 * @return bool|mixed
-	 */
 	function getContributingPayCodePolicy() {
-		return $this->getGenericDataValue( 'contributing_pay_code_policy_id' );
+		if ( isset($this->data['contributing_pay_code_policy_id']) ) {
+			return (int)$this->data['contributing_pay_code_policy_id'];
+		}
+
+		return FALSE;
+	}
+	function setContributingPayCodePolicy($id) {
+		$id = trim($id);
+
+		$cpcplf = TTnew( 'ContributingPayCodePolicyListFactory' );
+
+		if (
+				$this->Validator->isResultSetWithRows(	'contributing_pay_code_policy_id',
+													$cpcplf->getByID($id),
+													TTi18n::gettext('Contributing Pay Code Policy is invalid')
+													) ) {
+
+			$this->data['contributing_pay_code_policy_id'] = $id;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @param string $value UUID
-	 * @return bool
-	 */
-	function setContributingPayCodePolicy( $value) {
-		$value = TTUUID::castUUID( $value );
-		return $this->setGenericDataValue( 'contributing_pay_code_policy_id', $value );
-	}
-
-	/**
-	 * @param bool $raw
-	 * @return bool|int
-	 */
 	function getFilterStartDate( $raw = FALSE ) {
-		$value = $this->getGenericDataValue( 'filter_start_date' );
-		if ( $value !== FALSE ) {
+		if ( isset($this->data['filter_start_date']) ) {
 			if ( $raw === TRUE ) {
-				return $value;
+				return $this->data['filter_start_date'];
 			} else {
-				return TTDate::strtotime( $value );
+				return TTDate::strtotime( $this->data['filter_start_date'] );
 			}
 		}
 
 		return FALSE;
 	}
+	function setFilterStartDate($epoch) {
+		$epoch = ( !is_int($epoch) ) ? trim($epoch) : $epoch; //Dont trim integer values, as it changes them to strings.
 
-	/**
-	 * @param int $value EPOCH
-	 * @return bool
-	 */
-	function setFilterStartDate( $value) {
-		$value = ( !is_int($value) ) ? trim($value) : $value; //Dont trim integer values, as it changes them to strings.
-		return $this->setGenericDataValue( 'filter_start_date', $value );
+		if ( $epoch == '' ) {
+			$epoch = NULL;
+		}
+
+		if	(
+				$epoch == NULL
+				OR
+				$this->Validator->isDate(		'filter_start_date',
+												$epoch,
+												TTi18n::gettext('Incorrect start date'))
+			) {
+
+			$this->data['filter_start_date'] = $epoch;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @param bool $raw
-	 * @return bool|int
-	 */
 	function getFilterEndDate( $raw = FALSE ) {
-		$value = $this->getGenericDataValue( 'filter_end_date' );
-		if ( $value !== FALSE ) {
+		if ( isset($this->data['filter_end_date']) ) {
 			if ( $raw === TRUE ) {
-				return $value;
+				return $this->data['filter_end_date'];
 			} else {
-				return TTDate::strtotime( $value );
+				return TTDate::strtotime( $this->data['filter_end_date'] );
 			}
 		}
 
 		return FALSE;
 	}
+	function setFilterEndDate($epoch) {
+		$epoch = ( !is_int($epoch) ) ? trim($epoch) : $epoch; //Dont trim integer values, as it changes them to strings.
 
-	/**
-	 * @param int $value EPOCH
-	 * @return bool
-	 */
-	function setFilterEndDate( $value) {
-		$value = ( !is_int($value) ) ? trim($value) : $value; //Dont trim integer values, as it changes them to strings.
-		return $this->setGenericDataValue( 'filter_end_date', $value );
+		if ( $epoch == '' ) {
+			$epoch = NULL;
+		}
+
+		if	(	$epoch == NULL
+				OR
+				$this->Validator->isDate(		'filter_end_date',
+												$epoch,
+												TTi18n::gettext('Incorrect end date'))
+			) {
+
+			$this->data['filter_end_date'] = $epoch;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @param bool $raw
-	 * @return bool|int
-	 */
 	function getFilterStartTime( $raw = FALSE ) {
-		$value = $this->getGenericDataValue( 'filter_start_time' );
-		if ( $value !== FALSE ) {
+		if ( isset($this->data['filter_start_time']) ) {
 			if ( $raw === TRUE) {
-				return $value;
+				return $this->data['filter_start_time'];
 			} else {
-				return TTDate::strtotime( $value );
+				return TTDate::strtotime( $this->data['filter_start_time'] );
 			}
 		}
 
 		return FALSE;
 	}
+	function setFilterStartTime($epoch) {
+		$epoch = ( !is_int($epoch) ) ? trim($epoch) : $epoch; //Dont trim integer values, as it changes them to strings.
 
-	/**
-	 * @param int $value EPOCH
-	 * @return bool
-	 */
-	function setFilterStartTime( $value) {
-		$value = ( !is_int($value) ) ? trim($value) : $value; //Dont trim integer values, as it changes them to strings.
-		return $this->setGenericDataValue( 'filter_start_time', $value );
+		if	(	$epoch == ''
+				OR
+				$this->Validator->isDate(		'filter_start_time',
+												$epoch,
+												TTi18n::gettext('Incorrect Start time'))
+			) {
+
+			$this->data['filter_start_time'] = $epoch;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @param bool $raw
-	 * @return bool|int
-	 */
 	function getFilterEndTime( $raw = FALSE ) {
-		$value = $this->getGenericDataValue( 'filter_end_time' );
-		if ( $value !== FALSE ) {
+		if ( isset($this->data['filter_end_time']) ) {
 			if ( $raw === TRUE) {
-				return $value;
+				return $this->data['filter_end_time'];
 			} else {
-				return TTDate::strtotime( $value );
+				return TTDate::strtotime( $this->data['filter_end_time'] );
 			}
 		}
 
 		return FALSE;
 	}
+	function setFilterEndTime($epoch) {
+		$epoch = ( !is_int($epoch) ) ? trim($epoch) : $epoch; //Dont trim integer values, as it changes them to strings.
 
-	/**
-	 * @param int $value EPOCH
-	 * @return bool
-	 */
-	function setFilterEndTime( $value) {
-		$value = ( !is_int($value) ) ? trim($value) : $value; //Dont trim integer values, as it changes them to strings.
-		return $this->setGenericDataValue( 'filter_end_time', $value );
+		if	(	$epoch == ''
+				OR
+				$this->Validator->isDate(		'filter_end_time',
+												$epoch,
+												TTi18n::gettext('Incorrect End time'))
+			) {
+
+			$this->data['filter_end_time'] = $epoch;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @return bool|int
-	 */
 	function getFilterMinimumTime() {
-		return $this->getGenericDataValue( 'filter_minimum_time' );
+		if ( isset($this->data['filter_minimum_time']) ) {
+			return (int)$this->data['filter_minimum_time'];
+		}
+
+		return FALSE;
+	}
+	function setFilterMinimumTime($int) {
+		$int = trim($int);
+
+		if	( empty($int) ) {
+			$int = 0;
+		}
+
+		if	(	$this->Validator->isNumeric(		'filter_minimum_time',
+													$int,
+													TTi18n::gettext('Incorrect Minimum Time')) ) {
+			$this->data['filter_minimum_time'] = $int;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setFilterMinimumTime( $value) {
-		$value = (int)trim($value);
-		return $this->setGenericDataValue( 'filter_minimum_time', $value );
-	}
-
-	/**
-	 * @return bool|int
-	 */
 	function getFilterMaximumTime() {
-		return $this->getGenericDataValue( 'filter_maximum_time' );
+		if ( isset($this->data['filter_maximum_time']) ) {
+			return (int)$this->data['filter_maximum_time'];
+		}
+
+		return FALSE;
+	}
+	function setFilterMaximumTime($int) {
+		$int = trim($int);
+
+		if	( empty($int) ) {
+			$int = 0;
+		}
+
+		if	(	$this->Validator->isNumeric(		'filter_maximum_time',
+													$int,
+													TTi18n::gettext('Incorrect Maximum Time')) ) {
+			$this->data['filter_maximum_time'] = $int;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setFilterMaximumTime( $value) {
-		$value = (int)trim($value);
-		return $this->setGenericDataValue( 'filter_maximum_time', $value );
-	}
-
-	/**
-	 * @return bool|int
-	 */
 	function getIncludeShiftType() {
-		return (int)$this->getGenericDataValue( 'include_shift_type_id' );
+		if ( isset($this->data['include_shift_type_id']) ) {
+			return (int)$this->data['include_shift_type_id'];
+		}
+
+		return FALSE;
+	}
+	function setIncludeShiftType($value) {
+		$value = trim($value);
+
+		if ( $this->Validator->inArrayKey(	  'include_shift_type_id',
+											  $value,
+											  TTi18n::gettext('Incorrect Shift Type'),
+											  $this->getOptions('include_shift_type')) ) {
+
+			$this->data['include_shift_type_id'] = $value;
+
+		return TRUE;
 	}
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setIncludeShiftType( $value) {
-		$value = (int)trim($value);
-		return $this->setGenericDataValue( 'include_shift_type_id', $value );
+		return FALSE;
 	}
 
 	/*
@@ -511,416 +574,390 @@ class ContributingShiftPolicyFactory extends Factory {
 	Branch/Department/Job/Task filter functions
 
 	*/
-	/**
-	 * @return bool|int
-	 */
 	function getBranchSelectionType() {
-		return $this->getGenericDataValue( 'branch_selection_type_id' );
-	}
+		if ( isset($this->data['branch_selection_type_id']) ) {
+			return (int)$this->data['branch_selection_type_id'];
+		}
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setBranchSelectionType( $value) {
+		return FALSE;
+	}
+	function setBranchSelectionType($value) {
 		$value = (int)trim($value);
-		return $this->setGenericDataValue( 'branch_selection_type_id', $value );
+
+		if ( $value == 0
+				OR $this->Validator->inArrayKey(	'branch_selection_type_id',
+											$value,
+											TTi18n::gettext('Incorrect Branch Selection Type'),
+											$this->getOptions('branch_selection_type')) ) {
+
+			$this->data['branch_selection_type_id'] = $value;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function getExcludeDefaultBranch() {
-		return $this->fromBool( $this->getGenericDataValue( 'exclude_default_branch' ) );
+		if ( isset($this->data['exclude_default_branch']) ) {
+			return $this->fromBool( $this->data['exclude_default_branch'] );
+		}
+
+		return FALSE;
+	}
+	function setExcludeDefaultBranch($bool) {
+		$this->data['exclude_default_branch'] = $this->toBool($bool);
+
+		return TRUE;
 	}
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setExcludeDefaultBranch( $value) {
-		return $this->setGenericDataValue( 'exclude_default_branch', $this->toBool($value) );
-	}
-
-	/**
-	 * @return mixed
-	 */
 	function getBranch() {
 		return $this->getCompanyGenericMapData( $this->getCompany(), 610, $this->getID(), 'branch_map' );
 	}
-
-	/**
-	 * @param string $ids UUID
-	 * @return bool
-	 */
-	function setBranch( $ids) {
+	function setBranch($ids) {
 		Debug::text('Setting Branch IDs : ', __FILE__, __LINE__, __METHOD__, 10);
 		return CompanyGenericMapFactory::setMapIDs( $this->getCompany(), 610, $this->getID(), (array)$ids );
 	}
 
-	/**
-	 * @return bool|int
-	 */
 	function getDepartmentSelectionType() {
-		return $this->getGenericDataValue( 'department_selection_type_id' );
-	}
+		if ( isset($this->data['department_selection_type_id']) ) {
+			return (int)$this->data['department_selection_type_id'];
+		}
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setDepartmentSelectionType( $value) {
+		return FALSE;
+	}
+	function setDepartmentSelectionType($value) {
 		$value = (int)trim($value);
-		return $this->setGenericDataValue( 'department_selection_type_id', $value );
+
+		if ( $value == 0
+				OR $this->Validator->inArrayKey(	'department_selection_type_id',
+											$value,
+											TTi18n::gettext('Incorrect Department Selection Type'),
+											$this->getOptions('department_selection_type')) ) {
+
+			$this->data['department_selection_type_id'] = $value;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function getExcludeDefaultDepartment() {
-		return $this->fromBool( $this->getGenericDataValue( 'exclude_default_department' ) );
+		if ( isset($this->data['exclude_default_department']) ) {
+			return $this->fromBool( $this->data['exclude_default_department'] );
+		}
+
+		return FALSE;
+	}
+	function setExcludeDefaultDepartment($bool) {
+		$this->data['exclude_default_department'] = $this->toBool($bool);
+
+		return TRUE;
 	}
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setExcludeDefaultDepartment( $value) {
-		return $this->setGenericDataValue( 'exclude_default_department', $this->toBool($value) );
-	}
-
-	/**
-	 * @return mixed
-	 */
 	function getDepartment() {
 		return $this->getCompanyGenericMapData( $this->getCompany(), 620, $this->getID(), 'department_map' );
 	}
-
-	/**
-	 * @param string $ids UUID
-	 * @return bool
-	 */
-	function setDepartment( $ids) {
+	function setDepartment($ids) {
 		Debug::text('Setting Department IDs : ', __FILE__, __LINE__, __METHOD__, 10);
 		return CompanyGenericMapFactory::setMapIDs( $this->getCompany(), 620, $this->getID(), (array)$ids );
 	}
 
-	/**
-	 * @return bool|int
-	 */
 	function getJobGroupSelectionType() {
-		return $this->getGenericDataValue( 'job_group_selection_type_id' );
-	}
+		if ( isset($this->data['job_group_selection_type_id']) ) {
+			return (int)$this->data['job_group_selection_type_id'];
+		}
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setJobGroupSelectionType( $value) {
+		return FALSE;
+	}
+	function setJobGroupSelectionType($value) {
 		$value = (int)trim($value);
-		return $this->setGenericDataValue( 'job_group_selection_type_id', $value );
+
+		if ( $value == 0
+				OR $this->Validator->inArrayKey(	'job_group_selection_type_id',
+											$value,
+											TTi18n::gettext('Incorrect Job Group Selection Type'),
+											$this->getOptions('job_group_selection_type')) ) {
+
+			$this->data['job_group_selection_type_id'] = $value;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @return mixed
-	 */
 	function getJobGroup() {
 		return $this->getCompanyGenericMapData( $this->getCompany(), 640, $this->getID(), 'job_group_map' );
 	}
-
-	/**
-	 * @param string $ids UUID
-	 * @return bool
-	 */
-	function setJobGroup( $ids) {
+	function setJobGroup($ids) {
 		Debug::text('Setting Job Group IDs : ', __FILE__, __LINE__, __METHOD__, 10);
 		return CompanyGenericMapFactory::setMapIDs( $this->getCompany(), 640, $this->getID(), (array)$ids );
 	}
 
-	/**
-	 * @return bool|int
-	 */
 	function getJobSelectionType() {
-		return $this->getGenericDataValue( 'job_selection_type_id' );
-	}
+		if ( isset($this->data['job_selection_type_id']) ) {
+			return (int)$this->data['job_selection_type_id'];
+		}
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setJobSelectionType( $value) {
+		return FALSE;
+	}
+	function setJobSelectionType($value) {
 		$value = (int)trim($value);
-		return $this->setGenericDataValue( 'job_selection_type_id', $value );
+
+		if ( $value == 0
+				OR $this->Validator->inArrayKey(	'job_selection_type_id',
+											$value,
+											TTi18n::gettext('Incorrect Job Selection Type'),
+											$this->getOptions('job_selection_type')) ) {
+
+			$this->data['job_selection_type_id'] = $value;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @return mixed
-	 */
 	function getJob() {
 		return $this->getCompanyGenericMapData( $this->getCompany(), 630, $this->getID(), 'job_map' );
 	}
-
-	/**
-	 * @param string $ids UUID
-	 * @return bool
-	 */
-	function setJob( $ids) {
+	function setJob($ids) {
 		Debug::text('Setting Job IDs : ', __FILE__, __LINE__, __METHOD__, 10);
 		return CompanyGenericMapFactory::setMapIDs( $this->getCompany(), 630, $this->getID(), (array)$ids );
 	}
 
-	/**
-	 * @return bool
-	 */
 	function getExcludeDefaultJob() {
-		return $this->fromBool( $this->getGenericDataValue( 'exclude_default_job' ) );
+		if ( isset($this->data['exclude_default_job']) ) {
+			return $this->fromBool( $this->data['exclude_default_job'] );
+		}
+
+		return FALSE;
+	}
+	function setExcludeDefaultJob($bool) {
+		$this->data['exclude_default_job'] = $this->toBool($bool);
+
+		return TRUE;
 	}
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setExcludeDefaultJob( $value) {
-		return $this->setGenericDataValue( 'exclude_default_job', $this->toBool($value) );
-	}
-
-	/**
-	 * @return bool|int
-	 */
 	function getJobItemGroupSelectionType() {
-		return $this->getGenericDataValue( 'job_item_group_selection_type_id' );
-	}
+		if ( isset($this->data['job_item_group_selection_type_id']) ) {
+			return (int)$this->data['job_item_group_selection_type_id'];
+		}
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setJobItemGroupSelectionType( $value) {
+		return FALSE;
+	}
+	function setJobItemGroupSelectionType($value) {
 		$value = (int)trim($value);
-		return $this->setGenericDataValue( 'job_item_group_selection_type_id', $value );
+
+		if ( $value == 0
+				OR $this->Validator->inArrayKey(	'job_item_group_selection_type_id',
+											$value,
+											TTi18n::gettext('Incorrect Task Group Selection Type'),
+											$this->getOptions('job_item_group_selection_type')) ) {
+
+			$this->data['job_item_group_selection_type_id'] = $value;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @return mixed
-	 */
 	function getJobItemGroup() {
 		return $this->getCompanyGenericMapData( $this->getCompany(), 660, $this->getID(), 'job_item_group_map' );
 	}
-
-	/**
-	 * @param string $ids UUID
-	 * @return bool
-	 */
-	function setJobItemGroup( $ids) {
+	function setJobItemGroup($ids) {
 		Debug::text('Setting Task Group IDs : ', __FILE__, __LINE__, __METHOD__, 10);
 		return CompanyGenericMapFactory::setMapIDs( $this->getCompany(), 660, $this->getID(), (array)$ids );
 	}
 
-	/**
-	 * @return bool|int
-	 */
 	function getJobItemSelectionType() {
-		return $this->getGenericDataValue( 'job_item_selection_type_id' );
-	}
+		if ( isset($this->data['job_item_selection_type_id']) ) {
+			return (int)$this->data['job_item_selection_type_id'];
+		}
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setJobItemSelectionType( $value) {
+		return FALSE;
+	}
+	function setJobItemSelectionType($value) {
 		$value = (int)trim($value);
-		return $this->setGenericDataValue( 'job_item_selection_type_id', $value );
+
+		if ( $value == 0
+				OR $this->Validator->inArrayKey(	'job_item_selection_type_id',
+											$value,
+											TTi18n::gettext('Incorrect Task Selection Type'),
+											$this->getOptions('job_item_selection_type')) ) {
+
+			$this->data['job_item_selection_type_id'] = $value;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @return mixed
-	 */
 	function getJobItem() {
 		return $this->getCompanyGenericMapData( $this->getCompany(), 650, $this->getID(), 'job_item_map' );
 	}
-
-	/**
-	 * @param string $ids UUID
-	 * @return bool
-	 */
-	function setJobItem( $ids) {
+	function setJobItem($ids) {
 		Debug::text('Setting Task IDs : ', __FILE__, __LINE__, __METHOD__, 10);
 		return CompanyGenericMapFactory::setMapIDs( $this->getCompany(), 650, $this->getID(), (array)$ids );
 	}
 
-	/**
-	 * @return bool
-	 */
 	function getExcludeDefaultJobItem() {
-		return $this->fromBool( $this->getGenericDataValue( 'exclude_default_job_item' ) );
+		if ( isset($this->data['exclude_default_job_item']) ) {
+			return $this->fromBool( $this->data['exclude_default_job_item'] );
+		}
+
+		return FALSE;
+	}
+	function setExcludeDefaultJobItem($bool) {
+		$this->data['exclude_default_job_item'] = $this->toBool($bool);
+
+		return TRUE;
 	}
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setExcludeDefaultJobItem( $value) {
-		return $this->setGenericDataValue( 'exclude_default_job_item', $this->toBool($value) );
-	}
-
-	/**
-	 * @return bool
-	 */
 	function getSun() {
-		return $this->fromBool( $this->getGenericDataValue( 'sun' ) );
+		if ( isset($this->data['sun']) ) {
+			return $this->fromBool( $this->data['sun'] );
+		}
+
+		return FALSE;
+	}
+	function setSun($bool) {
+		$this->data['sun'] = $this->toBool($bool);
+
+		return TRUE;
 	}
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setSun( $value) {
-		return $this->setGenericDataValue( 'sun', $this->toBool($value) );
-	}
-
-	/**
-	 * @return bool
-	 */
 	function getMon() {
-		return $this->fromBool( $this->getGenericDataValue( 'mon' ) );
-	}
+		if ( isset($this->data['mon']) ) {
+			return $this->fromBool( $this->data['mon'] );
+		}
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setMon( $value) {
-		return $this->setGenericDataValue( 'mon', $this->toBool($value) );
+		return FALSE;
 	}
+	function setMon($bool) {
+		$this->data['mon'] = $this->toBool($bool);
 
-	/**
-	 * @return bool
-	 */
+		return TRUE;
+	}
 	function getTue() {
-		return $this->fromBool( $this->getGenericDataValue( 'tue' ) );
-	}
+		if ( isset($this->data['tue']) ) {
+			return $this->fromBool( $this->data['tue'] );
+		}
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setTue( $value) {
-		return $this->setGenericDataValue( 'tue', $this->toBool($value) );
+		return FALSE;
 	}
+	function setTue($bool) {
+		$this->data['tue'] = $this->toBool($bool);
 
-	/**
-	 * @return bool
-	 */
+		return TRUE;
+	}
 	function getWed() {
-		return $this->fromBool( $this->getGenericDataValue( 'wed' ) );
-	}
+		if ( isset($this->data['wed']) ) {
+			return $this->fromBool( $this->data['wed'] );
+		}
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setWed( $value) {
-		return $this->setGenericDataValue( 'wed', $this->toBool($value) );
+		return FALSE;
 	}
+	function setWed($bool) {
+		$this->data['wed'] = $this->toBool($bool);
 
-	/**
-	 * @return bool
-	 */
+		return TRUE;
+	}
 	function getThu() {
-		return $this->fromBool( $this->getGenericDataValue( 'thu' ) );
-	}
+		if ( isset($this->data['thu']) ) {
+			return $this->fromBool( $this->data['thu'] );
+		}
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setThu( $value) {
-		return $this->setGenericDataValue( 'thu', $this->toBool($value) );
+		return FALSE;
 	}
+	function setThu($bool) {
+		$this->data['thu'] = $this->toBool($bool);
 
-	/**
-	 * @return bool
-	 */
+		return TRUE;
+	}
 	function getFri() {
-		return $this->fromBool( $this->getGenericDataValue( 'fri' ) );
-	}
+		if ( isset($this->data['fri']) ) {
+			return $this->fromBool( $this->data['fri'] );
+		}
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setFri( $value) {
-		return $this->setGenericDataValue( 'fri', $this->toBool($value) );
+		return FALSE;
 	}
+	function setFri($bool) {
+		$this->data['fri'] = $this->toBool($bool);
 
-	/**
-	 * @return bool
-	 */
+		return TRUE;
+	}
 	function getSat() {
-		return $this->fromBool( $this->getGenericDataValue( 'sat' ) );
+		if ( isset($this->data['sat']) ) {
+			return $this->fromBool( $this->data['sat'] );
+		}
+
+		return FALSE;
+	}
+	function setSat($bool) {
+		$this->data['sat'] = $this->toBool($bool);
+
+		return TRUE;
 	}
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setSat( $value) {
-		return $this->setGenericDataValue( 'sat', $this->toBool($value) );
-	}
-
-	/**
-	 * @return bool|int
-	 */
 	function getIncludeScheduleShiftType() {
-		return (int)$this->getGenericDataValue( 'include_schedule_shift_type_id' );
+		if ( isset($this->data['include_schedule_shift_type_id']) ) {
+			return (int)$this->data['include_schedule_shift_type_id'];
+		}
+
+		return FALSE;
+	}
+	function setIncludeScheduleShiftType($value) {
+		$value = trim($value);
+
+		if ( $this->Validator->inArrayKey(	'include_schedule_shift_type_id',
+											$value,
+											TTi18n::gettext('Incorrect Include Schedule Shift Type'),
+											$this->getOptions('include_schedule_shift_type')) ) {
+
+			$this->data['include_schedule_shift_type_id'] = $value;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setIncludeScheduleShiftType( $value) {
-		$value = (int)trim($value);
-		return $this->setGenericDataValue( 'include_schedule_shift_type_id', $value );
-	}
-
-	/**
-	 * @return bool|int
-	 */
 	function getIncludeHolidayType() {
-		return $this->getGenericDataValue( 'include_holiday_type_id' );
+		if ( isset($this->data['include_holiday_type_id']) ) {
+			return (int)$this->data['include_holiday_type_id'];
+		}
+
+		return FALSE;
+	}
+	function setIncludeHolidayType($value) {
+		$value = trim($value);
+
+		if ( $this->Validator->inArrayKey(	'include_holiday_type_id',
+											$value,
+											TTi18n::gettext('Incorrect Include Holiday Type'),
+											$this->getOptions('include_holiday_type')) ) {
+
+			$this->data['include_holiday_type_id'] = $value;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setIncludeHolidayType( $value) {
-		$value = (int)trim($value);
-		return $this->setGenericDataValue( 'include_holiday_type_id', $value );
-	}
-
-	/**
-	 * @return array|bool
-	 */
 	function getHolidayPolicy() {
 		return CompanyGenericMapListFactory::getArrayByCompanyIDAndObjectTypeIDAndObjectID( $this->getCompany(), 690, $this->getID() );
 	}
-
-	/**
-	 * @param string $ids UUID
-	 * @return bool
-	 */
-	function setHolidayPolicy( $ids) {
+	function setHolidayPolicy($ids) {
 		Debug::text('Setting Holiday Policy IDs : ', __FILE__, __LINE__, __METHOD__, 10);
 		return CompanyGenericMapFactory::setMapIDs( $this->getCompany(), 690, $this->getID(), (array)$ids );
 	}
 
-	/**
-	 * @param int $epoch EPOCH
-	 * @param object $calculate_policy_obj
-	 * @return bool
-	 */
 	function isHoliday( $epoch, $calculate_policy_obj ) {
 		if ( $epoch == '' OR !is_object($calculate_policy_obj) ) {
 			return FALSE;
@@ -932,8 +969,8 @@ class ContributingShiftPolicyFactory extends Factory {
 			if ( is_array($holiday_policy_ids) AND count($holiday_policy_ids) > 0 ) {
 				foreach( $holiday_policy_ids as $holiday_policy_id ) {
 					if ( isset($calculate_policy_obj->holiday_policy[$holiday_policy_id]) ) {
-						$holiday_policies = $calculate_policy_obj->filterHoliday( $epoch, $calculate_policy_obj->holiday_policy[$holiday_policy_id], NULL );
-						if ( is_array( $holiday_policies ) AND count( $holiday_policies ) > 0 ) {
+						$holiday_obj = $calculate_policy_obj->filterHoliday( $epoch, $calculate_policy_obj->holiday_policy[$holiday_policy_id], NULL );
+						if ( is_object($holiday_obj) ) {
 							Debug::text(' Is Holiday: User ID: '. $calculate_policy_obj->getUserObject()->getID() .' Date: '. TTDate::getDate('DATE', $epoch), __FILE__, __LINE__, __METHOD__, 10);
 
 							//Check if its only eligible holidays or all holidays.
@@ -954,9 +991,6 @@ class ContributingShiftPolicyFactory extends Factory {
 		return FALSE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function isHolidayRestricted() {
 		if ( $this->getIncludeHolidayType() == 20 OR $this->getIncludeHolidayType() == 25 OR $this->getIncludeHolidayType() == 30 ) {
 			return TRUE;
@@ -967,9 +1001,6 @@ class ContributingShiftPolicyFactory extends Factory {
 
 	//Check if this premium policy is restricted by time.
 	//If its not, we can apply it to non-punched hours.
-	/**
-	 * @return bool
-	 */
 	function isTimeRestricted() {
 		//If time restrictions account for over 23.5 hours, then we assume
 		//that this policy is not time restricted at all.
@@ -983,12 +1014,7 @@ class ContributingShiftPolicyFactory extends Factory {
 		return FALSE;
 	}
 
-	/**
-	 * @param int $date_epoch EPOCH
-	 * @param object $calculate_policy_obj
-	 * @return bool
-	 */
-	function isActiveDayOfWeekOrHoliday( $date_epoch, $calculate_policy_obj ) {
+	function isActiveDayOfWeekOrHoliday( $date_epoch, $calculate_policy_obj = NULL ) {
 		Debug::text(' Date: '. TTDate::getDate('DATE+TIME', $date_epoch) .' Include Holiday Type: '. $this->getIncludeHolidayType(), __FILE__, __LINE__, __METHOD__, 10);
 		if ( $this->getIncludeHolidayType() > 10 AND is_object( $calculate_policy_obj ) ) {
 			$is_holiday = $this->isHoliday( TTDate::getMiddleDayEpoch( $date_epoch ), $calculate_policy_obj );
@@ -1008,15 +1034,6 @@ class ContributingShiftPolicyFactory extends Factory {
 		return FALSE;
 	}
 
-	/**
-	 * @param int $date_epoch EPOCH
-	 * @param int $in_epoch EPOCH
-	 * @param int $out_epoch EPOCH
-	 * @param null $udt_key
-	 * @param null $shift_data
-	 * @param object $calculate_policy_obj
-	 * @return bool
-	 */
 	function isActive( $date_epoch, $in_epoch = NULL, $out_epoch = NULL, $udt_key = NULL, $shift_data = NULL, $calculate_policy_obj = NULL ) {
 		//Debug::text(' Date Epoch: '. $date_epoch .' In: '. $in_epoch .' Out: '. $out_epoch, __FILE__, __LINE__, __METHOD__, 10);
 		//Make sure date_epoch is always specified so we can still determine isActive even if in_epoch/out_epoch are not specified themselves.
@@ -1070,13 +1087,6 @@ class ContributingShiftPolicyFactory extends Factory {
 		return FALSE;
 	}
 
-	/**
-	 * @param $filter_start_time_stamp
-	 * @param $filter_end_time_stamp
-	 * @param $shift_data
-	 * @param object $calculate_policy_obj
-	 * @return array|bool
-	 */
 	function calculateShiftDataOverlapFilterTime( $filter_start_time_stamp, $filter_end_time_stamp, $shift_data, $calculate_policy_obj = NULL ) {
 		if ( is_array($shift_data) ) {
 			if ( isset($shift_data['user_date_total_keys']) ) {
@@ -1104,25 +1114,11 @@ class ContributingShiftPolicyFactory extends Factory {
 	}
 
 	//Check if this time is within the start/end time.
-
-	/**
-	 * @param int $in_epoch EPOCH
-	 * @param int $out_epoch EPOCH
-	 * @param null $udt_key
-	 * @param null $shift_data
-	 * @param object $calculate_policy_obj
-	 * @return bool
-	 */
 	function isActiveFilterTime( $in_epoch, $out_epoch, $udt_key = NULL, $shift_data = NULL, $calculate_policy_obj = NULL ) {
 		//Debug::text(' Checking for Active Time with: In: '. TTDate::getDate('DATE+TIME', $in_epoch) .' Out: '. TTDate::getDate('DATE+TIME', $out_epoch), __FILE__, __LINE__, __METHOD__, 10);
 		if ( $in_epoch == '' OR $out_epoch == '' ) {
 			//Debug::text(' Empty time stamps, returning TRUE.', __FILE__, __LINE__, __METHOD__, 10);
 			return TRUE;
-		}
-
-		//If no start/end time filters are set, we can short circuit this by making sure the exact date (no forward/backward date checks) matches and return TRUE.
-		if ( $this->getFilterStartTime() == '' AND $this->getFilterEndTime() == '' AND isset($calculate_policy_obj->user_date_total[$udt_key]) ) {
-			return $this->isActive( $calculate_policy_obj->user_date_total[$udt_key]->getDateStamp(), NULL, NULL, NULL, NULL, $calculate_policy_obj );
 		}
 
 		//Debug::text(' PP Raw Start TimeStamp('.$this->getFilterStartTime(TRUE).'): '. TTDate::getDate('DATE+TIME', $this->getFilterStartTime() ) .' Raw End TimeStamp: '. TTDate::getDate('DATE+TIME', $this->getFilterEndTime() ), __FILE__, __LINE__, __METHOD__, 10);
@@ -1145,7 +1141,7 @@ class ContributingShiftPolicyFactory extends Factory {
 			//If the premium policy start/end time spans midnight, there could be multiple windows to check
 			//where the premium policy applies, make sure we check all windows.
 			for( $i = (TTDate::getMiddleDayEpoch($start_time_stamp) - 86400); $i <= (TTDate::getMiddleDayEpoch($end_time_stamp) + 86400); $i += 86400 ) {
-				$tmp_start_time_stamp = TTDate::getTimeLockedDate( $this->getFilterStartTime(), TTDate::getBeginDayEpoch( $i ) );
+				$tmp_start_time_stamp = TTDate::getTimeLockedDate( $this->getFilterStartTime(), $i);
 				$next_i = ( $tmp_start_time_stamp + ($end_time_stamp - $start_time_stamp) ); //Get next date to base the end_time_stamp on, and to calculate if we need to adjust for DST.
 				$tmp_end_time_stamp = TTDate::getTimeLockedDate( $end_time_stamp, ( $next_i + ( TTDate::getDSTOffset( $tmp_start_time_stamp, $next_i ) * -1 ) ) ); //Use $end_time_stamp as it can be modified above due to being near midnight. Also adjust for DST by reversing it.
 				if ( $this->isActive( $tmp_start_time_stamp, $tmp_start_time_stamp, $tmp_end_time_stamp, $udt_key, $shift_data, $calculate_policy_obj ) == TRUE ) {
@@ -1155,7 +1151,7 @@ class ContributingShiftPolicyFactory extends Factory {
 						Debug::text(' Partial Punch Within Active Time!', __FILE__, __LINE__, __METHOD__, 10);
 						return TRUE;
 					} elseif ( $this->getIncludeShiftType() == 200 AND $in_epoch >= $tmp_start_time_stamp AND $out_epoch <= $tmp_end_time_stamp
-							AND $this->isActiveDayOfWeekOrHoliday( $tmp_start_time_stamp, $calculate_policy_obj ) AND $this->isActiveDayOfWeekOrHoliday( $tmp_end_time_stamp, $calculate_policy_obj ) ) { //200=Full Shift (Must Start & End)
+							AND $this->isActiveDayOfWeekOrHoliday( $tmp_start_time_stamp ) AND $this->isActiveDayOfWeekOrHoliday( $tmp_end_time_stamp ) ) { //200=Full Shift (Must Start & End)
 						//Non partial punches, they must punch in AND out (entire shift) within the time window.
 						Debug::text(' Within Active Time!', __FILE__, __LINE__, __METHOD__, 10);
 						return TRUE;
@@ -1172,7 +1168,7 @@ class ContributingShiftPolicyFactory extends Factory {
 									AND isset( $calculate_policy_obj->user_date_total[$tmp_shift_data['first_in']] )
 									AND $calculate_policy_obj->user_date_total[$tmp_shift_data['first_in']]->getStartTimeStamp() >= $tmp_start_time_stamp
 									AND $calculate_policy_obj->user_date_total[$tmp_shift_data['first_in']]->getStartTimeStamp() <= $tmp_end_time_stamp
-									AND $this->isActiveDayOfWeekOrHoliday( $tmp_start_time_stamp, $calculate_policy_obj ) ) {
+									AND $this->isActiveDayOfWeekOrHoliday( $tmp_start_time_stamp ) ) {
 								Debug::text( ' Matched within Shift Start Time: UDT Key: ' . $udt_key, __FILE__, __LINE__, __METHOD__, 10 );
 								return TRUE;
 							}
@@ -1184,7 +1180,7 @@ class ContributingShiftPolicyFactory extends Factory {
 									AND isset( $calculate_policy_obj->user_date_total[$tmp_shift_data['last_out']] )
 									AND $calculate_policy_obj->user_date_total[$tmp_shift_data['last_out']]->getEndTimeStamp() >= $tmp_start_time_stamp
 									AND $calculate_policy_obj->user_date_total[$tmp_shift_data['last_out']]->getEndTimeStamp() <= $tmp_end_time_stamp
-									AND $this->isActiveDayOfWeekOrHoliday( $tmp_end_time_stamp, $calculate_policy_obj ) ) {
+									AND $this->isActiveDayOfWeekOrHoliday( $tmp_end_time_stamp ) ) {
 								Debug::text( ' Matched within Shift End Time: UDT Key: ' . $udt_key, __FILE__, __LINE__, __METHOD__, 10 );
 								return TRUE;
 							}
@@ -1192,8 +1188,9 @@ class ContributingShiftPolicyFactory extends Factory {
 //								Debug::text( ' NOT Matched within Shift End Time: UDT Key: ' . $udt_key, __FILE__, __LINE__, __METHOD__, 10 );
 //							}
 						} elseif( $this->getIncludeShiftType() == 230 ) { //230=Full Shift (Majority of Shift)
+							//$this->isActiveDayOfWeekOrHoliday( $i );
 							if ( isset( $tmp_shift_data['total_time_filter_overlap'] ) AND $tmp_shift_data['total_time_filter_overlap'] > ( $tmp_shift_data['total_time'] / 2 )
-									AND ( isset( $tmp_shift_data['day_with_most_time'] ) AND $this->isActiveDayOfWeekOrHoliday( $tmp_shift_data['day_with_most_time'], $calculate_policy_obj ) ) ) {
+									AND ( isset( $tmp_shift_data['day_with_most_time'] ) AND $this->isActiveDayOfWeekOrHoliday( $tmp_shift_data['day_with_most_time'] ) ) ) {
 								Debug::text( ' Matched within Majority Shift: UDT Key: ' . $udt_key, __FILE__, __LINE__, __METHOD__, 10 );
 								return TRUE;
 							} elseif ( isset( $tmp_shift_data['total_time_filter_overlap'] ) AND $tmp_shift_data['total_time_filter_overlap'] == ( $tmp_shift_data['total_time'] / 2 ) ) {
@@ -1202,7 +1199,7 @@ class ContributingShiftPolicyFactory extends Factory {
 										AND isset( $calculate_policy_obj->user_date_total[$tmp_shift_data['first_in']] )
 										AND $calculate_policy_obj->user_date_total[$tmp_shift_data['first_in']]->getStartTimeStamp() >= $tmp_start_time_stamp
 										AND $calculate_policy_obj->user_date_total[$tmp_shift_data['first_in']]->getStartTimeStamp() <= $tmp_end_time_stamp
-										AND $this->isActiveDayOfWeekOrHoliday( $tmp_start_time_stamp, $calculate_policy_obj ) ) {
+										AND $this->isActiveDayOfWeekOrHoliday( $tmp_start_time_stamp ) ) {
 									Debug::text( ' Matched within Majority Shift, 50/50 split: UDT Key: ' . $udt_key, __FILE__, __LINE__, __METHOD__, 10 );
 									return TRUE;
 								} else {
@@ -1232,11 +1229,6 @@ class ContributingShiftPolicyFactory extends Factory {
 	}
 
 	//Check if this date is within the effective date range
-
-	/**
-	 * @param int $epoch EPOCH
-	 * @return bool
-	 */
 	function isActiveFilterDate( $epoch ) {
 		//Debug::text(' Checking for Active Date: '. TTDate::getDate('DATE+TIME', $epoch), __FILE__, __LINE__, __METHOD__, 10);
 		$epoch = TTDate::getBeginDayEpoch( $epoch );
@@ -1255,11 +1247,6 @@ class ContributingShiftPolicyFactory extends Factory {
 	}
 
 	//Check if this day of the week is active
-
-	/**
-	 * @param int $epoch EPOCH
-	 * @return bool
-	 */
 	function isActiveFilterDayOfWeek( $epoch ) {
 		//Debug::Arr($epoch, ' Checking for Active Day of Week: '. $epoch, __FILE__, __LINE__, __METHOD__, 10);
 		$day_of_week = strtolower( date('D', $epoch) );
@@ -1306,12 +1293,6 @@ class ContributingShiftPolicyFactory extends Factory {
 		return FALSE;
 	}
 
-	/**
-	 * @param object $udt_obj
-	 * @param $udt_key
-	 * @param object $calculate_policy_obj
-	 * @return array|bool
-	 */
 	function getPartialUserDateTotalObject( $udt_obj, $udt_key, $calculate_policy_obj = NULL ) {
 		if ( !is_object($udt_obj) ) {
 			return FALSE;
@@ -1327,27 +1308,27 @@ class ContributingShiftPolicyFactory extends Factory {
 		$filter_end_time_stamp = TTDate::getTimeLockedDate( $this->getFilterEndTime(), $udt_obj->getStartTimeStamp() ); //Base the end time on day of the in_epoch.
 		//Debug::text(' bChecking for Active Time with: In: '. TTDate::getDate('DATE+TIME', $filter_start_time_stamp ) .' Out: '. TTDate::getDate('DATE+TIME', $filter_end_time_stamp ), __FILE__, __LINE__, __METHOD__, 10);
 
-		//Check if end timestamp is before start, if it is, move end timestamp to next day.
+			//Check if end timestamp is before start, if it is, move end timestamp to next day.
 		if ( $filter_end_time_stamp < $filter_start_time_stamp ) {
-			Debug::text(' Moving End TimeStamp to next day.', __FILE__, __LINE__, __METHOD__, 10);
+				Debug::text(' Moving End TimeStamp to next day.', __FILE__, __LINE__, __METHOD__, 10);
 			$filter_end_time_stamp = TTDate::getTimeLockedDate( $this->getFilterEndTime(), ( TTDate::getMiddleDayEpoch($filter_end_time_stamp) + 86400 ) ); //Due to DST, jump ahead 1.5 days, then jump back to the time locked date.
-		}
+			}
 
-		//Handle the last second of the day, so punches that span midnight like 11:00PM to 6:00AM get a full 1 hour for the time before midnight, rather than 59mins and 59secs.
+			//Handle the last second of the day, so punches that span midnight like 11:00PM to 6:00AM get a full 1 hour for the time before midnight, rather than 59mins and 59secs.
 		if ( TTDate::getHour( $filter_end_time_stamp ) == 23 AND TTDate::getMinute( $filter_end_time_stamp ) == 59 ) {
 			$filter_end_time_stamp = ( TTDate::getEndDayEpoch( $filter_end_time_stamp ) + 1 );
-			Debug::text(' End time stamp is within the last minute of day, make sure we include the last second of the day as well.', __FILE__, __LINE__, __METHOD__, 10);
-		}
+				Debug::text(' End time stamp is within the last minute of day, make sure we include the last second of the day as well.', __FILE__, __LINE__, __METHOD__, 10);
+			}
 
 		if ( $filter_start_time_stamp == $filter_end_time_stamp ) {
-			Debug::text(' Start/End time filters match, nothing to do...', __FILE__, __LINE__, __METHOD__, 10);
+				Debug::text(' Start/End time filters match, nothing to do...', __FILE__, __LINE__, __METHOD__, 10);
 			return array( $udt_key => $udt_obj );
-		}
+			}
 
 		if ( $udt_obj->getStartTimeStamp() == $udt_obj->getEndTimeStamp() ) {
 			Debug::text(' Start/End time match, nothing to do...', __FILE__, __LINE__, __METHOD__, 10);
 			return array( $udt_key => $udt_obj );
-		}
+				}
 
 		$split_udt_time_stamps = TTDate::splitDateRangeAtMidnight( $udt_obj->getStartTimeStamp(), $udt_obj->getEndTimeStamp(), $filter_start_time_stamp, $filter_end_time_stamp );
 		if ( is_array($split_udt_time_stamps) AND count($split_udt_time_stamps) > 0 ) {
@@ -1383,26 +1364,13 @@ class ContributingShiftPolicyFactory extends Factory {
 				$i++;
 			}
 
-			//If no split actually occurred (at least more than 1 record), return the original record untouched.
-			//Because splitting the record recalculates the TotalTime and sets isPartialShift(TRUE), we want to avoid modifying the data if at all possible.
-			//This manifested itself as a bug when manually overriding UDT records to 0hrs, but leaving the Start/End timestamps at thier original value.
-			if ( count($retarr) > 1 ) {
-				return $retarr;
-			}
+			return $retarr;
 		}
 
 		Debug::text(' Nothing to split, returning original UDT record...', __FILE__, __LINE__, __METHOD__, 10);
 		return array( $udt_key => $udt_obj );
 	}
 
-	/**
-	 * @param $selection_type
-	 * @param $exclude_default_item
-	 * @param $current_item
-	 * @param $allowed_items
-	 * @param null $default_item
-	 * @return bool
-	 */
 	function checkIndividualDifferentialCriteria( $selection_type, $exclude_default_item, $current_item, $allowed_items, $default_item = NULL ) {
 		//Debug::Arr($allowed_items, '    Allowed Items: Selection Type: '. $selection_type .' Current Item: '. $current_item, __FILE__, __LINE__, __METHOD__, 10);
 
@@ -1432,11 +1400,6 @@ class ContributingShiftPolicyFactory extends Factory {
 		return FALSE;
 	}
 
-	/**
-	 * @param object $udt_obj
-	 * @param object $user_obj
-	 * @return bool
-	 */
 	function isActiveDifferential( $udt_obj, $user_obj ) {
 		//Debug::Arr( array( $this->getBranchSelectionType(), (int)$this->getExcludeDefaultBranch(), $udt_obj->getBranch(), $user_obj->getDefaultBranch() ), ' Branch Selection: ', __FILE__, __LINE__, __METHOD__, 10);
 
@@ -1481,176 +1444,15 @@ class ContributingShiftPolicyFactory extends Factory {
 	}
 
 
-	/**
-	 * @param bool $ignore_warning
-	 * @return bool
-	 */
 	function Validate( $ignore_warning = TRUE ) {
-		//
-		// BELOW: Validation code moved from set*() functions.
-		//
-		// Company
-		$clf = TTnew( 'CompanyListFactory' );
-		$this->Validator->isResultSetWithRows(	'company',
-														$clf->getByID($this->getCompany()),
-														TTi18n::gettext('Company is invalid')
-													);
-		// Name
-		if ( $this->Validator->getValidateOnly() == FALSE ) { //Don't check the below when mass editing, but must check when adding a new record..
+		if ( $this->getDeleted() != TRUE AND $this->Validator->getValidateOnly() == FALSE ) { //Don't check the below when mass editing.
 			if ( $this->getName() == '' ) {
-				$this->Validator->isTRUE( 'name',
+				$this->Validator->isTRUE(	'name',
 											FALSE,
-											TTi18n::gettext( 'Please specify a name' ) );
+											TTi18n::gettext('Please specify a name') );
 			}
 		}
-		if ( $this->getName() !== FALSE ) {
-			if ( $this->getName() != '' AND $this->Validator->isError('name') == FALSE ) {
-				$this->Validator->isLength(	'name',
-													$this->getName(),
-													TTi18n::gettext('Name is too short or too long'),
-													2, 75
-												);
-			}
-			if ( $this->getName() != '' AND $this->Validator->isError('name') == FALSE ) {
-				$this->Validator->isTrue(	'name',
-													$this->isUniqueName($this->getName()),
-													TTi18n::gettext('Name is already in use')
-												);
-			}
-		}
-		// Description
-		if ( $this->getDescription() != '' ) {
-			$this->Validator->isLength(	'description',
-												$this->getDescription(),
-												TTi18n::gettext('Description is invalid'),
-												1, 250
-											);
-		}
-		// Contributing Pay Code Policy
-		if ( $this->getContributingPayCodePolicy() !== FALSE ) {
-			$cpcplf = TTnew( 'ContributingPayCodePolicyListFactory' );
-			$this->Validator->isResultSetWithRows(	'contributing_pay_code_policy_id',
-															$cpcplf->getByID($this->getContributingPayCodePolicy()),
-															TTi18n::gettext('Contributing Pay Code Policy is invalid')
-														);
-		}
-		// Start date
-		if ( $this->getFilterStartDate() != '' ) {
-			$this->Validator->isDate(		'filter_start_date',
-													$this->getFilterStartDate(),
-													TTi18n::gettext('Incorrect start date')
-												);
-		}
-		// End date
-		if ( $this->getFilterEndDate() != '' ) {
-			$this->Validator->isDate(		'filter_end_date',
-													$this->getFilterEndDate(),
-													TTi18n::gettext('Incorrect end date')
-												);
-		}
-		// Start time
-		if ( $this->getFilterStartTime() != '' ) {
-			$this->Validator->isDate(		'filter_start_time',
-													$this->getFilterStartTime(),
-													TTi18n::gettext('Incorrect Start time')
-												);
-		}
-		// End time
-		if ( $this->getFilterEndTime() != '' ) {
-			$this->Validator->isDate(		'filter_end_time',
-													$this->getFilterEndTime(),
-													TTi18n::gettext('Incorrect End time')
-												);
-		}
-		// Minimum Time
-		if ( $this->getFilterMinimumTime() !== FALSE ) {
-			$this->Validator->isNumeric(		'filter_minimum_time',
-														$this->getFilterMinimumTime(),
-														TTi18n::gettext('Incorrect Minimum Time')
-													);
-		}
-		// Maximum Time
-		if ( $this->getFilterMaximumTime() !== FALSE ) {
-			$this->Validator->isNumeric(		'filter_maximum_time',
-														$this->getFilterMaximumTime(),
-														TTi18n::gettext('Incorrect Maximum Time')
-													);
-		}
-		// Shift Type
-		if ( $this->getIncludeShiftType() != '' ) {
-			$this->Validator->inArrayKey(	  'include_shift_type_id',
-														$this->getIncludeShiftType(),
-														TTi18n::gettext('Incorrect Shift Type'),
-														$this->getOptions('include_shift_type')
-													);
-		}
-		// Branch Selection Type
-		if ( $this->getBranchSelectionType() != '' ) {
-			$this->Validator->inArrayKey(	'branch_selection_type_id',
-													$this->getBranchSelectionType(),
-													TTi18n::gettext('Incorrect Branch Selection Type'),
-													$this->getOptions('branch_selection_type')
-												);
-		}
-		// Department Selection Type
-		if ( $this->getDepartmentSelectionType() != '' ) {
-			$this->Validator->inArrayKey(	'department_selection_type_id',
-													$this->getDepartmentSelectionType(),
-													TTi18n::gettext('Incorrect Department Selection Type'),
-													$this->getOptions('department_selection_type')
-												);
-		}
-		// Job Group Selection Type
-		if ( $this->getJobGroupSelectionType() != '' ) {
-			$this->Validator->inArrayKey(	'job_group_selection_type_id',
-													$this->getJobGroupSelectionType(),
-													TTi18n::gettext('Incorrect Job Group Selection Type'),
-													$this->getOptions('job_group_selection_type')
-												);
-		}
-		// Job Selection Type
-		if ( $this->getJobSelectionType() != '' ) {
-			$this->Validator->inArrayKey(	'job_selection_type_id',
-													$this->getJobSelectionType(),
-													TTi18n::gettext('Incorrect Job Selection Type'),
-													$this->getOptions('job_selection_type')
-												);
-		}
-		// Task Group Selection Type
-		if ( $this->getJobItemGroupSelectionType() != '' ) {
-			$this->Validator->inArrayKey(	'job_item_group_selection_type_id',
-													$this->getJobItemGroupSelectionType(),
-													TTi18n::gettext('Incorrect Task Group Selection Type'),
-													$this->getOptions('job_item_group_selection_type')
-												);
-		}
-		// Task Selection Type
-		if ( $this->getJobItemSelectionType() != '' ) {
-			$this->Validator->inArrayKey(	'job_item_selection_type_id',
-													$this->getJobItemSelectionType(),
-													TTi18n::gettext('Incorrect Task Selection Type'),
-													$this->getOptions('job_item_selection_type')
-												);
-		}
-		// Include Schedule Shift Type
-		if ( $this->getIncludeScheduleShiftType() != '' ) {
-			$this->Validator->inArrayKey(	'include_schedule_shift_type_id',
-													$this->getIncludeScheduleShiftType(),
-													TTi18n::gettext('Incorrect Include Schedule Shift Type'),
-													$this->getOptions('include_schedule_shift_type')
-												);
-		}
-		// Include Holiday Type
-		if ( $this->getIncludeHolidayType() != '' ) {
-			$this->Validator->inArrayKey(	'include_holiday_type_id',
-													$this->getIncludeHolidayType(),
-													TTi18n::gettext('Incorrect Include Holiday Type'),
-													$this->getOptions('include_holiday_type')
-												);
-		}
-		//
-		// ABOVE: Validation code moved from set*() functions.
-		//
+
 		if ( $this->getDeleted() == TRUE ) {
 			$rtplf = TTNew('RegularTimePolicyListFactory');
 			$rtplf->getByCompanyIdAndContributingShiftPolicyId( $this->getCompany(), $this->getId() );
@@ -1704,9 +1506,6 @@ class ContributingShiftPolicyFactory extends Factory {
 		return TRUE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function preSave() {
 		if ( $this->getBranchSelectionType() === FALSE OR $this->getBranchSelectionType() < 10 ) {
 			$this->setBranchSelectionType(10); //All
@@ -1730,19 +1529,12 @@ class ContributingShiftPolicyFactory extends Factory {
 		return TRUE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function postSave() {
 		$this->removeCache( $this->getId() );
 
 		return TRUE;
 	}
 
-	/**
-	 * @param $data
-	 * @return bool
-	 */
 	function setObjectFromArray( $data ) {
 		if ( is_array( $data ) ) {
 			$variable_function_map = $this->getVariableToFunctionMap();
@@ -1776,10 +1568,6 @@ class ContributingShiftPolicyFactory extends Factory {
 		return FALSE;
 	}
 
-	/**
-	 * @param null $include_columns
-	 * @return array
-	 */
 	function getObjectAsArray( $include_columns = NULL ) {
 		$data = array();
 		$variable_function_map = $this->getVariableToFunctionMap();
@@ -1819,10 +1607,6 @@ class ContributingShiftPolicyFactory extends Factory {
 		return $data;
 	}
 
-	/**
-	 * @param $log_action
-	 * @return bool
-	 */
 	function addLog( $log_action ) {
 		return TTLog::addEntry( $this->getId(), $log_action, TTi18n::getText('Contributing Shift Policy'), NULL, $this->getTable(), $this );
 	}

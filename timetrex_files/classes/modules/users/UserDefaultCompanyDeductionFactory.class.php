@@ -1,7 +1,7 @@
 <?php
 /*********************************************************************************
  * TimeTrex is a Workforce Management program developed by
- * TimeTrex Software Inc. Copyright (C) 2003 - 2018 TimeTrex Software Inc.
+ * TimeTrex Software Inc. Copyright (C) 2003 - 2017 TimeTrex Software Inc.
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Affero General Public License version 3 as published by
@@ -41,171 +41,106 @@
 class UserDefaultCompanyDeductionFactory extends Factory {
 	protected $table = 'user_default_company_deduction';
 	protected $pk_sequence_name = 'user_default_company_deduction_id_seq'; //PK Sequence name
-
-	/**
-	 * @return bool|mixed
-	 */
+	
 	function getUserDefault() {
-		return $this->getGenericDataValue( 'user_default_id' );
-	}
+		if ( isset($this->data['user_default_id']) ) {
+			return (int)$this->data['user_default_id'];
+		}
 
-	/**
-	 * @param string $value UUID
-	 * @return bool
-	 */
-	function setUserDefault( $value ) {
-		$value = TTUUID::castUUID( $value );
-		Debug::Text('ID: '. $value, __FILE__, __LINE__, __METHOD__, 10);
-		return $this->setGenericDataValue( 'user_default_id', $value );
+		return FALSE;
 	}
+	function setUserDefault($id) {
+		$id = trim($id);
 
-	/**
-	 * @return bool|mixed
-	 */
-	function getCompanyDeduction() {
-		return $this->getGenericDataValue( 'company_deduction_id' );
-	}
-
-	/**
-	 * @param string $value UUID
-	 * @return bool
-	 */
-	function setCompanyDeduction( $value ) {
-		$value = TTUUID::castUUID( $value );
-		Debug::Text('ID: '. $value, __FILE__, __LINE__, __METHOD__, 10);
-		return $this->setGenericDataValue( 'company_deduction_id', $value );
-	}
-	/**
-	 * @return bool
-	 */
-	function Validate() {
-		//
-		// BELOW: Validation code moved from set*() functions.
-		//
-		// Employee Default settings
+		Debug::Text('ID: '. $id, __FILE__, __LINE__, __METHOD__, 10);
 		$udlf = TTnew( 'UserDefaultListFactory' );
-		$this->Validator->isResultSetWithRows(	'user_default',
-														$udlf->getByID($this->getUserDefault()),
-														TTi18n::gettext('Employee Default settings is invalid')
-													);
-		// Deduction
-		$cdlf = TTnew( 'CompanyDeductionListFactory' );
-		$this->Validator->isResultSetWithRows(	'company_deduction',
-														$cdlf->getByID($this->getCompanyDeduction()),
-														TTi18n::gettext('Deduction is invalid')
-													);
 
-		//
-		// ABOVE: Validation code moved from set*() functions.
-		//
-		return TRUE;
+		if (
+				$this->Validator->isResultSetWithRows(	'user_default',
+														$udlf->getByID($id),
+														TTi18n::gettext('Employee Default settings is invalid')
+													) ) {
+
+			$this->data['user_default_id'] = $id;
+
+			return TRUE;
+		}
+
+		return FALSE;
+	}
+
+	function getCompanyDeduction() {
+		if ( isset($this->data['company_deduction_id']) ) {
+			return (int)$this->data['company_deduction_id'];
+		}
+
+		return FALSE;
+	}
+	function setCompanyDeduction($id) {
+		$id = trim($id);
+
+		Debug::Text('ID: '. $id, __FILE__, __LINE__, __METHOD__, 10);
+		$cdlf = TTnew( 'CompanyDeductionListFactory' );
+
+		if (
+				$this->Validator->isResultSetWithRows(	'company_deduction',
+														$cdlf->getByID($id),
+														TTi18n::gettext('Deduction is invalid')
+													) ) {
+
+			$this->data['company_deduction_id'] = $id;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
 	//This table doesn't have any of these columns, so overload the functions.
-
-	/**
-	 * @return bool
-	 */
 	function getDeleted() {
 		return FALSE;
 	}
-
-	/**
-	 * @param $bool
-	 * @return bool
-	 */
-	function setDeleted( $bool) {
+	function setDeleted($bool) {
 		return FALSE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function getCreatedDate() {
 		return FALSE;
 	}
-
-	/**
-	 * @param int $epoch EPOCH
-	 * @return bool
-	 */
-	function setCreatedDate( $epoch = NULL) {
+	function setCreatedDate($epoch = NULL) {
 		return FALSE;
 	}
-
-	/**
-	 * @return bool
-	 */
 	function getCreatedBy() {
 		return FALSE;
 	}
-
-	/**
-	 * @param string $id UUID
-	 * @return bool
-	 */
-	function setCreatedBy( $id = NULL) {
+	function setCreatedBy($id = NULL) {
 		return FALSE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function getUpdatedDate() {
 		return FALSE;
 	}
-
-	/**
-	 * @param int $epoch EPOCH
-	 * @return bool
-	 */
-	function setUpdatedDate( $epoch = NULL) {
+	function setUpdatedDate($epoch = NULL) {
 		return FALSE;
 	}
-
-	/**
-	 * @return bool
-	 */
 	function getUpdatedBy() {
 		return FALSE;
 	}
-
-	/**
-	 * @param string $id UUID
-	 * @return bool
-	 */
-	function setUpdatedBy( $id = NULL) {
+	function setUpdatedBy($id = NULL) {
 		return FALSE;
 	}
 
 
-	/**
-	 * @return bool
-	 */
 	function getDeletedDate() {
 		return FALSE;
 	}
-
-	/**
-	 * @param int $epoch EPOCH
-	 * @return bool
-	 */
-	function setDeletedDate( $epoch = NULL) {
+	function setDeletedDate($epoch = NULL) {
 		return FALSE;
 	}
-
-	/**
-	 * @return bool
-	 */
 	function getDeletedBy() {
 		return FALSE;
 	}
-
-	/**
-	 * @param string $id UUID
-	 * @return bool
-	 */
-	function setDeletedBy( $id = NULL) {
+	function setDeletedBy($id = NULL) {
 		return FALSE;
 	}
 }

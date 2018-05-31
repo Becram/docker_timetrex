@@ -1,7 +1,7 @@
 <?php
 /*********************************************************************************
  * TimeTrex is a Workforce Management program developed by
- * TimeTrex Software Inc. Copyright (C) 2003 - 2018 TimeTrex Software Inc.
+ * TimeTrex Software Inc. Copyright (C) 2003 - 2017 TimeTrex Software Inc.
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Affero General Public License version 3 as published by
@@ -42,11 +42,6 @@ class UserSettingFactory extends Factory {
 	protected $table = 'user_setting';
 	protected $pk_sequence_name = 'user_setting_id_seq'; //PK Sequence name
 
-	/**
-	 * @param $name
-	 * @param null $parent
-	 * @return array|null
-	 */
 	function _getFactoryOptions( $name, $parent = NULL ) {
 
 		$retval = NULL;
@@ -62,10 +57,6 @@ class UserSettingFactory extends Factory {
 		return $retval;
 	}
 
-	/**
-	 * @param $data
-	 * @return array
-	 */
 	function _getVariableToFunctionMap( $data ) {
 		$variable_function_map = array(
 										'id' => 'ID',
@@ -81,11 +72,7 @@ class UserSettingFactory extends Factory {
 		return $variable_function_map;
 	}
 
-	/**
-	 * @param $name
-	 * @return bool
-	 */
-	function isUniqueName( $name) {
+	function isUniqueName($name) {
 		if ( $this->getUser() == FALSE ) {
 			return FALSE;
 		}
@@ -96,7 +83,7 @@ class UserSettingFactory extends Factory {
 		}
 
 		$ph = array(
-					'user_id' => TTUUID::castUUID($this->getUser()),
+					'user_id' => (int)$this->getUser(),
 					'name' => TTi18n::strtolower($name),
 					);
 
@@ -118,131 +105,111 @@ class UserSettingFactory extends Factory {
 		return FALSE;
 	}
 
-	/**
-	 * @return bool|mixed
-	 */
 	function getUser() {
-		return $this->getGenericDataValue( 'user_id' );
-	}
-
-	/**
-	 * @param string $value UUID
-	 * @return bool
-	 */
-	function setUser( $value ) {
-		$value = TTUUID::castUUID( $value );
-		return $this->setGenericDataValue( 'user_id', $value );
-	}
-
-	/**
-	 * @return bool|int
-	 */
-	function getType() {
-		return $this->getGenericDataValue( 'type_id' );
-	}
-
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setType( $value ) {
-		$value = (int)trim($value);
-		return $this->setGenericDataValue( 'type_id', $value );
-	}
-
-	/**
-	 * @return bool|mixed
-	 */
-	function getName() {
-		return $this->getGenericDataValue( 'name' );
-	}
-
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setName( $value) {
-		$value = trim($value);
-		return $this->setGenericDataValue( 'name', $value );
-	}
-
-	/**
-	 * @return bool|mixed
-	 */
-	function getValue() {
-		return $this->getGenericDataValue( 'value' );
-	}
-
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setValue( $value) {
-		$value = trim($value);
-		return $this->setGenericDataValue( 'value', $value );
-	}
-
-	/**
-	 * @return bool
-	 */
-	function Validate() {
-		//
-		// BELOW: Validation code moved from set*() functions.
-		//
-		// User
-		$ulf = TTnew( 'UserListFactory' );
-		$this->Validator->isResultSetWithRows(	'user_id',
-														$ulf->getByID($this->getUser()),
-														TTi18n::gettext('Invalid Employee')
-													);
-		// Type
-		$this->Validator->inArrayKey(	'type',
-												$this->getType(),
-												TTi18n::gettext('Incorrect Type'),
-												$this->getOptions('type')
-											);
-		// Name
-		$this->Validator->isLength(	'name',
-											$this->getName(),
-											TTi18n::gettext('Name is too short or too long'),
-											1, 250
-										);
-		if ( $this->Validator->isError('name') == FALSE ) {
-			$this->Validator->isTrue(	'name',
-												$this->isUniqueName($this->getName()),
-												TTi18n::gettext('Name already exists')
-											);
+		if ( isset($this->data['user_id']) ) {
+			return (int)$this->data['user_id'];
 		}
-		// Value
-		$this->Validator->isLength(	'value',
-											$this->getValue(),
-											TTi18n::gettext('Value is too short or too long'),
-											1, 4096
-										);
-		//
-		// ABOVE: Validation code moved from set*() functions.
-		//
-		return TRUE;
+		return FALSE;
 	}
-	/**
-	 * @return bool
-	 */
+	function setUser($id) {
+		$id = trim($id);
+
+		$ulf = TTnew( 'UserListFactory' );
+
+		if ( $this->Validator->isResultSetWithRows(	'user_id',
+															$ulf->getByID($id),
+															TTi18n::gettext('Invalid User')
+															) ) {
+			$this->data['user_id'] = $id;
+
+			return TRUE;
+		}
+
+		return FALSE;
+	}
+	function getType() {
+		if ( isset($this->data['type_id']) ) {
+			return (int)$this->data['type_id'];
+		}
+
+		return FALSE;
+	}
+	function setType($type) {
+		$type = trim($type);
+
+		if ( $this->Validator->inArrayKey(	'type',
+											$type,
+											TTi18n::gettext('Incorrect Type'),
+											$this->getOptions('type')) ) {
+
+			$this->data['type_id'] = $type;
+
+			return TRUE;
+		}
+
+		return FALSE;
+	}
+
+	function getName() {
+		if ( isset($this->data['name']) ) {
+			return $this->data['name'];
+		}
+
+		return FALSE;
+	}
+	function setName($value) {
+		$value = trim($value);
+		if (	$this->Validator->isLength(	'name',
+											$value,
+											TTi18n::gettext('Name is too short or too long'),
+											1, 250)
+				AND $this->Validator->isTrue(	'name',
+											$this->isUniqueName($value),
+											TTi18n::gettext('Name already exists')
+											)
+						) {
+
+			$this->data['name'] = $value;
+
+			return TRUE;
+		}
+
+		return FALSE;
+	}
+
+	function getValue() {
+		if ( isset($this->data['value']) ) {
+			return $this->data['value'];
+		}
+
+		return FALSE;
+	}
+	function setValue($value) {
+		$value = trim($value);
+		if (	$this->Validator->isLength(	'value',
+											$value,
+											TTi18n::gettext('Value is too short or too long'),
+											1, 4096)
+						) {
+
+			$this->data['value'] = $value;
+
+			return TRUE;
+		}
+
+		return FALSE;
+	}
+
+
 	function preSave() {
 		return TRUE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function postSave() {
 		$this->removeCache( $this->getUser().$this->getName() );
 		return TRUE;
 	}
 
-	/**
-	 * @param $data
-	 * @return bool
-	 */
 	function setObjectFromArray( $data ) {
 		if ( is_array( $data ) ) {
 			$variable_function_map = $this->getVariableToFunctionMap();
@@ -268,10 +235,6 @@ class UserSettingFactory extends Factory {
 		return FALSE;
 	}
 
-	/**
-	 * @param null $include_columns
-	 * @return array
-	 */
 	function getObjectAsArray( $include_columns = NULL ) {
 		$data = array();
 		$variable_function_map = $this->getVariableToFunctionMap();
@@ -306,19 +269,10 @@ class UserSettingFactory extends Factory {
 		return $data;
 	}
 
-	/**
-	 * @param $log_action
-	 * @return bool
-	 */
 	function addLog( $log_action ) {
 		return TTLog::addEntry( $this->getId(), $log_action, TTi18n::getText('User Setting - Name').': '. $this->getName() .' '. TTi18n::getText('Value').': '. $this->getValue(), NULL, $this->getTable() );
 	}
 
-	/**
-	 * @param string $user_id UUID
-	 * @param $name
-	 * @return bool
-	 */
 	static function getUserSetting( $user_id, $name ) {
 		$uslf = new UserSettingListFactory();
 		$uslf->getByUserIdAndName( $user_id, $name );
@@ -331,13 +285,6 @@ class UserSettingFactory extends Factory {
 		return FALSE;
 	}
 
-	/**
-	 * @param string $user_id UUID
-	 * @param $name
-	 * @param $value
-	 * @param int $type_id
-	 * @return bool
-	 */
 	static function setUserSetting( $user_id, $name, $value, $type_id = 10 ) {
 		$row = array(
 			'user_id' => $user_id,
@@ -363,11 +310,7 @@ class UserSettingFactory extends Factory {
 		return FALSE;
 
 	}
-	/**
-	 * @param string $user_id UUID
-	 * @param $name
-	 * @return bool
-	 */
+
 	static function deleteUserSetting( $user_id, $name ) {
 		$uslf = new UserSettingListFactory();
 		$uslf->getByUserIdAndName( $user_id, $name );

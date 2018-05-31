@@ -1,7 +1,7 @@
 <?php
 /*********************************************************************************
  * TimeTrex is a Workforce Management program developed by
- * TimeTrex Software Inc. Copyright (C) 2003 - 2018 TimeTrex Software Inc.
+ * TimeTrex Software Inc. Copyright (C) 2003 - 2017 TimeTrex Software Inc.
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Affero General Public License version 3 as published by
@@ -40,14 +40,7 @@
  */
 class PayStubEntryAccountListFactory extends PayStubEntryAccountFactory implements IteratorAggregate {
 
-	/**
-	 * @param int $limit Limit the number of records returned
-	 * @param int $page Page number of records to return for pagination
-	 * @param array $where Additional SQL WHERE clause in format of array( $column => $filter, ... ). ie: array( 'id' => 1, ... )
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return $this
-	 */
-	function getAll( $limit = NULL, $page = NULL, $where = NULL, $order = NULL) {
+	function getAll($limit = NULL, $page = NULL, $where = NULL, $order = NULL) {
 		$query = '
 					select	*
 					from	'. $this->getTable() .'
@@ -61,13 +54,7 @@ class PayStubEntryAccountListFactory extends PayStubEntryAccountFactory implemen
 		return $this;
 	}
 
-	/**
-	 * @param string $id UUID
-	 * @param array $where Additional SQL WHERE clause in format of array( $column => $filter, ... ). ie: array( 'id' => 1, ... )
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return bool|PayStubEntryAccountListFactory
-	 */
-	function getById( $id, $where = NULL, $order = NULL) {
+	function getById($id, $where = NULL, $order = NULL) {
 		if ( $id == '') {
 			return FALSE;
 		}
@@ -84,7 +71,7 @@ class PayStubEntryAccountListFactory extends PayStubEntryAccountFactory implemen
 			$query = '
 						select	*
 						from	'. $this->getTable() .'
-						where	id in ('. $this->getListSQL( $id, $ph, 'uuid' ) .')
+						where	id in ('. $this->getListSQL( $id, $ph, 'int' ) .')
 							AND deleted = 0';
 			$query .= $this->getWhereSQL( $where );
 			$query .= $this->getSortSQL( $order );
@@ -99,19 +86,13 @@ class PayStubEntryAccountListFactory extends PayStubEntryAccountFactory implemen
 		return $this;
 	}
 
-	/**
-	 * @param string $company_id UUID
-	 * @param array $where Additional SQL WHERE clause in format of array( $column => $filter, ... ). ie: array( 'id' => 1, ... )
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return bool|PayStubEntryAccountListFactory
-	 */
-	function getByCompanyId( $company_id, $where = NULL, $order = NULL) {
+	function getByCompanyId($company_id, $where = NULL, $order = NULL) {
 		if ( $company_id == '') {
 			return FALSE;
 		}
 
 		$ph = array(
-					'company_id' => TTUUID::castUUID($company_id),
+					'company_id' => (int)$company_id,
 					);
 
 		$query = '
@@ -128,14 +109,7 @@ class PayStubEntryAccountListFactory extends PayStubEntryAccountFactory implemen
 		return $this;
 	}
 
-	/**
-	 * @param string $id UUID
-	 * @param string $company_id UUID
-	 * @param array $where Additional SQL WHERE clause in format of array( $column => $filter, ... ). ie: array( 'id' => 1, ... )
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return bool|PayStubEntryAccountListFactory
-	 */
-	function getByIdAndCompanyId( $id, $company_id, $where = NULL, $order = NULL) {
+	function getByIdAndCompanyId($id, $company_id, $where = NULL, $order = NULL) {
 		if ( $id == '') {
 			return FALSE;
 		}
@@ -145,8 +119,8 @@ class PayStubEntryAccountListFactory extends PayStubEntryAccountFactory implemen
 		}
 
 		$ph = array(
-					'company_id' => TTUUID::castUUID($company_id),
-					'id' => TTUUID::castUUID($id),
+					'company_id' => (int)$company_id,
+					'id' => (int)$id,
 					);
 
 		$query = '
@@ -164,14 +138,7 @@ class PayStubEntryAccountListFactory extends PayStubEntryAccountFactory implemen
 		return $this;
 	}
 
-	/**
-	 * @param string $company_id UUID
-	 * @param string $accrual_id UUID
-	 * @param array $where Additional SQL WHERE clause in format of array( $column => $filter, ... ). ie: array( 'id' => 1, ... )
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return bool|PayStubEntryAccountListFactory
-	 */
-	function getByCompanyIdAndAccrualId( $company_id, $accrual_id, $where = NULL, $order = NULL) {
+	function getByCompanyIdAndAccrualId($company_id, $accrual_id, $where = NULL, $order = NULL) {
 		if ( $company_id == '') {
 			return FALSE;
 		}
@@ -181,8 +148,8 @@ class PayStubEntryAccountListFactory extends PayStubEntryAccountFactory implemen
 		}
 
 		$ph = array(
-					'company_id' => TTUUID::castUUID($company_id),
-					'accrual_id' => TTUUID::castUUID($accrual_id),
+					'company_id' => (int)$company_id,
+					'accrual_id' => (int)$accrual_id,
 					);
 
 		$query = '
@@ -200,14 +167,7 @@ class PayStubEntryAccountListFactory extends PayStubEntryAccountFactory implemen
 		return $this;
 	}
 
-	/**
-	 * @param string $company_id UUID
-	 * @param int $status_id
-	 * @param array $where Additional SQL WHERE clause in format of array( $column => $filter, ... ). ie: array( 'id' => 1, ... )
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return bool|PayStubEntryAccountListFactory
-	 */
-	function getByCompanyIdAndStatusId( $company_id, $status_id, $where = NULL, $order = NULL) {
+	function getByCompanyIdAndStatusId($company_id, $status_id, $where = NULL, $order = NULL) {
 		if ( $company_id == '') {
 			return FALSE;
 		}
@@ -217,7 +177,7 @@ class PayStubEntryAccountListFactory extends PayStubEntryAccountFactory implemen
 		}
 
 		$ph = array(
-					'company_id' => TTUUID::castUUID($company_id),
+					'company_id' => (int)$company_id,
 					);
 
 		$query = '
@@ -235,14 +195,7 @@ class PayStubEntryAccountListFactory extends PayStubEntryAccountFactory implemen
 		return $this;
 	}
 
-	/**
-	 * @param string $company_id UUID
-	 * @param int $type_id
-	 * @param array $where Additional SQL WHERE clause in format of array( $column => $filter, ... ). ie: array( 'id' => 1, ... )
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return bool|PayStubEntryAccountListFactory
-	 */
-	function getByCompanyIdAndTypeId( $company_id, $type_id, $where = NULL, $order = NULL) {
+	function getByCompanyIdAndTypeId($company_id, $type_id, $where = NULL, $order = NULL) {
 		if ( $company_id == '') {
 			return FALSE;
 		}
@@ -252,7 +205,7 @@ class PayStubEntryAccountListFactory extends PayStubEntryAccountFactory implemen
 		}
 
 		$ph = array(
-					'company_id' => TTUUID::castUUID($company_id),
+					'company_id' => (int)$company_id,
 					);
 
 		$query = '
@@ -270,15 +223,7 @@ class PayStubEntryAccountListFactory extends PayStubEntryAccountFactory implemen
 		return $this;
 	}
 
-	/**
-	 * @param string $company_id UUID
-	 * @param int $type_id
-	 * @param $name
-	 * @param array $where Additional SQL WHERE clause in format of array( $column => $filter, ... ). ie: array( 'id' => 1, ... )
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return bool|PayStubEntryAccountListFactory
-	 */
-	function getByCompanyIdAndTypeAndFuzzyName( $company_id, $type_id, $name, $where = NULL, $order = NULL) {
+	function getByCompanyIdAndTypeAndFuzzyName($company_id, $type_id, $name, $where = NULL, $order = NULL) {
 		if ( $company_id == '') {
 			return FALSE;
 		}
@@ -292,7 +237,7 @@ class PayStubEntryAccountListFactory extends PayStubEntryAccountFactory implemen
 		}
 
 		$ph = array(
-					'company_id' => TTUUID::castUUID($company_id),
+					'company_id' => (int)$company_id,
 					'name' => $name,
 					);
 
@@ -312,13 +257,7 @@ class PayStubEntryAccountListFactory extends PayStubEntryAccountFactory implemen
 		return $this;
 	}
 
-	/**
-	 * @param int $type_id
-	 * @param array $where Additional SQL WHERE clause in format of array( $column => $filter, ... ). ie: array( 'id' => 1, ... )
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return bool|PayStubEntryAccountListFactory
-	 */
-	function getByTypeId( $type_id, $where = NULL, $order = NULL) {
+	function getByTypeId($type_id, $where = NULL, $order = NULL) {
 		if ( $type_id == '') {
 			return FALSE;
 		}
@@ -339,14 +278,7 @@ class PayStubEntryAccountListFactory extends PayStubEntryAccountFactory implemen
 		return $this;
 	}
 
-	/**
-	 * @param string $company_id UUID
-	 * @param int $type_id
-	 * @param array $where Additional SQL WHERE clause in format of array( $column => $filter, ... ). ie: array( 'id' => 1, ... )
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return bool|PayStubEntryAccountListFactory
-	 */
-	function getHighestOrderByCompanyIdAndTypeId( $company_id, $type_id, $where = NULL, $order = NULL) {
+	function getHighestOrderByCompanyIdAndTypeId($company_id, $type_id, $where = NULL, $order = NULL) {
 		if ( $company_id == '') {
 			return FALSE;
 		}
@@ -356,7 +288,7 @@ class PayStubEntryAccountListFactory extends PayStubEntryAccountFactory implemen
 		}
 
 		$ph = array(
-					'company_id' => TTUUID::castUUID($company_id),
+					'company_id' => (int)$company_id,
 					'company_id2' => $company_id,
 					'type_id' => (int)$type_id,
 					);
@@ -383,15 +315,7 @@ class PayStubEntryAccountListFactory extends PayStubEntryAccountFactory implemen
 		return $this;
 	}
 
-	/**
-	 * @param string $company_id UUID
-	 * @param int $status_id
-	 * @param int $type_id
-	 * @param array $where Additional SQL WHERE clause in format of array( $column => $filter, ... ). ie: array( 'id' => 1, ... )
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return bool|PayStubEntryAccountListFactory
-	 */
-	function getByCompanyIdAndStatusIdAndTypeId( $company_id, $status_id, $type_id, $where = NULL, $order = NULL) {
+	function getByCompanyIdAndStatusIdAndTypeId($company_id, $status_id, $type_id, $where = NULL, $order = NULL) {
 		if ( $company_id == '') {
 			return FALSE;
 		}
@@ -405,7 +329,7 @@ class PayStubEntryAccountListFactory extends PayStubEntryAccountFactory implemen
 		}
 
 		$ph = array(
-					'company_id' => TTUUID::castUUID($company_id),
+					'company_id' => (int)$company_id,
 					);
 
 		$query = '
@@ -424,10 +348,6 @@ class PayStubEntryAccountListFactory extends PayStubEntryAccountFactory implemen
 		return $this;
 	}
 
-	/**
-	 * @param string $id UUID
-	 * @return bool
-	 */
 	function isInUseById( $id ) {
 		if ( $id == '') {
 			return FALSE;
@@ -437,7 +357,7 @@ class PayStubEntryAccountListFactory extends PayStubEntryAccountFactory implemen
 		$psalf = new PayStubAmendmentListFactory();
 
 		$ph = array(
-					'pay_stub_account_id' => TTUUID::castUUID($id),
+					'pay_stub_account_id' => (int)$id,
 					);
 
 		$query = '
@@ -459,15 +379,6 @@ class PayStubEntryAccountListFactory extends PayStubEntryAccountFactory implemen
 		return TRUE;
 	}
 
-	/**
-	 * @param string $company_id UUID
-	 * @param $filter_data
-	 * @param int $limit Limit the number of records returned
-	 * @param int $page Page number of records to return for pagination
-	 * @param array $where Additional SQL WHERE clause in format of array( $column => $filter, ... ). ie: array( 'id' => 1, ... )
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return bool|PayStubEntryAccountListFactory
-	 */
 	function getAPISearchByCompanyIdAndArrayCriteria( $company_id, $filter_data, $limit = NULL, $page = NULL, $where = NULL, $order = NULL ) {
 		if ( $company_id == '') {
 			return FALSE;
@@ -518,13 +429,12 @@ class PayStubEntryAccountListFactory extends PayStubEntryAccountFactory implemen
 		$cdpseaf = new CompanyDeductionPayStubEntryAccountFactory();
 
 		$ph = array(
-					'company_id' => TTUUID::castUUID($company_id),
+					'company_id' => (int)$company_id,
 					);
 
 		$query = '
-					select	
+					select	a.*,
 							_ADODB_COUNT
-							a.*,
 							(
 								CASE WHEN a.type_id = 40 THEN 1
 								ELSE
@@ -558,17 +468,14 @@ class PayStubEntryAccountListFactory extends PayStubEntryAccountFactory implemen
 					where	a.company_id = ?
 					';
 
-		$query .= ( isset($filter_data['permission_children_ids']) ) ? $this->getWhereClauseSQL( 'a.created_by', $filter_data['permission_children_ids'], 'uuid_list', $ph ) : NULL;
-		$query .= ( isset($filter_data['id']) ) ? $this->getWhereClauseSQL( 'a.id', $filter_data['id'], 'uuid_list', $ph ) : NULL;
-		$query .= ( isset($filter_data['exclude_id']) ) ? $this->getWhereClauseSQL( 'a.id', $filter_data['exclude_id'], 'not_uuid_list', $ph ) : NULL;
+		$query .= ( isset($filter_data['permission_children_ids']) ) ? $this->getWhereClauseSQL( 'a.created_by', $filter_data['permission_children_ids'], 'numeric_list', $ph ) : NULL;
+		$query .= ( isset($filter_data['id']) ) ? $this->getWhereClauseSQL( 'a.id', $filter_data['id'], 'numeric_list', $ph ) : NULL;
+		$query .= ( isset($filter_data['exclude_id']) ) ? $this->getWhereClauseSQL( 'a.id', $filter_data['exclude_id'], 'not_numeric_list', $ph ) : NULL;
 
 		if ( isset($filter_data['status']) AND !is_array($filter_data['status']) AND trim($filter_data['status']) != '' AND !isset($filter_data['status_id']) ) {
 			$filter_data['status_id'] = Option::getByFuzzyValue( $filter_data['status'], $this->getOptions('status') );
 		}
 		$query .= ( isset($filter_data['status_id']) ) ? $this->getWhereClauseSQL( 'a.status_id', $filter_data['status_id'], 'numeric_list', $ph ) : NULL;
-
-		$query .= ( isset($filter_data['debit_account']) ) ? $this->getWhereClauseSQL( 'a.debit_account', $filter_data['debit_account'], 'text', $ph ) : NULL;
-		$query .= ( isset($filter_data['credit_account']) ) ? $this->getWhereClauseSQL( 'a.credit_account', $filter_data['credit_account'], 'text', $ph ) : NULL;
 
 		if ( isset($filter_data['type']) AND !is_array($filter_data['type']) AND trim($filter_data['type']) != '' AND !isset($filter_data['type_id']) ) {
 			$filter_data['type_id'] = Option::getByFuzzyValue( $filter_data['type'], $this->getOptions('type') );
@@ -586,29 +493,21 @@ class PayStubEntryAccountListFactory extends PayStubEntryAccountFactory implemen
 		$query .= $this->getWhereSQL( $where );
 		$query .= $this->getSortSQL( $order, $strict, $additional_order_fields );
 
-		//Debug::Query($query, $ph, __FILE__, __LINE__, __METHOD__, 10);
+		//Debug::Text('Query: '. $query, __FILE__, __LINE__, __METHOD__, 10);
 
 		$this->ExecuteSQL( $query, $ph, $limit, $page );
 
 		return $this;
 	}
 
-	/**
-	 * @param $lf
-	 * @param bool $include_blank
-	 * @param bool $include_disabled
-	 * @param bool $abbreviate_type
-	 * @param bool $include_type
-	 * @return array|bool
-	 */
-	function getArrayByListFactory( $lf, $include_blank = TRUE, $include_disabled = TRUE, $abbreviate_type = TRUE, $include_type = TRUE ) {
+	function getArrayByListFactory($lf, $include_blank = TRUE, $include_disabled = TRUE, $abbreviate_type = TRUE, $include_type = TRUE ) {
 		if ( !is_object($lf) ) {
 			return FALSE;
 		}
 
 		$list = array();
 		if ( $include_blank == TRUE ) {
-			$list[TTUUID::getZeroID()] = '--';
+			$list[0] = '--';
 		}
 
 		$list = array();
@@ -637,12 +536,7 @@ class PayStubEntryAccountListFactory extends PayStubEntryAccountFactory implemen
 		return FALSE;
 	}
 
-	/**
-	 * @param string $id UUID
-	 * @param bool $include_blank
-	 * @return array|bool
-	 */
-	function getByIdArray( $id, $include_blank = TRUE) {
+	function getByIdArray($id, $include_blank = TRUE) {
 		if ( $id == '') {
 			return FALSE;
 		}
@@ -652,7 +546,7 @@ class PayStubEntryAccountListFactory extends PayStubEntryAccountFactory implemen
 
 		$entry_name_list = array();
 		if ( $include_blank == TRUE ) {
-			$entry_name_list[TTUUID::getZeroID()] = '--';
+			$entry_name_list[0] = '--';
 		}
 
 		$type_options  = $this->getOptions('type');
@@ -664,15 +558,7 @@ class PayStubEntryAccountListFactory extends PayStubEntryAccountFactory implemen
 		return $entry_name_list;
 	}
 
-	/**
-	 * @param string $company_id UUID
-	 * @param int $status_id
-	 * @param int $type_id
-	 * @param bool $include_blank
-	 * @param bool $abbreviate_type
-	 * @return array|bool
-	 */
-	function getByCompanyIdAndStatusIdAndTypeIdArray( $company_id, $status_id, $type_id, $include_blank = TRUE, $abbreviate_type = TRUE ) {
+	function getByCompanyIdAndStatusIdAndTypeIdArray($company_id, $status_id, $type_id, $include_blank = TRUE, $abbreviate_type = TRUE ) {
 		if ( $type_id == '') {
 			return FALSE;
 		}
@@ -684,7 +570,7 @@ class PayStubEntryAccountListFactory extends PayStubEntryAccountFactory implemen
 		$entry_name_list = array();
 
 		if ( $include_blank == TRUE ) {
-			$entry_name_list[TTUUID::getZeroID()] = '--';
+			$entry_name_list[0] = '--';
 		}
 
 		$type_options  = $this->getOptions('type');
@@ -702,12 +588,7 @@ class PayStubEntryAccountListFactory extends PayStubEntryAccountFactory implemen
 		return $entry_name_list;
 	}
 
-	/**
-	 * @param string $company_id UUID
-	 * @param int $status_id
-	 * @return array|bool
-	 */
-	function getByTypeArrayByCompanyIdAndStatusId( $company_id, $status_id) {
+	function getByTypeArrayByCompanyIdAndStatusId($company_id, $status_id) {
 
 		$psealf = new PayStubEntryAccountListFactory();
 		$psealf->getByCompanyIdAndStatusId( $company_id, $status_id);

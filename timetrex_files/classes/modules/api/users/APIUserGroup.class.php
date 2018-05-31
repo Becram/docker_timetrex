@@ -1,7 +1,7 @@
 <?php
 /*********************************************************************************
  * TimeTrex is a Workforce Management program developed by
- * TimeTrex Software Inc. Copyright (C) 2003 - 2018 TimeTrex Software Inc.
+ * TimeTrex Software Inc. Copyright (C) 2003 - 2017 TimeTrex Software Inc.
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Affero General Public License version 3 as published by
@@ -41,9 +41,6 @@
 class APIUserGroup extends APIFactory {
 	protected $main_class = 'UserGroupFactory';
 
-	/**
-	 * APIUserGroup constructor.
-	 */
 	public function __construct() {
 		parent::__construct(); //Make sure parent constructor is always called.
 
@@ -52,9 +49,9 @@ class APIUserGroup extends APIFactory {
 
 	/**
 	 * Get options for dropdown boxes.
-	 * @param bool|string $name Name of options to return, ie: 'columns', 'type', 'status'
+	 * @param string $name Name of options to return, ie: 'columns', 'type', 'status'
 	 * @param mixed $parent Parent name/ID of options to return if data is in hierarchical format. (ie: Province)
-	 * @return bool|array
+	 * @return array
 	 */
 	function getOptions( $name = FALSE, $parent = NULL ) {
 		if ( $name == 'columns'
@@ -87,8 +84,6 @@ class APIUserGroup extends APIFactory {
 	/**
 	 * Get UserGroup data for one or more UserGroupes.
 	 * @param array $data filter data
-	 * @param bool $disable_paging
-	 * @param string $mode
 	 * @return array
 	 */
 	function getUserGroup( $data = NULL, $disable_paging = FALSE, $mode = 'flat' ) {
@@ -104,7 +99,7 @@ class APIUserGroup extends APIFactory {
 
 		//Allow getting users from other companies, so we can change admin contacts when using the master company.
 		if ( isset($data['filter_data']['company_id'])
-				AND TTUUID::isUUID( $data['filter_data']['company_id'] ) AND $data['filter_data']['company_id'] != TTUUID::getZeroID() AND $data['filter_data']['company_id'] != TTUUID::getNotExistID()
+				AND $data['filter_data']['company_id'] > 0
 				AND ( $this->getPermissionObject()->Check('company', 'enabled') AND $this->getPermissionObject()->Check('company', 'view') ) ) {
 			$company_id = $data['filter_data']['company_id'];
 		} else {
@@ -134,10 +129,19 @@ class APIUserGroup extends APIFactory {
 		} else {
 			$nodes = $uglf->getByCompanyIdArray( $company_id );
 			//Debug::Arr($nodes, ' Nodes: ', __FILE__, __LINE__, __METHOD__, 10);
-			//Debug::Text('Record Count: '. count($nodes), __FILE__, __LINE__, __METHOD__, 10);
+			Debug::Text('Record Count: '. count($nodes), __FILE__, __LINE__, __METHOD__, 10);
 			if ( isset($nodes) ) {
-				$retarr = TTTree::FormatArray( $nodes );
+				//$retarr = $uglf->getArrayByNodes( FastTree::FormatArray( $nodes, 'PLAIN_TEXT', TRUE) );
+				$retarr = FastTree::FormatFlexArray( $nodes );
 				//Debug::Arr($retarr, ' Data: ', __FILE__, __LINE__, __METHOD__, 10);
+
+				//There seems to be a bug with Flex here that if getUser() and getUserGroup() are called at the same time
+				//if this function returns an array with the keys out of order (1, 5, 10, rather then 0, 1, 3, 4, 5) Flex just sees
+				//some empty object.
+				//Not sure why this is happening with just this function, but the workaround for now is to call getUserGroup()
+				//in a separate call to the server.
+				//This could have something to do with the array having 0 => ... as the first entry, which we ran into a issue
+				//in ExceptionPolicyFactory with getOptions('email_notification')
 
 				return $this->returnHandler( $retarr );
 			}
@@ -167,9 +171,7 @@ class APIUserGroup extends APIFactory {
 	/**
 	 * Set UserGroup data for one or more UserGroupes.
 	 * @param array $data UserGroup data
-	 * @param bool $validate_only
-	 * @param bool $ignore_warning
-	 * @return array|bool
+	 * @return array
 	 */
 	function setUserGroup( $data, $validate_only = FALSE, $ignore_warning = TRUE ) {
 		$validate_only = (bool)$validate_only;
@@ -188,18 +190,18 @@ class APIUserGroup extends APIFactory {
 			Debug::Text('Validating Only!', __FILE__, __LINE__, __METHOD__, 10);
 		}
 
-		list( $data, $total_records ) = $this->convertToMultipleRecords( $data );
+		extract( $this->convertToMultipleRecords($data) );
 		Debug::Text('Received data for: '. $total_records .' UserGroups', __FILE__, __LINE__, __METHOD__, 10);
 		Debug::Arr($data, 'Data: ', __FILE__, __LINE__, __METHOD__, 10);
 
 		$validator_stats = array('total_records' => $total_records, 'valid_records' => 0 );
-		$validator = $save_result = $key = FALSE;
+		$validator = $save_result = FALSE;
 		if ( is_array($data) AND $total_records > 0 ) {
 			foreach( $data as $key => $row ) {
 				$primary_validator = new Validator();
 				$lf = TTnew( 'UserGroupListFactory' );
 				$lf->StartTransaction();
-				if ( isset($row['id']) AND $row['id'] != '' ) {
+				if ( isset($row['id']) AND $row['id'] > 0 ) {
 					//Modifying existing object.
 					//Get UserGroup object, so we can only modify just changed data for specific records if needed.
 					$lf->getByIdAndCompanyId( $row['id'], $this->getCurrentCompanyObject()->getId() );
@@ -213,7 +215,7 @@ class APIUserGroup extends APIFactory {
 									OR ( $this->getPermissionObject()->Check('user', 'edit_own') AND $this->getPermissionObject()->isOwner( $lf->getCurrent()->getCreatedBy(), $lf->getCurrent()->getID() ) === TRUE )
 								) ) {
 
-							Debug::Text('Row Exists, getting current data for ID: '. $row['id'], __FILE__, __LINE__, __METHOD__, 10);
+							Debug::Text('Row Exists, getting current data: ', $row['id'], __FILE__, __LINE__, __METHOD__, 10);
 							$lf = $lf->getCurrent();
 							$row = array_merge( $lf->getObjectAsArray(), $row );
 						} else {
@@ -273,10 +275,10 @@ class APIUserGroup extends APIFactory {
 	/**
 	 * Delete one or more UserGroups.
 	 * @param array $data UserGroup data
-	 * @return array|bool
+	 * @return array
 	 */
 	function deleteUserGroup( $data ) {
-		if ( !is_array($data) ) {
+		if ( is_numeric($data) ) {
 			$data = array($data);
 		}
 
@@ -293,14 +295,14 @@ class APIUserGroup extends APIFactory {
 		Debug::Arr($data, 'Data: ', __FILE__, __LINE__, __METHOD__, 10);
 
 		$total_records = count($data);
-		$validator = $save_result = $key = FALSE;
+		$validator = $save_result = FALSE;
 		$validator_stats = array('total_records' => $total_records, 'valid_records' => 0 );
 		if ( is_array($data) AND $total_records > 0 ) {
 			foreach( $data as $key => $id ) {
 				$primary_validator = new Validator();
 				$lf = TTnew( 'UserGroupListFactory' );
 				$lf->StartTransaction();
-				if ( $id != '' ) {
+				if ( is_numeric($id) ) {
 					//Modifying existing object.
 					//Get UserGroup object, so we can only modify just changed data for specific records if needed.
 					$lf->getByIdAndCompanyId( $id, $this->getCurrentCompanyObject()->getId() );
@@ -308,7 +310,7 @@ class APIUserGroup extends APIFactory {
 						//Object exists, check edit permissions
 						if ( $this->getPermissionObject()->Check('user', 'delete')
 								OR ( $this->getPermissionObject()->Check('user', 'delete_own') AND $this->getPermissionObject()->isOwner( $lf->getCurrent()->getCreatedBy(), $lf->getCurrent()->getID() ) === TRUE ) ) {
-							Debug::Text('Record Exists, deleting record ID: '. $id, __FILE__, __LINE__, __METHOD__, 10);
+							Debug::Text('Record Exists, deleting record: ', $id, __FILE__, __LINE__, __METHOD__, 10);
 							$lf = $lf->getCurrent();
 						} else {
 							$primary_validator->isTrue( 'permission', FALSE, TTi18n::gettext('Delete permission denied') );

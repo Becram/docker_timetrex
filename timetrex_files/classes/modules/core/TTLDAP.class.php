@@ -1,7 +1,7 @@
 <?php
 /*********************************************************************************
  * TimeTrex is a Workforce Management program developed by
- * TimeTrex Software Inc. Copyright (C) 2003 - 2018 TimeTrex Software Inc.
+ * TimeTrex Software Inc. Copyright (C) 2003 - 2017 TimeTrex Software Inc.
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Affero General Public License version 3 as published by
@@ -43,9 +43,6 @@ class TTLDAP {
 	private $password_attribute = 'userPassword';
 	//private $password_attribute = NULL;
 
-	/**
-	 * TTLDAP constructor.
-	 */
 	function __construct() {
 		// @codingStandardsIgnoreStart --  Unused global variable $LDAP_CONNECT_OPTIONS.
 		global $LDAP_CONNECT_OPTIONS;
@@ -65,9 +62,6 @@ class TTLDAP {
 		return TRUE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function getHost() {
 		if ( isset($this->data['host']) ) {
 			return $this->data['host'];
@@ -75,21 +69,13 @@ class TTLDAP {
 
 		return FALSE;
 	}
-
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setHost( $value) {
+	function setHost($value) {
 		$value = trim($value);
 
 		$this->data['host'] = $value;
 		return TRUE;
 	}
 
-	/**
-	 * @return int
-	 */
 	function getPort() {
 		if ( isset($this->data['port']) ) {
 			return $this->data['port'];
@@ -97,19 +83,11 @@ class TTLDAP {
 
 		return 389; //Default port.
 	}
-
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setPort( $value) {
+	function setPort($value) {
 		$this->data['port'] = $value;
 		return TRUE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function getBindUserName() {
 		if ( isset($this->data['bind_user_name']) ) {
 			return $this->data['bind_user_name'];
@@ -117,21 +95,13 @@ class TTLDAP {
 
 		return FALSE;
 	}
-
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setBindUserName( $value) {
+	function setBindUserName($value) {
 		$value = trim($value);
 
 		$this->data['bind_user_name'] = $value;
 		return TRUE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function getBindPassword() {
 		if ( isset($this->data['bind_password']) ) {
 			return $this->data['bind_password'];
@@ -139,20 +109,12 @@ class TTLDAP {
 
 		return FALSE;
 	}
-
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setBindPassword( $value) {
+	function setBindPassword($value) {
 		$this->data['bind_password']  = trim($value);
 
 		return TRUE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function getBaseDN() {
 		if ( isset($this->data['base_dn']) ) {
 			return $this->data['base_dn'];
@@ -160,21 +122,13 @@ class TTLDAP {
 
 		return FALSE;
 	}
-
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setBaseDN( $value) {
+	function setBaseDN($value) {
 		$value = trim($value);
 
 		$this->data['base_dn'] = $value;
 		return TRUE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function getBindAttribute() {
 		if ( isset($this->data['bind_attribute']) ) {
 			return $this->data['bind_attribute'];
@@ -182,21 +136,13 @@ class TTLDAP {
 
 		return FALSE;
 	}
-
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setBindAttribute( $value) {
+	function setBindAttribute($value) {
 		$value = trim($value);
 
 		$this->data['bind_attribute'] = $value;
 		return TRUE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function getUserFilter() {
 		if ( isset($this->data['user_filter']) ) {
 			return $this->data['user_filter'];
@@ -204,21 +150,13 @@ class TTLDAP {
 
 		return FALSE;
 	}
-
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setUserFilter( $value) {
+	function setUserFilter($value) {
 		$value = trim($value);
 
 		$this->data['user_filter'] = $value;
 		return TRUE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function getLoginAttribute() {
 		if ( isset($this->data['login_attribute']) ) {
 			return $this->data['login_attribute'];
@@ -226,12 +164,7 @@ class TTLDAP {
 
 		return FALSE;
 	}
-
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setLoginAttribute( $value) {
+	function setLoginAttribute($value) {
 		$value = trim($value);
 
 		$this->data['login_attribute'] = $value;
@@ -240,9 +173,6 @@ class TTLDAP {
 
 	//This is not fully implemented, not sure if its even needed, as it appears
 	//most active directory installs will work without needing to specify the domain.
-	/**
-	 * @return bool
-	 */
 	function getUserNameSuffix() {
 		if ( isset($this->data['user_name_suffix']) ) {
 			return $this->data['user_name_suffix'];
@@ -250,21 +180,13 @@ class TTLDAP {
 
 		return FALSE;
 	}
-
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setUserNameSuffix( $value) {
+	function setUserNameSuffix($value) {
 		$value = trim($value);
 
 		$this->data['user_name_suffix'] = $value;
 		return TRUE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function checkLDAPExtension() {
 		if ( function_exists('ldap_connect') ) {
 			return TRUE;
@@ -276,9 +198,6 @@ class TTLDAP {
 	//Bind authentication is when a specific bind User/Password is *not* specified,
 	//so we try to initially bind as the username trying to login instead.
 	//However when bind username/password is specified, we can still attempt to bind as the username trying to login after a filter query is run.
-	/**
-	 * @return bool
-	 */
 	function isBindAuthentication() {
 		if ( $this->getBindUserName() == '' ) { //Don't check password, as anonymous binding doesn't have one specified.
 			return TRUE;
@@ -287,10 +206,6 @@ class TTLDAP {
 		return FALSE;
 	}
 
-	/**
-	 * @param $user_name
-	 * @return string
-	 */
 	function getFilterQuery( $user_name ) {
 		$filter_query = '';
 		$filter_count = 0;
@@ -312,10 +227,6 @@ class TTLDAP {
 		return $filter_query;
 	}
 
-	/**
-	 * @param $user_name
-	 * @return string
-	 */
 	function getBindDN( $user_name ) {
 		//return $this->getBindAttribute().'='. $user_name .', '.$this->getBaseDN();
 		$retval = '';
@@ -328,11 +239,6 @@ class TTLDAP {
 		return $retval;
 	}
 
-	/**
-	 * @param $user_name
-	 * @param $password
-	 * @return bool
-	 */
 	function authenticate( $user_name, $password ) {
 		$user_name = trim($user_name);
 		$password = trim($password);

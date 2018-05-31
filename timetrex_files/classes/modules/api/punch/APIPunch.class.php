@@ -1,7 +1,7 @@
 <?php
 /*********************************************************************************
  * TimeTrex is a Workforce Management program developed by
- * TimeTrex Software Inc. Copyright (C) 2003 - 2018 TimeTrex Software Inc.
+ * TimeTrex Software Inc. Copyright (C) 2003 - 2017 TimeTrex Software Inc.
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Affero General Public License version 3 as published by
@@ -47,42 +47,34 @@
 class APIPunch extends APIFactory {
 	protected $main_class = 'PunchFactory';
 
-	public $is_import = FALSE;
-
-	/**
-	 * APIPunch constructor.
-	 */
 	public function __construct() {
 		parent::__construct(); //Make sure parent constructor is always called.
 
 		return TRUE;
 	}
 
-	/**
-	 * @param string $user_id UUID
-	 * @param int $epoch EPOCH
-	 * @param string $station_id UUID
-	 * @param string $company_id UUID
-	 * @return array|bool
-	 */
-	function getUserPunch( $user_id = NULL, $epoch = NULL, $station_id = NULL ) {
+	function getUserPunch( $user_id = NULL, $epoch = NULL, $station_id = NULL, $company_id = NULL ) {
 		if ( $epoch == '' ) {
 			$epoch = TTDate::getTime();
 		}
 
-		if ( TTUUID::isUUID( $user_id ) == FALSE ) {
+		if ( !is_numeric( $user_id	) ) {
 			$user_id = $this->getCurrentUserObject()->getId();
 		}
 
-		if ( $station_id == NULL ) { //This is not a UUID, but the public station_id typically from the browser cookie.
-			$station_id = getStationID(); //getStationID() from includes/API.inc.php
+		if ( !is_numeric( $company_id ) ) {
+			$company_id = $this->getCurrentCompanyObject()->getId();
+		}
+
+		if ( !is_numeric( $station_id ) ) {
+			$station_id = getStationID(); //API.inc
 		}
 
 		//Must call APIStation->getCurrentStation( $station_id = NULL ) first, so the Station ID cookie can be set and passed to this.
 		//Check if station is allowed.
 		$current_station = FALSE;
 		$slf = new StationListFactory();
-		$slf->getByStationIdandCompanyId( $station_id, $this->getCurrentCompanyObject()->getId() );
+		$slf->getByStationIdandCompanyId( $station_id, $company_id );
 		if ( $slf->getRecordCount() == 1 ) {
 			$current_station = $slf->getCurrent();
 			$station_type = $current_station->getType();
@@ -91,10 +83,10 @@ class APIPunch extends APIFactory {
 
 		Debug::Text('Station ID: '. $station_id .' User ID: '. $user_id .' Epoch: '. $epoch, __FILE__, __LINE__, __METHOD__, 10);
 		if ( is_object($current_station) AND $current_station->checkAllowed( $user_id, $station_id, $station_type ) == TRUE ) {
-			Debug::Text('Station Allowed! ID: '. $current_station->getId() .' ('. $station_id .') User ID: '. $user_id .' Epoch: '. $epoch, __FILE__, __LINE__, __METHOD__, 10);
+			Debug::Text('Station Allowed! ID: '. $station_id .' User ID: '. $user_id .' Epoch: '. $epoch, __FILE__, __LINE__, __METHOD__, 10);
 			//Get user object from ID.
 			$ulf = TTNew('UserListFactory');
-			$ulf->getByIdAndCompanyId( $user_id, $this->getCurrentCompanyObject()->getId() );
+			$ulf->getByIdAndCompanyId( $user_id, $company_id );
 			if ( $ulf->getRecordCount() == 1 ) {
 				$user_obj = $ulf->getCurrent();
 
@@ -131,12 +123,6 @@ class APIPunch extends APIFactory {
 		return FALSE;
 	}
 
-	/**
-	 * @param $data
-	 * @param bool $validate_only
-	 * @param bool $ignore_warning
-	 * @return array|bool
-	 */
 	function setUserPunch( $data, $validate_only = FALSE, $ignore_warning = TRUE ) {
 		if ( !$this->getPermissionObject()->Check('punch', 'enabled')
 				OR !( $this->getPermissionObject()->Check('punch', 'punch_in_out') ) ) {
@@ -248,22 +234,18 @@ class APIPunch extends APIFactory {
 		} else {
 			return $this->returnHandler( FALSE, 'VALIDATION', TTi18n::getText('INVALID DATA'), $validator, $validator_stats );
 		}
+
+		return FALSE;
 	}
 
 	/**
 	 * Get default punch data for creating new punches.
-	 * @param string $user_id UUID
-	 * @param int $date EPOCH
-	 * @param string $punch_control_id UUID
-	 * @param string $previous_punch_id UUID
-	 * @param int $status_id ID
-	 * @param int $type_id ID
 	 * @return array
 	 */
 	function getPunchDefaultData( $user_id = NULL, $date = NULL, $punch_control_id = NULL, $previous_punch_id = NULL, $status_id = NULL, $type_id = NULL ) {
 		$company_obj = $this->getCurrentCompanyObject();
 
-		if ( TTUUID::isUUID( $user_id ) == FALSE ) {
+		if ( !is_numeric( $user_id	) ) {
 			$user_id = $this->getCurrentUserObject()->getId();
 		}
 
@@ -295,7 +277,7 @@ class APIPunch extends APIFactory {
 		}
 		unset($ulf, $user_obj);
 
-		if ( TTUUID::isUUID($punch_control_id) AND $punch_control_id != TTUUID::getZeroID() AND $punch_control_id != TTUUID::getNotExistID() ) {
+		if ( $punch_control_id > 0 ) {
 			$pclf = TTnew('PunchControlListFactory');
 			$pclf->getByIDAndCompanyID( $punch_control_id, $company_obj->getId() );
 			if ( $pclf->getRecordCount() == 1 ) {
@@ -319,7 +301,7 @@ class APIPunch extends APIFactory {
 		}
 
 		//IF specified, get the previous punch object to determine the next punch type/status.
-		if ( TTUUID::isUUID($previous_punch_id) AND $previous_punch_id != TTUUID::getZeroID() AND $previous_punch_id != TTUUID::getNotExistID() ) {
+		if ( $previous_punch_id > 0 ) {
 			$plf = TTnew('PunchListFactory');
 			$plf->getByCompanyIDAndId( $company_obj->getId(), $previous_punch_id );
 			if ( $plf->getRecordCount() == 1 ) {
@@ -349,17 +331,10 @@ class APIPunch extends APIFactory {
 
 	/**
 	 * Get default punch data for creating new punches.
-	 * @param string $user_id UUID
-	 * @param int $date EPOCH
-	 * @param string $punch_control_id UUID
-	 * @param string $previous_punch_id UUID
-	 * @param int $status_id
-	 * @param int $type_id
-	 * @param string $current_punch_id UUID
 	 * @return array
 	 */
 	function getRequestDefaultData( $user_id = NULL, $date = NULL, $punch_control_id = NULL, $previous_punch_id = NULL, $status_id = 10, $type_id = 10, $current_punch_id = NULL ) {
-		if ( TTUUID::isUUID( $user_id ) == FALSE ) {
+		if ( !is_numeric( $user_id	) ) {
 			$user_id = $this->getCurrentUserObject()->getId();
 		}
 
@@ -387,7 +362,7 @@ class APIPunch extends APIFactory {
 			$type_text = Option::getByKey( $punch_data['api_retval']['type_id'], $plf->getOptions( 'type' ) );
 			$status_text = Option::getByKey( $punch_data['api_retval']['status_id'], $plf->getOptions( 'status' ) );
 
-			//$type_id = $punch_data['api_retval']['type_id'];
+			$type_id = $punch_data['api_retval']['type_id'];
 			//$status_id = $punch_data['api_retval']['status_id'];
 			$message = TTi18n::getText('Due to <specify reason here>, please add the missing %1 %2 punch at <%3>', array($type_text, $status_text, $punch_data['api_retval']['punch_time']) );
 		}
@@ -405,9 +380,8 @@ class APIPunch extends APIFactory {
 
 	/**
 	 * Get all necessary dates for building the TimeSheet in a single call, this is mainly as a performance optimization.
-	 * @param int $base_date EPOCH
+	 * @param array $data filter data
 	 * @return array
-	 * @internal param array $data filter data
 	 */
 	function getTimeSheetDates( $base_date ) {
 		$epoch = TTDate::parseDateTime( $base_date );
@@ -434,8 +408,7 @@ class APIPunch extends APIFactory {
 	/**
 	 * Get punch data for one or more punches.
 	 * @param array $data filter data
-	 * @param bool $disable_paging
-	 * @return array|bool
+	 * @return array
 	 */
 	function getPunch( $data = NULL, $disable_paging = FALSE ) {
 		if ( !$this->getPermissionObject()->Check('punch', 'enabled')
@@ -480,7 +453,6 @@ class APIPunch extends APIFactory {
 			$this->setPagerObject( $plf );
 
 			/** @var PunchFactory $p_obj */
-			$retarr = array();
 			foreach( $plf as $p_obj ) {
 				$retarr[] = $p_obj->getObjectAsArray( $data['filter_columns'], $data['filter_data']['permission_children_ids'] );
 
@@ -516,9 +488,7 @@ class APIPunch extends APIFactory {
 	/**
 	 * Set punch data for one or more punches.
 	 * @param array $data punch data
-	 * @param bool $validate_only
-	 * @param bool $ignore_warning
-	 * @return array|bool
+	 * @return array
 	 */
 	function setPunch( $data, $validate_only = FALSE, $ignore_warning = TRUE ) {
 		$validate_only = (bool)$validate_only;
@@ -541,12 +511,12 @@ class APIPunch extends APIFactory {
 			$permission_children_ids = $this->getPermissionChildren();
 		}
 
-		list( $data, $total_records ) = $this->convertToMultipleRecords( $data );
+		extract( $this->convertToMultipleRecords($data) );
 		Debug::Text('Received data for: '. $total_records .' Punchs', __FILE__, __LINE__, __METHOD__, 10);
 		Debug::Arr($data, 'Data: ', __FILE__, __LINE__, __METHOD__, 10);
 
 		$validator_stats = array('total_records' => $total_records, 'valid_records' => 0 );
-		$validator = $save_result = $key = FALSE;
+		$validator = $save_result = FALSE;
 		if ( is_array($data) AND $total_records > 0 ) {
 			$this->getProgressBarObject()->start( $this->getAMFMessageID(), $total_records );
 
@@ -558,7 +528,7 @@ class APIPunch extends APIFactory {
 				$primary_validator = new Validator();
 				$lf = TTnew( 'PunchListFactory' );
 				//$lf->StartTransaction();
-				if ( isset($row['id']) AND $row['id'] != '' ) {
+				if ( isset($row['id']) AND $row['id'] > 0 ) {
 					//Modifying existing object.
 					//Get punch object, so we can only modify just changed data for specific records if needed.
 					//Use the special getAPIByIdAndCompanyId() function as it returns additional columns needed for mass editing.
@@ -575,12 +545,11 @@ class APIPunch extends APIFactory {
 									OR ( $this->getPermissionObject()->Check('punch', 'edit_child') AND $this->getPermissionObject()->isChild( $lf->getCurrent()->getPunchControlObject()->getUser(), $permission_children_ids ) === TRUE )
 								) ) {
 
-							Debug::Text('Row Exists, getting current data for ID: '. $row['id'], __FILE__, __LINE__, __METHOD__, 10);
+							Debug::Text('Row Exists, getting current data: ', $row['id'], __FILE__, __LINE__, __METHOD__, 10);
 							//If we make the current object be $lf, it fails saving the punch because extra columns exist.
 							//$lf = $lf->getCurrent();
 							//$row = array_merge( $lf->getObjectAsArray( array('id' => TRUE, 'user_id' => TRUE, 'transfer' => TRUE, 'type_id' => TRUE, 'status_id' => TRUE, 'time_stamp' => TRUE, 'punch_control_id' => TRUE, 'actual_time_stamp' => TRUE, 'original_time_stamp' => TRUE, 'schedule_id' => TRUE, 'station_id' => TRUE, 'longitude' => TRUE, 'latitude' => TRUE, 'deleted' => TRUE) ), $row );
-							$lf = $lf->getCurrent(); //Make the current $lf variable the current object, otherwise getDataDifferences() fails to function.
-							$row = array_merge( $lf->getObjectAsArray(), $row );
+							$row = array_merge( $lf->getCurrent()->getObjectAsArray(), $row );
 						} else {
 							$primary_validator->isTrue( 'permission', FALSE, TTi18n::gettext('Edit permission denied') );
 						}
@@ -631,14 +600,6 @@ class APIPunch extends APIFactory {
 
 					$lf->setObjectFromArray( $row );
 
-					//When importing punches, make sure they aren't tainted immediately. We assume if the punches are imported the employee did them originally from some other device.
-					//  The audit log will still show who imported the punch in the detailed log records.
-					if ( $this->is_import == TRUE ) {
-						Debug::Text('Imported punch, forcing created/updated by to the punch user...', __FILE__, __LINE__, __METHOD__, 10);
-						$lf->setCreatedBy( $lf->getUser() );
-						$lf->setUpdatedBy( $lf->getUser() );
-					}
-
 					$is_valid = $lf->isValid( $ignore_warning );
 					if ( $is_valid == TRUE ) {
 						Debug::Text('Saving data...', __FILE__, __LINE__, __METHOD__, 10);
@@ -651,12 +612,7 @@ class APIPunch extends APIFactory {
 							if ( $save_result[$key] == TRUE ) {
 								unset($row['id']); //ID must be removed so it doesn't get confused with PunchControlID
 								Debug::Text('Saving PCF data... Punch Control ID: '. $lf->getPunchControlID(), __FILE__, __LINE__, __METHOD__, 10);
-								if ( is_object( $lf ) AND is_object( $lf->getPunchControlObject() ) ) {
-									$pcf = $lf->getPunchControlObject(); //Use getPunchControlObject() so we get the "old_data" and audit log can properly be handled. It should already be cached anyways, so there is no SQL query.
-								} else {
-									$pcf = TTnew( 'PunchControlFactory' );
-								}
-
+								$pcf = TTnew( 'PunchControlFactory' );
 								$pcf->setId( $lf->getPunchControlID() );
 								$pcf->setPunchObject( $lf );
 
@@ -755,10 +711,10 @@ class APIPunch extends APIFactory {
 	/**
 	 * Delete one or more punchs.
 	 * @param array $data punch data
-	 * @return array|bool
+	 * @return array
 	 */
 	function deletePunch( $data ) {
-		if ( !is_array($data) ) {
+		if ( is_numeric($data) ) {
 			$data = array($data);
 		}
 
@@ -778,7 +734,7 @@ class APIPunch extends APIFactory {
 		Debug::Arr($data, 'Data: ', __FILE__, __LINE__, __METHOD__, 10);
 
 		$total_records = count($data);
-		$validator = $save_result = $key = FALSE;
+		$validator = $save_result = FALSE;
 		$validator_stats = array('total_records' => $total_records, 'valid_records' => 0 );
 		if ( is_array($data) AND $total_records > 0 ) {
 			$this->getProgressBarObject()->start( $this->getAMFMessageID(), $total_records );
@@ -791,7 +747,7 @@ class APIPunch extends APIFactory {
 				$primary_validator = new Validator();
 				$lf = TTnew( 'PunchListFactory' );
 				//$lf->StartTransaction();
-				if ( $id != '' ) {
+				if ( is_numeric($id) ) {
 					//Modifying existing object.
 					//Get punch object, so we can only modify just changed data for specific records if needed.
 					$lf->getByIdAndCompanyId( $id, $this->getCurrentCompanyObject()->getId() );
@@ -889,18 +845,13 @@ class APIPunch extends APIFactory {
 		return $this->returnHandler( FALSE );
 	}
 
-	/**
-	 * @param $data
-	 * @param bool $disable_paging
-	 * @return array|bool
-	 */
 	function getMealAndBreakTotalTime( $data, $disable_paging = FALSE  ) {
 		return PunchFactory::calcMealAndBreakTotalTime( $this->getPunch( $data, TRUE ) );
 	}
 
 	/**
 	 * @param string $format
-	 * @param array $data
+	 * @param null $data
 	 * @param bool $disable_paging
 	 * @return array|bool
 	 */

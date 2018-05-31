@@ -10,11 +10,9 @@ ROEViewController = BaseViewController.extend( {
 
 	form_setup_item: null,
 
-	_required_files: ['APIROE', 'APIUser', 'APICompany', 'APIPayPeriodSchedule', 'APIUserGenericData', 'APIAbsencePolicy', 'APIPayStubEntryAccount'],
+	initialize: function( options ) {
 
-	init: function( options ) {
-
-		//this._super('initialize', options );
+		this._super( 'initialize', options );
 		this.permission_id = 'roe';
 		this.viewId = 'ROE';
 		this.edit_view_tpl = 'ROEEditView.html';
@@ -220,14 +218,14 @@ ROEViewController = BaseViewController.extend( {
 			permission: null
 		} );
 
-		// var print = new RibbonSubMenu( {
-		// 	label: $.i18n._( 'Print' ),
-		// 	id: ContextMenuIconName.print,
-		// 	group: form_group,
-		// 	icon: Icons.print,
-		// 	permission_result: true,
-		// 	permission: null
-		// } );
+		var print = new RibbonSubMenu( {
+			label: $.i18n._( 'Print' ),
+			id: ContextMenuIconName.print,
+			group: form_group,
+			icon: Icons.print,
+			permission_result: true,
+			permission: null
+		} );
 
 		var efile = new RibbonSubMenu( {
 			label: $.i18n._( 'eFile' ),
@@ -1009,7 +1007,7 @@ ROEViewController = BaseViewController.extend( {
 		var $this = this;
 		args.filter_data = {};
 		args.filter_data.script = "roe";
-		args.filter_data.user_id = TTUUID.zero_id;
+		args.filter_data.user_id = "0";
 		args.filter_data.is_default = true;
 
 		this.user_generic_data_api.getUserGenericData( args, {
@@ -1059,7 +1057,7 @@ ROEViewController = BaseViewController.extend( {
 		var $this = this;
 		var form_setup = this.form_setup_item;
 
-		form_setup.user_id = TTUUID.zero_id;
+		form_setup.user_id = '0';
 		form_setup.is_default = true;
 
 		if ( !form_setup.id ) {
@@ -1069,14 +1067,10 @@ ROEViewController = BaseViewController.extend( {
 
 		form_setup.data = this.getFormSetupData( {} ).form;
 
-		$this.form_setup_item = form_setup;
 		this.user_generic_data_api.setUserGenericData( form_setup, {
 			onResult: function( result ) {
 
 				if ( result.isValid() ) {
-					if ( typeof $this.form_setup_item.id =='undefined' && TTUUID.isUUID( result.getResult() ) ) {
-						$this.form_setup_item.id = result.getResult();
-					}
 					TAlertManager.showAlert( $.i18n._( 'Form Setup has been saved successfully' ) );
 				} else {
 					TAlertManager.showAlert( $.i18n._( 'Form Setup save failed, Please try again' ) );
@@ -1172,7 +1166,7 @@ ROEViewController = BaseViewController.extend( {
 	},
 
 	doFormIFrameCall: function( postData ) {
-		Global.APIFileDownload( 'APIROEReport', 'getROEReport', postData );
+		this.sendIframeCall('APIROEReport','getROEReport', postData);
 	},
 
 	onSaveResult: function( result ) {
@@ -1213,7 +1207,7 @@ ROEViewController = BaseViewController.extend( {
 	showStatusReport: function( result, id ) {
 		var user_ids = id;
 		var user_generic_status_batch_id = result.getAttributeInAPIDetails( 'user_generic_status_batch_id' );
-		if ( user_generic_status_batch_id && TTUUID.isUUID( user_generic_status_batch_id ) && user_generic_status_batch_id != TTUUID.zero_id&& user_generic_status_batch_id != TTUUID.not_exist_id ) {
+		if ( user_generic_status_batch_id && user_generic_status_batch_id > 0 ) {
 			UserGenericStatusWindowController.open( user_generic_status_batch_id, user_ids );
 		}
 	},

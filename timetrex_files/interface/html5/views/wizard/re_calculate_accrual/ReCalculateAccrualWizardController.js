@@ -1,10 +1,9 @@
 ReCalculateAccrualWizardController = BaseWizardController.extend( {
 
 	el: '.wizard',
-	_required_files:['APIAccrualPolicy', 'APIPayPeriod', 'APITimesheetSummaryReport', 'APIPayPeriodSchedule', 'APIUser'],
 
-	init: function( options ) {
-		//this._super('initialize', options );
+	initialize: function( options ) {
+		this._super( 'initialize', options );
 
 		this.title = $.i18n._( 'Accrual ReCalculation Wizard' );
 		this.steps = 3;
@@ -231,7 +230,7 @@ ReCalculateAccrualWizardController = BaseWizardController.extend( {
 			case 3:
 
 				if ( !current_step_data ) {
-					current_step_ui['user_id'].setValue( TTUUID.not_exist_id );
+					current_step_ui['user_id'].setValue( -1 );
 				} else {
 					for ( key in current_step_data ) {
 						if ( !current_step_data.hasOwnProperty( key ) ) continue;

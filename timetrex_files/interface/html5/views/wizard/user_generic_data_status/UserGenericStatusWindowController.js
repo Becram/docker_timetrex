@@ -21,7 +21,7 @@ UserGenericStatusWindowController = BaseViewController.extend( {
 
 	},
 
-	init: function( options ) {
+	initialize: function( options ) {
 		this.options = options;
 		this.content_div = $( this.el ).find( '.content' );
 		this.batch_id = this.options.batch_id;
@@ -116,11 +116,9 @@ UserGenericStatusWindowController = BaseViewController.extend( {
 				var warning = $( $this.el ).find( '.warning' );
 				var success = $( $this.el ).find( '.success' );
 
-				if ( result_data != true && result_data.status ) {
-					failed.text(result_data.status[10].total + '/' + result_data.total + '( ' + result_data.status[10].percent + '% )');
-					warning.text(result_data.status[20].total + '/' + result_data.total + '( ' + result_data.status[20].percent + '% )');
-					success.text(result_data.status[30].total + '/' + result_data.total + '( ' + result_data.status[30].percent + '% )')
-				}
+				failed.text( result_data.status[10].total + '/' + result_data.total + '( ' + result_data.status[10].percent + '% )' );
+				warning.text( result_data.status[20].total + '/' + result_data.total + '( ' + result_data.status[20].percent + '% )' );
+				success.text( result_data.status[30].total + '/' + result_data.total + '( ' + result_data.status[30].percent + '% )' )
 
 			}
 		} );

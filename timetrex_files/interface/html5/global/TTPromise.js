@@ -32,22 +32,6 @@ TTPromise = {
 		}
 	},
 
-	/**
-	 * Wait for all or specific category/key
-	 *
-	 * In the case of waiting on all promises, error_callback is triggered for each individual error (rejection), and success callback is called when all promises are resolved (either success or failure)
-	 * so when waiting for all promises, most times you don't want a failure callback because both "success" and "failure" can happen on the same wait.
-	 *
-	 * The function call should look like:
-	 *    TTPromise.wait(null,null,function(){
-	 *    	//do stuff on success
-	 *    });
-	 *
-	 * @param category
-	 * @param key
-	 * @param success_callback
-	 * @param error_callback
-	 */
 	wait: function ( category, key, success_callback, error_callback ) {
 		// if(!category){
 		// 	throw new Error('TTPromise::wait requires at least a category argument.');
@@ -89,10 +73,10 @@ TTPromise = {
 
 				if ( TTPromise.filterPromiseArray(wait_category,wait_key).length == 0 ) {
 					Debug.Text('Promise: success callback;', 'TTPromise.js', 'TTPromise.js', 'wait', 11);
-					success_callback( true );
+					success_callback();
 				} else {
-					Debug.Text('Promise: waiting again '+category+'|'+key, 'TTPromise.js', 'TTPromise.js', 'wait', 11);
-					TTPromise.wait(category, key, success_callback, error_callback);
+					Debug.Text('Promise: waiting again '+wait_category+'|'+wait_key, 'TTPromise.js', 'TTPromise.js', 'wait', 11);
+					TTPromise.wait(wait_category, wait_key, success_callback, error_callback);
 				}
 			};
 
@@ -109,7 +93,7 @@ TTPromise = {
 				}
 				//different than success because we want to call the callback AND wait again if necessary
 				if ( typeof error_callback != "undefined" ) {
-					error_callback( false );
+					error_callback();
 				}
 				TTPromise.wait(wait_category, wait_key, success_callback, error_callback);
 			};
@@ -117,7 +101,7 @@ TTPromise = {
 			$.when.apply($, pending_promises).then( onComplete, onError );
 
 		} else {
-			success_callback( true );
+			success_callback();
 		}
 	},
 

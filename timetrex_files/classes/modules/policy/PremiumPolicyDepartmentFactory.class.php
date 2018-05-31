@@ -1,7 +1,7 @@
 <?php
 /*********************************************************************************
  * TimeTrex is a Workforce Management program developed by
- * TimeTrex Software Inc. Copyright (C) 2003 - 2018 TimeTrex Software Inc.
+ * TimeTrex Software Inc. Copyright (C) 2003 - 2017 TimeTrex Software Inc.
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Affero General Public License version 3 as published by
@@ -44,9 +44,6 @@ class PremiumPolicyDepartmentFactory extends Factory {
 
 	protected $department_obj = NULL;
 
-	/**
-	 * @return bool|null
-	 */
 	function getDepartmentObject() {
 		if ( is_object($this->department_obj) ) {
 			return $this->department_obj;
@@ -62,184 +59,111 @@ class PremiumPolicyDepartmentFactory extends Factory {
 		}
 	}
 
-	/**
-	 * @return mixed
-	 */
 	function getPremiumPolicy() {
-		return $this->getGenericDataValue( 'premium_policy_id' );
-	}
-
-	/**
-	 * @param string $value UUID
-	 * @return bool
-	 */
-	function setPremiumPolicy( $value) {
-		$value = TTUUID::castUUID( $value );
-		return $this->setGenericDataValue( 'premium_policy_id', $value );
-	}
-
-	/**
-	 * @return bool|mixed
-	 */
-	function getDepartment() {
-		return $this->getGenericDataValue( 'department_id' );
-	}
-
-	/**
-	 * @param string $value UUID
-	 * @return bool
-	 */
-	function setDepartment( $value) {
-		$value = TTUUID::castUUID( $value );
-		return $this->setGenericDataValue( 'department_id', $value );
-	}
-	/**
-	 * @return bool
-	 */
-	function Validate() {
-		//
-		// BELOW: Validation code moved from set*() functions.
-		//
-		// Premium Policy
-		if ( $this->getPremiumPolicy() != TTUUID::getZeroID() ) {
-			$this->Validator->isUUID(	'premium_policy',
-												$this->getPremiumPolicy(),
-												TTi18n::gettext('Selected Premium Policy is invalid')
-											);
+		if ( isset($this->data['premium_policy_id']) ) {
+			return (int)$this->data['premium_policy_id'];
 		}
-		// Department
-		$dlf = TTnew( 'DepartmentListFactory' );
-		$this->Validator->isResultSetWithRows(	'department',
-													$dlf->getByID($this->getDepartment()),
-													TTi18n::gettext('Selected Department is invalid')
-												);
+	}
+	function setPremiumPolicy($id) {
+		$id = trim($id);
 
+		if (	$id == 0
+				OR
+				$this->Validator->isNumeric(	'premium_policy',
+													$id,
+													TTi18n::gettext('Selected Premium Policy is invalid')
+/*
+				$this->Validator->isResultSetWithRows(	'premium_policy',
+													$pplf->getByID($id),
+													TTi18n::gettext('Selected Premium Policy is invalid')
+*/
+															)
+			) {
 
-		//
-		// ABOVE: Validation code moved from set*() functions.
-		//
-		return TRUE;
+			$this->data['premium_policy_id'] = $id;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @return bool
-	 */
+	function getDepartment() {
+		if ( isset($this->data['department_id']) ) {
+			return (int)$this->data['department_id'];
+		}
+
+		return FALSE;
+	}
+	function setDepartment($id) {
+		$id = trim($id);
+
+		$dlf = TTnew( 'DepartmentListFactory' );
+
+		if ( $this->Validator->isResultSetWithRows(	'department',
+													$dlf->getByID($id),
+													TTi18n::gettext('Selected Department is invalid')
+													) ) {
+			$this->data['department_id'] = $id;
+
+			return TRUE;
+		}
+
+		return FALSE;
+	}
+
 	function postSave() {
 		$this->removeCache( 'premium_policy-'. $this->getPremiumPolicy() );
 		return TRUE;
 	}
 
 	//This table doesn't have any of these columns, so overload the functions.
-
-	/**
-	 * @return bool
-	 */
 	function getDeleted() {
 		return FALSE;
 	}
-
-	/**
-	 * @param $bool
-	 * @return bool
-	 */
-	function setDeleted( $bool) {
+	function setDeleted($bool) {
 		return FALSE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function getCreatedDate() {
 		return FALSE;
 	}
-
-	/**
-	 * @param int $epoch EPOCH
-	 * @return bool
-	 */
-	function setCreatedDate( $epoch = NULL) {
+	function setCreatedDate($epoch = NULL) {
 		return FALSE;
 	}
-
-	/**
-	 * @return bool
-	 */
 	function getCreatedBy() {
 		return FALSE;
 	}
-
-	/**
-	 * @param string $id UUID
-	 * @return bool
-	 */
-	function setCreatedBy( $id = NULL) {
+	function setCreatedBy($id = NULL) {
 		return FALSE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function getUpdatedDate() {
 		return FALSE;
 	}
-
-	/**
-	 * @param int $epoch EPOCH
-	 * @return bool
-	 */
-	function setUpdatedDate( $epoch = NULL) {
+	function setUpdatedDate($epoch = NULL) {
 		return FALSE;
 	}
-
-	/**
-	 * @return bool
-	 */
 	function getUpdatedBy() {
 		return FALSE;
 	}
-
-	/**
-	 * @param string $id UUID
-	 * @return bool
-	 */
-	function setUpdatedBy( $id = NULL) {
+	function setUpdatedBy($id = NULL) {
 		return FALSE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function getDeletedDate() {
 		return FALSE;
 	}
-
-	/**
-	 * @param int $epoch EPOCH
-	 * @return bool
-	 */
-	function setDeletedDate( $epoch = NULL) {
+	function setDeletedDate($epoch = NULL) {
 		return FALSE;
 	}
-
-	/**
-	 * @return bool
-	 */
 	function getDeletedBy() {
 		return FALSE;
 	}
-
-	/**
-	 * @param string $id UUID
-	 * @return bool
-	 */
-	function setDeletedBy( $id = NULL) {
+	function setDeletedBy($id = NULL) {
 		return FALSE;
 	}
 
-	/**
-	 * @param $log_action
-	 * @return bool
-	 */
 	function addLog( $log_action ) {
 		$obj = $this->getDepartmentObject();
 		if ( is_object($obj) ) {

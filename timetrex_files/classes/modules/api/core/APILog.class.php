@@ -1,7 +1,7 @@
 <?php
 /*********************************************************************************
  * TimeTrex is a Workforce Management program developed by
- * TimeTrex Software Inc. Copyright (C) 2003 - 2018 TimeTrex Software Inc.
+ * TimeTrex Software Inc. Copyright (C) 2003 - 2017 TimeTrex Software Inc.
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Affero General Public License version 3 as published by
@@ -41,9 +41,6 @@
 class APILog extends APIFactory {
 	protected $main_class = 'LogFactory';
 
-	/**
-	 * APILog constructor.
-	 */
 	public function __construct() {
 		parent::__construct(); //Make sure parent constructor is always called.
 
@@ -53,7 +50,6 @@ class APILog extends APIFactory {
 	/**
 	 * Get log data for one or more logs.
 	 * @param array $data filter data
-	 * @param bool $disable_paging
 	 * @return array
 	 */
 	function getLog( $data = NULL, $disable_paging = FALSE ) {
@@ -89,16 +85,8 @@ class APILog extends APIFactory {
 									OR $this->getPermissionObject()->Check( $permission_section, 'edit_child')
 								) ) ) {
 							//By default administrators have company,edit_own permissions, which means they can't see their own companies audit tab. This is just to be on the safe side.
-
-							//If permission checks fail, force the filter to include the currently logged in user_id, assuming that they can always see audit records created by themselves.
-							//This is needed so they can see the audit tab for saved/scheduled reports and at least view when they were sent out.
-							if ( $this->getPermissionObject()->Check( $permission_section, 'view_own' ) OR $this->getPermissionObject()->Check( $permission_section, 'edit_own' ) ) {
-								Debug::Text( 'Forcing filter to currently logged in user due to audit log table permissions: ' . $filter_table_name . ' Permission Section: ' . $permission_section . ' Key: ' . $key, __FILE__, __LINE__, __METHOD__, 10 );
-								$data['filter_data']['user_id'] = $this->getCurrentUserObject()->getId();
-							} else {
-								Debug::Text('Skipping table name due to permissions: '. $filter_table_name .' Permission Section: '. $permission_section .' Key: '. $key, __FILE__, __LINE__, __METHOD__, 10);
-								unset($data['filter_data']['table_name'][$key], $data['filter_data']['table_name_object_id'][$filter_table_name]);
-							}
+							Debug::Text('Skipping table name due to permissions: '. $filter_table_name .' Permission Section: '. $permission_section .' Key: '. $key, __FILE__, __LINE__, __METHOD__, 10);
+							unset($data['filter_data']['table_name'][$key], $data['filter_data']['table_name_object_id'][$filter_table_name]);
 						} else {
 							Debug::Text('Allowing table name due to permissions: '. $filter_table_name, __FILE__, __LINE__, __METHOD__, 10);
 						}
@@ -117,7 +105,6 @@ class APILog extends APIFactory {
 			return $this->returnHandler( TRUE ); //No records returned.
 		}
 
-		//Debug::Arr($data, 'Filter Data: ', __FILE__, __LINE__, __METHOD__, 10);
 		$blf->getAPISearchByCompanyIdAndArrayCriteria( $this->getCurrentCompanyObject()->getId(), $data['filter_data'], $data['filter_items_per_page'], $data['filter_page'], NULL, $data['filter_sort'] );
 		Debug::Text('Record Count: '. $blf->getRecordCount(), __FILE__, __LINE__, __METHOD__, 10);
 		if ( $blf->getRecordCount() > 0 ) {
@@ -125,7 +112,7 @@ class APILog extends APIFactory {
 
 			$this->setPagerObject( $blf );
 
-			$retarr = array();
+			$retarr = array();			
 			foreach( $blf as $b_obj ) {
 				$retarr[] = $b_obj->getObjectAsArray( $data['filter_columns'] );
 
@@ -152,8 +139,6 @@ class APILog extends APIFactory {
 	/**
 	 * Set log data for one or more logs.
 	 * @param array $data log data
-	 * @param bool $validate_only
-	 * @param bool $ignore_warning
 	 * @return array
 	 */
 	function setLog( $data, $validate_only = FALSE, $ignore_warning = TRUE ) {
@@ -167,12 +152,12 @@ class APILog extends APIFactory {
 			Debug::Text('Validating Only!', __FILE__, __LINE__, __METHOD__, 10);
 		}
 
-		list( $data, $total_records ) = $this->convertToMultipleRecords( $data );
+		extract( $this->convertToMultipleRecords($data) );
 		Debug::Text('Received data for: '. $total_records .' Logs', __FILE__, __LINE__, __METHOD__, 10);
 		Debug::Arr($data, 'Data: ', __FILE__, __LINE__, __METHOD__, 10);
 
 		$validator_stats = array('total_records' => $total_records, 'valid_records' => 0 );
-		$validator = $save_result = $key = FALSE;
+		$validator = $save_result = FALSE;
 		if ( is_array($data) AND $total_records > 0 ) {
 			$this->getProgressBarObject()->start( $this->getAMFMessageID(), $total_records );
 

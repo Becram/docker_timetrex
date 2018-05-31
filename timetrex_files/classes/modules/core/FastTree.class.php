@@ -1,7 +1,7 @@
 <?php
 /*********************************************************************************
  * TimeTrex is a Workforce Management program developed by
- * TimeTrex Software Inc. Copyright (C) 2003 - 2018 TimeTrex Software Inc.
+ * TimeTrex Software Inc. Copyright (C) 2003 - 2017 TimeTrex Software Inc.
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Affero General Public License version 3 as published by
@@ -69,10 +69,6 @@ class FastTree {
 
 	var $spacer = 0;
 
-	/**
-	 * FastTree constructor.
-	 * @param null $options
-	 */
 	function __construct( $options = NULL ) {
 		//Debug::Text(' Contruct... ', __FILE__, __LINE__, __METHOD__, 10);
 
@@ -91,18 +87,11 @@ class FastTree {
 		return TRUE;
 	}
 
-	/**
-	 * @return int
-	 */
 	function getTree() {
 		return $this->tree_id;
 	}
 
-	/**
-	 * @param string $id UUID
-	 * @return bool
-	 */
-	function setTree( $id) {
+	function setTree($id) {
 		if ( $id != '') {
 			//Debug::Text(' Setting Tree ID to: '. $id, __FILE__, __LINE__, __METHOD__, 10);
 			$this->tree_id = $id;
@@ -115,9 +104,6 @@ class FastTree {
 		return FALSE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function _setupTree() {
 		//Add the root node if its missing.
 		$node_data = $this->getNode( 0 );
@@ -132,9 +118,6 @@ class FastTree {
 		return FALSE;
 	}
 
-	/**
-	 * @return mixed
-	 */
 	function getRootId() {
 		$ph = array(
 					'tree_id' => $this->tree_id,
@@ -148,10 +131,6 @@ class FastTree {
 
 	}
 
-	/**
-	 * @param string $object_id UUID
-	 * @return bool
-	 */
 	function getNode( $object_id ) {
 		//Debug::Text(' Object ID: '. $object_id, __FILE__, __LINE__, __METHOD__, 10);
 
@@ -185,10 +164,6 @@ class FastTree {
 
 	}
 
-	/**
-	 * @param string $object_id UUID
-	 * @return bool
-	 */
 	function getLevel( $object_id ) {
 		//Debug::Text(' Object ID: '. $object_id, __FILE__, __LINE__, __METHOD__, 10);
 
@@ -199,10 +174,6 @@ class FastTree {
 		return $data['level'];
 	}
 
-	/**
-	 * @param string $object_id UUID
-	 * @return bool
-	 */
 	function getRightId( $object_id ) {
 		//Debug::Text(' Object ID: '. $object_id, __FILE__, __LINE__, __METHOD__, 10);
 
@@ -213,10 +184,6 @@ class FastTree {
 		return $data['right_id'];
 	}
 
-	/**
-	 * @param string $object_id UUID
-	 * @return bool
-	 */
 	function getLeftId( $object_id ) {
 		//Debug::Text(' Object ID: '. $object_id, __FILE__, __LINE__, __METHOD__, 10);
 
@@ -227,10 +194,6 @@ class FastTree {
 		return $data['left_id'];
 	}
 
-	/**
-	 * @param string $object_id UUID
-	 * @return bool
-	 */
 	function getParentId( $object_id ) {
 		//Debug::Text(' Object ID: '. $object_id, __FILE__, __LINE__, __METHOD__, 10);
 
@@ -241,10 +204,6 @@ class FastTree {
 		return $data['parent_id'];
 	}
 
-	/**
-	 * @param bool $object_id
-	 * @return bool
-	 */
 	function rebuildTree( $object_id = FALSE ) {
 		Debug::Text(' Object ID: '. $object_id, __FILE__, __LINE__, __METHOD__, 10);
 
@@ -285,11 +244,6 @@ class FastTree {
 		return TRUE;
 	}
 
-	/**
-	 * @param string $object_id UUID
-	 * @param string $left_id UUID
-	 * @return bool
-	 */
 	function _rebuildTree( $object_id, $left_id ) {
 		Debug::Text(' Object ID: '. $object_id .' - Left: '. $left_id, __FILE__, __LINE__, __METHOD__, 10);
 
@@ -348,10 +302,6 @@ class FastTree {
 		return ( $right_id + 1 );
 	}
 
-	/**
-	 * @param string $object_id UUID
-	 * @return bool
-	 */
 	function getAllParents( $object_id ) {
 		//Debug::Text(' Object ID: '. $object_id, __FILE__, __LINE__, __METHOD__, 10);
 
@@ -380,10 +330,6 @@ class FastTree {
 		return $this->db->GetCol($query, $ph);
 	}
 
-	/**
-	 * @param string $object_id UUID
-	 * @return bool
-	 */
 	function getChild( $object_id ) {
 		if ( !is_numeric($object_id) ) {
 			Debug::Text(' aReturning False...', __FILE__, __LINE__, __METHOD__, 10);
@@ -405,12 +351,6 @@ class FastTree {
 		return $child_id;
 	}
 
-	/**
-	 * @param string $object_id UUID
-	 * @param bool $recurse
-	 * @param int $data_format
-	 * @return array|bool
-	 */
 	function getAllChildren( $object_id = NULL, $recurse = FALSE, $data_format = 0 ) {
 		$original_object_id = $object_id;
 		//Debug::Text(' Object ID: '. $object_id .' Recurse: '. $recurse, __FILE__, __LINE__, __METHOD__, 10);
@@ -498,10 +438,6 @@ class FastTree {
 		return FALSE;
 	}
 
-	/**
-	 * @param string $parent_id UUID
-	 * @return array|bool
-	 */
 	function _getLeftAndRightIds( $parent_id ) {
 		Debug::Text(' getLeftAndRightIds: '. $parent_id, __FILE__, __LINE__, __METHOD__, 10);
 
@@ -554,10 +490,6 @@ class FastTree {
 
 	}
 
-	/**
-	 * @param string $parent_id UUID
-	 * @return bool
-	 */
 	function insertGaps( $parent_id ) {
 		$this->spacer++;
 
@@ -588,12 +520,6 @@ class FastTree {
 
 
 	//MPTT + Gap add function.
-
-	/**
-	 * @param string $object_id UUID
-	 * @param int $parent_id
-	 * @return bool
-	 */
 	function add( $object_id, $parent_id = 0 ) {
 		Debug::Text(' Object ID: '. $object_id .' Parent ID: '. $parent_id, __FILE__, __LINE__, __METHOD__, 10);
 
@@ -696,12 +622,7 @@ class FastTree {
 		return FALSE;
 	}
 
-	/**
-	 * @param $array
-	 * @param null $ph
-	 * @return string
-	 */
-	protected function getListSQL( $array, &$ph = NULL) {
+	protected function getListSQL($array, &$ph = NULL) {
 		//Debug::Arr($ph, 'Place Holder BEFORE:', __FILE__, __LINE__, __METHOD__, 10);
 
 		//Append $array values to end of $ph, return
@@ -739,11 +660,6 @@ class FastTree {
 		return $retval;
 	}
 
-	/**
-	 * @param string $object_id UUID
-	 * @param bool $recurse
-	 * @return bool
-	 */
 	function delete( $object_id, $recurse = FALSE ) {
 		Debug::Text(' Deleting Object: '. $object_id, __FILE__, __LINE__, __METHOD__, 10);
 
@@ -820,11 +736,6 @@ class FastTree {
 		return TRUE;
 	}
 
-	/**
-	 * @param string $object_id UUID
-	 * @param string $parent_id UUID
-	 * @return bool
-	 */
 	function move( $object_id, $parent_id ) {
 		Debug::Text(' Object ID: '. $object_id .' Parent ID: '. $parent_id, __FILE__, __LINE__, __METHOD__, 10);
 
@@ -841,7 +752,7 @@ class FastTree {
 		//Make sure we don't reparent to self.
 		$children_ids = array_keys( (array)$this->getAllChildren($object_id, 'RECURSE' ) );
 
-		if ( $parent_id != TTUUID::getZeroID() AND is_array($children_ids) AND in_array($parent_id, $children_ids) == TRUE ) {
+		if ( $parent_id != 0 AND is_array($children_ids) AND in_array($parent_id, $children_ids) == TRUE ) {
 			Debug::Text(' Objects cant be re-parented to their own children...', __FILE__, __LINE__, __METHOD__, 10);
 			return FALSE;
 		}
@@ -870,11 +781,6 @@ class FastTree {
 
 	}
 
-	/**
-	 * @param string $object_id UUID
-	 * @param string $new_object_id UUID
-	 * @return bool
-	 */
 	function edit( $object_id, $new_object_id ) {
 		Debug::Text(' Object ID: '. $object_id .' New Object ID: '. $new_object_id, __FILE__, __LINE__, __METHOD__, 10);
 
@@ -931,11 +837,6 @@ class FastTree {
 
 	//Flex requires that all index keys start at 0, even in the children section,
 	//So we need to handle that as well so Flex doesn't need any post processing.
-	/**
-	 * @param $nodes
-	 * @param bool $include_root
-	 * @return array
-	 */
 	static function FormatFlexArray( $nodes, $include_root = TRUE ) {
 		Debug::Text(' Formatting Flex Array...', __FILE__, __LINE__, __METHOD__, 10);
 		$nested = array();
@@ -995,13 +896,7 @@ class FastTree {
 		}
 	}
 
-	/**
-	 * @param $nodes
-	 * @param string $type
-	 * @param bool $include_root
-	 * @return array|bool
-	 */
-	static function FormatArray( $nodes, $type = 'HTML', $include_root = FALSE) {
+	static function FormatArray($nodes, $type = 'HTML', $include_root = FALSE) {
 		$type = strtolower($type);
 
 		if ( $include_root === TRUE) {

@@ -1,7 +1,7 @@
 <?php
 /*********************************************************************************
  * TimeTrex is a Workforce Management program developed by
- * TimeTrex Software Inc. Copyright (C) 2003 - 2018 TimeTrex Software Inc.
+ * TimeTrex Software Inc. Copyright (C) 2003 - 2017 TimeTrex Software Inc.
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Affero General Public License version 3 as published by
@@ -40,14 +40,7 @@
  */
 class DepartmentBranchListFactory extends DepartmentBranchFactory implements IteratorAggregate {
 
-	/**
-	 * @param int $limit Limit the number of records returned
-	 * @param int $page Page number of records to return for pagination
-	 * @param array $where Additional SQL WHERE clause in format of array( $column => $filter, ... ). ie: array( 'id' => 1, ... )
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return $this
-	 */
-	function getAll( $limit = NULL, $page = NULL, $where = NULL, $order = NULL) {
+	function getAll($limit = NULL, $page = NULL, $where = NULL, $order = NULL) {
 		$query = '
 					select	*
 					from	'. $this->getTable() .'
@@ -60,19 +53,13 @@ class DepartmentBranchListFactory extends DepartmentBranchFactory implements Ite
 		return $this;
 	}
 
-	/**
-	 * @param string $id UUID
-	 * @param array $where Additional SQL WHERE clause in format of array( $column => $filter, ... ). ie: array( 'id' => 1, ... )
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return bool|DepartmentBranchListFactory
-	 */
-	function getById( $id, $where = NULL, $order = NULL) {
+	function getById($id, $where = NULL, $order = NULL) {
 		if ( $id == '' ) {
 			return FALSE;
 		}
 
 		$ph = array(
-					'id' => TTUUID::castUUID($id),
+					'id' => (int)$id,
 					);
 
 
@@ -89,13 +76,7 @@ class DepartmentBranchListFactory extends DepartmentBranchFactory implements Ite
 		return $this;
 	}
 
-	/**
-	 * @param string $company_id UUID
-	 * @param array $where Additional SQL WHERE clause in format of array( $column => $filter, ... ). ie: array( 'id' => 1, ... )
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return bool|DepartmentBranchListFactory
-	 */
-	function getByCompanyId( $company_id, $where = NULL, $order = NULL) {
+	function getByCompanyId($company_id, $where = NULL, $order = NULL) {
 		if ( $company_id == '' ) {
 			return FALSE;
 		}
@@ -103,7 +84,7 @@ class DepartmentBranchListFactory extends DepartmentBranchFactory implements Ite
 		$df = new DepartmentFactory();
 
 		$ph = array(
-					'company_id' => TTUUID::castUUID($company_id),
+					'company_id' => (int)$company_id,
 					);
 
 		$query = '
@@ -120,19 +101,13 @@ class DepartmentBranchListFactory extends DepartmentBranchFactory implements Ite
 		return $this;
 	}
 
-	/**
-	 * @param string $id UUID
-	 * @param array $where Additional SQL WHERE clause in format of array( $column => $filter, ... ). ie: array( 'id' => 1, ... )
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return bool|DepartmentBranchListFactory
-	 */
-	function getByBranchId( $id, $where = NULL, $order = NULL) {
+	function getByBranchId($id, $where = NULL, $order = NULL) {
 		if ( $id == '' ) {
 			return FALSE;
 		}
 
 		$ph = array(
-					'id' => TTUUID::castUUID($id),
+					'id' => (int)$id,
 					);
 
 
@@ -149,13 +124,7 @@ class DepartmentBranchListFactory extends DepartmentBranchFactory implements Ite
 		return $this;
 	}
 
-	/**
-	 * @param string $id UUID
-	 * @param string $branch_id UUID
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return bool|DepartmentBranchListFactory
-	 */
-	function getByIdAndBranchId( $id, $branch_id, $order = NULL) {
+	function getByIdAndBranchId($id, $branch_id, $order = NULL) {
 		if ( $id == '' ) {
 			return FALSE;
 		}
@@ -165,8 +134,8 @@ class DepartmentBranchListFactory extends DepartmentBranchFactory implements Ite
 		}
 
 		$ph = array(
-					'branch_id' => TTUUID::castUUID($branch_id),
-					'id' => TTUUID::castUUID($id),
+					'branch_id' => (int)$branch_id,
+					'id' => (int)$id,
 					);
 
 		$query = '
@@ -182,19 +151,13 @@ class DepartmentBranchListFactory extends DepartmentBranchFactory implements Ite
 		return $this;
 	}
 
-	/**
-	 * @param string $id UUID
-	 * @param array $where Additional SQL WHERE clause in format of array( $column => $filter, ... ). ie: array( 'id' => 1, ... )
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return bool|DepartmentBranchListFactory
-	 */
-	function getByDepartmentId( $id, $where = NULL, $order = NULL) {
+	function getByDepartmentId($id, $where = NULL, $order = NULL) {
 		if ( $id == '' ) {
 			return FALSE;
 		}
 
 		$ph = array(
-					'id' => TTUUID::castUUID($id),
+					'id' => (int)$id,
 					);
 
 
@@ -211,13 +174,7 @@ class DepartmentBranchListFactory extends DepartmentBranchFactory implements Ite
 		return $this;
 	}
 
-	/**
-	 * @param string $id UUID
-	 * @param string $department_id UUID
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return bool|DepartmentBranchListFactory
-	 */
-	function getByIdAndDepartmentId( $id, $department_id, $order = NULL) {
+	function getByIdAndDepartmentId($id, $department_id, $order = NULL) {
 		if ( $id == '' ) {
 			return FALSE;
 		}
@@ -227,8 +184,8 @@ class DepartmentBranchListFactory extends DepartmentBranchFactory implements Ite
 		}
 
 		$ph = array(
-					'department_id' => TTUUID::castUUID($department_id),
-					'id' => TTUUID::castUUID($id),
+					'department_id' => (int)$department_id,
+					'id' => (int)$id,
 					);
 
 		$query = '
@@ -244,13 +201,7 @@ class DepartmentBranchListFactory extends DepartmentBranchFactory implements Ite
 		return $this;
 	}
 
-	/**
-	 * @param string $department_id UUID
-	 * @param string $branch_id UUID
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return bool|DepartmentBranchListFactory
-	 */
-	function getByDepartmentIdAndBranchId( $department_id, $branch_id, $order = NULL) {
+	function getByDepartmentIdAndBranchId($department_id, $branch_id, $order = NULL) {
 		if ( $department_id == '' ) {
 			return FALSE;
 		}
@@ -260,8 +211,8 @@ class DepartmentBranchListFactory extends DepartmentBranchFactory implements Ite
 		}
 
 		$ph = array(
-					'department_id' => TTUUID::castUUID($department_id),
-					'branch_id' => TTUUID::castUUID($branch_id),
+					'department_id' => (int)$department_id,
+					'branch_id' => (int)$branch_id,
 					);
 
 		$query = '
@@ -283,7 +234,7 @@ class DepartmentBranchListFactory extends DepartmentBranchFactory implements Ite
 		$blf = new BranchListFactory();
 		$blf->getByCompanyId($company_id);
 
-		$branch_list[TTUUID::getZeroID()] = '--';
+		$branch_list[0] = '--';
 
 		foreach ($blf as $branch) {
 			$branch_list[$branch->getID()] = $branch->getName();

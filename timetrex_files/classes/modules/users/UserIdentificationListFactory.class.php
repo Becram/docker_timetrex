@@ -1,7 +1,7 @@
 <?php
 /*********************************************************************************
  * TimeTrex is a Workforce Management program developed by
- * TimeTrex Software Inc. Copyright (C) 2003 - 2018 TimeTrex Software Inc.
+ * TimeTrex Software Inc. Copyright (C) 2003 - 2017 TimeTrex Software Inc.
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Affero General Public License version 3 as published by
@@ -40,14 +40,7 @@
  */
 class UserIdentificationListFactory extends UserIdentificationFactory implements IteratorAggregate {
 
-	/**
-	 * @param int $limit Limit the number of records returned
-	 * @param int $page Page number of records to return for pagination
-	 * @param array $where Additional SQL WHERE clause in format of array( $column => $filter, ... ). ie: array( 'id' => 1, ... )
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return $this
-	 */
-	function getAll( $limit = NULL, $page = NULL, $where = NULL, $order = NULL) {
+	function getAll($limit = NULL, $page = NULL, $where = NULL, $order = NULL) {
 		$query = '
 					select	*
 					from	'. $this->getTable() .'
@@ -60,13 +53,7 @@ class UserIdentificationListFactory extends UserIdentificationFactory implements
 		return $this;
 	}
 
-	/**
-	 * @param string $id UUID
-	 * @param array $where Additional SQL WHERE clause in format of array( $column => $filter, ... ). ie: array( 'id' => 1, ... )
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return bool|UserIdentificationListFactory
-	 */
-	function getById( $id, $where = NULL, $order = NULL) {
+	function getById($id, $where = NULL, $order = NULL) {
 		if ( $id == '') {
 			return FALSE;
 		}
@@ -74,7 +61,7 @@ class UserIdentificationListFactory extends UserIdentificationFactory implements
 		$this->rs = $this->getCache($id);
 		if ( $this->rs === FALSE ) {
 			$ph = array(
-						'id' => TTUUID::castUUID($id),
+						'id' => (int)$id,
 						);
 
 			$query = '
@@ -93,13 +80,7 @@ class UserIdentificationListFactory extends UserIdentificationFactory implements
 		return $this;
 	}
 
-	/**
-	 * @param int $type_id
-	 * @param $value
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return bool|UserIdentificationListFactory
-	 */
-	function getByTypeIdAndValue( $type_id, $value, $order = NULL) {
+	function getByTypeIdAndValue($type_id, $value, $order = NULL) {
 		if ( $type_id == '') {
 			return FALSE;
 		}
@@ -126,15 +107,7 @@ class UserIdentificationListFactory extends UserIdentificationFactory implements
 		return $this;
 	}
 
-	/**
-	 * @param string $id UUID
-	 * @param int $limit Limit the number of records returned
-	 * @param int $page Page number of records to return for pagination
-	 * @param array $where Additional SQL WHERE clause in format of array( $column => $filter, ... ). ie: array( 'id' => 1, ... )
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return bool|UserIdentificationListFactory
-	 */
-	function getByCompanyId( $id, $limit = NULL, $page = NULL, $where = NULL, $order = NULL) {
+	function getByCompanyId($id, $limit = NULL, $page = NULL, $where = NULL, $order = NULL) {
 		if ( $id == '') {
 			return FALSE;
 		}
@@ -142,7 +115,7 @@ class UserIdentificationListFactory extends UserIdentificationFactory implements
 		$uf = new UserFactory();
 
 		$ph = array(
-					'id' => TTUUID::castUUID($id),
+					'id' => (int)$id,
 					);
 
 
@@ -161,13 +134,7 @@ class UserIdentificationListFactory extends UserIdentificationFactory implements
 		return $this;
 	}
 
-	/**
-	 * @param string $id UUID
-	 * @param string $company_id UUID
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return bool|UserIdentificationListFactory
-	 */
-	function getByIdAndCompanyId( $id, $company_id, $order = NULL) {
+	function getByIdAndCompanyId($id, $company_id, $order = NULL) {
 		if ( $id == '') {
 			return FALSE;
 		}
@@ -179,8 +146,8 @@ class UserIdentificationListFactory extends UserIdentificationFactory implements
 		$uf = new UserFactory();
 
 		$ph = array(
-					'company_id' => TTUUID::castUUID($company_id),
-					'id' => TTUUID::castUUID($id),
+					'company_id' => (int)$company_id,
+					'id' => (int)$id,
 					);
 
 		$query = '
@@ -198,13 +165,7 @@ class UserIdentificationListFactory extends UserIdentificationFactory implements
 		return $this;
 	}
 
-	/**
-	 * @param string $company_id UUID
-	 * @param int $type_id
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return bool|UserIdentificationListFactory
-	 */
-	function getByCompanyIdAndTypeId( $company_id, $type_id, $order = NULL) {
+	function getByCompanyIdAndTypeId($company_id, $type_id, $order = NULL) {
 		if ( $company_id == '') {
 			return FALSE;
 		}
@@ -223,7 +184,7 @@ class UserIdentificationListFactory extends UserIdentificationFactory implements
 		$uf = new UserFactory();
 
 		$ph = array(
-					'company_id' => TTUUID::castUUID($company_id),
+					'company_id' => (int)$company_id,
 					);
 
 		$query = '
@@ -242,15 +203,7 @@ class UserIdentificationListFactory extends UserIdentificationFactory implements
 		return $this;
 	}
 
-	/**
-	 * @param string $company_id UUID
-	 * @param int $type_id
-	 * @param int $date EPOCH
-	 * @param array $valid_user_ids
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return bool|UserIdentificationListFactory
-	 */
-	function getByCompanyIdAndTypeIdAndDateAndValidUserIDs( $company_id, $type_id, $date = NULL, $valid_user_ids = array(), $order = NULL) {
+	function getByCompanyIdAndTypeIdAndDateAndValidUserIDs($company_id, $type_id, $date = NULL, $valid_user_ids = array(), $order = NULL) {
 		if ( $company_id == '') {
 			return FALSE;
 		}
@@ -273,7 +226,7 @@ class UserIdentificationListFactory extends UserIdentificationFactory implements
 		$uf = new UserFactory();
 
 		$ph = array(
-					'company_id' => TTUUID::castUUID($company_id),
+					'company_id' => (int)$company_id,
 					);
 
 		//If the user record is modified, we have to consider the identification record to be modified as well,
@@ -307,7 +260,7 @@ class UserIdentificationListFactory extends UserIdentificationFactory implements
 				if ( isset($date) AND $date > 0 ) {
 					$query .= ' OR ';
 				}
-				$query	.=	' a.user_id in ('. $this->getListSQL( $valid_user_ids, $ph, 'uuid') .') ';
+				$query	.=	' a.user_id in ('. $this->getListSQL( $valid_user_ids, $ph, 'int' ) .') ';
 			}
 
 			$query .= ' ) ';
@@ -322,14 +275,7 @@ class UserIdentificationListFactory extends UserIdentificationFactory implements
 		return $this;
 	}
 
-	/**
-	 * @param string $company_id UUID
-	 * @param int $type_id
-	 * @param $value
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return bool|UserIdentificationListFactory
-	 */
-	function getByCompanyIdAndTypeIdAndValue( $company_id, $type_id, $value, $order = NULL) {
+	function getByCompanyIdAndTypeIdAndValue($company_id, $type_id, $value, $order = NULL) {
 		if ( $company_id == '') {
 			return FALSE;
 		}
@@ -345,7 +291,7 @@ class UserIdentificationListFactory extends UserIdentificationFactory implements
 		$uf = new UserFactory();
 
 		$ph = array(
-					'company_id' => TTUUID::castUUID($company_id),
+					'company_id' => (int)$company_id,
 					'type_id' => (int)$type_id,
 					'value' => $value,
 					);
@@ -366,18 +312,13 @@ class UserIdentificationListFactory extends UserIdentificationFactory implements
 		return $this;
 	}
 
-	/**
-	 * @param string $user_id UUID
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return bool|UserIdentificationListFactory
-	 */
-	function getByUserId( $user_id, $order = NULL) {
+	function getByUserId($user_id, $order = NULL) {
 		if ( $user_id == '') {
 			return FALSE;
 		}
 
 		$ph = array(
-					'user_id' => TTUUID::castUUID($user_id),
+					'user_id' => (int)$user_id,
 					);
 
 		$query = '
@@ -392,13 +333,7 @@ class UserIdentificationListFactory extends UserIdentificationFactory implements
 		return $this;
 	}
 
-	/**
-	 * @param string $user_id UUID
-	 * @param int $type_id
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return bool|UserIdentificationListFactory
-	 */
-	function getByUserIdAndTypeId( $user_id, $type_id, $order = NULL) {
+	function getByUserIdAndTypeId($user_id, $type_id, $order = NULL) {
 		if ( $user_id == '') {
 			return FALSE;
 		}
@@ -415,7 +350,7 @@ class UserIdentificationListFactory extends UserIdentificationFactory implements
 		}
 
 		$ph = array(
-					'user_id' => TTUUID::castUUID($user_id),
+					'user_id' => (int)$user_id,
 					);
 
 		$query = '
@@ -431,14 +366,7 @@ class UserIdentificationListFactory extends UserIdentificationFactory implements
 		return $this;
 	}
 
-	/**
-	 * @param string $user_id UUID
-	 * @param int $type_id
-	 * @param $number
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return bool|UserIdentificationListFactory
-	 */
-	function getByUserIdAndTypeIdAndNumber( $user_id, $type_id, $number, $order = NULL) {
+	function getByUserIdAndTypeIdAndNumber($user_id, $type_id, $number, $order = NULL) {
 		if ( $user_id == '') {
 			return FALSE;
 		}
@@ -459,7 +387,7 @@ class UserIdentificationListFactory extends UserIdentificationFactory implements
 		}
 
 		$ph = array(
-					'user_id' => TTUUID::castUUID($user_id),
+					'user_id' => (int)$user_id,
 					'type_id' => (int)$type_id,
 					'number' => $number,
 					);
@@ -478,15 +406,7 @@ class UserIdentificationListFactory extends UserIdentificationFactory implements
 		return $this;
 	}
 
-	/**
-	 * @param string $company_id UUID
-	 * @param string $user_id UUID
-	 * @param int $type_id
-	 * @param $number
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return bool|UserIdentificationListFactory
-	 */
-	function getByCompanyIdAndUserIdAndTypeIdAndNumber( $company_id, $user_id, $type_id, $number, $order = NULL) {
+	function getByCompanyIdAndUserIdAndTypeIdAndNumber($company_id, $user_id, $type_id, $number, $order = NULL) {
 		if ( $company_id == '') {
 			return FALSE;
 		}
@@ -513,8 +433,8 @@ class UserIdentificationListFactory extends UserIdentificationFactory implements
 		$uf = new UserFactory();
 
 		$ph = array(
-					'company_id' => TTUUID::castUUID($company_id),
-					'user_id' => TTUUID::castUUID($user_id),
+					'company_id' => (int)$company_id,
+					'user_id' => (int)$user_id,
 					'type_id' => (int)$type_id,
 					'number' => $number,
 					);
@@ -536,14 +456,7 @@ class UserIdentificationListFactory extends UserIdentificationFactory implements
 		return $this;
 	}
 
-	/**
-	 * @param string $user_id UUID
-	 * @param int $type_id
-	 * @param $value
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return bool|UserIdentificationListFactory
-	 */
-	function getByUserIdAndTypeIdAndValue( $user_id, $type_id, $value, $order = NULL) {
+	function getByUserIdAndTypeIdAndValue($user_id, $type_id, $value, $order = NULL) {
 		if ( $user_id == '') {
 			return FALSE;
 		}
@@ -557,7 +470,7 @@ class UserIdentificationListFactory extends UserIdentificationFactory implements
 		}
 
 		$ph = array(
-					'user_id' => TTUUID::castUUID($user_id),
+					'user_id' => (int)$user_id,
 					'type_id' => (int)$type_id,
 					'value' => $value,
 					);
@@ -576,14 +489,7 @@ class UserIdentificationListFactory extends UserIdentificationFactory implements
 		return $this;
 	}
 
-	/**
-	 * @param string $user_id UUID
-	 * @param int $date EPOCH
-	 * @param array $where Additional SQL WHERE clause in format of array( $column => $filter, ... ). ie: array( 'id' => 1, ... )
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return bool
-	 */
-	function getIsModifiedByUserIdAndDate( $user_id, $date, $where = NULL, $order = NULL) {
+	function getIsModifiedByUserIdAndDate($user_id, $date, $where = NULL, $order = NULL) {
 		if ( $user_id == '') {
 			return FALSE;
 		}
@@ -593,7 +499,7 @@ class UserIdentificationListFactory extends UserIdentificationFactory implements
 		}
 
 		$ph = array(
-					'user_id' => TTUUID::castUUID($user_id),
+					'user_id' => (int)$user_id,
 					'created_date' => $date,
 					'updated_date' => $date,
 					);
@@ -617,14 +523,7 @@ class UserIdentificationListFactory extends UserIdentificationFactory implements
 		return FALSE;
 	}
 
-	/**
-	 * @param string $company_id UUID
-	 * @param int $date EPOCH
-	 * @param array $where Additional SQL WHERE clause in format of array( $column => $filter, ... ). ie: array( 'id' => 1, ... )
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return bool
-	 */
-	function getIsModifiedByCompanyIdAndDate( $company_id, $date, $where = NULL, $order = NULL) {
+	function getIsModifiedByCompanyIdAndDate($company_id, $date, $where = NULL, $order = NULL) {
 		if ( $company_id == '') {
 			return FALSE;
 		}
@@ -636,7 +535,7 @@ class UserIdentificationListFactory extends UserIdentificationFactory implements
 		$uf = new UserFactory();
 
 		$ph = array(
-					'company_id' => TTUUID::castUUID($company_id),
+					'company_id' => (int)$company_id,
 					'created_date' => $date,
 					'updated_date' => $date,
 					'user_created_date' => $date,
@@ -668,21 +567,12 @@ class UserIdentificationListFactory extends UserIdentificationFactory implements
 		return FALSE;
 	}
 
-	/**
-	 * @param string $user_id UUID
-	 * @param string $company_id UUID
-	 * @param int $limit Limit the number of records returned
-	 * @param int $page Page number of records to return for pagination
-	 * @param array $where Additional SQL WHERE clause in format of array( $column => $filter, ... ). ie: array( 'id' => 1, ... )
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return bool|UserIdentificationListFactory
-	 */
-	function getByUserIdAndCompanyId( $user_id, $company_id, $limit = NULL, $page = NULL, $where = NULL, $order = NULL) {
-		if ( empty($user_id) OR $user_id == TTUUID::getZeroID() ) {
+	function getByUserIdAndCompanyId($user_id, $company_id, $limit = NULL, $page = NULL, $where = NULL, $order = NULL) {
+		if ( empty($user_id) ) {
 			return FALSE;
 		}
 
-		if ( empty($company_id) OR $company_id == TTUUID::getZeroID() ) {
+		if ( empty($company_id) ) {
 			return FALSE;
 		}
 
@@ -695,8 +585,8 @@ class UserIdentificationListFactory extends UserIdentificationFactory implements
 		$uf = new UserFactory();
 
 		$ph = array(
-					'company_id' => TTUUID::castUUID($company_id),
-					'user_id' => TTUUID::castUUID($user_id),
+					'company_id' => (int)$company_id,
+					'user_id' => (int)$user_id,
 					);
 
 		$query = '

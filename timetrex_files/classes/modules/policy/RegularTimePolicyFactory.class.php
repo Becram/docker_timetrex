@@ -1,7 +1,7 @@
 <?php
 /*********************************************************************************
  * TimeTrex is a Workforce Management program developed by
- * TimeTrex Software Inc. Copyright (C) 2003 - 2018 TimeTrex Software Inc.
+ * TimeTrex Software Inc. Copyright (C) 2003 - 2017 TimeTrex Software Inc.
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Affero General Public License version 3 as published by
@@ -46,11 +46,6 @@ class RegularTimePolicyFactory extends Factory {
 	protected $contributing_shift_policy_obj = NULL;
 	protected $pay_code_obj = NULL;
 
-	/**
-	 * @param $name
-	 * @param null $parent
-	 * @return array|null
-	 */
 	function _getFactoryOptions( $name, $parent = NULL ) {
 		$retval = NULL;
 		switch( $name ) {
@@ -137,10 +132,6 @@ class RegularTimePolicyFactory extends Factory {
 		return $retval;
 	}
 
-	/**
-	 * @param $data
-	 * @return array
-	 */
 	function _getVariableToFunctionMap( $data ) {
 		$variable_function_map = array(
 										'id' => 'ID',
@@ -187,56 +178,52 @@ class RegularTimePolicyFactory extends Factory {
 		return $variable_function_map;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function getCompanyObject() {
 		return $this->getGenericObject( 'CompanyListFactory', $this->getCompany(), 'company_obj' );
 	}
 
-	/**
-	 * @return bool
-	 */
 	function getContributingShiftPolicyObject() {
 		return $this->getGenericObject( 'ContributingShiftPolicyListFactory', $this->getContributingShiftPolicy(), 'contributing_shift_policy_obj' );
 	}
 
-	/**
-	 * @return bool
-	 */
 	function getPayCodeObject() {
 		return $this->getGenericObject( 'PayCodeListFactory', $this->getPayCode(), 'pay_code_obj' );
 	}
 
-	/**
-	 * @return bool|mixed
-	 */
 	function getCompany() {
-		return $this->getGenericDataValue( 'company_id' );
+		if ( isset($this->data['company_id']) ) {
+			return (int)$this->data['company_id'];
+		}
+
+		return FALSE;
+	}
+	function setCompany($id) {
+		$id = trim($id);
+
+		Debug::Text('Company ID: '. $id, __FILE__, __LINE__, __METHOD__, 10);
+		$clf = TTnew( 'CompanyListFactory' );
+
+		if ( $this->Validator->isResultSetWithRows(	'company',
+													$clf->getByID($id),
+													TTi18n::gettext('Company is invalid')
+													) ) {
+
+			$this->data['company_id'] = $id;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @param string $value UUID
-	 * @return bool
-	 */
-	function setCompany( $value) {
-		$value = TTUUID::castUUID( $value );
-		Debug::Text('Company ID: '. $value, __FILE__, __LINE__, __METHOD__, 10);
-		return $this->setGenericDataValue( 'company_id', $value );
-	}
-
-	/**
-	 * @param $name
-	 * @return bool
-	 */
-	function isUniqueName( $name) {
+	function isUniqueName($name) {
 		$name = trim($name);
 		if ( $name == '' ) {
 			return FALSE;
 		}
 
 		$ph = array(
-					'company_id' => TTUUID::castUUID($this->getCompany()),
+					'company_id' => (int)$this->getCompany(),
 					'name' => TTi18n::strtolower($name),
 					);
 
@@ -254,103 +241,166 @@ class RegularTimePolicyFactory extends Factory {
 
 		return FALSE;
 	}
-
-	/**
-	 * @return bool|mixed
-	 */
 	function getName() {
-		return $this->getGenericDataValue( 'name' );
+		if ( isset($this->data['name']) ) {
+			return $this->data['name'];
+		}
+
+		return FALSE;
+	}
+	function setName($name) {
+		$name = trim($name);
+		if (	$this->Validator->isLength(	'name',
+											$name,
+											TTi18n::gettext('Name is too short or too long'),
+											2, 50)
+				AND
+				$this->Validator->isTrue(	'name',
+											$this->isUniqueName($name),
+											TTi18n::gettext('Name is already in use') )
+						) {
+
+			$this->data['name'] = $name;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setName( $value) {
-		$value = trim($value);
-		return $this->setGenericDataValue( 'name', $value );
-	}
-
-	/**
-	 * @return bool|mixed
-	 */
 	function getDescription() {
-		return $this->getGenericDataValue( 'description' );
+		if ( isset($this->data['description']) ) {
+			return $this->data['description'];
+		}
+
+		return FALSE;
+	}
+	function setDescription($description) {
+		$description = trim($description);
+
+		if (	$description == ''
+				OR $this->Validator->isLength(	'description',
+												$description,
+												TTi18n::gettext('Description is invalid'),
+												1, 250) ) {
+
+			$this->data['description'] = $description;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setDescription( $value) {
-		$value = trim($value);
-		return $this->setGenericDataValue( 'description', $value );
-	}
-
-	/**
-	 * @return bool|mixed
-	 */
 	function getContributingShiftPolicy() {
-		return $this->getGenericDataValue( 'contributing_shift_policy_id' );
+		if ( isset($this->data['contributing_shift_policy_id']) ) {
+			return (int)$this->data['contributing_shift_policy_id'];
+		}
+
+		return FALSE;
+	}
+	function setContributingShiftPolicy($id) {
+		$id = trim($id);
+
+		$csplf = TTnew( 'ContributingShiftPolicyListFactory' );
+
+		if (
+				$this->Validator->isResultSetWithRows(	'contributing_shift_policy_id',
+													$csplf->getByID($id),
+													TTi18n::gettext('Contributing Shift Policy is invalid')
+													) ) {
+
+			$this->data['contributing_shift_policy_id'] = $id;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @param string $value UUID
-	 * @return bool
-	 */
-	function setContributingShiftPolicy( $value) {
-		$value = TTUUID::castUUID( $value );
-		return $this->setGenericDataValue( 'contributing_shift_policy_id', $value );
-	}
-
-	/**
-	 * @return bool|mixed
-	 */
 	function getPayCode() {
-		return $this->getGenericDataValue( 'pay_code_id' );
+		if ( isset($this->data['pay_code_id']) ) {
+			return (int)$this->data['pay_code_id'];
+		}
+
+		return FALSE;
+	}
+	function setPayCode($id) {
+		$id = trim($id);
+
+		if ( $id == '' OR empty($id) ) {
+			$id = 0;
+		}
+
+		$pclf = TTnew( 'PayCodeListFactory' );
+
+		if (	$id == 0
+				OR
+				$this->Validator->isResultSetWithRows(	'pay_code_id',
+														$pclf->getById($id),
+														TTi18n::gettext('Invalid Pay Code')
+														) ) {
+			$this->data['pay_code_id'] = $id;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @param string $value UUID
-	 * @return bool
-	 */
-	function setPayCode( $value) {
-		$value = TTUUID::castUUID( $value );
-		return $this->setGenericDataValue( 'pay_code_id', $value );
-	}
-
-	/**
-	 * @return bool|mixed
-	 */
 	function getPayFormulaPolicy() {
-		return $this->getGenericDataValue( 'pay_formula_policy_id' );
-	}
+		if ( isset($this->data['pay_formula_policy_id']) ) {
+			return (int)$this->data['pay_formula_policy_id'];
+		}
 
-	/**
-	 * @param string $value UUID
-	 * @return bool
-	 */
-	function setPayFormulaPolicy( $value) {
-		$value = TTUUID::castUUID( $value );
-		return $this->setGenericDataValue( 'pay_formula_policy_id', $value );
+		return FALSE;
+	}
+	function setPayFormulaPolicy($id) {
+		$id = trim($id);
+
+		if ( $id == '' OR empty($id) ) {
+			$id = 0;
+		}
+
+		$pfplf = TTnew( 'PayFormulaPolicyListFactory' );
+
+		if ( $id == 0
+				OR
+				$this->Validator->isResultSetWithRows(	'pay_formula_policy_id',
+													$pfplf->getByID($id),
+													TTi18n::gettext('Pay Formula Policy is invalid')
+													) ) {
+
+			$this->data['pay_formula_policy_id'] = $id;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
 	//Last regular time policy gets all remaining worked time.
-
-	/**
-	 * @return bool|mixed
-	 */
 	function getCalculationOrder() {
-		return $this->getGenericDataValue( 'calculation_order' );
-	}
+		if ( isset($this->data['calculation_order']) ) {
+			return $this->data['calculation_order'];
+		}
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setCalculationOrder( $value) {
+		return FALSE;
+	}
+	function setCalculationOrder($value) {
 		$value = trim($value);
-		return $this->setGenericDataValue( 'calculation_order', $value );
+
+		if ( $this->Validator->isNumeric(		'calculation_order',
+												$value,
+												TTi18n::gettext('Invalid Calculation Order')
+										) ) {
+
+			$this->data['calculation_order'] = $value;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
 	/*
@@ -358,393 +408,266 @@ class RegularTimePolicyFactory extends Factory {
 	Branch/Department/Job/Task filter functions
 
 	*/
-	/**
-	 * @return bool|int
-	 */
 	function getBranchSelectionType() {
-		return $this->getGenericDataValue( 'branch_selection_type_id' );
-	}
+		if ( isset($this->data['branch_selection_type_id']) ) {
+			return (int)$this->data['branch_selection_type_id'];
+		}
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setBranchSelectionType( $value) {
+		return FALSE;
+	}
+	function setBranchSelectionType($value) {
 		$value = (int)trim($value);
-		return $this->setGenericDataValue( 'branch_selection_type_id', $value );
+
+		if ( $value == 0
+				OR $this->Validator->inArrayKey(	'branch_selection_type',
+											$value,
+											TTi18n::gettext('Incorrect Branch Selection Type'),
+											$this->getOptions('branch_selection_type')) ) {
+
+			$this->data['branch_selection_type_id'] = $value;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function getExcludeDefaultBranch() {
-		return $this->fromBool( $this->getGenericDataValue( 'exclude_default_branch' ) );
+		if ( isset($this->data['exclude_default_branch']) ) {
+			return $this->fromBool( $this->data['exclude_default_branch'] );
+		}
+
+		return FALSE;
+	}
+	function setExcludeDefaultBranch($bool) {
+		$this->data['exclude_default_branch'] = $this->toBool($bool);
+
+		return TRUE;
 	}
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setExcludeDefaultBranch( $value) {
-		return $this->setGenericDataValue( 'exclude_default_branch', $this->toBool($value) );
-	}
-
-	/**
-	 * @return array|bool
-	 */
 	function getBranch() {
 		return CompanyGenericMapListFactory::getArrayByCompanyIDAndObjectTypeIDAndObjectID( $this->getCompany(), 581, $this->getID() );
 	}
-
-	/**
-	 * @param string $ids UUID
-	 * @return bool
-	 */
-	function setBranch( $ids) {
+	function setBranch($ids) {
 		Debug::text('Setting Branch IDs : ', __FILE__, __LINE__, __METHOD__, 10);
 		return CompanyGenericMapFactory::setMapIDs( $this->getCompany(), 581, $this->getID(), (array)$ids );
 	}
 
-	/**
-	 * @return bool|int
-	 */
 	function getDepartmentSelectionType() {
-		return $this->getGenericDataValue( 'department_selection_type_id' );
-	}
+		if ( isset($this->data['department_selection_type_id']) ) {
+			return (int)$this->data['department_selection_type_id'];
+		}
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setDepartmentSelectionType( $value) {
+		return FALSE;
+	}
+	function setDepartmentSelectionType($value) {
 		$value = (int)trim($value);
-		return $this->setGenericDataValue( 'department_selection_type_id', $value );
+
+		if ( $value == 0
+				OR $this->Validator->inArrayKey(	'department_selection_type',
+											$value,
+											TTi18n::gettext('Incorrect Department Selection Type'),
+											$this->getOptions('department_selection_type')) ) {
+
+			$this->data['department_selection_type_id'] = $value;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function getExcludeDefaultDepartment() {
-		return $this->fromBool( $this->getGenericDataValue( 'exclude_default_department' ) );
+		if ( isset($this->data['exclude_default_department']) ) {
+			return $this->fromBool( $this->data['exclude_default_department'] );
+		}
+
+		return FALSE;
+	}
+	function setExcludeDefaultDepartment($bool) {
+		$this->data['exclude_default_department'] = $this->toBool($bool);
+
+		return TRUE;
 	}
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setExcludeDefaultDepartment( $value) {
-		return $this->setGenericDataValue( 'exclude_default_department', $this->toBool($value) );
-	}
-
-	/**
-	 * @return array|bool
-	 */
 	function getDepartment() {
 		return CompanyGenericMapListFactory::getArrayByCompanyIDAndObjectTypeIDAndObjectID( $this->getCompany(), 582, $this->getID() );
 	}
-
-	/**
-	 * @param string $ids UUID
-	 * @return bool
-	 */
-	function setDepartment( $ids) {
+	function setDepartment($ids) {
 		Debug::text('Setting Department IDs : ', __FILE__, __LINE__, __METHOD__, 10);
 		return CompanyGenericMapFactory::setMapIDs( $this->getCompany(), 582, $this->getID(), (array)$ids );
 	}
 
-	/**
-	 * @return bool|int
-	 */
 	function getJobGroupSelectionType() {
-		return $this->getGenericDataValue( 'job_group_selection_type_id' );
-	}
+		if ( isset($this->data['job_group_selection_type_id']) ) {
+			return (int)$this->data['job_group_selection_type_id'];
+		}
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setJobGroupSelectionType( $value) {
+		return FALSE;
+	}
+	function setJobGroupSelectionType($value) {
 		$value = (int)trim($value);
-		return $this->setGenericDataValue( 'job_group_selection_type_id', $value );
+
+		if ( $value == 0
+				OR $this->Validator->inArrayKey(	'job_group_selection_type',
+											$value,
+											TTi18n::gettext('Incorrect Job Group Selection Type'),
+											$this->getOptions('job_group_selection_type')) ) {
+
+			$this->data['job_group_selection_type_id'] = $value;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @return array|bool
-	 */
 	function getJobGroup() {
 		return CompanyGenericMapListFactory::getArrayByCompanyIDAndObjectTypeIDAndObjectID( $this->getCompany(), 583, $this->getID() );
 	}
-
-	/**
-	 * @param string $ids UUID
-	 * @return bool
-	 */
-	function setJobGroup( $ids) {
+	function setJobGroup($ids) {
 		Debug::text('Setting Job Group IDs : ', __FILE__, __LINE__, __METHOD__, 10);
 		return CompanyGenericMapFactory::setMapIDs( $this->getCompany(), 583, $this->getID(), (array)$ids );
 	}
 
-	/**
-	 * @return bool|int
-	 */
 	function getJobSelectionType() {
-		return $this->getGenericDataValue( 'job_selection_type_id' );
-	}
+		if ( isset($this->data['job_selection_type_id']) ) {
+			return (int)$this->data['job_selection_type_id'];
+		}
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setJobSelectionType( $value) {
+		return FALSE;
+	}
+	function setJobSelectionType($value) {
 		$value = (int)trim($value);
-		return $this->setGenericDataValue( 'job_selection_type_id', $value );
+
+		if ( $value == 0
+				OR $this->Validator->inArrayKey(	'job_selection_type',
+											$value,
+											TTi18n::gettext('Incorrect Job Selection Type'),
+											$this->getOptions('job_selection_type')) ) {
+
+			$this->data['job_selection_type_id'] = $value;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @return array|bool
-	 */
 	function getJob() {
 		return CompanyGenericMapListFactory::getArrayByCompanyIDAndObjectTypeIDAndObjectID( $this->getCompany(), 584, $this->getID() );
 	}
-
-	/**
-	 * @param string $ids UUID
-	 * @return bool
-	 */
-	function setJob( $ids) {
+	function setJob($ids) {
 		Debug::text('Setting Job IDs : ', __FILE__, __LINE__, __METHOD__, 10);
 		return CompanyGenericMapFactory::setMapIDs( $this->getCompany(), 584, $this->getID(), (array)$ids );
 	}
 
-	/**
-	 * @return bool
-	 */
 	function getExcludeDefaultJob() {
-		return $this->fromBool( $this->getGenericDataValue( 'exclude_default_job' ) );
+		if ( isset($this->data['exclude_default_job']) ) {
+			return $this->fromBool( $this->data['exclude_default_job'] );
+		}
+
+		return FALSE;
+	}
+	function setExcludeDefaultJob($bool) {
+		$this->data['exclude_default_job'] = $this->toBool($bool);
+
+		return TRUE;
 	}
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setExcludeDefaultJob( $value) {
-		return $this->setGenericDataValue( 'exclude_default_job', $this->toBool($value) );
-	}
-
-	/**
-	 * @return bool|int
-	 */
 	function getJobItemGroupSelectionType() {
-		return $this->getGenericDataValue( 'job_item_group_selection_type_id' );
-	}
+		if ( isset($this->data['job_item_group_selection_type_id']) ) {
+			return (int)$this->data['job_item_group_selection_type_id'];
+		}
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setJobItemGroupSelectionType( $value) {
+		return FALSE;
+	}
+	function setJobItemGroupSelectionType($value) {
 		$value = (int)trim($value);
-		return $this->setGenericDataValue( 'job_item_group_selection_type_id', $value );
+
+		if ( $value == 0
+				OR $this->Validator->inArrayKey(	'job_item_group_selection_type',
+											$value,
+											TTi18n::gettext('Incorrect Task Group Selection Type'),
+											$this->getOptions('job_item_group_selection_type')) ) {
+
+			$this->data['job_item_group_selection_type_id'] = $value;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @return array|bool
-	 */
 	function getJobItemGroup() {
 		return CompanyGenericMapListFactory::getArrayByCompanyIDAndObjectTypeIDAndObjectID( $this->getCompany(), 585, $this->getID() );
 	}
-
-	/**
-	 * @param string $ids UUID
-	 * @return bool
-	 */
-	function setJobItemGroup( $ids) {
+	function setJobItemGroup($ids) {
 		Debug::text('Setting Task Group IDs : ', __FILE__, __LINE__, __METHOD__, 10);
 		return CompanyGenericMapFactory::setMapIDs( $this->getCompany(), 585, $this->getID(), (array)$ids );
 	}
 
-	/**
-	 * @return bool|int
-	 */
 	function getJobItemSelectionType() {
-		return $this->getGenericDataValue( 'job_item_selection_type_id' );
-	}
+		if ( isset($this->data['job_item_selection_type_id']) ) {
+			return (int)$this->data['job_item_selection_type_id'];
+		}
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setJobItemSelectionType( $value) {
+		return FALSE;
+	}
+	function setJobItemSelectionType($value) {
 		$value = (int)trim($value);
-		return $this->setGenericDataValue( 'job_item_selection_type_id', $value );
+
+		if ( $value == 0
+				OR $this->Validator->inArrayKey(	'job_item_selection_type',
+											$value,
+											TTi18n::gettext('Incorrect Task Selection Type'),
+											$this->getOptions('job_item_selection_type')) ) {
+
+			$this->data['job_item_selection_type_id'] = $value;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @return array|bool
-	 */
 	function getJobItem() {
 		return CompanyGenericMapListFactory::getArrayByCompanyIDAndObjectTypeIDAndObjectID( $this->getCompany(), 586, $this->getID() );
 	}
-
-	/**
-	 * @param string $ids UUID
-	 * @return bool
-	 */
-	function setJobItem( $ids) {
+	function setJobItem($ids) {
 		Debug::text('Setting Task IDs : ', __FILE__, __LINE__, __METHOD__, 10);
 		return CompanyGenericMapFactory::setMapIDs( $this->getCompany(), 586, $this->getID(), (array)$ids );
 	}
 
-	/**
-	 * @return bool
-	 */
 	function getExcludeDefaultJobItem() {
-		return $this->fromBool( $this->getGenericDataValue( 'exclude_default_job_item' ) );
+		if ( isset($this->data['exclude_default_job_item']) ) {
+			return $this->fromBool( $this->data['exclude_default_job_item'] );
+		}
+
+		return FALSE;
+	}
+	function setExcludeDefaultJobItem($bool) {
+		$this->data['exclude_default_job_item'] = $this->toBool($bool);
+
+		return TRUE;
 	}
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setExcludeDefaultJobItem( $value) {
-		return $this->setGenericDataValue( 'exclude_default_job_item', $this->toBool($value) );
-	}
-
-	/**
-	 * @param bool $ignore_warning
-	 * @return bool
-	 */
 	function Validate( $ignore_warning = TRUE ) {
-		//
-		// BELOW: Validation code moved from set*() functions.
-		//
-		// Company
-		$clf = TTnew( 'CompanyListFactory' );
-		$this->Validator->isResultSetWithRows(	'company',
-													$clf->getByID($this->getCompany()),
-													TTi18n::gettext('Company is invalid')
-												);
-		// Name
-		if ( $this->Validator->getValidateOnly() == FALSE ) {
+		if ( $this->getDeleted() != TRUE AND $this->Validator->getValidateOnly() == FALSE ) { //Don't check the below when mass editing.
 			if ( $this->getName() == '' ) {
 				$this->Validator->isTRUE(	'name',
 											FALSE,
 											TTi18n::gettext('Please specify a name') );
 			}
-		}
-		if ( $this->getName() != '' AND $this->Validator->isError('name') == FALSE ) {
-			$this->Validator->isLength(	'name',
-												$this->getName(),
-												TTi18n::gettext('Name is too short or too long'),
-												2, 50
-											);
-		}
-		if ( $this->getName() != '' AND $this->Validator->isError('name') == FALSE ) {
-			$this->Validator->isTrue(	'name',
-												$this->isUniqueName($this->getName()),
-												TTi18n::gettext('Name is already in use')
-											);
-		}
-		// Description
-		if ( $this->getDescription() != '' ) {
-			$this->Validator->isLength(	'description',
-												$this->getDescription(),
-												TTi18n::gettext('Description is invalid'),
-												1, 250
-											);
-		}
-		// Contributing Shift Policy
-		if ( $this->getContributingShiftPolicy() !== FALSE ) {
-			$csplf = TTnew( 'ContributingShiftPolicyListFactory' );
-			$this->Validator->isResultSetWithRows(	'contributing_shift_policy_id',
-															$csplf->getByID($this->getContributingShiftPolicy()),
-															TTi18n::gettext('Contributing Shift Policy is invalid')
-														);
-		}
-		// Pay Code
-		if ( $this->getPayCode() !== FALSE AND $this->getPayCode() != TTUUID::getZeroID() ) {
-			$pclf = TTnew( 'PayCodeListFactory' );
-			$this->Validator->isResultSetWithRows(	'pay_code_id',
-														$pclf->getById($this->getPayCode()),
-														TTi18n::gettext('Invalid Pay Code')
-													);
-		}
-		// Pay Formula Policy
-		if ( $this->getPayFormulaPolicy() !== FALSE AND $this->getPayFormulaPolicy() != TTUUID::getZeroID() ) {
-			$pfplf = TTnew( 'PayFormulaPolicyListFactory' );
-			$this->Validator->isResultSetWithRows(	'pay_formula_policy_id',
-														$pfplf->getByID($this->getPayFormulaPolicy()),
-														TTi18n::gettext('Pay Formula Policy is invalid')
-													);
-		}
-		// Calculation Order
-		if ( $this->getCalculationOrder() !== FALSE ) {
-			$this->Validator->isNumeric(		'calculation_order',
-														$this->getCalculationOrder(),
-														TTi18n::gettext('Invalid Calculation Order')
-													);
-		}
-		// Branch Selection Type
-		if ( $this->getBranchSelectionType() != '' ) {
-			$this->Validator->inArrayKey(	'branch_selection_type',
-													$this->getBranchSelectionType(),
-													TTi18n::gettext('Incorrect Branch Selection Type'),
-													$this->getOptions('branch_selection_type')
-												);
-		}
-		// Department Selection Type
-		if ( $this->getDepartmentSelectionType() != '' ) {
-			$this->Validator->inArrayKey(	'department_selection_type',
-													$this->getDepartmentSelectionType(),
-													TTi18n::gettext('Incorrect Department Selection Type'),
-													$this->getOptions('department_selection_type')
-												);
-		}
-		// Job Group Selection Type
-		if ( $this->getJobGroupSelectionType() != '' ) {
-			$this->Validator->inArrayKey(	'job_group_selection_type',
-													$this->getJobGroupSelectionType(),
-													TTi18n::gettext('Incorrect Job Group Selection Type'),
-													$this->getOptions('job_group_selection_type')
-												);
-		}
-		// Job Selection Type
-		if ( $this->getJobSelectionType() != '' ) {
-			$this->Validator->inArrayKey(	'job_selection_type',
-													$this->getJobSelectionType(),
-													TTi18n::gettext('Incorrect Job Selection Type'),
-													$this->getOptions('job_selection_type')
-												);
-		}
-		// Task Group Selection Type
-		if ( $this->getJobItemGroupSelectionType() != '' ) {
-			$this->Validator->inArrayKey(	'job_item_group_selection_type',
-													$this->getJobItemGroupSelectionType(),
-													TTi18n::gettext('Incorrect Task Group Selection Type'),
-													$this->getOptions('job_item_group_selection_type')
-												);
-		}
-		// Task Selection Type
-		if ( $this->getJobItemSelectionType() != '' ) {
-			$this->Validator->inArrayKey(	'job_item_selection_type',
-													$this->getJobItemSelectionType(),
-													TTi18n::gettext('Incorrect Task Selection Type'),
-													$this->getOptions('job_item_selection_type')
-												);
-		}
 
-		//
-		// ABOVE: Validation code moved from set*() functions.
-		//
-		if ( $this->getDeleted() != TRUE AND $this->Validator->getValidateOnly() == FALSE ) { //Don't check the below when mass editing.
-			if ( $this->getPayCode() == TTUUID::getZeroID() ) {
+			if ( $this->getPayCode() == 0 ) {
 				$this->Validator->isTRUE(	'pay_code_id',
 											FALSE,
 											TTi18n::gettext('Please choose a Pay Code') );
 			}
 
 			//Make sure Pay Formula Policy is defined somewhere.
-			if ( $this->getPayFormulaPolicy() == TTUUID::getZeroID() AND ( TTUUID::isUUID( $this->getPayCode() ) AND $this->getPayCode() != TTUUID::getZeroID() AND $this->getPayCode() != TTUUID::getNotExistID() ) AND ( !is_object( $this->getPayCodeObject() ) OR ( is_object( $this->getPayCodeObject() ) AND $this->getPayCodeObject()->getPayFormulaPolicy() == TTUUID::getZeroID() ) ) ) {
+			if ( $this->getPayFormulaPolicy() == 0 AND $this->getPayCode() > 0 AND ( !is_object( $this->getPayCodeObject() ) OR ( is_object( $this->getPayCodeObject() ) AND $this->getPayCodeObject()->getPayFormulaPolicy() == 0 ) ) ) {
 					$this->Validator->isTRUE(	'pay_formula_policy_id',
 												FALSE,
 												TTi18n::gettext('Selected Pay Code does not have a Pay Formula Policy defined'));
@@ -765,26 +688,16 @@ class RegularTimePolicyFactory extends Factory {
 		return TRUE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function preSave() {
 		return TRUE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function postSave() {
 		$this->removeCache( $this->getId() );
 
 		return TRUE;
 	}
 
-	/**
-	 * @param $data
-	 * @return bool
-	 */
 	function setObjectFromArray( $data ) {
 		if ( is_array( $data ) ) {
 			$variable_function_map = $this->getVariableToFunctionMap();
@@ -810,10 +723,6 @@ class RegularTimePolicyFactory extends Factory {
 		return FALSE;
 	}
 
-	/**
-	 * @param null $include_columns
-	 * @return array
-	 */
 	function getObjectAsArray( $include_columns = NULL ) {
 		$data = array();
 		$variable_function_map = $this->getVariableToFunctionMap();
@@ -841,10 +750,6 @@ class RegularTimePolicyFactory extends Factory {
 		return $data;
 	}
 
-	/**
-	 * @param $log_action
-	 * @return bool
-	 */
 	function addLog( $log_action ) {
 		return TTLog::addEntry( $this->getId(), $log_action, TTi18n::getText('Regular Time Policy'), NULL, $this->getTable(), $this );
 	}

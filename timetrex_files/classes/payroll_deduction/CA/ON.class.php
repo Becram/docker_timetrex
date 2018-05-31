@@ -1,7 +1,7 @@
 <?php
 /*********************************************************************************
  * TimeTrex is a Workforce Management program developed by
- * TimeTrex Software Inc. Copyright (C) 2003 - 2018 TimeTrex Software Inc.
+ * TimeTrex Software Inc. Copyright (C) 2003 - 2017 TimeTrex Software Inc.
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Affero General Public License version 3 as published by
@@ -40,13 +40,6 @@
  */
 class PayrollDeduction_CA_ON extends PayrollDeduction_CA {
 	var $provincial_income_tax_rate_options = array(
-			20180101 => array(
-					array('income' => 42960, 'rate' => 5.05, 'constant' => 0),
-					array('income' => 85923, 'rate' => 9.15, 'constant' => 1761),
-					array('income' => 150000, 'rate' => 11.16, 'constant' => 3488),
-					array('income' => 220000, 'rate' => 12.16, 'constant' => 4988),
-					array('income' => 220000, 'rate' => 13.16, 'constant' => 7188),
-			),
 			20170101 => array(
 					array('income' => 42201, 'rate' => 5.05, 'constant' => 0),
 					array('income' => 84404, 'rate' => 9.15, 'constant' => 1730),
@@ -129,12 +122,6 @@ class PayrollDeduction_CA_ON extends PayrollDeduction_CA {
 		Provincial surtax
 	*/
 	var $provincial_surtax_options = array(
-			20180101 => array( //2018
-							   'income1' => 4638,
-							   'income2' => 5936,
-							   'rate1'   => 0.20,
-							   'rate2'   => 0.36,
-			),
 			20170101 => array( //2017
 							   'income1' => 4556,
 							   'income2' => 5831,
@@ -213,9 +200,6 @@ class PayrollDeduction_CA_ON extends PayrollDeduction_CA {
 		Provincial tax reduction
 	*/
 	var $provincial_tax_reduction_options = array(
-			20180101 => array( //2018
-							   'amount' => 239,
-			),
 			20170101 => array( //2017
 							   'amount' => 235,
 			),

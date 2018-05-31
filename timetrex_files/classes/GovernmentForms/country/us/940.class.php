@@ -1,7 +1,7 @@
 <?php
 /*********************************************************************************
  * TimeTrex is a Workforce Management program developed by
- * TimeTrex Software Inc. Copyright (C) 2003 - 2018 TimeTrex Software Inc.
+ * TimeTrex Software Inc. Copyright (C) 2003 - 2017 TimeTrex Software Inc.
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Affero General Public License version 3 as published by
@@ -49,8 +49,6 @@ class GovernmentForms_US_940 extends GovernmentForms_US {
 	public $futa_tax_before_adjustment_rate = 0.006; //Line8
 
 	public $futa_tax_rate = 0.054; //Line9
-
-	public $credit_reduction_states = array('CA', 'VI'); //Last Updated: Tax Year 2017
 
 	public $line_16_cutoff_amount = 500; //Line16
 
@@ -107,8 +105,8 @@ class GovernmentForms_US_940 extends GovernmentForms_US {
 					'value'         => '(' . $this->year . ')', //Page Footer
 					'on_background' => TRUE,
 					'coordinates'   => array(
-							'x'          => 556,
-							'y'          => 757,
+							'x'          => 554,
+							'y'          => 709,
 							'h'          => 11,
 							'w'          => 25,
 							'halign'     => 'C',
@@ -116,6 +114,42 @@ class GovernmentForms_US_940 extends GovernmentForms_US {
 					),
 					'font'          => array(
 							'size' => 7,
+					),
+			),
+			array(
+					'value'         => $this->year, //Part 2
+					'on_background' => TRUE,
+					'coordinates'   => array(
+							'x'          => 290.5,
+							'y'          => 288.5,
+							'h'          => 6,
+							'w'          => 20,
+							'halign'     => 'C',
+							//'text_color' => array( 255, 255, 255 ),
+							//'fill_color' => array( 30, 30, 30 ),
+							'fill_color' => array(255, 255, 255),
+					),
+					'font'          => array(
+							'size' => 9,
+							'type' => 'B',
+					),
+			),
+			array(
+					'value'         => $this->year,
+					'on_background' => TRUE,
+					'coordinates'   => array(
+							'x'          => 350,
+							'y'          => 558.5,
+							'h'          => 6,
+							'w'          => 20,
+							'halign'     => 'C',
+							//'text_color' => array( 255, 255, 255 ),
+							//'fill_color' => array( 30, 30, 30 ),
+							'fill_color' => array(255, 255, 255),
+					),
+					'font'          => array(
+							'size' => 9,
+							'type' => 'B',
 					),
 			),
 			//Finish initializing page 1.
@@ -225,7 +259,7 @@ class GovernmentForms_US_940 extends GovernmentForms_US {
 			'city'       => array(
 					'coordinates' => array(
 							'x'      => 79,
-							'y'      => 174,
+							'y'      => 165,
 							'h'      => 18,
 							'w'      => 186,
 							'halign' => 'L',
@@ -234,7 +268,7 @@ class GovernmentForms_US_940 extends GovernmentForms_US {
 			'state'      => array(
 					'coordinates' => array(
 							'x'      => 274,
-							'y'      => 174,
+							'y'      => 165,
 							'h'      => 18,
 							'w'      => 36,
 							'halign' => 'C',
@@ -243,7 +277,7 @@ class GovernmentForms_US_940 extends GovernmentForms_US {
 			'zip_code'   => array(
 					'coordinates' => array(
 							'x'      => 317,
-							'y'      => 174,
+							'y'      => 165,
 							'h'      => 18,
 							'w'      => 72,
 							'halign' => 'C',
@@ -293,14 +327,14 @@ class GovernmentForms_US_940 extends GovernmentForms_US {
 					'coordinates' => array(
 							array(
 									'x'      => 455,
-									'y'      => 270,
+									'y'      => 221,
 									'h'      => 18,
 									'w'      => 22,
 									'halign' => 'C',
 							),
 							array(
 									'x'      => 490,
-									'y'      => 270,
+									'y'      => 221,
 									'h'      => 18,
 									'w'      => 23,
 									'halign' => 'C',
@@ -312,7 +346,7 @@ class GovernmentForms_US_940 extends GovernmentForms_US {
 					'coordinates' => array(
 							array(
 									'x'      => 454,
-									'y'      => 299,
+									'y'      => 251,
 									'h'      => 8,
 									'w'      => 10,
 									'halign' => 'C',
@@ -328,7 +362,7 @@ class GovernmentForms_US_940 extends GovernmentForms_US {
 					'coordinates' => array(
 							array(
 									'x'      => 454,
-									'y'      => 317,
+									'y'      => 270,
 									'h'      => 8,
 									'w'      => 10,
 									'halign' => 'C',
@@ -345,14 +379,14 @@ class GovernmentForms_US_940 extends GovernmentForms_US {
 					'coordinates' => array(
 							array(
 									'x'      => 454,
-									'y'      => 354,
+									'y'      => 305,
 									'h'      => 18,
 									'w'      => 95,
 									'halign' => 'R',
 							),
 							array(
 									'x'      => 554,
-									'y'      => 354,
+									'y'      => 305,
 									'h'      => 18,
 									'w'      => 23,
 									'halign' => 'C',
@@ -364,14 +398,14 @@ class GovernmentForms_US_940 extends GovernmentForms_US {
 					'coordinates' => array(
 							array(
 									'x'      => 310,
-									'y'      => 372,
+									'y'      => 324,
 									'h'      => 18,
 									'w'      => 95,
 									'halign' => 'R',
 							),
 							array(
 									'x'      => 410,
-									'y'      => 372,
+									'y'      => 324,
 									'h'      => 18,
 									'w'      => 23,
 									'halign' => 'C',
@@ -383,7 +417,7 @@ class GovernmentForms_US_940 extends GovernmentForms_US {
 					'coordinates' => array(
 							array(
 									'x'      => 158.5,
-									'y'      => 395.5,
+									'y'      => 347.5,
 									'h'      => 8,
 									'w'      => 10,
 									'halign' => 'C',
@@ -400,7 +434,7 @@ class GovernmentForms_US_940 extends GovernmentForms_US {
 					'coordinates' => array(
 							array(
 									'x'      => 158.5,
-									'y'      => 406,
+									'y'      => 360,
 									'h'      => 8,
 									'w'      => 10,
 									'halign' => 'C',
@@ -417,7 +451,7 @@ class GovernmentForms_US_940 extends GovernmentForms_US {
 					'coordinates' => array(
 							array(
 									'x'      => 310,
-									'y'      => 395.5,
+									'y'      => 347.5,
 									'h'      => 8,
 									'w'      => 10,
 									'halign' => 'C',
@@ -434,7 +468,7 @@ class GovernmentForms_US_940 extends GovernmentForms_US {
 					'coordinates' => array(
 							array(
 									'x'      => 310,
-									'y'      => 406,
+									'y'      => 360,
 									'h'      => 8,
 									'w'      => 10,
 									'halign' => 'C',
@@ -451,7 +485,7 @@ class GovernmentForms_US_940 extends GovernmentForms_US {
 					'coordinates' => array(
 							array(
 									'x'      => 432,
-									'y'      => 395.5,
+									'y'      => 347.5,
 									'h'      => 8,
 									'w'      => 10,
 									'halign' => 'C',
@@ -469,14 +503,14 @@ class GovernmentForms_US_940 extends GovernmentForms_US {
 					'coordinates' => array(
 							array(
 									'x'      => 310,
-									'y'      => 426,
+									'y'      => 378,
 									'h'      => 18,
 									'w'      => 95,
 									'halign' => 'R',
 							),
 							array(
 									'x'      => 410,
-									'y'      => 426,
+									'y'      => 378,
 									'h'      => 18,
 									'w'      => 23,
 									'halign' => 'C',
@@ -488,14 +522,14 @@ class GovernmentForms_US_940 extends GovernmentForms_US {
 					'coordinates' => array(
 							array(
 									'x'      => 454,
-									'y'      => 444.5,
+									'y'      => 397,
 									'h'      => 18,
 									'w'      => 95,
 									'halign' => 'R',
 							),
 							array(
 									'x'      => 554,
-									'y'      => 444.5,
+									'y'      => 397,
 									'h'      => 18,
 									'w'      => 23,
 									'halign' => 'C',
@@ -507,14 +541,14 @@ class GovernmentForms_US_940 extends GovernmentForms_US {
 					'coordinates' => array(
 							array(
 									'x'      => 454,
-									'y'      => 468,
+									'y'      => 420,
 									'h'      => 18,
 									'w'      => 95,
 									'halign' => 'R',
 							),
 							array(
 									'x'      => 554,
-									'y'      => 468,
+									'y'      => 420,
 									'h'      => 18,
 									'w'      => 23,
 									'halign' => 'C',
@@ -526,14 +560,14 @@ class GovernmentForms_US_940 extends GovernmentForms_US {
 					'coordinates' => array(
 							array(
 									'x'      => 454,
-									'y'      => 492.5,
+									'y'      => 445,
 									'h'      => 18,
 									'w'      => 95,
 									'halign' => 'R',
 							),
 							array(
 									'x'      => 554,
-									'y'      => 492.5,
+									'y'      => 445,
 									'h'      => 18,
 									'w'      => 23,
 									'halign' => 'C',
@@ -545,14 +579,14 @@ class GovernmentForms_US_940 extends GovernmentForms_US {
 					'coordinates' => array(
 							array(
 									'x'      => 454,
-									'y'      => 533,
+									'y'      => 485,
 									'h'      => 18,
 									'w'      => 95,
 									'halign' => 'R',
 							),
 							array(
 									'x'      => 554,
-									'y'      => 533,
+									'y'      => 485,
 									'h'      => 18,
 									'w'      => 23,
 									'halign' => 'C',
@@ -560,18 +594,18 @@ class GovernmentForms_US_940 extends GovernmentForms_US {
 					),
 			),
 			'l10'  => array(
-					'function'    => array('filterL10', 'drawSplitDecimalFloat'),
+					'function'    => 'drawSplitDecimalFloat',
 					'coordinates' => array(
 							array(
 									'x'      => 454,
-									'y'      => 564,
+									'y'      => 515,
 									'h'      => 18,
 									'w'      => 95,
 									'halign' => 'R',
 							),
 							array(
 									'x'      => 554,
-									'y'      => 564,
+									'y'      => 515,
 									'h'      => 18,
 									'w'      => 23,
 									'halign' => 'C',
@@ -579,18 +613,18 @@ class GovernmentForms_US_940 extends GovernmentForms_US {
 					),
 			),
 			'l11'  => array(
-					'function'    =>  array('filterL11', 'drawSplitDecimalFloat'),
+					'function'    => 'drawSplitDecimalFloat',
 					'coordinates' => array(
 							array(
 									'x'      => 454,
-									'y'      => 586,
+									'y'      => 538,
 									'h'      => 18,
 									'w'      => 95,
 									'halign' => 'R',
 							),
 							array(
 									'x'      => 554,
-									'y'      => 586,
+									'y'      => 538,
 									'h'      => 18,
 									'w'      => 23,
 									'halign' => 'C',
@@ -602,14 +636,14 @@ class GovernmentForms_US_940 extends GovernmentForms_US {
 					'coordinates' => array(
 							array(
 									'x'      => 454,
-									'y'      => 623,
+									'y'      => 575,
 									'h'      => 18,
 									'w'      => 95,
 									'halign' => 'R',
 							),
 							array(
 									'x'      => 554,
-									'y'      => 623,
+									'y'      => 575,
 									'h'      => 18,
 									'w'      => 23,
 									'halign' => 'C',
@@ -617,19 +651,18 @@ class GovernmentForms_US_940 extends GovernmentForms_US {
 					),
 			),
 			'l13'  => array(
-					'function'    => array('filterL13', 'drawSplitDecimalFloat'),
-					'draw_zero_value' => TRUE,
+					'function'    => 'drawSplitDecimalFloat',
 					'coordinates' => array(
 							array(
 									'x'      => 454,
-									'y'      => 646,
+									'y'      => 598,
 									'h'      => 18,
 									'w'      => 95,
 									'halign' => 'R',
 							),
 							array(
 									'x'      => 554,
-									'y'      => 646,
+									'y'      => 598,
 									'h'      => 18,
 									'w'      => 23,
 									'halign' => 'C',
@@ -641,14 +674,14 @@ class GovernmentForms_US_940 extends GovernmentForms_US {
 					'coordinates' => array(
 							array(
 									'x'      => 454,
-									'y'      => 684,
+									'y'      => 636,
 									'h'      => 18,
 									'w'      => 95,
 									'halign' => 'R',
 							),
 							array(
 									'x'      => 554,
-									'y'      => 684,
+									'y'      => 636,
 									'h'      => 18,
 									'w'      => 23,
 									'halign' => 'C',
@@ -660,14 +693,14 @@ class GovernmentForms_US_940 extends GovernmentForms_US {
 					'coordinates' => array(
 							array(
 									'x'      => 454,
-									'y'      => 708,
+									'y'      => 660,
 									'h'      => 18,
 									'w'      => 95,
 									'halign' => 'R',
 							),
 							array(
 									'x'      => 554,
-									'y'      => 708,
+									'y'      => 660,
 									'h'      => 18,
 									'w'      => 23,
 									'halign' => 'C',
@@ -679,7 +712,7 @@ class GovernmentForms_US_940 extends GovernmentForms_US {
 					'coordinates' => array(
 							array(
 									'x'      => 420.5,
-									'y'      => 727,
+									'y'      => 680,
 									'h'      => 8,
 									'w'      => 10,
 									'halign' => 'C',
@@ -695,7 +728,7 @@ class GovernmentForms_US_940 extends GovernmentForms_US {
 					'coordinates' => array(
 							array(
 									'x'      => 492,
-									'y'      => 727,
+									'y'      => 680,
 									'h'      => 8,
 									'w'      => 10,
 									'halign' => 'C',
@@ -853,7 +886,7 @@ class GovernmentForms_US_940 extends GovernmentForms_US {
 					'template_page' => 3,
 					'value'         => substr( $this->year, 2, 2 ),
 					'on_background' => TRUE,
-					'coordinates'   => array( //Large print in payment voucher.
+					'coordinates'   => array(
 							'x'          => 536,
 							'y'          => 582.5,
 							'h'          => 0,
@@ -871,7 +904,7 @@ class GovernmentForms_US_940 extends GovernmentForms_US {
 					'on_background' => TRUE,
 					'coordinates'   => array(
 							'x'          => 258,
-							'y'          => 174.5,
+							'y'          => 204.5,
 							'h'          => 11,
 							'w'          => 22,
 							'halign'     => 'C',
@@ -885,8 +918,8 @@ class GovernmentForms_US_940 extends GovernmentForms_US {
 					'value'         => $this->year,
 					'on_background' => TRUE,
 					'coordinates'   => array(
-							'x'          => 397.5,
-							'y'          => 260,
+							'x'          => 398,
+							'y'          => 286,
 							'h'          => 11,
 							'w'          => 22,
 							'halign'     => 'C',
@@ -995,31 +1028,6 @@ class GovernmentForms_US_940 extends GovernmentForms_US {
 		return FALSE;
 	}
 
-	function filterL10( $value ) {
-		if ( $this->l9 > 0 ) { //If L9 is specified, L10 does not apply.
-			return FALSE;
-		}
-
-		return $value;
-	}
-	function filterL11( $value ) {
-		if ( $this->l9 > 0 ) { //If L9 is specified, L11 does not apply.
-			return FALSE;
-		}
-
-		return $value;
-	}
-
-	function filterL13( $value, $schema ) {
-		if ( $this->l13 != '' ) {
-			return $value;
-		} else {
-			return 0; //If no deposit amount is specified, assume they deposit the amount calculated.
-		}
-
-		return FALSE;
-	}
-
 	function filterL15( $value ) {
 		if ( $this->l15 > 0 ) {
 			return $value;
@@ -1058,13 +1066,13 @@ class GovernmentForms_US_940 extends GovernmentForms_US {
 	}
 
 	function calcL9( $value, $schema ) {
-		//If line 9 is specified, line 10 and 11 don't apply.
-		if ( $this->l9 == TRUE ) {
-			$this->l9 = bcmul( $this->l7, $this->futa_tax_rate );
-			$this->l10 = NULL;
-			$this->l11 = NULL;
+		//Taxable FUTA wages
 
-			return $this->l9;
+		//Lines 9, 10 and 11 are all optional and completely on their own.
+		//Currently we can't handle line 9 at all.
+		if ( ( $this->l10 == '' OR $this->l10 == 0 ) AND ( $this->l11 == '' OR $this->l11 == 0 ) ) {
+			//$this->l9 = $this->l7 * $this->futa_tax_rate;
+			//return $this->l9;
 		}
 
 		return FALSE;

@@ -1,6 +1,6 @@
 <?php
 /*
- @version   v5.21.0-dev  ??-???-2016
+ @version   v5.20.9  21-Dec-2016
  @copyright (c) 2000-2013 John Lim (jlim#natsoft.com). All rights reserved.
  @copyright (c) 2014      Damien Regad, Mark Newnham and the ADOdb community
   Released under both BSD license and Lesser GPL library license.
@@ -124,40 +124,19 @@ class ADODB_postgres64 extends ADOConnection{
 	// to know what the concequences are. The other values are correct (wheren't in 0.94)
 	// -- Freek Dijkstra
 
-	/**
-	 * Retrieve Server information.
-	 * In addition to server version and desription, the function also returns
-	 * the client version.
-	 * @param bool $detailed If true, retrieve detailed version string (executes
-	 *                       a SQL query) in addition to the version number
-	 * @return array|bool Server info or false if version could not be retrieved
-	 *                    e.g. if there is no active connection
-	 */
-	function ServerInfo($detailed = true)
+	function __construct()
 	{
-		if (empty($this->version['version'])) {
-			// We don't have a connection, so we can't retrieve server info
-			if (!$this->_connectionID) {
-				return false;
-			}
+		// changes the metaColumnsSQL, adds columns: attnum[6]
+	}
 
-			$version = pg_version($this->_connectionID);
-			$this->version = array(
-				// If PHP has been compiled with PostgreSQL 7.3 or lower, then
-				// server version is not set so we use pg_parameter_status()
-				// which includes logic to obtain values server_version
-				'version' => isset($version['server'])
-					? $version['server']
-					: pg_parameter_status($this->_connectionID, 'server_version'),
-				'client' => $version['client'],
-				'description' => null,
-			);
-		}
-		if ($detailed && $this->version['description'] === null) {
-			$this->version['description'] = $this->GetOne('select version()');
-		}
+	function ServerInfo()
+	{
+		if (isset($this->version)) return $this->version;
 
-		return $this->version;
+		$arr['description'] = $this->GetOne("select version()");
+		$arr['version'] = ADOConnection::_findvers($arr['description']);
+		$this->version = $arr;
+		return $arr;
 	}
 
 	function IfNull( $field, $ifNull )
@@ -451,17 +430,13 @@ class ADODB_postgres64 extends ADOConnection{
 		return $realblob;
 	}
 
-	/**
-	 * Encode binary value prior to DB storage.
-	 *
-	 * See https://www.postgresql.org/docs/current/static/datatype-binary.html
-	 *
-	 * NOTE: SQL string literals (input strings) must be preceded with two
-	 * backslashes due to the fact that they must pass through two parsers in
-	 * the PostgreSQL backend.
-	 *
-	 * @param string $blob
-	 */
+	/*
+		See http://www.postgresql.org/idocs/index.php?datatype-binary.html
+
+		NOTE: SQL string literals (input strings) must be preceded with two backslashes
+		due to the fact that they must pass through two parsers in the PostgreSQL
+		backend.
+	*/
 	function BlobEncode($blob)
 	{
 		if (ADODB_PHPVER >= 0x5200) return pg_escape_bytea($this->_connectionID, $blob);
@@ -752,23 +727,18 @@ class ADODB_postgres64 extends ADOConnection{
 			$this->_connectionID = pg_connect($str);
 		}
 		if ($this->_connectionID === false) return false;
-		$this->Execute("set datestyle='ISO'");
+		//$this->Execute("set datestyle='ISO'"); //Added to Database.inc.php instead as an optimization for delayed execution.
 
-		$info = $this->ServerInfo(false);
-
-		if (version_compare($info['version'], '7.1', '>=')) {
-			$this->_nestedSQL = true;
-		}
+		//PostgreSQL >= v7.1 supports nested SQL queries.
+		// Since 7.1 was EOL April 2006 (11years ago) it should be safe to default this and save a call to "select version()" upon every connection.
+		$this->_nestedSQL = true;
 
 		# PostgreSQL 9.0 changed the default output for bytea from 'escape' to 'hex'
 		# PHP does not handle 'hex' properly ('x74657374' is returned as 't657374')
 		# https://bugs.php.net/bug.php?id=59831 states this is in fact not a bug,
 		# so we manually set bytea_output
-		if (!empty($this->connection->noBlobs) && version_compare($info['version'], '9.0', '>=')) {
-			$version = pg_version($this->connectionID);
-			if (version_compare($info['client'], '9.2', '<')) {
-				$this->Execute('set bytea_output=escape');
-			}
+		if ( !empty($this->connection->noBlobs) && version_compare($info['version'], '9.0', '>=')) {
+			$this->Execute('set bytea_output=escape');
 		}
 
 		return true;
@@ -1096,7 +1066,6 @@ class ADORecordSet_postgres64 extends ADORecordSet{
 				case 'NAME':
 				case 'BPCHAR':
 				case '_VARCHAR':
-				case 'CIDR':
 				case 'INET':
 				case 'MACADDR':
 				case 'UUID':
@@ -1148,14 +1117,8 @@ class ADORecordSet_postgres64 extends ADORecordSet{
 				case 'SERIAL':
 					return 'R';
 
-				case 'NUMERIC':
-				case 'DECIMAL':
-				case 'FLOAT4':
-				case 'FLOAT8':
-					return 'N';
-
 				default:
-					return ADODB_DEFAULT_METATYPE;
+					return 'N';
 			}
 	}
 

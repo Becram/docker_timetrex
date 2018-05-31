@@ -1,7 +1,7 @@
 <?php
 /*********************************************************************************
  * TimeTrex is a Workforce Management program developed by
- * TimeTrex Software Inc. Copyright (C) 2003 - 2018 TimeTrex Software Inc.
+ * TimeTrex Software Inc. Copyright (C) 2003 - 2017 TimeTrex Software Inc.
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Affero General Public License version 3 as published by
@@ -127,11 +127,6 @@ class CalculatePolicy {
 
 
 	//Determine pay period based on the date that is being calculated.
-
-	/**
-	 * CalculatePolicy constructor.
-	 * @param object $user_obj
-	 */
 	function __construct( $user_obj = NULL ) {
 		if ( is_object( $user_obj ) ) {
 			$this->setUserObject( $user_obj );
@@ -140,11 +135,6 @@ class CalculatePolicy {
 		return TRUE;
 	}
 
-	/**
-	 * @param $key
-	 * @param bool $value
-	 * @return bool
-	 */
 	function setFlag( $key, $value = TRUE ) {
 		if ( is_array($key) ) {
 			foreach( $key as $k => $v ) {
@@ -155,11 +145,6 @@ class CalculatePolicy {
 		}
 		return TRUE;
 	}
-
-	/**
-	 * @param $key
-	 * @return bool|mixed
-	 */
 	function getFlag( $key ) {
 		if( isset($this->flags[$key]) ) {
 			return $this->flags[$key];
@@ -168,17 +153,9 @@ class CalculatePolicy {
 		return FALSE;
 	}
 
-	/**
-	 * @return null
-	 */
 	function getUserObject() {
 		return $this->user_obj;
 	}
-
-	/**
-	 * @param object $obj
-	 * @return bool
-	 */
 	function setUserObject( $obj ) {
 		if ( is_object($obj) ) {
 			$this->user_obj = $obj;
@@ -198,12 +175,8 @@ class CalculatePolicy {
 		return FALSE;
 	}
 
-	/**
-	 * @param string $id UUID
-	 * @return bool
-	 */
 	function getPayPeriodObject( $id ) {
-		if ( TTUUID::isUUID($id) AND $id != TTUUID::getZeroID() AND $id != TTUUID::getNotExistID() ) {
+		if ( $id > 0 ) {
 			if ( isset($this->pay_periods[$id]) AND is_object($this->pay_periods[$id]) AND $id == $this->pay_periods[$id]->getID() ) {
 				return $this->pay_periods[$id];
 			} else {
@@ -221,12 +194,8 @@ class CalculatePolicy {
 		return FALSE;
 	}
 
-	/**
-	 * @param string $id UUID
-	 * @return bool
-	 */
 	function getPayPeriodScheduleObject( $id ) {
-		if ( TTUUID::isUUID( $id ) AND $id != TTUUID::getZeroID() AND $id != TTUUID::getNotExistID() ) {
+		if ( $id > 0 ) {
 			if ( isset($this->pay_period_schedules[$id]) AND is_object($this->pay_period_schedules[$id]) AND $id == $this->pay_period_schedules[$id]->getID() ) {
 				return $this->pay_period_schedules[$id];
 			} else {
@@ -244,9 +213,6 @@ class CalculatePolicy {
 		return FALSE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function setTimeZone() {
 		//IMPORTANT: Make sure the timezone is set to the users timezone, prior to calculating policies,
 		//as that will affect when date/time premium policies apply
@@ -259,7 +225,7 @@ class CalculatePolicy {
 			//So make sure we only set it once, as even if recalculating many employees at once the entire CalculatePolicy object should be re-initialized.
 			//The bug can be replicated by setting current user to PST8PDT, then Mass Edit two IN punches for a user in MST7MDT timezone, and first punch time will be correct, the 2nd punch incorrect.
 			if ( !isset($this->original_time_zone) OR $this->original_time_zone == '' ) { //original_time_zone defaults to NULL which causes isset() to be FALSE.
-				$this->original_time_zone = TTDate::getTimeZone();
+			$this->original_time_zone = TTDate::getTimeZone();
 			}
 
 			return TTDate::setTimeZone( $this->getUserObject()->getUserPreferenceObject()->getTimeZone() );
@@ -267,10 +233,6 @@ class CalculatePolicy {
 
 		return FALSE;
 	}
-
-	/**
-	 * @return bool
-	 */
 	function revertTimeZone() {
 		if ( isset($this->original_time_zone) AND $this->original_time_zone != '' ) {
 			return TTDate::setTimeZone( $this->original_time_zone );
@@ -279,11 +241,8 @@ class CalculatePolicy {
 		return FALSE;
 	}
 
-	/**
-	 * Check if past date calculation is required.
-	 * This is based on PayFormulas that use average calculations.
-	 * @return bool
-	 */
+	//Check if past date calculation is required.
+	//This is based on PayFormulas that use average calculations.
 	function isPastDateCalculationRequired() {
 		$pfplf = TTnew( 'PayFormulaPolicyListFactory' );
 		$pfplf->getByCompanyIdAndPayTypeId( $this->getUserObject()->getCompany(), 30 );
@@ -296,16 +255,12 @@ class CalculatePolicy {
 		return FALSE;
 	}
 
-	/**
-	 * Since handling auto-deduct meal policies (negative total time) is virtually impossible to handle by itself
-	 * when it comes to overtime/premium policies that adjust the total time themselves,
-	 * this function will roll the meal/break policy time into the source record before being calculated for Reg/OT/Prem.
-	 * This way Reg/OT/Prem. calculation functions don't need to worry about negative total times at all.
-	 * @param int $user_date_total_rows EPOCH
-	 * @return array|bool
-	 */
+	//Since handling auto-deduct meal policies (negative total time) is virtually impossible to handle by itself
+	//when it comes to overtime/premium policies that adjust the total time themselves,
+	//this function will roll the meal/break policy time into the source record before being calculated for Reg/OT/Prem.
+	//This way Reg/OT/Prem. calculation functions don't need to worry about negative total times at all.
 	function compactMealAndBreakUserDateTotalObjects( $user_date_total_rows ) {
-		if ( is_array( $user_date_total_rows ) AND count( $user_date_total_rows ) > 0 ) {
+		if ( is_array( $user_date_total_rows ) ) {
 			$tmp_user_date_total_rows = $user_date_total_rows;
 			Debug::Text('Total Records: '. count($user_date_total_rows), __FILE__, __LINE__, __METHOD__, 10);
 
@@ -371,14 +326,9 @@ class CalculatePolicy {
 		}
 
 		Debug::Text('No data to compact...', __FILE__, __LINE__, __METHOD__, 10);
-		return array();
+		return FALSE;
 	}
 
-	/**
-	 * @param object $udt_obj
-	 * @param object $tmp_udt_obj
-	 * @return bool
-	 */
 	function testOverriddenUserDateTotalObject( $udt_obj, $tmp_udt_obj ) {
 		if (
 				$tmp_udt_obj->getOverride() == TRUE
@@ -389,26 +339,22 @@ class CalculatePolicy {
 				AND $udt_obj->getDepartment() == $tmp_udt_obj->getDepartment()
 				AND $udt_obj->getJob() == $tmp_udt_obj->getJob()
 				AND $udt_obj->getJobItem() == $tmp_udt_obj->getJobItem() ) {
-			Debug::Text('Found override UDT Object ID: \''. TTUUID::castUUID($udt_obj->getID()) .'\' Object Type: '. $tmp_udt_obj->getObjectType() .' Pay Code: '. $tmp_udt_obj->getPayCode() .' Date: '. TTDate::getDate('DATE', $tmp_udt_obj->getDateStamp() ) .' Total Time: '. $tmp_udt_obj->getTotalTime() .' Branch: '. $tmp_udt_obj->getBranch() .' Department: '. $tmp_udt_obj->getDepartment() .' Job: '. $tmp_udt_obj->getJob() .' Task: '. $tmp_udt_obj->getJobItem(), __FILE__, __LINE__, __METHOD__, 10);
+			Debug::Text('Found override UDT Object ID: '. (int)$udt_obj->getID() .' Object Type: '. $tmp_udt_obj->getObjectType() .' Pay Code: '. $tmp_udt_obj->getPayCode() .' Date: '. TTDate::getDate('DATE', $tmp_udt_obj->getDateStamp() ) .' Total Time: '. $tmp_udt_obj->getTotalTime() .' Branch: '. $tmp_udt_obj->getBranch() .' Department: '. $tmp_udt_obj->getDepartment() .' Job: '. $tmp_udt_obj->getJob() .' Task: '. $tmp_udt_obj->getJobItem(), __FILE__, __LINE__, __METHOD__, 10);
 			return TRUE;
 		}
 
 		return FALSE;
 	}
 
-	/**
-	 * Find existing UDT records that have override=TRUE and other fields matching, so we don't try to insert new UDT records.
-	 * @param object $udt_obj
-	 * @return bool
-	 */
+	//Find existing UDT records that have override=TRUE and other fields matching, so we don't try to insert new UDT records.
 	function isOverriddenUserDateTotalObject( $udt_obj ) {
 		if ( is_array($this->user_date_total) ) {
-			Debug::Text('Search based on UDT: ID: \''. TTUUID::castUUID($udt_obj->getID()) .'\' Object Type: '. $udt_obj->getObjectType() .' Pay Code: '. $udt_obj->getPayCode() .' Date: '. TTDate::getDate('DATE', $udt_obj->getDateStamp() ) .' Total Time: '. $udt_obj->getTotalTime() .' Branch: '. $udt_obj->getBranch() .' Department: '. $udt_obj->getDepartment() .' Job: '. $udt_obj->getJob() .' Task: '. $udt_obj->getJobItem(), __FILE__, __LINE__, __METHOD__, 10);
+			Debug::Text('Search based on UDT: ID: '. (int)$udt_obj->getID() .' Object Type: '. $udt_obj->getObjectType() .' Pay Code: '. $udt_obj->getPayCode() .' Date: '. TTDate::getDate('DATE', $udt_obj->getDateStamp() ) .' Total Time: '. $udt_obj->getTotalTime() .' Branch: '. $udt_obj->getBranch() .' Department: '. $udt_obj->getDepartment() .' Job: '. $udt_obj->getJob() .' Task: '. $udt_obj->getJobItem(), __FILE__, __LINE__, __METHOD__, 10);
 			foreach( $this->user_date_total as $key => $tmp_udt_obj ) {
-				if ( TTUUID::isUUID( $key ) == TRUE //Found positive time record (key=UUID), only positive ones can be overridden anyways.
+				if ( $key > 0 //Found positive time record, only positive ones can be overridden anyways.
 						AND $this->testOverriddenUserDateTotalObject( $udt_obj, $tmp_udt_obj )
 					) {
-					Debug::Text('Found override UDT Object key: '. $key .' ID: \''. TTUUID::castUUID($udt_obj->getID()) .'\' Object Type: '. $tmp_udt_obj->getObjectType() .' Pay Code: '. $tmp_udt_obj->getPayCode() .' Date: '. TTDate::getDate('DATE', $tmp_udt_obj->getDateStamp() ) .' Total Time: '. $tmp_udt_obj->getTotalTime() .' Branch: '. $tmp_udt_obj->getBranch() .' Department: '. $tmp_udt_obj->getDepartment() .' Job: '. $tmp_udt_obj->getJob() .' Task: '. $tmp_udt_obj->getJobItem(), __FILE__, __LINE__, __METHOD__, 10);
+					Debug::Text('Found override UDT Object key: '. $key .' ID: '. (int)$udt_obj->getID() .' Object Type: '. $tmp_udt_obj->getObjectType() .' Pay Code: '. $tmp_udt_obj->getPayCode() .' Date: '. TTDate::getDate('DATE', $tmp_udt_obj->getDateStamp() ) .' Total Time: '. $tmp_udt_obj->getTotalTime() .' Branch: '. $tmp_udt_obj->getBranch() .' Department: '. $tmp_udt_obj->getDepartment() .' Job: '. $tmp_udt_obj->getJob() .' Task: '. $tmp_udt_obj->getJobItem(), __FILE__, __LINE__, __METHOD__, 10);
 					return TRUE;
 				}
 				//else {
@@ -423,9 +369,6 @@ class CalculatePolicy {
 
 	//Remove UserDateTotalObjects that cancel each other out, such as a +1800 total time and -1800 total time for the same pay_code_id.
 	//This is required for some premium policies with auto-deduct lunches and such.
-	/**
-	 * @return bool
-	 */
 	function removeRedundantUserDateTotalObjects() {
 		if ( is_array($this->user_date_total) ) {
 			foreach( $this->user_date_total as $key => $udt_obj ) {
@@ -452,10 +395,6 @@ class CalculatePolicy {
 		return FALSE;
 	}
 
-	/**
-	 * @param int $user_date_total_records EPOCH
-	 * @return bool
-	 */
 	function insertUserDateTotal( $user_date_total_records ) {
 		if ( is_array($user_date_total_records) AND count($user_date_total_records) > 0 ) {
 			//Debug::Arr($user_date_total_records, 'Inserting UserDateTotal entries...', __FILE__, __LINE__, __METHOD__, 10);
@@ -478,18 +417,11 @@ class CalculatePolicy {
 				//  Don't resave override absence entries, this caused a bug where UDT rows would switch to different dates when calcExceptions was run.
 				//  *If a note is specified, always insert the record, this way we can give the user notes as to why they arent eligible for holiday time for example.
 				//  Since we implemented getPartialUserDateTotalObject() to split UDT records, it might split records of ObjectTypeID=10, which causes the KEY to be < 0 introducing a bug where this was inserting it into the DB and corrupting the data. Added check for this: $udt_obj->getObjectType() != 10 (5 must still be allowed)
-				if ( ( is_numeric( $key ) AND $key < 0 AND $udt_obj->getObjectType() != 10 AND ( $udt_obj->getTotalTime() != 0 OR $udt_obj->getTotalTimeAmount() != 0 OR $udt_obj->getNote() != '' ) )
-						OR ( TTUUID::isUUID( $key ) == TRUE AND $udt_obj->getObjectType() != 50 AND $udt_obj->getOverride() == TRUE AND isset($this->dates['calculated'][TTDate::getBeginDayEpoch($udt_obj->getDateStamp())]) ) ) {
+				if ( ( $key < 0 AND $udt_obj->getObjectType() != 10 AND ( $udt_obj->getTotalTime() != 0 OR $udt_obj->getTotalTimeAmount() != 0 OR $udt_obj->getNote() != '' ) )
+						OR ( $key > 0 AND $udt_obj->getObjectType() != 50 AND $udt_obj->getOverride() == TRUE AND isset($this->dates['calculated'][TTDate::getBeginDayEpoch($udt_obj->getDateStamp())]) ) ) {
 					//Debug::text('    Currency ID: '. $this->getUserObject()->getCurrency() .' Rate: '. $this->filterCurrencyRate( $udt_obj->getDateStamp() )->getReverseConversionRate(), __FILE__, __LINE__, __METHOD__, 10);
-
-					//  This is required when the last day of a closed pay period is a holiday with manual timesheet time exists, and trying to add time on first day of the next pay period,
-					// 		due to the maximum shift time, it will try to recalculate the last day of the previous pay period and cause a validation failure, preventing any punches from being saved.
-					//		It will cause UDT object to skip certain validations, such as locked pay periods of course.
-					//		FIXME: We could potentially change this to just skipping trying to save the record in a locked pay period completely. By just checking if its locked outside the isValid() function.
-					$udt_obj->setEnableCalculatePolicy( TRUE );
-
 					//Handle currency rates here, just before the record is saved.
-					$udt_obj->setCurrency( $this->getUserObject()->getCurrency(), TRUE ); //Disable automatic rate lookup.
+					$udt_obj->setCurrency( (int)$this->getUserObject()->getCurrency(), TRUE ); //Disable automatic rate lookup.
 					$udt_obj->setCurrencyRate( $this->filterCurrencyRate( $udt_obj->getDateStamp() )->getReverseConversionRate() );
 
 					//Debug::Arr($udt_obj->data, 'Inserting UserDateTotal entry... Key: '. $key, __FILE__, __LINE__, __METHOD__, 10);
@@ -534,17 +466,7 @@ class CalculatePolicy {
 		return FALSE;
 	}
 
-	/**
-	 * @param int $date_stamp EPOCH
-	 * @param int $object_type_id
-	 * @param string $pay_code_id UUID
-	 * @param string $branch_id UUID
-	 * @param string $department_id UUID
-	 * @param string $job_id UUID
-	 * @param string $job_item_id UUID
-	 * @return bool
-	 */
-	function isConflictingUserDateTotal( $date_stamp, $object_type_id, $pay_code_id = NULL, $branch_id = NULL, $department_id = NULL, $job_id = NULL, $job_item_id = NULL, $override = NULL ) {
+	function isConflictingUserDateTotal( $date_stamp, $object_type_id, $pay_code_id = NULL, $branch_id = NULL, $department_id = NULL, $job_id = NULL, $job_item_id = NULL ) {
 		if ( is_array($this->user_date_total) ) {
 			$date_stamp = TTDate::getMiddleDayEpoch( $date_stamp ); //Optimization - Move outside of loop.
 			foreach( $this->user_date_total as $udt_key => $udt_obj ) {
@@ -560,8 +482,7 @@ class CalculatePolicy {
 							( $job_id === NULL OR $udt_obj->getJob() == $job_id )
 							AND
 							( $job_item_id === NULL OR $udt_obj->getJobItem() == $job_item_id )
-							AND
-							( $override === NULL OR $udt_obj->getOverride() == $override ) //Only check override=TRUE records.
+
 						) {
 						Debug::text('Found conflicting UserDateTotal row: '. $udt_key, __FILE__, __LINE__, __METHOD__, 10);
 						return TRUE;
@@ -575,23 +496,16 @@ class CalculatePolicy {
 	}
 
 	//Calculates schedule absence time (exclusive to holiday absence time, or manually entered time on the timesheet)
-
-	/**
-	 * @param int $date_stamp EPOCH
-	 * @return bool
-	 */
 	function calculateScheduleAbsence( $date_stamp ) {
 		$slf = $this->filterScheduleDataByStatus( $date_stamp, $date_stamp, 20 );
 		if ( is_array( $slf ) AND count( $slf ) > 0 ) {
 			foreach( $slf as $key => $s_obj ) {
-				if ( $s_obj->getStatus() == 20
-						AND TTUUID::isUUID( $s_obj->getAbsencePolicyID() ) AND $s_obj->getAbsencePolicyID() != TTUUID::getZeroID() AND $s_obj->getAbsencePolicyID() != TTUUID::getNotExistID()
-						AND is_object( $s_obj->getAbsencePolicyObject() ) ) {
+				if ( $s_obj->getStatus() == 20 AND $s_obj->getAbsencePolicyID() > 0 AND is_object( $s_obj->getAbsencePolicyObject() ) ) {
 					//Check for conflicting/overridden records, so we don't double up on the time.
 					//This is to allow users to enter a schedule shift for absence time, then override it to smaller number of hours.
 					//Only consider records using the same pay code though, so a user could have different absences on the same day
 					//like a "No Show/No Call" on a Stat holiday and still receive stat holiday time and the absence time.
-					if ( $this->isConflictingUserDateTotal( $date_stamp, array(25, 50), $s_obj->getAbsencePolicyObject()->getPayCode() ) ) {
+					if ( $this->isConflictingUserDateTotal( $date_stamp, array(25, 50), (int)$s_obj->getAbsencePolicyObject()->getPayCode() ) ) {
 						continue;
 					}
 
@@ -602,14 +516,14 @@ class CalculatePolicy {
 						$udtf->setObjectType( 50 ); //Absence
 						$udtf->setSourceObject( $s_obj->getAbsencePolicyID() );
 						if ( is_object( $s_obj->getAbsencePolicyObject() ) AND is_object( $s_obj->getAbsencePolicyObject()->getPayCode() ) ) {
-							$udtf->setPayCode( $s_obj->getAbsencePolicyObject()->getPayCode() );
+							$udtf->setPayCode( (int)$s_obj->getAbsencePolicyObject()->getPayCode() );
 						}
 
-						$udtf->setBranch( $s_obj->getBranch() );
-						$udtf->setDepartment( $s_obj->getDepartment() );
+						$udtf->setBranch( (int)$s_obj->getBranch() );
+						$udtf->setDepartment( (int)$s_obj->getDepartment() );
 						if ( getTTProductEdition() >= TT_PRODUCT_CORPORATE ) {
-							$udtf->setJob( $s_obj->getJob() );
-							$udtf->setJobItem( $s_obj->getJobItem() );
+							$udtf->setJob( (int)$s_obj->getJob() );
+							$udtf->setJobItem( (int)$s_obj->getJobItem() );
 						}
 
 						$udtf->setTotalTime( $s_obj->getTotalTime() );
@@ -654,10 +568,6 @@ class CalculatePolicy {
 		return FALSE;
 	}
 
-	/**
-	 * @param $schedule_arr
-	 * @return array
-	 */
 	function getScheduleDates( $schedule_arr ) {
 		$retarr = array();
 		if ( is_array($schedule_arr) ) {
@@ -668,11 +578,6 @@ class CalculatePolicy {
 		Debug::text('Schedule Dates: '. count($retarr), __FILE__, __LINE__, __METHOD__, 10);
 		return $retarr;
 	}
-
-	/**
-	 * @param $schedule_arr
-	 * @return int
-	 */
 	function getSumScheduledDays( $schedule_arr ) {
 		$sum = 0;
 		if ( is_array($schedule_arr) ) {
@@ -686,10 +591,6 @@ class CalculatePolicy {
 		return $sum;
 	}
 
-	/**
-	 * @param $schedule_arr
-	 * @return int
-	 */
 	function getSumScheduleTime( $schedule_arr ) {
 		$sum = 0;
 		if ( is_array($schedule_arr) ) {
@@ -702,11 +603,6 @@ class CalculatePolicy {
 		return $sum;
 	}
 
-	/**
-	 * @param $a
-	 * @param $b
-	 * @return int
-	 */
 	function sortScheduleByDateASC( $a, $b ) {
 		if ( $a->getDateStamp() == $b->getDateStamp() ) {
 			return 0;
@@ -714,12 +610,6 @@ class CalculatePolicy {
 
 		return ( $a->getDateStamp() < $b->getDateStamp() ) ? (-1) : 1;
 	}
-
-	/**
-	 * @param $a
-	 * @param $b
-	 * @return int
-	 */
 	function sortScheduleByDateDESC( $a, $b ) {
 		if ( $a->getDateStamp() == $b->getDateStamp() ) {
 			return 0;
@@ -728,19 +618,11 @@ class CalculatePolicy {
 		return ( $a->getDateStamp() > $b->getDateStamp() ) ? (-1) : 1;
 	}
 
-	/**
-	 * @param int $pivot_date EPOCH
-	 * @param int $status_ids ID
-	 * @param null $direction
-	 * @param int $limit Limit the number of records returned
-	 * @return array
-	 */
 	function filterScheduleDataByDateAndDirection( $pivot_date = NULL, $status_ids = NULL, $direction = NULL, $limit = NULL ) {
 		$slf = $this->schedule;
 		Debug::text('Pivot Date: '. TTDate::getDate('DATE', $pivot_date ) .' Direction: '.  $direction .' Limit: '. $limit, __FILE__, __LINE__, __METHOD__, 10);
 		if ( is_array($slf) AND count($slf) > 0 ) {
 			$direction = strtolower($direction);
-			$status_ids = (array)$status_ids;
 
 			if ( $direction == 'desc' ) {
 				uasort( $slf, array( $this, 'sortScheduleByDateDESC' ) );
@@ -752,8 +634,8 @@ class CalculatePolicy {
 			$i = 1;
 			foreach( $slf as $s_obj ) {
 				$s_obj_date_stamp = TTDate::getMiddleDayEpoch( $s_obj->getDateStamp() );
-				if ( in_array( $s_obj->getStatus(), $status_ids )
-						AND ( ( $direction == 'desc' AND $s_obj_date_stamp < $pivot_date ) OR ( $direction == 'asc' AND $s_obj_date_stamp > $pivot_date ) ) ) {
+				if ( ( $direction == 'desc' AND $s_obj_date_stamp < $pivot_date )
+						OR ( $direction == 'asc' AND $s_obj_date_stamp > $pivot_date ) ) {
 					$retarr[$s_obj->getId()] = $s_obj;
 
 					//Stop the loop once the limit is reached on the returned values.
@@ -773,15 +655,9 @@ class CalculatePolicy {
 		}
 
 		Debug::text('No schedule rows match filter...', __FILE__, __LINE__, __METHOD__, 10);
-		return array();
+		return FALSE;
 	}
 
-	/**
-	 * @param int $start_date EPOCH
-	 * @param int $end_date EPOCH
-	 * @param int $status_ids ID
-	 * @return array
-	 */
 	function filterScheduleDataByStatus( $start_date, $end_date, $status_ids = NULL ) {
 		$slf = $this->schedule;
 		Debug::text('Start Date: '. TTDate::getDate('DATE', $start_date ) .' End Date: '.  TTDate::getDate('DATE', $end_date ), __FILE__, __LINE__, __METHOD__, 10);
@@ -807,17 +683,10 @@ class CalculatePolicy {
 		}
 
 		Debug::text('No schedule rows match filter...', __FILE__, __LINE__, __METHOD__, 10);
-		return array();
+		return FALSE;
 	}
 
 	//Filter scheduled shifts based on worked shift times.
-
-	/**
-	 * @param $start_time
-	 * @param $end_time
-	 * @param bool $schedule_status_id
-	 * @return array
-	 */
 	function filterScheduleDataByShiftStartAndEnd( $start_time, $end_time, $schedule_status_id = FALSE ) {
 		$slf = $this->schedule;
 		Debug::text('Start Date: '. TTDate::getDate('DATE+TIME', $start_time ) .' End Date: '.  TTDate::getDate('DATE+TIME', $end_time ), __FILE__, __LINE__, __METHOD__, 10);
@@ -878,17 +747,9 @@ class CalculatePolicy {
 		}
 
 		Debug::text('No schedule rows match filter...', __FILE__, __LINE__, __METHOD__, 10);
-		return array();
+		return FALSE;
 	}
 
-	/**
-	 * @param int $start_date EPOCH
-	 * @param int $end_date EPOCH
-	 * @param int $status_ids ID
-	 * @param int $limit Limit the number of records returned
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return bool
-	 */
 	function getScheduleData( $start_date = NULL, $end_date = NULL, $status_ids = NULL, $limit = NULL, $order = NULL ) {
 		$slf = TTNew('ScheduleListFactory');
 		$filter_data = array(
@@ -914,12 +775,6 @@ class CalculatePolicy {
 	}
 
 	//Filter schedule policies to only those that affect a specific shift.
-
-	/**
-	 * @param int $date_stamp EPOCH
-	 * @param bool $force_all_scheduled_shifts
-	 * @return array
-	 */
 	function filterSchedulePolicyByDate( $date_stamp, $force_all_scheduled_shifts = FALSE ) {
 		if ( $force_all_scheduled_shifts == TRUE ) {
 			Debug::text('Returning all scheduled shifts for the day...', __FILE__, __LINE__, __METHOD__, 10);
@@ -936,7 +791,7 @@ class CalculatePolicy {
 
 		if ( isset($slf) AND is_array($slf) AND count($slf) > 0 ) {
 			foreach( $slf as $s_obj ) {
-				if ( TTUUID::isUUID($s_obj->getSchedulePolicyID()) AND $s_obj->getSchedulePolicyID() != TTUUID::getZeroID() AND $s_obj->getSchedulePolicyID() != TTUUID::getNotExistID() ) {
+				if ( $s_obj->getSchedulePolicyID() > 0 ) {
 					if ( isset( $this->schedule_policy_rs[$s_obj->getSchedulePolicyID()] ) ) {
 						$retarr[$s_obj->getSchedulePolicyID()] = $this->schedule_policy_rs[$s_obj->getSchedulePolicyID()];
 					} else {
@@ -952,13 +807,10 @@ class CalculatePolicy {
 		}
 
 		Debug::text('No scheduled shifts for this date: '. TTDate::getDATE('DATE', $date_stamp ), __FILE__, __LINE__, __METHOD__, 10);
-		return array();
+		return FALSE;
 	}
 
-	/**
-	 * Get all possible schedule policies.
-	 * @return bool
-	 */
+	//Get all possible schedule policies.
 	function getSchedulePolicy() {
 		//Get all schedule policies so we can figure out the maximum start/stop window
 		//which we then use to get schedules. So this has to be called before getSchedule().
@@ -982,10 +834,6 @@ class CalculatePolicy {
 		return FALSE;
 	}
 
-	/**
-	 * @param int $date_stamp EPOCH
-	 * @return bool
-	 */
 	function deleteSystemTotalTime( $date_stamp ) {
 		//Delete everything that is not overrided.
 		$udtlf = TTnew( 'UserDateTotalListFactory' );
@@ -1035,6 +883,8 @@ class CalculatePolicy {
 
 		if ( is_array($object_type_ids) AND count( $object_type_ids ) > 0 ) {
 			//Debug::Arr( $object_type_ids, 'Deleting UDT rows based on total object_type_ids: '. count($object_type_ids), __FILE__, __LINE__, __METHOD__, 10);
+			//$udtlf->getByUserIdAndDateStampAndObjectTypeAndOverrideAndMisMatchPunchControlDateStamp( $this->getUserObject()->getId(), $date_stamp, $object_type_ids, FALSE ); //System totals
+			//$udtlf->bulkDelete( $udtlf->getIDSByListFactory( $udtlf ) );
 			$udtlf->deleteByUserIdAndDateStampAndObjectTypeAndOverrideAndMisMatchPunchControlDateStamp( $this->getUserObject()->getId(), $date_stamp, $object_type_ids, FALSE ); //System totals
 			unset($this->new_system_user_date_total_id[TTDate::getMiddleDayEpoch($date_stamp)]); //Reset this when deleting records, so it can be set again when we insert them later on.
 			$this->delete_system_total_time_already_run = TRUE; //This allows insertUserDateTotal to run later on without inserting duplicated records.
@@ -1061,11 +911,7 @@ class CalculatePolicy {
 		return TRUE;
 	}
 
-	/**
-	 * FIXME: This can be activated later on with more testing, specifically used in cases where Contributing Shifts split on certain times of day.
-	 * @param $udtlf
-	 * @return mixed
-	 */
+	//FIXME: This can be activated later on with more testing, specifically used in cases where Contributing Shifts split on certain times of day.
 	function compactUserDateTotalDataBasedOnTimeStamps( $udtlf ) {
 		if ( is_array($udtlf) AND count($udtlf) > 0 ) {
 			$prev_udt_obj = FALSE;
@@ -1108,10 +954,6 @@ class CalculatePolicy {
 
 	//Compacts UDT records based on override, so calcualteSystemTotalTime() is correct
 	//  even when new UDT records are added (override=1) and some are modified directly.
-	/**
-	 * @param $udtlf
-	 * @return mixed
-	 */
 	function compactUserDateTotalDataBasedOnOverride( $udtlf ) {
 		if ( is_array($udtlf) AND count($udtlf) > 0 ) {
 
@@ -1135,11 +977,6 @@ class CalculatePolicy {
 		return $udtlf;
 	}
 
-	/**
-	 * @param int $date_stamp EPOCH
-	 * @param $tmp_system_total_time
-	 * @return bool
-	 */
 	function calculateSystemTotalTime( $date_stamp, $tmp_system_total_time ) {
 		$system_total_time = $this->getSumUserDateTotalData( $this->compactUserDateTotalDataBasedOnOverride( $this->filterUserDateTotalDataByObjectTypeIDs( $date_stamp, $date_stamp, array( 20, 30, 25 ) ) ) );
 		Debug::text('System Total Time: '. $system_total_time .' vs. System Total Time Param: '. $tmp_system_total_time, __FILE__, __LINE__, __METHOD__, 10);
@@ -1181,10 +1018,6 @@ class CalculatePolicy {
 		return FALSE;
 	}
 
-	/**
-	 * @param int $date_stamp EPOCH
-	 * @return bool
-	 */
 	function calculateBreakTimePolicy( $date_stamp ) {
 		//Calculate break time taken even if no break policies exist.
 		$break_policy_total_time = 0;
@@ -1199,7 +1032,6 @@ class CalculatePolicy {
 			$pair = 0;
 			$x = 0;
 			$out_for_break = FALSE;
-			$break_out_timestamp = FALSE;
 			foreach ( $plf as $p_obj ) {
 				if ( $out_for_break == FALSE AND $p_obj->getEndType() == 30 ) {
 					$break_out_timestamp = $p_obj->getEndTimeStamp();
@@ -1232,12 +1064,12 @@ class CalculatePolicy {
 							$udtf->setUser( $this->getUserObject()->getId() );
 							$udtf->setDateStamp( $date_stamp );
 							$udtf->setObjectType( 111 ); //Break (Taken)
-							$udtf->setPayCode( TTUUID::getZeroID() );
+							$udtf->setPayCode( 0 );
 
-							$udtf->setBranch( $this->getUserObject()->getDefaultBranch() );
-							$udtf->setDepartment( $this->getUserObject()->getDefaultDepartment() );
-							$udtf->setJob( $this->getUserObject()->getDefaultJob() );
-							$udtf->setJobItem( $this->getUserObject()->getDefaultJobItem() );
+							$udtf->setBranch( (int)$this->getUserObject()->getDefaultBranch() );
+							$udtf->setDepartment( (int)$this->getUserObject()->getDefaultDepartment() );
+							$udtf->setJob( (int)$this->getUserObject()->getDefaultJob() );
+							$udtf->setJobItem( (int)$this->getUserObject()->getDefaultJobItem() );
 
 							$udtf->setStartType( 30 ); //Break
 							$udtf->setStartTimeStamp( $time_stamp_arr[20] );
@@ -1399,13 +1231,13 @@ class CalculatePolicy {
 									$udtf->setUser( $this->getUserObject()->getId() );
 									$udtf->setDateStamp( $date_stamp );
 									$udtf->setObjectType( 110 ); //Break
-									$udtf->setSourceObject( TTUUID::castUUID($bp_obj->getId()) );
-									$udtf->setPayCode( $bp_obj->getPayCode() );
+									$udtf->setSourceObject( (int)$bp_obj->getId() );
+									$udtf->setPayCode( (int)$bp_obj->getPayCode() );
 
-									$udtf->setBranch( $this->user_date_total[$udt_id]->getBranch() );
-									$udtf->setDepartment( $this->user_date_total[$udt_id]->getDepartment() );
-									$udtf->setJob( $this->user_date_total[$udt_id]->getJob() );
-									$udtf->setJobItem( $this->user_date_total[$udt_id]->getJobItem() );
+									$udtf->setBranch( (int)$this->user_date_total[$udt_id]->getBranch() );
+									$udtf->setDepartment( (int)$this->user_date_total[$udt_id]->getDepartment() );
+									$udtf->setJob( (int)$this->user_date_total[$udt_id]->getJob() );
+									$udtf->setJobItem( (int)$this->user_date_total[$udt_id]->getJobItem() );
 
 									$udtf->setStartType( 30 ); //Break
 									$udtf->setEndType( 30 ); //Break
@@ -1471,11 +1303,6 @@ class CalculatePolicy {
 		return FALSE;
 	}
 
-	/**
-	 * @param $a
-	 * @param $b
-	 * @return int
-	 */
 	function BreakTimePolicySortByTriggerTimeAsc( $a, $b ) {
 		if ( $a->getTriggerTime() == $b->getTriggerTime() ) {
 			return 0;
@@ -1484,13 +1311,6 @@ class CalculatePolicy {
 		return ( $a->getTriggerTime() < $b->getTriggerTime() ) ? (-1) : 1;
 	}
 
-	/**
-	 * @param int $date_stamp EPOCH
-	 * @param null $daily_total_time
-	 * @param int $type_id ID
-	 * @param bool $always_return_at_least_one
-	 * @return array
-	 */
 	function filterBreakTimePolicy( $date_stamp, $daily_total_time = NULL, $type_id = NULL, $always_return_at_least_one = FALSE ) {
 		if ( ( $daily_total_time > 0 OR $always_return_at_least_one == TRUE )
 					AND (
@@ -1514,9 +1334,9 @@ class CalculatePolicy {
 			//When break policies are defined in a schedule policy, they completely override the policy group break policies.
 			//Break Policy ID: -1 == No Break
 			//Break Policy ID: 0 == Defined By Policy Group
-			if ( count($schedule_policy_break_time_policy_ids) > 0 AND !in_array( TTUUID::getZeroID(), $schedule_policy_break_time_policy_ids ) ) {
+			if ( count($schedule_policy_break_time_policy_ids) > 0 AND !in_array( 0, $schedule_policy_break_time_policy_ids ) ) {
 				//Only use break policies from schedule policy
-				if ( in_array( TTUUID::getNotExistID(), $schedule_policy_break_time_policy_ids ) ) {
+				if ( in_array( -1, $schedule_policy_break_time_policy_ids ) ) {
 					Debug::text('Using NO break policies...', __FILE__, __LINE__, __METHOD__, 10);
 					$bplf = array(); //No break policies.
 				} else {
@@ -1557,14 +1377,10 @@ class CalculatePolicy {
 		}
 
 		Debug::text('No break policies apply on date...', __FILE__, __LINE__, __METHOD__, 10);
-		return array();
+		return FALSE;
 	}
 
 	//Get all overtime policies that could possibly apply, including from schedule policies.
-
-	/**
-	 * @return bool
-	 */
 	function getBreakTimePolicy() {
 		$this->schedule_break_time_policy_ids = array();
 
@@ -1595,10 +1411,6 @@ class CalculatePolicy {
 		return FALSE;
 	}
 
-	/**
-	 * @param int $date_stamp EPOCH
-	 * @return bool
-	 */
 	function calculateMealTimePolicy( $date_stamp ) {
 		//Calculate meal time taken even if no meal policies exist.
 		$lunch_total_time = 0;
@@ -1610,7 +1422,6 @@ class CalculatePolicy {
 			$pair = 0;
 			$x = 0;
 			$out_for_lunch = FALSE;
-			$lunch_out_timestamp = FALSE;
 			foreach ( $plf as $p_obj ) {
 				if ( $out_for_lunch == FALSE AND $p_obj->getEndType() == 20 ) {
 					$lunch_out_timestamp = $p_obj->getEndTimeStamp();
@@ -1641,12 +1452,12 @@ class CalculatePolicy {
 							$udtf->setUser( $this->getUserObject()->getId() );
 							$udtf->setDateStamp( $date_stamp );
 							$udtf->setObjectType( 101 ); //Lunch (Taken)
-							$udtf->setPayCode( TTUUID::getZeroID() );
+							$udtf->setPayCode( 0 );
 
-							$udtf->setBranch( $this->getUserObject()->getDefaultBranch() );
-							$udtf->setDepartment( $this->getUserObject()->getDefaultDepartment() );
-							$udtf->setJob( $this->getUserObject()->getDefaultJob() );
-							$udtf->setJobItem( $this->getUserObject()->getDefaultJobItem() );
+							$udtf->setBranch( (int)$this->getUserObject()->getDefaultBranch() );
+							$udtf->setDepartment( (int)$this->getUserObject()->getDefaultDepartment() );
+							$udtf->setJob( (int)$this->getUserObject()->getDefaultJob() );
+							$udtf->setJobItem( (int)$this->getUserObject()->getDefaultJobItem() );
 
 							$udtf->setStartType( 20 ); //Lunch
 							$udtf->setStartTimeStamp( $time_stamp_arr[20] );
@@ -1779,13 +1590,13 @@ class CalculatePolicy {
 									$udtf->setUser( $this->getUserObject()->getId() );
 									$udtf->setDateStamp( $date_stamp );
 									$udtf->setObjectType( 100 ); //Lunch
-									$udtf->setSourceObject( TTUUID::castUUID($mp_obj->getId()) );
-									$udtf->setPayCode( $mp_obj->getPayCode() );
+									$udtf->setSourceObject( (int)$mp_obj->getId() );
+									$udtf->setPayCode( (int)$mp_obj->getPayCode() );
 
-									$udtf->setBranch( $this->user_date_total[$udt_id]->getBranch() );
-									$udtf->setDepartment( $this->user_date_total[$udt_id]->getDepartment() );
-									$udtf->setJob( $this->user_date_total[$udt_id]->getJob() );
-									$udtf->setJobItem( $this->user_date_total[$udt_id]->getJobItem() );
+									$udtf->setBranch( (int)$this->user_date_total[$udt_id]->getBranch() );
+									$udtf->setDepartment( (int)$this->user_date_total[$udt_id]->getDepartment() );
+									$udtf->setJob( (int)$this->user_date_total[$udt_id]->getJob() );
+									$udtf->setJobItem( (int)$this->user_date_total[$udt_id]->getJobItem() );
 
 									$udtf->setStartType( 20 ); //Lunch
 									$udtf->setEndType( 20 ); //Lunch
@@ -1849,13 +1660,6 @@ class CalculatePolicy {
 		return FALSE;
 	}
 
-	/**
-	 * @param int $date_stamp EPOCH
-	 * @param null $daily_total_time
-	 * @param int $type_id ID
-	 * @param bool $always_return_at_least_one
-	 * @return array
-	 */
 	function filterMealTimePolicy( $date_stamp, $daily_total_time = NULL, $type_id = NULL, $always_return_at_least_one = FALSE ) {
 		if ( ( $daily_total_time > 0 OR $always_return_at_least_one == TRUE )
 				AND (
@@ -1879,9 +1683,9 @@ class CalculatePolicy {
 			//When meal policies are defined in a schedule policy, they completely override the policy group meal policies.
 			//Meal Policy ID: -1 == No Meal
 			//Meal Policy ID: 0 == Defined By Policy Group
-			if ( count($schedule_policy_meal_time_policy_ids) > 0 AND !in_array( TTUUID::getZeroID(), $schedule_policy_meal_time_policy_ids ) ) {
+			if ( count($schedule_policy_meal_time_policy_ids) > 0 AND !in_array( 0, $schedule_policy_meal_time_policy_ids ) ) {
 				//Only use meal policies from schedule policy
-				if ( in_array( TTUUID::getNotExistID(), $schedule_policy_meal_time_policy_ids ) ) {
+				if ( in_array( -1, $schedule_policy_meal_time_policy_ids ) ) {
 					Debug::text('Using NO meal policies...', __FILE__, __LINE__, __METHOD__, 10);
 					$mplf = array(); //No meal policies.
 				} else {
@@ -1919,14 +1723,10 @@ class CalculatePolicy {
 		}
 
 		Debug::text('No meal policies apply on date...', __FILE__, __LINE__, __METHOD__, 10);
-		return array();
+		return FALSE;
 	}
 
 	//Get all meal policies that could possibly apply, including from schedule policies.
-
-	/**
-	 * @return bool
-	 */
 	function getMealTimePolicy() {
 		$this->schedule_meal_time_policy_ids = array();
 
@@ -1953,7 +1753,7 @@ class CalculatePolicy {
 				}
 			}
 
-			Debug::text('Found schedule policy meal policy rows: '. count( (array)$this->schedule_policy_meal_time_policy) .' Policy Group: '. count( (array)$this->meal_time_policy), __FILE__, __LINE__, __METHOD__, 10);
+			Debug::text('Found schedule policy meal policy rows: '. count($this->schedule_policy_meal_time_policy) .' Policy Group: '. count($this->meal_time_policy), __FILE__, __LINE__, __METHOD__, 10);
 			return TRUE;
 		}
 
@@ -1961,29 +1761,25 @@ class CalculatePolicy {
 		return FALSE;
 	}
 
-	/**
-	 * @param int $date_stamp EPOCH
-	 * @return bool
-	 */
 	function calculateAbsenceTimePolicy( $date_stamp ) {
 		$user_date_total_rows = $this->filterUserDateTotalDataByObjectTypeIDs( $date_stamp, $date_stamp, array( 50 ) );
 		if ( is_array($user_date_total_rows) ) {
 			foreach( $user_date_total_rows as $udt_key => $udt_obj ) {
 				$ap_obj = $udt_obj->getSourceObjectObject();
 
-				Debug::text('Generating UserDateTotal object from Absence Time Policy, ID: '. $this->user_date_total_insert_id .' Object Type ID: '. 25 .' Pay Code ID: '. $udt_obj->getPayCode() .' Total Time: '. $udt_obj->getTotalTime() .' UDT Key: '. $udt_key, __FILE__, __LINE__, __METHOD__, 10);
+				Debug::text('Generating UserDateTotal object from Absence Time Policy, ID: '. $this->user_date_total_insert_id .' Object Type ID: '. 25 .' Pay Code ID: '. (int)$udt_obj->getPayCode() .' Total Time: '. $udt_obj->getTotalTime() .' UDT Key: '. $udt_key, __FILE__, __LINE__, __METHOD__, 10);
 				if ( is_object($ap_obj) AND !isset( $this->user_date_total[$this->user_date_total_insert_id] ) ) {
 					$udtf = TTnew( 'UserDateTotalFactory' );
 					$udtf->setUser( $this->getUserObject()->getId() );
 					$udtf->setDateStamp( $date_stamp );
 					$udtf->setObjectType( 25 ); //Absence Time
-					$udtf->setSourceObject( $udt_obj->getSourceObject() );
+					$udtf->setSourceObject( (int)$udt_obj->getSourceObject() );
 					$udtf->setPayCode( $udt_obj->getPayCode() );
 
-					$udtf->setBranch( $udt_obj->getBranch() );
-					$udtf->setDepartment( $udt_obj->getDepartment() );
-					$udtf->setJob( $udt_obj->getJob() );
-					$udtf->setJobItem( $udt_obj->getJobItem() );
+					$udtf->setBranch( (int)$udt_obj->getBranch() );
+					$udtf->setDepartment( (int)$udt_obj->getDepartment() );
+					$udtf->setJob( (int)$udt_obj->getJob() );
+					$udtf->setJobItem( (int)$udt_obj->getJobItem() );
 
 					$udtf->setQuantity( 0 );
 					$udtf->setBadQuantity( 0 );
@@ -2049,10 +1845,6 @@ class CalculatePolicy {
 	}
 
 
-	/**
-	 * @param int $date_stamp EPOCH
-	 * @return bool
-	 */
 	function calculateUnderTimeAbsencePolicy( $date_stamp ) {
 		$undertime_absence_policy_arr = $this->filterUnderTimeAbsencePolicy( $date_stamp );
 		if ( is_array($undertime_absence_policy_arr) AND count($undertime_absence_policy_arr) > 0 ) {
@@ -2086,7 +1878,7 @@ class CalculatePolicy {
 							)
 					) {
 					//Check for conflicting/overridden records, so the user can override undertime absences and zero them out.
-					if ( $this->isConflictingUserDateTotal( $date_stamp, array(25, 50), $ap_obj->getPayCode() ) == FALSE ) {
+					if ( $this->isConflictingUserDateTotal( $date_stamp, array(25, 50), (int)$ap_obj->getPayCode() ) == FALSE ) {
 						if ( !isset( $this->user_date_total[$this->user_date_total_insert_id] ) ) {
 							$udtf = TTnew( 'UserDateTotalFactory' );
 							$udtf->setUser( $this->getUserObject()->getId() );
@@ -2097,8 +1889,8 @@ class CalculatePolicy {
 							//Changed back to object_type_id=50 on 10-Apr-15 to be consistent with other policy absences.
 							//It also makes it easier to override it without having to use Accumulated Time functionality.
 							$udtf->setObjectType( 50 );
-							$udtf->setSourceObject( TTUUID::castUUID($ap_obj->getId()) );
-							$udtf->setPayCode( $ap_obj->getPayCode() );
+							$udtf->setSourceObject( (int)$ap_obj->getId() );
+							$udtf->setPayCode( (int)$ap_obj->getPayCode() );
 
 							$udtf->setBranch( $this->getUserObject()->getDefaultBranch() );
 							$udtf->setDepartment( $this->getUserObject()->getDefaultDepartment() );
@@ -2144,10 +1936,6 @@ class CalculatePolicy {
 		return FALSE;
 	}
 
-	/**
-	 * @param int $date_stamp EPOCH
-	 * @return array
-	 */
 	function filterUnderTimeAbsencePolicy( $date_stamp ) {
 		if ( ( is_array( $this->undertime_absence_policy ) AND count( $this->undertime_absence_policy ) > 0 ) ) {
 			$schedule_policy_arr = $this->filterSchedulePolicyByDate( $date_stamp, TRUE ); //Force all scheduled shifts to be returned.
@@ -2175,14 +1963,10 @@ class CalculatePolicy {
 		}
 
 		Debug::text('No partial/full shift undertime absence policies apply on date...', __FILE__, __LINE__, __METHOD__, 10);
-		return array();
+		return FALSE;
 	}
 
 	//Get all absence policies that could possibly apply, including from schedule policies.
-
-	/**
-	 * @return bool
-	 */
 	function getUnderTimeAbsenceTimePolicy() {
 		$this->schedule_undertime_absence_policy_ids = array();
 
@@ -2212,9 +1996,6 @@ class CalculatePolicy {
 		return FALSE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function calculateRegularTimeExclusivity() {
 		//Loop through the exclusivity map and reduce regular time records by the amount of the linked absence record.
 		if ( is_array( $this->regular_time_exclusivity_map ) AND count( $this->regular_time_exclusivity_map ) > 0 ) {
@@ -2256,10 +2037,6 @@ class CalculatePolicy {
 		return FALSE;
 	}
 
-	/**
-	 * @param object $udt_obj
-	 * @return array
-	 */
 	function calculateUserDateTotalStartAndEndTimeStamps( $udt_obj ) {
 		//Try to fit time stamps in with schedule and existing punches as best as possible.
 		if ( $udt_obj->getObjectType() == 50 ) {
@@ -2343,11 +2120,6 @@ class CalculatePolicy {
 		return $retarr;
 	}
 
-	/**
-	 * @param int $date_stamp EPOCH
-	 * @param null $maximum_daily_total_time
-	 * @return bool
-	 */
 	function calculateRegularTimePolicy( $date_stamp, $maximum_daily_total_time = NULL ) {
 		//Since other policies such as OT need to be able to calculate hourly rates based on regular time.
 		//We need to assign *all* worked time+meal/break+absence to regular time policies.
@@ -2355,7 +2127,7 @@ class CalculatePolicy {
 
 		//Loop over all regular time policies calculating the pay codes, up until $maximum_time is reached.
 		$regular_time_policies = $this->filterRegularTimePolicy( $date_stamp );
-		$total_regular_time_policies = count( $regular_time_policies );
+		$total_regular_time_policies = count($regular_time_policies);
 		if ( is_array( $regular_time_policies ) AND $total_regular_time_policies > 0 ) {
 			//Don't set an upper limit on the regular time, as we have to account for worked, absence time, but not always in every situation
 			//So we can't reliably calculate the upper limit. As long as we don't calculate policies on source UDT rows multiple times we should be fine.
@@ -2467,23 +2239,23 @@ class CalculatePolicy {
 
 							//Can't compact the data here, as that won't allow us to reference (pyramid) the time as each policy total time is calculated.
 							//We will need to create the UserDateTotal objects, then compact them just before inserting...
-							Debug::text('Generating UserDateTotal object from Regular Time Policy, ID: '. $this->user_date_total_insert_id .' Object Type ID: '. 20 .' Pay Code ID: '. $rtp_obj->getPayCode() .' Total Time: '. $total_time, __FILE__, __LINE__, __METHOD__, 10);
+							Debug::text('Generating UserDateTotal object from Regular Time Policy, ID: '. $this->user_date_total_insert_id .' Object Type ID: '. 20 .' Pay Code ID: '. (int)$rtp_obj->getPayCode() .' Total Time: '. $total_time, __FILE__, __LINE__, __METHOD__, 10);
 							if ( !isset( $this->user_date_total[$this->user_date_total_insert_id] ) ) {
 								$udtf = TTnew( 'UserDateTotalFactory' );
 								$udtf->setUser( $this->getUserObject()->getId() );
 								$udtf->setDateStamp( $date_stamp );
 								$udtf->setObjectType( 20 ); //Regular Time
-								$udtf->setSourceObject( TTUUID::castUUID($rtp_obj->getId()) );
+								$udtf->setSourceObject( (int)$rtp_obj->getId() );
 								if ( $i == $total_regular_time_policies ) {
-									$udtf->setPayCode( TTUUID::getZeroID() );
+									$udtf->setPayCode( 0 );
 								} else {
-									$udtf->setPayCode( $rtp_obj->getPayCode() );
+									$udtf->setPayCode( (int)$rtp_obj->getPayCode() );
 								}
 
-								$udtf->setBranch( $udt_obj->getBranch() );
-								$udtf->setDepartment( $udt_obj->getDepartment() );
-								$udtf->setJob( $udt_obj->getJob() );
-								$udtf->setJobItem( $udt_obj->getJobItem() );
+								$udtf->setBranch( (int)$udt_obj->getBranch() );
+								$udtf->setDepartment( (int)$udt_obj->getDepartment() );
+								$udtf->setJob( (int)$udt_obj->getJob() );
+								$udtf->setJobItem( (int)$udt_obj->getJobItem() );
 
 								if ( $udt_obj->getStartTimeStamp() != '' AND $udt_obj->getEndTimeStamp() != '' ) {
 									$udtf->setStartType( $udt_obj->getStartType() );
@@ -2557,11 +2329,6 @@ class CalculatePolicy {
 		return FALSE;
 	}
 
-	/**
-	 * @param $a
-	 * @param $b
-	 * @return int
-	 */
 	function RegularTimePolicySortByCalculationOrderAsc( $a, $b ) {
 		if ( $a->getCalculationOrder() == $b->getCalculationOrder() ) {
 			return 0;
@@ -2570,10 +2337,6 @@ class CalculatePolicy {
 		return ( $a->getCalculationOrder() < $b->getCalculationOrder() ) ? (-1) : 1;
 	}
 
-	/**
-	 * @param int $date_stamp EPOCH
-	 * @return array
-	 */
 	function filterRegularTimePolicy( $date_stamp ) {
 		$rtplf = $this->regular_time_policy;
 		if ( is_array( $rtplf ) AND count( $rtplf ) > 0 ) {
@@ -2618,13 +2381,10 @@ class CalculatePolicy {
 		}
 
 		Debug::text('No regular time policies apply on date...', __FILE__, __LINE__, __METHOD__, 10);
-		return array();
+		return FALSE;
 	}
 
-	/**
-	 * Get all regulartime policies that could possibly apply, including from schedule policies.
-	 * @return bool
-	 */
+	//Get all regulartime policies that could possibly apply, including from schedule policies.
 	function getRegularTimePolicy() {
 		$this->schedule_regular_time_policy_ids = array();
 
@@ -2654,16 +2414,12 @@ class CalculatePolicy {
 		return FALSE;
 	}
 
-	/**
-	 * This must be done after all other policies are calculated so any average calculations can include premium time wages.
-	 * @param int $user_date_total_records EPOCH
-	 * @return bool
-	 */
+	//This must be done after all other policies are calculated so any average calculations can include premium time wages.
 	function calculateOverTimeHourlyRates( $user_date_total_records ) {
 		if ( is_array($user_date_total_records) AND count($user_date_total_records) > 0 ) {
 			Debug::text('Calculating Overtime Hourly Rates...', __FILE__, __LINE__, __METHOD__, 10);
 			foreach( $user_date_total_records as $key => $udt_obj ) {
-				if ( is_numeric( $key ) AND $key < 0 AND $udt_obj->getTotalTime() > 0 AND $udt_obj->getObjectType() == 30 ) {
+				if ( $key < 0 AND $udt_obj->getTotalTime() > 0 AND $udt_obj->getObjectType() == 30 ) {
 					//Debug::text('  Calculating UserDateTotal Entry!', __FILE__, __LINE__, __METHOD__, 10);
 
 					//Only recalculate rates if we are actually using averaging. Otherwise we calculate them in calculateOverTime() instead.
@@ -2687,15 +2443,9 @@ class CalculatePolicy {
 		return FALSE;
 	}
 
-	/**
-	 * Overtime policies need to be nested...
-	 * Since they are basically like saying: Any time after Xhrs/day goes to this OT policy. If some time is filtered out, it simply applies to the next OT policy.
-	 * So the first OT policy should have almost all time applied to it, then the next policy simply moves time from the prior OT policy into itself, rinse and repeat...
-	 * @param int $date_stamp EPOCH
-	 * @param $current_trigger_time_arr
-	 * @param bool $prev_policy_data
-	 * @return bool
-	 */
+	//Overtime policies need to be nested...
+	//Since they are basically like saying: Any time after Xhrs/day goes to this OT policy. If some time is filtered out, it simply applies to the next OT policy.
+	//So the first OT policy should have almost all time applied to it, then the next policy simply moves time from the prior OT policy into itself, rinse and repeat...
 	function calculateOverTimePolicyForTriggerTime( $date_stamp, $current_trigger_time_arr, $prev_policy_data = FALSE ) {
 		$retval = FALSE;
 		if ( isset($this->over_time_policy[$current_trigger_time_arr['over_time_policy_id']]) ) {
@@ -2767,20 +2517,19 @@ class CalculatePolicy {
 					} else {
 						$base_hourly_rate = $udt_obj->getHourlyRate();
 					}
-					$hourly_rate = $this->getHourlyRate( $otp_obj->getPayFormulaPolicy(), $otp_obj->getPayCode(), $date_stamp, $base_hourly_rate );
+					$hourly_rate = $this->getHourlyRate( $otp_obj->getPayFormulaPolicy(), (int)$otp_obj->getPayCode(), $date_stamp, $base_hourly_rate );
 
 					//This must be below the $udt_obj assignment above.
 					//Even if the combined_rate is lower, if the input UDT record is not overtime, then we know some UDT records were skipped over likely due to differential criteria OT policies that only matched the middle of a shift.
 					//  See Unit Test: OvertimePolicy_testDifferentialDailyOverTimePolicyE1
-					//  Some of these checks are also in: $this->calculateOverTimePolicy()
 					if (	$current_trigger_time_arr['combined_rate'] > $prev_policy_data['combined_rate']
 							OR
-							( $current_trigger_time_arr['combined_rate'] == $prev_policy_data['combined_rate'] AND $current_trigger_time_arr['calculation_order'] <= $prev_policy_data['calculation_order'] )
+							$current_trigger_time_arr['combined_rate'] == $prev_policy_data['combined_rate'] AND $current_trigger_time_arr['calculation_order'] <= $prev_policy_data['calculation_order']
 							OR
 							//This may cause problems with banked time, as there wouldn't be an hourly rate associated with it, but there would be a combined_rate (accrual rate)
 							$hourly_rate >= $udt_obj->getHourlyRate() ) {
 						$udt_overlap_time = TTDate::getTimeOverLapDifference( $udt_obj->getStartTimeStamp(), $udt_obj->getEndTimeStamp(), $current_trigger_time_arr['start_time_stamp'], $udt_obj->getEndTimeStamp() );
-						Debug::text('    aID: \''. TTUUID::castUUID($udt_obj->getID()) .'\' Total Time: '. $udt_obj->getTotalTime() .' Quantity: '. $udt_obj->getQuantity() .' Bad Quantity: '. $udt_obj->getBadQuantity() .' Overlap Time: '. $udt_overlap_time .' Start Time: '. TTDate::getDate('DATE+TIME', $udt_obj->getStartTimeStamp() ) .' End Time: '. TTDate::getDate('DATE+TIME', $udt_obj->getEndTimeStamp() ), __FILE__, __LINE__, __METHOD__, 10);
+						Debug::text('    aID: '. (int)$udt_obj->getID() .' Total Time: '. $udt_obj->getTotalTime() .' Quantity: '. $udt_obj->getQuantity() .' Bad Quantity: '. $udt_obj->getBadQuantity() .' Overlap Time: '. $udt_overlap_time .' Start Time: '. TTDate::getDate('DATE+TIME', $udt_obj->getStartTimeStamp() ) .' End Time: '. TTDate::getDate('DATE+TIME', $udt_obj->getEndTimeStamp() ), __FILE__, __LINE__, __METHOD__, 10);
 
 						if ( $udt_overlap_time > 0 ) {
 							Debug::text('      UDT Overlaps with Trigger Time...', __FILE__, __LINE__, __METHOD__, 10);
@@ -2826,19 +2575,19 @@ class CalculatePolicy {
 
 									//Can't compact the data here, as that won't allow us to reference (pyramid) the time as each policy total time is calculated.
 									//We will need to create the UserDateTotal objects, then compact them just before inserting...
-									Debug::text('          Generating UserDateTotal object from OverTime Policy, ID: '. $this->user_date_total_insert_id .' Object Type ID: '. 30 .' Pay Code ID: '. $otp_obj->getPayCode() .' Total Time: '. $udt_overlap_time .' Original Hourly Rate: '. $udt_obj->getHourlyRate(), __FILE__, __LINE__, __METHOD__, 10);
+									Debug::text('          Generating UserDateTotal object from OverTime Policy, ID: '. $this->user_date_total_insert_id .' Object Type ID: '. 30 .' Pay Code ID: '. (int)$otp_obj->getPayCode() .' Total Time: '. $udt_overlap_time .' Original Hourly Rate: '. $udt_obj->getHourlyRate(), __FILE__, __LINE__, __METHOD__, 10);
 									if ( !isset( $this->user_date_total[$this->user_date_total_insert_id] ) ) {
 										$udtf = TTnew( 'UserDateTotalFactory' );
 										$udtf->setUser( $this->getUserObject()->getId() );
 										$udtf->setDateStamp( $date_stamp );
 										$udtf->setObjectType( 30 ); //Overtime
 										$udtf->setSourceObject( $otp_obj->getId() );
-										$udtf->setPayCode( $otp_obj->getPayCode() );
+										$udtf->setPayCode( (int)$otp_obj->getPayCode() );
 
-										$udtf->setBranch( $udt_obj->getBranch() );
-										$udtf->setDepartment( $udt_obj->getDepartment() );
-										$udtf->setJob( $udt_obj->getJob() );
-										$udtf->setJobItem( $udt_obj->getJobItem() );
+										$udtf->setBranch( (int)$udt_obj->getBranch() );
+										$udtf->setDepartment( (int)$udt_obj->getDepartment() );
+										$udtf->setJob( (int)$udt_obj->getJob() );
+										$udtf->setJobItem( (int)$udt_obj->getJobItem() );
 
 										//Make sure we set start/end timestamps for overtime, so its easier to diagnose problems.
 										//However when including absences in OT it makes that difficult.
@@ -2875,7 +2624,7 @@ class CalculatePolicy {
 											//We will save these records at the end.
 											$this->user_date_total[$this->user_date_total_insert_id] = $udtf;
 
-											if ( $udt_obj->getID() == '' AND ( $udt_obj->getObjectType() == 20 OR $udt_obj->getObjectType() == 25 OR $udt_obj->getObjectType() == 30 ) ) {
+											if ( (int)$udt_obj->getID() == 0 AND ( $udt_obj->getObjectType() == 20 OR $udt_obj->getObjectType() == 25 OR $udt_obj->getObjectType() == 30 ) ) {
 												//Since we reduce the source UDT record immediately here, we need a pointer to it rather than a copy.
 												//If we didn't get a pointer to it near the top of this loop, get it here.
 												if ( !isset($this->over_time_recurse_map[$udt_key]) ) {
@@ -2883,7 +2632,7 @@ class CalculatePolicy {
 												}
 
 												$this->over_time_recurse_map[$udt_key] = $this->user_date_total_insert_id;
-												Debug::text('        Reducing source recursive UDT row... ID: \''. TTUUID::castUUID($udt_obj->getId()) .'\' KEY: '. $udt_key .' row EndTimeStamp: '. TTDate::getDate('DATE+TIME', $udt_obj->getEndTimeStamp() ) .'/'. TTDate::getDate('DATE+TIME', ( $udt_obj->getEndTimeStamp() - $udt_overlap_time ) ) .' TotalTime: '. $udt_obj->getTotalTime() .'/'. ( $udt_obj->getTotalTime() - $udt_overlap_time ) .' Object Type: '. $udt_obj->getObjectType(), __FILE__, __LINE__, __METHOD__, 10);
+												Debug::text('        Reducing source recursive UDT row... ID: '. (int)$udt_obj->getId() .' KEY: '. $udt_key .' row EndTimeStamp: '. TTDate::getDate('DATE+TIME', $udt_obj->getEndTimeStamp() ) .'/'. TTDate::getDate('DATE+TIME', ( $udt_obj->getEndTimeStamp() - $udt_overlap_time ) ) .' TotalTime: '. $udt_obj->getTotalTime() .'/'. ( $udt_obj->getTotalTime() - $udt_overlap_time ) .' Object Type: '. $udt_obj->getObjectType(), __FILE__, __LINE__, __METHOD__, 10);
 
 												$udt_obj->setEndTimeStamp( ( $udt_obj->getEndTimeStamp() - $udt_overlap_time ) );
 												$udt_obj->setQuantity( ( $udt_obj->getQuantity() - $udt_quantity ) );
@@ -2938,15 +2687,9 @@ class CalculatePolicy {
 		return $retval;
 	}
 
-	/**
-	 * @param int $date_stamp EPOCH
-	 * @param $trigger_time_arr
-	 * @param null $maximum_daily_total_time
-	 * @return bool
-	 */
 	function calculateOverTimePolicy( $date_stamp, $trigger_time_arr, $maximum_daily_total_time = NULL ) {
 		//1. Loop through each trigger_time_arr, as that will contain all the overtime policies that should apply to this date.
-		$total_over_time_policies = count( $trigger_time_arr );
+		$total_over_time_policies = count($trigger_time_arr);
 		if ( $total_over_time_policies > 0 AND is_array($trigger_time_arr) AND count($trigger_time_arr) ) {
 			$prev_policy_data = FALSE;
 
@@ -2967,10 +2710,8 @@ class CalculatePolicy {
 			}
 			Debug::text('Maximum Possible Over Time: '. $maximum_daily_total_time .' Is Differential Criteria: '. (int)$is_differential_criteria, __FILE__, __LINE__, __METHOD__, 10);
 
-
 			foreach( $trigger_time_arr_keys as $key => $trigger_time_arr_trigger_time ) {
 				$current_trigger_time_arr_trigger_time = $trigger_time_arr_keys[$key];
-
 				foreach( $trigger_time_arr[$current_trigger_time_arr_trigger_time] as $key_b => $current_trigger_time_arr ) {
 					//Filter based on combined_rate/calculation_order here rather than in processTriggerTimeArray() due to differential criterias.
 					//Only once a OT policy has actually been used do we take it into account and require the next policy to have a higher rate AND lower calculation order.
@@ -2979,16 +2720,11 @@ class CalculatePolicy {
 					//Move these checks into calculateOverTimePolicyForTriggerTime() so we can better handle differential criteria and hourly rate decisions when differential criterias are used.
 					if ( 	$prev_policy_data == FALSE
 							OR (
-									(
-										$is_differential_criteria == TRUE
-											//Make sure we aren't going from a non-weekly OT type to a weekly OT type. Daily to Daily, or Weekly to Weekly is fine. See unit test: OvertimePolicy::testDailyAndWeeklyOverTimePolicyE3
-											//  Otherwise it could be switching from daily OT to a weekly OT, which should never happen unless the rate has changed.
-											AND ( $current_trigger_time_arr['is_weekly_over_time_policy_type_id'] == $prev_policy_data['is_weekly_over_time_policy_type_id'] )
-									)
+									$is_differential_criteria == TRUE
 									OR
 									$current_trigger_time_arr['combined_rate'] > $prev_policy_data['combined_rate']
 									OR
-									( $current_trigger_time_arr['combined_rate'] == $prev_policy_data['combined_rate'] AND $current_trigger_time_arr['calculation_order'] <= $prev_policy_data['calculation_order'] )
+									$current_trigger_time_arr['combined_rate'] == $prev_policy_data['combined_rate'] AND $current_trigger_time_arr['calculation_order'] <= $prev_policy_data['calculation_order']
 								)
 						) {
 						$calculate_retval = $this->calculateOverTimePolicyForTriggerTime( $date_stamp, $current_trigger_time_arr, $prev_policy_data );
@@ -3015,10 +2751,6 @@ class CalculatePolicy {
 		return FALSE;
 	}
 
-	/**
-	 * @param int $date_stamp EPOCH
-	 * @return array
-	 */
 	function filterOverTimePolicy( $date_stamp ) {
 		$otplf = $this->over_time_policy;
 		if ( is_array($otplf) AND count($otplf) > 0 ) {
@@ -3056,19 +2788,9 @@ class CalculatePolicy {
 		}
 
 		Debug::text('No overtime policies apply on date...', __FILE__, __LINE__, __METHOD__, 10);
-		return array();
+		return FALSE;
 	}
 
-	/**
-	 * @return array
-	 */
-	function getWeeklyOverTimePolicyTypeIds() {
-		return array(20, 30, 503, 504, 505, 506, 507, 508, 509, 510, 511, 512, 210 );
-	}
-
-	/**
-	 * @return array
-	 */
 	function getWeeklyOverTimePolicyPayCodes() {
 		$weekly_over_time_pay_code_ids = array();
 		$weekly_over_time_policies = $this->filterWeeklyOverTimePolicy();
@@ -3081,10 +2803,6 @@ class CalculatePolicy {
 
 		return $weekly_over_time_pay_code_ids;
 	}
-
-	/**
-	 * @return array
-	 */
 	function getWeeklyOverTimePolicyIDs() {
 		$weekly_over_time_ids = array();
 		$weekly_over_time_policies = $this->filterWeeklyOverTimePolicy();
@@ -3099,15 +2817,11 @@ class CalculatePolicy {
 	}
 
 	//Get list of all weekly overtime policies so they can be included when calculating weekly time.
-
-	/**
-	 * @return array
-	 */
 	function filterWeeklyOverTimePolicy() {
 		$otplf = $this->over_time_policy;
 		if ( is_array($otplf) AND count($otplf) > 0 ) {
 			foreach( $otplf as $otp_obj ) {
-				if ( in_array( $otp_obj->getType(), $this->getWeeklyOverTimePolicyTypeIds() ) ) {
+				if ( in_array( $otp_obj->getType(), array(20, 30, 210) ) ) {
 					$retarr[$otp_obj->getId()] = $otp_obj;
 				}
 			}
@@ -3119,14 +2833,10 @@ class CalculatePolicy {
 		}
 
 		Debug::text('No overtime policies apply on date...', __FILE__, __LINE__, __METHOD__, 10);
-		return array();
+		return FALSE;
 	}
 
 	//Get all overtime policies that could possibly apply, including from schedule policies.
-
-	/**
-	 * @return bool
-	 */
 	function getOverTimePolicy() {
 		$this->schedule_over_time_policy_ids = array();
 
@@ -3156,12 +2866,6 @@ class CalculatePolicy {
 		return FALSE;
 	}
 
-	/**
-	 * @param int $date_stamp EPOCH
-	 * @param int $first_pay_period_start_date EPOCH
-	 * @param int $start_week_day_id
-	 * @return bool
-	 */
 	function isSecondBiWeeklyOverTimeWeek( $date_stamp, $first_pay_period_start_date, $start_week_day_id = 0 ) {
 		//This must be based on an "anchor" date, or first_pay_period_start_date, otherwise when there are 53 weeks in a year
 		//it will throw off the odd/even calculation.
@@ -3193,13 +2897,6 @@ class CalculatePolicy {
 		return FALSE;
 	}
 
-	/**
-	 * @param int $date_stamp EPOCH
-	 * @param $weeks
-	 * @param int $first_pay_period_start_date EPOCH
-	 * @param int $start_week_day_id
-	 * @return array
-	 */
 	function getOverTimePeriodDates( $date_stamp, $weeks, $first_pay_period_start_date, $start_week_day_id = 0 ) {
 		//Weeks is the number of weeks. ie: 2, 3, 6, ...
 
@@ -3269,16 +2966,8 @@ class CalculatePolicy {
 		return $retarr;
 	}
 
-	/**
-	 * @param int $start_date EPOCH
-	 * @param int $end_date EPOCH
-	 * @param object $otp_obj
-	 * @return int
-	 */
 	function getOverTimeTriggerTimeAdjustAmount( $start_date, $end_date, $otp_obj ) {
-		if ( getTTProductEdition() >= TT_PRODUCT_PROFESSIONAL
-				AND TTUUID::isUUID( $otp_obj->getTriggerTimeAdjustContributingShiftPolicy() ) AND $otp_obj->getTriggerTimeAdjustContributingShiftPolicy() != TTUUID::getZeroID() AND $otp_obj->getTriggerTimeAdjustContributingShiftPolicy() != TTUUID::getNotExistID() ) {
-
+		if ( getTTProductEdition() >= TT_PRODUCT_PROFESSIONAL AND $otp_obj->getTriggerTimeAdjustContributingShiftPolicy() > 0 ) {
 			$adjust_total_time = $this->getSumUserDateTotalData( $this->filterUserDateTotalDataByContributingShiftPolicy( $start_date, $end_date, $this->contributing_shift_policy[$otp_obj->getTriggerTimeAdjustContributingShiftPolicy()], array(20, 25, 30, 100, 110) ) ); //Don't include object_type_id=50 as that often is duplicated with ID: 25.
 			if ( $adjust_total_time != 0 ) {
 				$this->addPendingCalculationDate( $start_date, $end_date );
@@ -3291,10 +2980,6 @@ class CalculatePolicy {
 		return 0;
 	}
 
-	/**
-	 * @param int $date_stamp EPOCH
-	 * @return array|bool
-	 */
 	function getOverTimeTriggerArray( $date_stamp ) {
 		//Loop over each overtime policy that applies to this day.
 		$over_time_policies = $this->filterOverTimePolicy( $date_stamp );
@@ -3694,38 +3379,23 @@ class CalculatePolicy {
 						unset($days_worked_arr, $weekly_days_worked, $minimum_days_worked);
 						break;
 					case 180: //Holiday
-						//Only include holidays in policy groups that are assigned to the employee.
-						// Otherwise in cases like multi-provinces, a holiday might be assigned to BC but not AB, and it would still apply in AB.
-						// If they need to use specific holiday policies *not* assigned to a policy group for some reason, they will need to use Daily OT type with a Contributing Shift Policy instead.
-						$holiday_policies = $this->filterHoliday( $date_stamp, NULL, TRUE );
-						if ( is_array( $holiday_policies ) AND count( $holiday_policies ) > 0 ) {
-							$is_holiday_eligible = FALSE;
-							foreach ( $holiday_policies as $holiday_obj ) {
-								if ( is_object( $holiday_obj ) AND isset( $this->holiday_policy[ $holiday_obj->getHolidayPolicyID() ] ) ) {
-									Debug::text( '   Found Holiday: ' . $holiday_obj->getName(), __FILE__, __LINE__, __METHOD__, 10 );
-									if ( $this->holiday_policy[$holiday_obj->getHolidayPolicyID()]->getForceOverTimePolicy() == TRUE
-											OR $this->isEligibleForHoliday( $date_stamp, $this->holiday_policy[ $holiday_obj->getHolidayPolicyID() ] )
-									) {
-										$trigger_time = $otp_obj->getTriggerTime();
-										$trigger_time -= $this->getOverTimeTriggerTimeAdjustAmount( TTDate::getBeginDayEpoch( $date_stamp ), TTDate::getEndDayEpoch( $date_stamp ), $otp_obj );
-
-										$is_holiday_eligible = TRUE;
-										Debug::text( '   Is Eligible for Holiday: ' . $holiday_obj->getName() . ' Daily Trigger Time: ' . $trigger_time, __FILE__, __LINE__, __METHOD__, 10 );
-									} else {
-										Debug::text( '   Not Eligible for Holiday: ' . $holiday_obj->getName(), __FILE__, __LINE__, __METHOD__, 10 );
-									}
-								}
-							}
-
-							if ( $is_holiday_eligible == FALSE ) {
-								Debug::text( '   Not Eligible for any Holidays...', __FILE__, __LINE__, __METHOD__, 10 );
+						$holiday_obj = $this->filterHoliday( $date_stamp );
+						if ( is_object( $holiday_obj ) AND isset($this->holiday_policy[$holiday_obj->getHolidayPolicyID()]) ) {
+							Debug::text('   Found Holiday: '. $holiday_obj->getName(), __FILE__, __LINE__, __METHOD__, 10);
+							if ( $this->holiday_policy[$holiday_obj->getHolidayPolicyID()]->getForceOverTimePolicy() == TRUE
+									OR $this->isEligibleForHoliday( $date_stamp, $this->holiday_policy[$holiday_obj->getHolidayPolicyID()] ) ) {
+								$trigger_time = $otp_obj->getTriggerTime();
+								$trigger_time -= $this->getOverTimeTriggerTimeAdjustAmount( TTDate::getBeginDayEpoch( $date_stamp ), TTDate::getEndDayEpoch( $date_stamp ), $otp_obj );
+								Debug::text('   Is Eligible for Holiday: '. $holiday_obj->getName() .' Daily Trigger Time: '. $trigger_time, __FILE__, __LINE__, __METHOD__, 10);
+							} else {
+								Debug::text('   Not Eligible for Holiday: '. $holiday_obj->getName(), __FILE__, __LINE__, __METHOD__, 10);
 								continue 2; //Skip to next policy
 							}
 						} else {
-							Debug::text( '   No Holidays...', __FILE__, __LINE__, __METHOD__, 10 );
+							Debug::text('   Not Holiday...', __FILE__, __LINE__, __METHOD__, 10);
 							continue 2; //Skip to next policy
 						}
-						unset($holiday_policies, $holiday_obj, $is_holiday_eligible);
+						unset($holiday_obj);
 						break;
 					case 200: //Over schedule (Daily) / No Schedule. Have trigger time extend the schedule time.
 						$schedule_daily_total_time = $this->getSumScheduleTime( $this->filterScheduleDataByStatus( $date_stamp, $date_stamp, array( 10 ) ) );
@@ -3755,18 +3425,7 @@ class CalculatePolicy {
 				if ( is_numeric($trigger_time) ) {
 					$pay_formula_obj = $this->getPayFormulaPolicyObjectByPolicyObject( $otp_obj );
 					if ( is_object( $pay_formula_obj ) ) {
-						$trigger_time_arr[] = array(
-								'name'                               => $otp_obj->getName(),
-								'calculation_order'                  => $otp_calculation_order[ $otp_obj->getType() ],
-								'trigger_time'                       => $trigger_time,
-								'is_differential_criteria'           => $otp_obj->isDifferentialCriteriaDefined(),
-								'over_time_policy_id'                => $otp_obj->getId(),
-								'over_time_policy_type_id'           => $otp_obj->getType(),
-								'is_weekly_over_time_policy_type_id' => in_array( $otp_obj->getType(), $this->getWeeklyOverTimePolicyTypeIds() ),
-								'contributing_shift_policy_id'       => $otp_obj->getContributingShiftPolicy(),
-								'pay_code_id'                        => $otp_obj->getPayCode(),
-								'combined_rate'                      => ( $pay_formula_obj->getRate() + ( $this->isPayFormulaAccruing( $pay_formula_obj ) == TRUE ? $pay_formula_obj->getAccrualRate() : 0 ) ),
-						);
+						$trigger_time_arr[] = array( 'name' => $otp_obj->getName(), 'calculation_order' => $otp_calculation_order[$otp_obj->getType()], 'trigger_time' => $trigger_time, 'is_differential_criteria' => $otp_obj->isDifferentialCriteriaDefined(), 'over_time_policy_id' => $otp_obj->getId(), 'over_time_policy_type_id' => $otp_obj->getType(), 'contributing_shift_policy_id' => $otp_obj->getContributingShiftPolicy(), 'pay_code_id' => $otp_obj->getPayCode(), 'combined_rate' => ($pay_formula_obj->getRate() + $pay_formula_obj->getAccrualRate()) );
 						//Debug::Arr($trigger_time_arr, 'Trigger Time Array: ', __FILE__, __LINE__, __METHOD__, 10);
 					} else {
 						Debug::Arr( array_keys( (array)$this->pay_codes ), 'Pay Formula Policy not found! OT Policy ID: '. $otp_obj->getID(), __FILE__, __LINE__, __METHOD__, 10);
@@ -3786,14 +3445,9 @@ class CalculatePolicy {
 		return FALSE;
 	}
 
-	/**
-	 * @param int $date_stamp EPOCH
-	 * @param $trigger_time_arr
-	 * @return bool
-	 */
 	function processTriggerTimeArray( $date_stamp, $trigger_time_arr ) {
 		if ( is_array($trigger_time_arr) == FALSE OR count($trigger_time_arr) == 0 ) {
-			return array();
+			return FALSE;
 		}
 
 		//Debug::Arr($trigger_time_arr, 'Source Trigger Arr: ', __FILE__, __LINE__, __METHOD__, 10);
@@ -3820,7 +3474,7 @@ class CalculatePolicy {
 		$trigger_time_arr = Sort::arrayMultiSort( $trigger_time_arr, array( 'calculation_order' => SORT_ASC, 'trigger_time' => SORT_DESC, 'is_differential_criteria' => SORT_ASC, 'combined_rate' => SORT_DESC )  );
 		//Debug::Arr($trigger_time_arr, 'Source Trigger Arr After Calculation Order Sort: ', __FILE__, __LINE__, __METHOD__, 10);
 
-		$weekly_overtime_policy_type_ids = $this->getWeeklyOverTimePolicyTypeIds();
+		$weekly_overtime_policy_type_ids = array(20, 30, 503, 504, 505, 506, 507, 508, 509, 510, 511, 512, 210 );
 
 		$date_stamp = TTDate::getMiddleDayEpoch( $date_stamp ); //Optimization - Move outside loop.
 
@@ -3892,10 +3546,6 @@ class CalculatePolicy {
 		return $retval;
 	}
 
-	/**
-	 * @param int $date_stamp EPOCH
-	 * @return bool
-	 */
 	function calculateExceptionPolicy( $date_stamp ) {
 		//Make sure passed date_stamp is middleDayEpoch() to match the existing exceptions.
 		$date_stamp = TTDate::getMiddleDayEpoch( $date_stamp ); //Optimization - Move outside loop.
@@ -4019,8 +3669,8 @@ class CalculatePolicy {
 																		'date_stamp' => $date_stamp,
 																		'exception_policy_id' => $ep_obj->getId(),
 																		'type_id' => $type_id,
-																		'punch_id' => TTUUID::getZeroID(),
-																		'punch_control_id' => TTUUID::getZeroID(),
+																		'punch_id' => FALSE,
+																		'punch_control_id' => FALSE,
 																		'schedule_obj' => $s_obj,
 																	);
 									}
@@ -4053,7 +3703,7 @@ class CalculatePolicy {
 																		'exception_policy_id' => $ep_obj->getId(),
 																		'type_id' => $type_id,
 																		'punch_id' => $p_obj->getID(),
-																		'punch_control_id' => TTUUID::getZeroID(),
+																		'punch_control_id' => FALSE,
 																	);
 
 									} else {
@@ -4087,7 +3737,7 @@ class CalculatePolicy {
 																				'exception_policy_id' => $ep_obj->getId(),
 																				'type_id' => $type_id,
 																				'punch_id' => $p_obj->getID(),
-																				'punch_control_id' => TTUUID::getZeroID(),
+																				'punch_control_id' => FALSE,
 																				'punch_obj' => $p_obj,
 																				'schedule_obj' => $p_obj->getScheduleObject(),
 																			);
@@ -4125,7 +3775,7 @@ class CalculatePolicy {
 																				'exception_policy_id' => $ep_obj->getId(),
 																				'type_id' => $type_id,
 																				'punch_id' => $p_obj->getID(),
-																				'punch_control_id' => TTUUID::getZeroID(),
+																				'punch_control_id' => FALSE,
 																				'punch_obj' => $p_obj,
 																				'schedule_obj' => $p_obj->getScheduleObject(),
 																			);
@@ -4200,8 +3850,8 @@ class CalculatePolicy {
 																			'date_stamp' => $date_stamp,
 																			'exception_policy_id' => $ep_obj->getId(),
 																			'type_id' => $type_id,
-																			'punch_id' => TTUUID::getZeroID(),
-																			'punch_control_id' => TTUUID::getZeroID(),
+																			'punch_id' => FALSE,
+																			'punch_control_id' => FALSE,
 																			'schedule_obj' => $s_obj,
 																		);
 										}
@@ -4240,7 +3890,7 @@ class CalculatePolicy {
 																				'exception_policy_id' => $ep_obj->getId(),
 																				'type_id' => $type_id,
 																				'punch_id' => $p_obj->getID(),
-																				'punch_control_id' => TTUUID::getZeroID(),
+																				'punch_control_id' => FALSE,
 																				'punch_obj' => $p_obj,
 																				'schedule_obj' => $p_obj->getScheduleObject(),
 																			);
@@ -4294,7 +3944,7 @@ class CalculatePolicy {
 																				'exception_policy_id' => $ep_obj->getId(),
 																				'type_id' => $type_id,
 																				'punch_id' => $p_obj->getID(),
-																				'punch_control_id' => TTUUID::getZeroID(),
+																				'punch_control_id' => FALSE,
 																				'punch_obj' => $p_obj,
 																				'schedule_obj' => $p_obj->getScheduleObject(),
 																			);
@@ -4338,7 +3988,7 @@ class CalculatePolicy {
 																						'date_stamp' => $date_stamp,
 																						'exception_policy_id' => $ep_obj->getId(),
 																						'type_id' => $type_id,
-																						'punch_id' => TTUUID::getZeroID(),
+																						'punch_id' => FALSE,
 																						'punch_control_id' => $punch_pair[0]['punch_control_id'],
 																						'schedule_obj' => $s_obj,
 																					);
@@ -4372,25 +4022,13 @@ class CalculatePolicy {
 									if ( $p_obj->setScheduleID( $scheduled_id_cache[$p_obj->getID()] ) == TRUE ) {
 										if ( is_object( $p_obj->getPunchControlObject() )
 												AND (
-														( strtolower( $ep_obj->getType() ) == 'sb'
-																AND TTUUID::isUUID( $p_obj->getScheduleObject()->getBranch() ) AND $p_obj->getScheduleObject()->getBranch() != TTUUID::getZeroID() AND $p_obj->getScheduleObject()->getBranch() != TTUUID::getNotExistID()
-																AND $p_obj->getPunchControlObject()->getBranch() != $p_obj->getScheduleObject()->getBranch()
-														)
+														( strtolower( $ep_obj->getType() ) == 'sb' AND $p_obj->getScheduleObject()->getBranch() > 0 AND $p_obj->getPunchControlObject()->getBranch() != $p_obj->getScheduleObject()->getBranch() )
 														OR
-														( strtolower( $ep_obj->getType() ) == 'sb'
-																AND TTUUID::isUUID( $p_obj->getScheduleObject()->getDepartment() ) AND $p_obj->getScheduleObject()->getDepartment() != TTUUID::getZeroID() AND $p_obj->getScheduleObject()->getDepartment() != TTUUID::getNotExistID()
-																AND $p_obj->getPunchControlObject()->getDepartment() != $p_obj->getScheduleObject()->getDepartment()
-														)
+														( strtolower( $ep_obj->getType() ) == 'sb' AND $p_obj->getScheduleObject()->getDepartment() > 0 AND $p_obj->getPunchControlObject()->getDepartment() != $p_obj->getScheduleObject()->getDepartment() )
 														OR
-														( getTTProductEdition() >= TT_PRODUCT_CORPORATE AND strtolower( $ep_obj->getType() ) == 'sc'
-																AND TTUUID::isUUID( $p_obj->getScheduleObject()->getJob() ) AND $p_obj->getScheduleObject()->getJob() != TTUUID::getZeroID() AND $p_obj->getScheduleObject()->getJob() != TTUUID::getNotExistID()
-																AND $p_obj->getPunchControlObject()->getJob() != $p_obj->getScheduleObject()->getJob()
-														)
+														( getTTProductEdition() >= TT_PRODUCT_CORPORATE AND strtolower( $ep_obj->getType() ) == 'sc' AND $p_obj->getScheduleObject()->getJob() > 0 AND $p_obj->getPunchControlObject()->getJob() != $p_obj->getScheduleObject()->getJob() )
 														OR
-														( getTTProductEdition() >= TT_PRODUCT_CORPORATE AND strtolower( $ep_obj->getType() ) == 'sc'
-																AND TTUUID::isUUID( $p_obj->getScheduleObject()->getJobItem() ) AND $p_obj->getScheduleObject()->getJobItem() != TTUUID::getZeroID() AND $p_obj->getScheduleObject()->getJobItem() != TTUUID::getNotExistID()
-																AND $p_obj->getPunchControlObject()->getJobItem() != $p_obj->getScheduleObject()->getJobItem()
-														)
+														( getTTProductEdition() >= TT_PRODUCT_CORPORATE AND strtolower( $ep_obj->getType() ) == 'sc' AND $p_obj->getScheduleObject()->getJobItem() > 0 AND $p_obj->getPunchControlObject()->getJobItem() != $p_obj->getScheduleObject()->getJobItem() )
 													)
 											) {
 											Debug::text('	 Punch Branch/Department does not match scheduled branch/department: ', __FILE__, __LINE__, __METHOD__, 10);
@@ -4400,7 +4038,7 @@ class CalculatePolicy {
 																			'exception_policy_id' => $ep_obj->getId(),
 																			'type_id' => $type_id,
 																			'punch_id' => $p_obj->getID(),
-																			'punch_control_id' => TTUUID::getZeroID(),
+																			'punch_control_id' => FALSE,
 																			'punch_obj' => $p_obj,
 																			'schedule_obj' => $p_obj->getScheduleObject(),
 																		);
@@ -4421,7 +4059,7 @@ class CalculatePolicy {
 									$glf = TTnew('GEOFenceListFactory');
 									$glf->getByCompanyIdAndGEOLocationAndBranchAndDepartmentAndJobAndTask( $this->getUserObject()->getCompany(), $p_obj->getLatitude(), $p_obj->getLongitude(), $p_obj->getPositionAccuracy(), $p_obj->getPunchControlObject()->getBranch(), $p_obj->getPunchControlObject()->getDepartment(), $p_obj->getPunchControlObject()->getJob(), $p_obj->getPunchControlObject()->getJobItem(), 1 );
 									Debug::Text('GEO Fences found: '. $glf->getRecordCount() .' Punch Latitude: '. $p_obj->getLatitude() . ' Punch Longitude: '. $p_obj->getLongitude() . ' Punch Radius: '. $p_obj->getPositionAccuracy() .' ID: '. $p_obj->getID(), __FILE__, __LINE__, __METHOD__, 10);
-									if ( $glf->getRecordCount() === 0 ) { //=== is needed here, as we want to ignore cases where Lon=0.00,Lat=0.00 and it returns FALSE.
+									if ( $glf->getRecordCount() == 0 ) {
 										$current_exceptions[] = array(
 											'user_id' => $user_id,
 											'date_stamp' => $date_stamp,
@@ -4462,8 +4100,7 @@ class CalculatePolicy {
 																			'date_stamp' => $date_stamp,
 																			'exception_policy_id' => $ep_obj->getId(),
 																			'type_id' => $type_id,
-																			//'punch_id' => FALSE,
-																			'punch_id' => TTUUID::getZeroID(),
+																			'punch_id' => FALSE,
 																			'punch_control_id' => $punch_pair[0]['punch_control_id'],
 																		);
 										}
@@ -4513,7 +4150,7 @@ class CalculatePolicy {
 																			'date_stamp' => $date_stamp,
 																			'exception_policy_id' => $ep_obj->getId(),
 																			'type_id' => $type_id,
-																			'punch_id' => TTUUID::getZeroID(),
+																			'punch_id' => FALSE,
 																			'punch_control_id' => $punch_pair[0]['punch_control_id'],
 																		);
 										}
@@ -4577,7 +4214,7 @@ class CalculatePolicy {
 																		'exception_policy_id' => $ep_obj->getId(),
 																		'type_id' => $invalid_punch_arr['type_id'],
 																		'punch_id' => $invalid_punch_arr['punch_id'],
-																		'punch_control_id' => TTUUID::getZeroID(),
+																		'punch_control_id' => FALSE,
 																	);
 									}
 									unset($invalid_punch_arr);
@@ -4639,7 +4276,7 @@ class CalculatePolicy {
 																		'exception_policy_id' => $ep_obj->getId(),
 																		'type_id' => $invalid_punch_arr['type_id'],
 																		'punch_id' => $invalid_punch_arr['punch_id'],
-																		'punch_control_id' => TTUUID::getZeroID(),
+																		'punch_control_id' => FALSE,
 																	);
 									}
 									unset($invalid_punch_arr);
@@ -4671,7 +4308,7 @@ class CalculatePolicy {
 																	'exception_policy_id' => $ep_obj->getId(),
 																	'type_id' => $type_id,
 																	'punch_id' => $p_obj->getID(), //When paired, only attach to the out punch.
-																	'punch_control_id' => TTUUID::getZeroID(),
+																	'punch_control_id' => FALSE,
 																	'punch_obj' => $p_obj,
 																	'schedule_obj' => $p_obj->getScheduleObject(),
 																);
@@ -4692,7 +4329,7 @@ class CalculatePolicy {
 																	'date_stamp' => $date_stamp,
 																	'exception_policy_id' => $ep_obj->getId(),
 																	'type_id' => $type_id,
-																	'punch_id' => TTUUID::getZeroID(),
+																	'punch_id' => FALSE,
 																	'punch_control_id' => $p_obj->getPunchControlID(), //When not paired, attach to the punch control.
 																	'punch_obj' => $p_obj,
 																	'schedule_obj' => $p_obj->getScheduleObject(),
@@ -4715,7 +4352,7 @@ class CalculatePolicy {
 								if ( $p_obj->getStatus() == 10 AND is_object( $p_obj->getPunchControlObject() ) ) {
 									//If no Branches are setup, ignore checking them.
 									if ( $p_obj->getPunchControlObject()->getBranch() == ''
-											OR $p_obj->getPunchControlObject()->getBranch() == TTUUID::getZeroID()
+											OR $p_obj->getPunchControlObject()->getBranch() == 0
 											OR $p_obj->getPunchControlObject()->getBranch() == FALSE  ) {
 										//Make sure at least one task exists before triggering exception.
 										$blf = TTNew('BranchListFactory');
@@ -4727,7 +4364,7 @@ class CalculatePolicy {
 
 									//If no Departments are setup, ignore checking them.
 									if ( $p_obj->getPunchControlObject()->getDepartment() == ''
-											OR $p_obj->getPunchControlObject()->getDepartment() == TTUUID::getZeroID()
+											OR $p_obj->getPunchControlObject()->getDepartment() == 0
 											OR $p_obj->getPunchControlObject()->getDepartment() == FALSE ) {
 										//Make sure at least one task exists before triggering exception.
 										$dlf = TTNew('DepartmentListFactory');
@@ -4786,8 +4423,8 @@ class CalculatePolicy {
 																		'date_stamp' => $date_stamp,
 																		'exception_policy_id' => $ep_obj->getId(),
 																		'type_id' => $type_id,
-																		'punch_id' => TTUUID::getZeroID(),
-																		'punch_control_id' => TTUUID::getZeroID(),
+																		'punch_id' => FALSE,
+																		'punch_control_id' => FALSE,
 																	);
 									} else {
 										Debug::text(' DID NOT Work Over Scheduled Hours', __FILE__, __LINE__, __METHOD__, 10);
@@ -4836,8 +4473,8 @@ class CalculatePolicy {
 																		'date_stamp' => $date_stamp,
 																		'exception_policy_id' => $ep_obj->getId(),
 																		'type_id' => $type_id,
-																		'punch_id' => TTUUID::getZeroID(),
-																		'punch_control_id' => TTUUID::getZeroID(),
+																		'punch_id' => FALSE,
+																		'punch_control_id' => FALSE,
 																	);
 									} else {
 										Debug::text(' DID NOT Work Under Scheduled Hours', __FILE__, __LINE__, __METHOD__, 10);
@@ -4874,8 +4511,8 @@ class CalculatePolicy {
 																'date_stamp' => $date_stamp,
 																'exception_policy_id' => $ep_obj->getId(),
 																'type_id' => $type_id,
-																'punch_id' => TTUUID::getZeroID(),
-																'punch_control_id' => TTUUID::getZeroID(),
+																'punch_id' => FALSE,
+																'punch_control_id' => FALSE,
 															);
 							} else {
 								Debug::text(' DID NOT Work Over Scheduled Hours', __FILE__, __LINE__, __METHOD__, 10);
@@ -4927,8 +4564,8 @@ class CalculatePolicy {
 																'date_stamp' => $date_stamp,
 																'exception_policy_id' => $ep_obj->getId(),
 																'type_id' => $type_id,
-																'punch_id' => TTUUID::getZeroID(),
-																'punch_control_id' => TTUUID::getZeroID(),
+																'punch_id' => FALSE,
+																'punch_control_id' => FALSE,
 															);
 							} else {
 								Debug::text(' DID NOT Work Over Scheduled Hours', __FILE__, __LINE__, __METHOD__, 10);
@@ -5014,7 +4651,7 @@ class CalculatePolicy {
 																				'exception_policy_id' => $ep_obj->getId(),
 																				'type_id' => $type_id,
 																				'punch_id' => $punch_id,
-																				'punch_control_id' => TTUUID::getZeroID(),
+																				'punch_control_id' => FALSE,
 																			);
 												unset($punch_id);
 											} else {
@@ -5133,7 +4770,7 @@ class CalculatePolicy {
 																		'date_stamp' => $date_stamp,
 																		'exception_policy_id' => $ep_obj->getId(),
 																		'type_id' => $type_id,
-																		'punch_id' => TTUUID::getZeroID(),
+																		'punch_id' => FALSE,
 																		'punch_control_id' => $punch_control_id,
 																	);
 									}
@@ -5233,7 +4870,7 @@ class CalculatePolicy {
 																					'exception_policy_id' => $ep_obj->getId(),
 																					'type_id' => $type_id,
 																					'punch_id' => $punch_id,
-																					'punch_control_id' => TTUUID::getZeroID(),
+																					'punch_control_id' => FALSE,
 																				);
 													unset($punch_id);
 												} else {
@@ -5366,7 +5003,7 @@ class CalculatePolicy {
 																			'exception_policy_id' => $ep_obj->getId(),
 																			'type_id' => $type_id,
 																			'punch_id' => $punch_id,
-																			'punch_control_id' => TTUUID::getZeroID(),
+																			'punch_control_id' => FALSE,
 																		);
 											unset($punch_id);
 										} else {
@@ -5479,7 +5116,7 @@ class CalculatePolicy {
 																		'date_stamp' => $date_stamp,
 																		'exception_policy_id' => $ep_obj->getId(),
 																		'type_id' => $type_id,
-																		'punch_id' => TTUUID::getZeroID(),
+																		'punch_id' => FALSE,
 																		'punch_control_id' => $punch_control_id,
 																	);
 									}
@@ -5526,8 +5163,8 @@ class CalculatePolicy {
 																			'date_stamp' => $date_stamp,
 																			'exception_policy_id' => $ep_obj->getId(),
 																			'type_id' => $type_id,
-																			'punch_id' => TTUUID::getZeroID(),
-																			'punch_control_id' => TTUUID::getZeroID(),
+																			'punch_id' => FALSE,
+																			'punch_control_id' => FALSE,
 																			'enable_email_notification' => TRUE,
 																		);
 										} else {
@@ -5549,8 +5186,7 @@ class CalculatePolicy {
 							$jlf = TTnew( 'JobListFactory' );
 							foreach ( $plf as $p_obj ) {
 								if ( $p_obj->getStatus() == 10 ) { //In punches
-									if ( is_object( $p_obj->getPunchControlObject() )
-											AND TTUUID::isUUID( $p_obj->getPunchControlObject()->getJob() ) AND $p_obj->getPunchControlObject()->getJob() != TTUUID::getZeroID() AND $p_obj->getPunchControlObject()->getJob() != TTUUID::getNotExistID() ) {
+									if ( is_object( $p_obj->getPunchControlObject() ) AND $p_obj->getPunchControlObject()->getJob() > 0 ) {
 										//Found job punch, check job settings.
 
 										//If the job is all the same across many punches, don't look it up every time.
@@ -5567,7 +5203,7 @@ class CalculatePolicy {
 																				'date_stamp' => $date_stamp,
 																				'exception_policy_id' => $ep_obj->getId(),
 																				'type_id' => $type_id,
-																				'punch_id' => TTUUID::getZeroID(),
+																				'punch_id' => FALSE,
 																				'punch_control_id' => $p_obj->getPunchControlId(),
 																			);
 											}
@@ -5588,10 +5224,7 @@ class CalculatePolicy {
 							$jlf = TTnew( 'JobListFactory' );
 							foreach ( $plf as $p_obj ) {
 								if ( $p_obj->getStatus() == 10 ) { //In punches
-									if ( is_object( $p_obj->getPunchControlObject() )
-											AND TTUUID::isUUID( $p_obj->getPunchControlObject()->getJob() ) AND $p_obj->getPunchControlObject()->getJob() != TTUUID::getZeroID() AND $p_obj->getPunchControlObject()->getJob() != TTUUID::getNotExistID()
-											AND TTUUID::isUUID( $p_obj->getPunchControlObject()->getJobItem() ) AND $p_obj->getPunchControlObject()->getJobItem() != TTUUID::getZeroID() AND $p_obj->getPunchControlObject()->getJobItem() != TTUUID::getNotExistID() ) {
-
+									if ( is_object( $p_obj->getPunchControlObject() ) AND $p_obj->getPunchControlObject()->getJob() > 0 AND $p_obj->getPunchControlObject()->getJobItem() > 0 ) {
 										//Found job punch, check job settings.
 
 										//If the job is all the same across many punches, don't look it up every time.
@@ -5608,7 +5241,7 @@ class CalculatePolicy {
 																				'date_stamp' => $date_stamp,
 																				'exception_policy_id' => $ep_obj->getId(),
 																				'type_id' => $type_id,
-																				'punch_id' => TTUUID::getZeroID(),
+																				'punch_id' => FALSE,
 																				'punch_control_id' => $p_obj->getPunchControlId(),
 																			);
 											}
@@ -5629,8 +5262,7 @@ class CalculatePolicy {
 							$jlf = TTnew( 'JobListFactory' );
 							foreach ( $plf as $p_obj ) {
 								if ( $p_obj->getStatus() == 10 ) { //In punches
-									if ( is_object( $p_obj->getPunchControlObject() )
-											AND TTUUID::isUUID( $p_obj->getPunchControlObject()->getJob() ) AND $p_obj->getPunchControlObject()->getJob() != TTUUID::getZeroID() AND $p_obj->getPunchControlObject()->getJob() != TTUUID::getNotExistID() ){
+									if ( is_object( $p_obj->getPunchControlObject() ) AND $p_obj->getPunchControlObject()->getJob() > 0 ) {
 										//Found job punch, check job settings.
 
 										//If the job is all the same across many punches, don't look it up every time.
@@ -5649,7 +5281,7 @@ class CalculatePolicy {
 																				'date_stamp' => $date_stamp,
 																				'exception_policy_id' => $ep_obj->getId(),
 																				'type_id' => $type_id,
-																				'punch_id' => TTUUID::getZeroID(),
+																				'punch_id' => FALSE,
 																				'punch_control_id' => $p_obj->getPunchControlId(),
 																			);
 											}
@@ -5677,7 +5309,7 @@ class CalculatePolicy {
 								if ( $p_obj->getStatus() == 10 AND is_object( $p_obj->getPunchControlObject() ) ) {
 									//If no Tasks are setup, ignore checking them.
 									if ( $p_obj->getPunchControlObject()->getJob() == ''
-											OR $p_obj->getPunchControlObject()->getJob() == TTUUID::getZeroID()
+											OR $p_obj->getPunchControlObject()->getJob() == 0
 											OR $p_obj->getPunchControlObject()->getJob() == FALSE  ) {
 										//Make sure at least one task exists before triggering exception.
 										$jlf = TTNew('JobListFactory');
@@ -5688,7 +5320,7 @@ class CalculatePolicy {
 									}
 
 									if ( $p_obj->getPunchControlObject()->getJobItem() == ''
-											OR $p_obj->getPunchControlObject()->getJobItem() == TTUUID::getZeroID()
+											OR $p_obj->getPunchControlObject()->getJobItem() == 0
 											OR $p_obj->getPunchControlObject()->getJobItem() == FALSE ) {
 
 										//Make sure at least one task exists before triggering exception.
@@ -5757,24 +5389,17 @@ class CalculatePolicy {
 					$ef = TTnew( 'ExceptionFactory' );
 					$ef->bulkDelete( $exceptions['delete_exceptions'] );
 				}
-
-				return TRUE;
 			}
 		} elseif ( is_array($existing_exceptions) AND count($existing_exceptions) > 0 ) { //No exception policy, so delete all existing exceptions that may exist.
 			Debug::text('Deleting all existing exceptions...', __FILE__, __LINE__, __METHOD__, 10);
 			$ef = TTnew( 'ExceptionFactory' );
 			$ef->bulkDelete( array_keys($existing_exceptions) );
-
-			return TRUE;
 		}
 
 		Debug::text('No exception policies to calculate...', __FILE__, __LINE__, __METHOD__, 10);
 		return FALSE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function getExceptionPolicy() {
 		$eplf = TTnew( 'ExceptionPolicyListFactory' );
 		$eplf->getByPolicyGroupUserIdAndActive( $this->getUserObject()->getId(), TRUE );
@@ -5791,11 +5416,6 @@ class CalculatePolicy {
 		return FALSE;
 	}
 
-	/**
-	 * @param int $start_date EPOCH
-	 * @param int $end_date EPOCH
-	 * @return bool
-	 */
 	function getExceptionData( $start_date = NULL, $end_date = NULL ) {
 		$elf = TTNew('ExceptionListFactory');
 		$elf->getByCompanyIDAndUserIdAndStartDateAndEndDate( $this->getUserObject()->getCompany(), $this->getUserObject()->getId(), $start_date, $end_date );
@@ -5812,12 +5432,6 @@ class CalculatePolicy {
 		return FALSE;
 	}
 
-	/**
-	 * @param int $date_stamp EPOCH
-	 * @param int $type_ids ID
-	 * @param int $status_ids ID
-	 * @return array
-	 */
 	function filterPunchDataByDateAndTypeAndStatus( $date_stamp, $type_ids = NULL, $status_ids = NULL ) {
 		$plf = $this->punch;
 		Debug::text('Date: '. TTDate::getDate('DATE', $date_stamp ), __FILE__, __LINE__, __METHOD__, 10);
@@ -5842,14 +5456,9 @@ class CalculatePolicy {
 		}
 
 		Debug::text('No punch rows match filter...', __FILE__, __LINE__, __METHOD__, 10);
-		return array();
+		return FALSE;
 	}
 
-	/**
-	 * @param int $start_date EPOCH
-	 * @param int $end_date EPOCH
-	 * @return bool
-	 */
 	function getPunchData( $start_date, $end_date ) {
 		if ( is_object( $this->pay_period_schedule_obj ) ) {
 			$maximum_shift_time = $this->pay_period_schedule_obj->getMaximumShiftTime();
@@ -5888,9 +5497,6 @@ class CalculatePolicy {
 		return FALSE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function getContributingShiftPolicy() {
 		$this->contributing_shift_policy_ids = array();
 
@@ -5931,7 +5537,7 @@ class CalculatePolicy {
 		$pfplf = $this->pay_formula_policy;
 		if ( is_array($pfplf) AND count($pfplf) > 0 ) {
 			foreach( $pfplf as $pfp_obj ) {
-				if ( TTUUID::isUUID( $pfp_obj->getWageSourceContributingShiftPolicy() ) AND $pfp_obj->getWageSourceContributingShiftPolicy() != TTUUID::getZeroID() AND $pfp_obj->getWageSourceContributingShiftPolicy() != TTUUID::getNotExistID() ) {
+				if ( $pfp_obj->getWageSourceContributingShiftPolicy() > 0 ) {
 					$this->contributing_shift_policy_ids[] = $pfp_obj->getWageSourceContributingShiftPolicy();
 					$this->contributing_shift_policy_ids[] = $pfp_obj->getTimeSourceContributingShiftPolicy();
 				}
@@ -5969,9 +5575,6 @@ class CalculatePolicy {
 		return FALSE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function getContributingPayCodePolicy() {
 		$csplf = $this->contributing_shift_policy;
 		if ( is_array( $csplf ) AND count( $csplf ) > 0 ) {
@@ -6004,9 +5607,6 @@ class CalculatePolicy {
 
 	//Need to get all pay codes referenced by policies and all pay codes used by contributing shift policies too.
 	//So we may as well just get them all.
-	/**
-	 * @return bool
-	 */
 	function getPayCode() {
 		$pclf = TTnew( 'PayCodeListFactory' );
 		$pclf->getByCompanyId( $this->getUserObject()->getCompany() );
@@ -6023,17 +5623,10 @@ class CalculatePolicy {
 		return FALSE;
 	}
 
-	/**
-	 * @param string $pay_formula_policy_id UUID
-	 * @param string $pay_code_id UUID
-	 * @return bool
-	 */
 	function getPayFormulaPolicyObjectByPayFormulaIdOrPayCodeId( $pay_formula_policy_id, $pay_code_id ) {
 		if ( isset( $this->pay_formula_policy[$pay_formula_policy_id] ) ) {
 			$pay_formula_policy_obj = $this->pay_formula_policy[$pay_formula_policy_id];
-		} elseif ( isset( $this->pay_codes[$pay_code_id] )
-				AND TTUUID::isUUID( $this->pay_codes[$pay_code_id]->getPayFormulaPolicy() ) AND $this->pay_codes[$pay_code_id]->getPayFormulaPolicy() != TTUUID::getZeroID() AND $this->pay_codes[$pay_code_id]->getPayFormulaPolicy() != TTUUID::getNotExistID()
-				AND isset( $this->pay_formula_policy[$this->pay_codes[$pay_code_id]->getPayFormulaPolicy()] ) ) {
+		} elseif ( isset( $this->pay_codes[$pay_code_id] ) AND $this->pay_codes[$pay_code_id]->getPayFormulaPolicy() > 0 AND isset( $this->pay_formula_policy[$this->pay_codes[$pay_code_id]->getPayFormulaPolicy()] ) ) {
 			$pay_formula_policy_obj = $this->pay_formula_policy[$this->pay_codes[$pay_code_id]->getPayFormulaPolicy()];
 		}
 
@@ -6045,22 +5638,13 @@ class CalculatePolicy {
 		return FALSE;
 	}
 
-	/**
-	 * @param object $obj
-	 * @return bool
-	 */
 	function getPayFormulaPolicyObjectByPolicyObject( $obj ) {
 		if ( is_object( $obj ) ) {
-			if ( method_exists( $obj, 'getPayFormulaPolicy')
-					AND TTUUID::isUUID( $obj->getPayFormulaPolicy() ) AND $obj->getPayFormulaPolicy() != TTUUID::getZeroID() AND $obj->getPayFormulaPolicy() != TTUUID::getNotExistID()
-					AND isset($this->pay_formula_policy[$obj->getPayFormulaPolicy()]) ) {
+			if ( method_exists( $obj, 'getPayFormulaPolicy') AND $obj->getPayFormulaPolicy() > 0 AND isset($this->pay_formula_policy[$obj->getPayFormulaPolicy()]) ) {
 				return $this->pay_formula_policy[$obj->getPayFormulaPolicy()];
-			} elseif ( method_exists( $obj, 'getPayCode')
-					AND TTUUID::isUUID( $obj->getPayCode() ) AND $obj->getPayCode() != TTUUID::getZeroID() AND $obj->getPayCode() != TTUUID::getNotExistID()
-					AND isset($this->pay_codes[$obj->getPayCode()]) AND isset($this->pay_formula_policy[$this->pay_codes[$obj->getPayCode()]->getPayFormulaPolicy()]) ) {
+			} elseif ( method_exists( $obj, 'getPayCode') AND $obj->getPayCode() > 0 AND isset($this->pay_codes[$obj->getPayCode()]) AND isset($this->pay_formula_policy[$this->pay_codes[$obj->getPayCode()]->getPayFormulaPolicy()]) ) {
 				return $this->pay_formula_policy[$this->pay_codes[$obj->getPayCode()]->getPayFormulaPolicy()];
-			} elseif ( TTUUID::isUUID( $obj->getID() ) AND $obj->getID() != TTUUID::getZeroID() AND $obj->getID() != TTUUID::getNotExistID()
-					AND isset($this->pay_codes[$obj->getID()]) AND isset($this->pay_formula_policy[$this->pay_codes[$obj->getID()]->getPayFormulaPolicy()]) ) {
+			} elseif ( $obj->getID() > 0 AND isset($this->pay_codes[$obj->getID()]) AND isset($this->pay_formula_policy[$this->pay_codes[$obj->getID()]->getPayFormulaPolicy()]) ) {
 				//This if the user is editing UDT records directly and no src_object_id is specified, but a pay code is, so the object is PayCodeFactory or PayCodeListFactory.
 				return $this->pay_formula_policy[$this->pay_codes[$obj->getID()]->getPayFormulaPolicy()];
 			}
@@ -6070,25 +5654,14 @@ class CalculatePolicy {
 		return FALSE;
 	}
 
-	/**
-	 * @param object $pay_formula_policy_obj
-	 * @return bool
-	 */
 	function isPayFormulaAccruing( $pay_formula_policy_obj ) {
-		if ( is_object( $pay_formula_policy_obj )
-				AND TTUUID::isUUID( $pay_formula_policy_obj->getAccrualPolicyAccount() ) AND $pay_formula_policy_obj->getAccrualPolicyAccount() != TTUUID::getZeroID() AND $pay_formula_policy_obj->getAccrualPolicyAccount() != TTUUID::getNotExistID()
-				AND $pay_formula_policy_obj->getAccrualRate() != 0 ) {
+		if ( is_object( $pay_formula_policy_obj ) AND $pay_formula_policy_obj->getAccrualPolicyAccount() > 0 AND $pay_formula_policy_obj->getAccrualRate() != 0 ) {
 			return TRUE;
 		}
 
 		return FALSE;
 	}
 
-	/**
-	 * @param string $pay_formula_policy_id UUID
-	 * @param string $pay_code_id UUID
-	 * @return bool
-	 */
 	function isPayFormulaPolicyAveraging( $pay_formula_policy_id, $pay_code_id ) {
 		$pay_formula_policy_obj = $this->getPayFormulaPolicyObjectByPayFormulaIdOrPayCodeId( $pay_formula_policy_id, $pay_code_id );
 		if ( !is_object( $pay_formula_policy_obj ) ) {
@@ -6106,9 +5679,6 @@ class CalculatePolicy {
 
 	//Need to get all pay formula policies referenced by policies and all pay codes too.
 	//So we may as well just get them all.
-	/**
-	 * @return bool
-	 */
 	function getPayFormulaPolicy() {
 		$pfplf = TTnew( 'PayFormulaPolicyListFactory' );
 		$pfplf->getByCompanyId( $this->getUserObject()->getCompany() );
@@ -6125,13 +5695,6 @@ class CalculatePolicy {
 		return FALSE;
 	}
 
-	/**
-	 * @param int $date_stamp EPOCH
-	 * @param object $hour_contributing_shift_policy_obj
-	 * @param int $hour_object_type_ids
-	 * @param object $wage_contributing_shift_policy_obj
-	 * @return bool|float|int
-	 */
 	function getAverageHourlyRate( $date_stamp, $hour_contributing_shift_policy_obj, $hour_object_type_ids, $wage_contributing_shift_policy_obj ) {
 		//To determine average rate we need to seperate what hours are included and what dollars are included.
 
@@ -6183,18 +5746,9 @@ class CalculatePolicy {
 		return FALSE;
 	}
 
-	/**
-	 * @param string $pay_formula_policy_id UUID
-	 * @param string $pay_code_id UUID
-	 * @param int $date_stamp EPOCH
-	 * @param bool $contributing_pay_code_hourly_rate
-	 * @param object $contributing_shift_policy_obj
-	 * @param int $object_type_ids ID
-	 * @return bool|float|int
-	 */
 	function getBaseHourlyRate( $pay_formula_policy_id, $pay_code_id, $date_stamp, $contributing_pay_code_hourly_rate = FALSE, $contributing_shift_policy_obj = NULL, $object_type_ids = NULL ) {
-		$pay_code_id = TTUUID::castUUID($pay_code_id);
-		$pay_formula_policy_id = TTUUID::castUUID($pay_formula_policy_id);
+		$pay_code_id = (int)$pay_code_id;
+		$pay_formula_policy_id = (int)$pay_formula_policy_id;
 
 		Debug::text('Pay Code ID: '. $pay_code_id .' DateStamp: '. $date_stamp .' Contributing Pay Code Hourly Rate: '. $contributing_pay_code_hourly_rate, __FILE__, __LINE__, __METHOD__, 10);
 		$hourly_rate = 0;
@@ -6229,16 +5783,9 @@ class CalculatePolicy {
 		return $hourly_rate;
 	}
 
-	/**
-	 * @param string $pay_formula_policy_id UUID
-	 * @param string $pay_code_id UUID
-	 * @param int $date_stamp EPOCH
-	 * @param $base_hourly_rate
-	 * @return int
-	 */
 	function getHourlyRate( $pay_formula_policy_id, $pay_code_id, $date_stamp, $base_hourly_rate ) {
-		$pay_code_id = TTUUID::castUUID($pay_code_id);
-		$pay_formula_policy_id = TTUUID::castUUID($pay_formula_policy_id);
+		$pay_code_id = (int)$pay_code_id;
+		$pay_formula_policy_id = (int)$pay_formula_policy_id;
 
 		Debug::text('Pay Formula ID: '. $pay_formula_policy_id .' Pay Code ID: '. $pay_code_id .' Base Hourly Rate: '. $base_hourly_rate, __FILE__, __LINE__, __METHOD__, 10);
 		$hourly_rate = 0;
@@ -6277,16 +5824,9 @@ class CalculatePolicy {
 		return $hourly_rate;
 	}
 
-	/**
-	 * @param string $pay_formula_policy_id UUID
-	 * @param string $pay_code_id UUID
-	 * @param int $date_stamp EPOCH
-	 * @param int $base_hourly_rate
-	 * @return int
-	 */
 	function getHourlyRateWithBurden( $pay_formula_policy_id, $pay_code_id, $date_stamp, $base_hourly_rate = 0 ) {
-		$pay_code_id = TTUUID::castUUID($pay_code_id);
-		$pay_formula_policy_id = TTUUID::castUUID($pay_formula_policy_id);
+		$pay_code_id = (int)$pay_code_id;
+		$pay_formula_policy_id = (int)$pay_formula_policy_id;
 
 		$hourly_rate = 0;
 		$pay_formula_policy_obj = $this->getPayFormulaPolicyObjectByPayFormulaIdOrPayCodeId( $pay_formula_policy_id, $pay_code_id );
@@ -6295,7 +5835,7 @@ class CalculatePolicy {
 			return 0;
 		}
 
-		$uw_obj = $this->filterUserWage( $pay_formula_policy_obj->getWageGroup(), $date_stamp );
+		$uw_obj = $this->filterUserWage( (int)$pay_formula_policy_obj->getWageGroup(), $date_stamp );
 		if ( is_object( $uw_obj) ) {
 			$hourly_rate = ( $base_hourly_rate * ( ( $uw_obj->getLaborBurdenPercent() / 100 ) + 1 ) );
 		}
@@ -6308,11 +5848,6 @@ class CalculatePolicy {
 		return $hourly_rate;
 	}
 
-	/**
-	 * @param string $wage_group_id UUID
-	 * @param int $date_stamp EPOCH
-	 * @return array|object
-	 */
 	function filterUserWage( $wage_group_id, $date_stamp ) {
 		$uwlf = $this->user_wages;
 		if ( is_array( $uwlf ) AND count( $uwlf ) > 0 ) {
@@ -6330,14 +5865,9 @@ class CalculatePolicy {
 
 		Debug::text('No user wage rows match filter... Date: '. TTDate::getDate('DATE', $date_stamp ), __FILE__, __LINE__, __METHOD__, 10);
 
-		return array();
+		return FALSE;
 	}
 
-	/**
-	 * @param $a
-	 * @param $b
-	 * @return int
-	 */
 	function UserWageSortByEffectiveDateDesc( $a, $b ) {
 		if ( $a->getEffectiveDate() == $b->getEffectiveDate() ) {
 			//Compare updated dates instead, so hopefully in cases where two wage entries on the same date exist we will pick the newest one.
@@ -6345,12 +5875,6 @@ class CalculatePolicy {
 		}
 		return ( $a->getEffectiveDate() < $b->getEffectiveDate() ) ? 1 : (-1);
 	}
-
-	/**
-	 * @param int $start_date EPOCH
-	 * @param int $end_date EPOCH
-	 * @return bool
-	 */
 	function getUserWageData( $start_date, $end_date ) {
 		$uwlf = TTnew('UserWageListFactory');
 		$uwlf->getByUserIdAndStartDateAndEndDate( $this->getUserObject()->getId(), $start_date, $end_date );
@@ -6372,10 +5896,6 @@ class CalculatePolicy {
 	}
 
 
-	/**
-	 * @param int $date_stamp EPOCH
-	 * @return object
-	 */
 	function filterCurrencyRate( $date_stamp ) {
 		//Punches can happen before the currency rate is specified (which normally happens around noon PST/EST), especially in other timezones, so always use the currency rate from the day before.
 		$currency_date_stamp = TTDate::getMiddleDayEpoch( ( TTDate::getMiddleDayEpoch( $date_stamp ) - 86400 ) ); //Optimization - Move outside loop.
@@ -6403,11 +5923,6 @@ class CalculatePolicy {
 		return $crf;
 	}
 
-	/**
-	 * @param int $start_date EPOCH
-	 * @param int $end_date EPOCH
-	 * @return bool
-	 */
 	function getCurrencyRateData( $start_date, $end_date ) {
 		$crlf = TTnew('CurrencyRateListFactory');
 		$crlf->getByCurrencyIdAndStartDateAndEndDate( $this->getUserObject()->getCurrency(), $start_date, $end_date );
@@ -6438,11 +5953,6 @@ class CalculatePolicy {
 		return FALSE;
 	}
 
-	/**
-	 * @param int $date_stamp EPOCH
-	 * @param null $maximum_daily_total_time
-	 * @return bool
-	 */
 	function calculatePremiumTimePolicy( $date_stamp, $maximum_daily_total_time = NULL ) {
 		//Loop over all premium time policies calculating the pay codes
 		$premium_time_policies = $this->sortPolicyByPayCodeDependancy( $this->filterPremiumTimePolicy( $date_stamp ) );
@@ -6458,12 +5968,12 @@ class CalculatePolicy {
 				//Include object_type_id=40 (premium time), so when calculating multiple WCB rates, the WCB premium policies can include evening/weekend shift differentials too.
 				//However order matters in this case, so we have to calculate the proper order in filterPremiumTimePolicy()
 				$user_date_total_rows = $this->compactMealAndBreakUserDateTotalObjects( $this->filterUserDateTotalDataByContributingShiftPolicy( $date_stamp, $date_stamp, $this->contributing_shift_policy[$pp_obj->getContributingShiftPolicy()], array( 20, 25, 30, 40, 100, 110 ) ) );
-				$user_date_total_rows_count = count( $user_date_total_rows );
+				$user_date_total_rows_count = count($user_date_total_rows);
 				if ( is_array($user_date_total_rows) AND $user_date_total_rows_count > 0 ) {
 					switch( $pp_obj->getType() ) {
 						case 10: //Date/Time
 						case 100: //Advanced
-						case 90: //Holiday (converts to Date/Time policy automatically)
+						case 90: //Holiday (coverts to Date/Time policy automatically)
 							if ( is_object( $this->pay_period_schedule_obj ) ) {
 								$maximum_shift_time = $this->pay_period_schedule_obj->getMaximumShiftTime();
 							}
@@ -6473,43 +5983,35 @@ class CalculatePolicy {
 
 							if ( $pp_obj->getType() == 90 )	{
 								Debug::text(' Holiday Premium Policy...', __FILE__, __LINE__, __METHOD__, 10);
-								$holiday_policies = $this->filterHoliday( $date_stamp, NULL, TRUE );
-								if ( !is_array( $holiday_policies ) OR ( is_array($holiday_policies) AND count( $holiday_policies ) == 0 ) ) {
-									$holiday_policies = $this->filterHoliday( ( $date_stamp - $maximum_shift_time ), NULL, TRUE );
-									if ( !is_array( $holiday_policies ) OR ( is_array( $holiday_policies ) AND count( $holiday_policies ) == 0 ) ) {
-										$holiday_policies = $this->filterHoliday( ( $date_stamp + $maximum_shift_time ), NULL, TRUE );
+								//Determine if the employee is eligible for holiday premium.
+								$holiday_obj = $this->filterHoliday( $date_stamp );
+								if ( !is_object($holiday_obj) ) {
+									$holiday_obj = $this->filterHoliday( ($date_stamp - $maximum_shift_time) );
+									if ( !is_object($holiday_obj) ) {
+										$holiday_obj = $this->filterHoliday( ($date_stamp + $maximum_shift_time) );
 									}
 								}
 
-								if ( is_array( $holiday_policies ) AND count( $holiday_policies ) > 0 ) {
-									foreach ( $holiday_policies as $holiday_obj ) {
-										Debug::text( ' Found Holiday: ' . $holiday_obj->getName() . ' Date: ' . TTDate::getDate( 'DATE', $holiday_obj->getDateStamp() ) . ' Current Date: ' . TTDate::getDate( 'DATE', $date_stamp ), __FILE__, __LINE__, __METHOD__, 10 );
-										if ( $this->holiday_policy[$holiday_obj->getHolidayPolicyID()]->getForceOverTimePolicy() == TRUE
-												OR $this->isEligibleForHoliday( $date_stamp, $this->holiday_policy[$holiday_obj->getHolidayPolicyID()] )
-										) {
-											Debug::text( ' User is Eligible for Holiday: ' . $holiday_obj->getName(), __FILE__, __LINE__, __METHOD__, 10 );
+								if ( is_object( $holiday_obj ) ) {
+									Debug::text(' Found Holiday: '. $holiday_obj->getName() .' Date: '. TTDate::getDate('DATE', $holiday_obj->getDateStamp() ) .' Current Date: '.	TTDate::getDate('DATE', $date_stamp ), __FILE__, __LINE__, __METHOD__, 10);
+									if ( $this->holiday_policy[$holiday_obj->getHolidayPolicyID()]->getForceOverTimePolicy() == TRUE
+											OR $this->isEligibleForHoliday( $date_stamp, $this->holiday_policy[$holiday_obj->getHolidayPolicyID()] ) ) {
+										Debug::text(' User is Eligible for Holiday: '. $holiday_obj->getName(), __FILE__, __LINE__, __METHOD__, 10);
 
-											//Modify the premium policy in memory to make it like a date/time policy
-											$pp_obj->setStartDate( $holiday_obj->getDateStamp() );
-											$pp_obj->setEndDate( $holiday_obj->getDateStamp() );
-											$pp_obj->setStartTime( TTDate::getBeginDayEpoch( $holiday_obj->getDateStamp() ) );
-											$pp_obj->setEndTime( TTDate::getEndDayEpoch( $holiday_obj->getDateStamp() ) );
-											$pp_obj->setSun( TRUE );
-											$pp_obj->setMon( TRUE );
-											$pp_obj->setTue( TRUE );
-											$pp_obj->setWed( TRUE );
-											$pp_obj->setThu( TRUE );
-											$pp_obj->setFri( TRUE );
-											$pp_obj->setSat( TRUE );
-
-											//These don't apply to holiday type premium policies, but could be carried over from a Date/Time type accidently.
-											$pp_obj->setDailyTriggerTime( 0 );
-											$pp_obj->setMaximumDailyTriggerTime( 0 );
-											$pp_obj->setWeeklyTriggerTime( 0 );
-											$pp_obj->setMaximumWeeklyTriggerTime( 0 );
-
-											break; //If they are eligible for the holiday, stop processing more days.
-										}
+										//Modify the premium policy in memory to make it like a date/time policy
+										$pp_obj->setStartDate( $holiday_obj->getDateStamp() );
+										$pp_obj->setEndDate( $holiday_obj->getDateStamp() );
+										$pp_obj->setStartTime( TTDate::getBeginDayEpoch( $holiday_obj->getDateStamp() ) );
+										$pp_obj->setEndTime( TTDate::getEndDayEpoch( $holiday_obj->getDateStamp() ) );
+										$pp_obj->setSun( TRUE );
+										$pp_obj->setMon( TRUE );
+										$pp_obj->setTue( TRUE );
+										$pp_obj->setWed( TRUE );
+										$pp_obj->setThu( TRUE );
+										$pp_obj->setFri( TRUE );
+										$pp_obj->setSat( TRUE );
+										$pp_obj->setDailyTriggerTime( 0 );
+										$pp_obj->setWeeklyTriggerTime( 0 );
 									}
 								} else {
 									//If a Date/Time premium was created first, with all days activated, then switched to a holiday type,
@@ -6521,14 +6023,8 @@ class CalculatePolicy {
 									$pp_obj->setThu( FALSE );
 									$pp_obj->setFri( FALSE );
 									$pp_obj->setSat( FALSE );
-
-									//These don't apply to holiday type premium policies, but could be carried over from a Date/Time type accidently.
-									$pp_obj->setDailyTriggerTime( 0 );
-									$pp_obj->setMaximumDailyTriggerTime( 0 );
-									$pp_obj->setWeeklyTriggerTime( 0 );
-									$pp_obj->setMaximumWeeklyTriggerTime( 0 );
 								}
-								unset($holiday_policies, $holiday_obj);
+								unset($holiday_obj);
 							}
 
 							//Make sure this is a valid day
@@ -6594,7 +6090,7 @@ class CalculatePolicy {
 										} else {
 											Debug::text(' NOT Setting temporary Maximum Time...', __FILE__, __LINE__, __METHOD__, 10);
 										}
-										unset($maximum_weekly_trigger_time, $tmp_maximum_time);
+										unset($maximum_weekly_trigger_time, $tmnp_maximum_time);
 									}
 								}
 								Debug::text(' Daily Trigger Time: '. $daily_trigger_time .' Max: '. $maximum_daily_trigger_time, __FILE__, __LINE__, __METHOD__, 10);
@@ -6788,19 +6284,19 @@ class CalculatePolicy {
 											}
 
 											if ( $create_udt_record == TRUE ) {
-												Debug::text('Generating UserDateTotal object from Premium Time Policy, ID: '. $this->user_date_total_insert_id .' Object Type ID: '. 40 .' Pay Code ID: '. $pp_obj->getPayCode() .' Total Time: '. $total_time, __FILE__, __LINE__, __METHOD__, 10);
+												Debug::text('Generating UserDateTotal object from Premium Time Policy, ID: '. $this->user_date_total_insert_id .' Object Type ID: '. 40 .' Pay Code ID: '. (int)$pp_obj->getPayCode() .' Total Time: '. $total_time, __FILE__, __LINE__, __METHOD__, 10);
 												if ( !isset( $this->user_date_total[$this->user_date_total_insert_id] ) ) {
 													$udtf = TTnew( 'UserDateTotalFactory' );
 													$udtf->setUser( $this->getUserObject()->getId() );
 													$udtf->setDateStamp( $date_stamp );
 													$udtf->setObjectType( 40 ); //Premium Time
-													$udtf->setSourceObject( TTUUID::castUUID($pp_obj->getId()) );
-													$udtf->setPayCode( $pp_obj->getPayCode() );
+													$udtf->setSourceObject( (int)$pp_obj->getId() );
+													$udtf->setPayCode( (int)$pp_obj->getPayCode() );
 
-													$udtf->setBranch( $udt_obj->getBranch() );
-													$udtf->setDepartment( $udt_obj->getDepartment() );
-													$udtf->setJob( $udt_obj->getJob() );
-													$udtf->setJobItem( $udt_obj->getJobItem() );
+													$udtf->setBranch( (int)$udt_obj->getBranch() );
+													$udtf->setDepartment( (int)$udt_obj->getDepartment() );
+													$udtf->setJob( (int)$udt_obj->getJob() );
+													$udtf->setJobItem( (int)$udt_obj->getJobItem() );
 
 													if ( $udt_obj->getStartTimeStamp() != '' AND $udt_obj->getEndTimeStamp() != '' ) {
 														$udtf->setStartType( $udt_obj->getStartType() );
@@ -6902,19 +6398,19 @@ class CalculatePolicy {
 
 														Debug::text(' Premium Punch Total Time: '. $total_time, __FILE__, __LINE__, __METHOD__, 10);
 														if ( $total_time != 0 ) { //Need to handle negative values too for things like lunch auto-deduct.
-															Debug::text('Generating UserDateTotal object from Premium Time Policy, ID: '. $this->user_date_total_insert_id .' Object Type ID: '. 40 .' Pay Code ID: '. $pp_obj->getPayCode() .' Total Time: '. $total_time .' UDT ObjectType: '. $udt_obj->getObjectType(), __FILE__, __LINE__, __METHOD__, 10);
+															Debug::text('Generating UserDateTotal object from Premium Time Policy, ID: '. $this->user_date_total_insert_id .' Object Type ID: '. 40 .' Pay Code ID: '. (int)$pp_obj->getPayCode() .' Total Time: '. $total_time .' UDT ObjectType: '. $udt_obj->getObjectType(), __FILE__, __LINE__, __METHOD__, 10);
 															if ( !isset( $this->user_date_total[$this->user_date_total_insert_id] ) ) {
 																$udtf = TTnew( 'UserDateTotalFactory' );
 																$udtf->setUser( $this->getUserObject()->getId() );
 																$udtf->setDateStamp( $date_stamp );
 																$udtf->setObjectType( 40 ); //Premium Time
-																$udtf->setSourceObject( TTUUID::castUUID($pp_obj->getId()) );
-																$udtf->setPayCode( $pp_obj->getPayCode() );
+																$udtf->setSourceObject( (int)$pp_obj->getId() );
+																$udtf->setPayCode( (int)$pp_obj->getPayCode() );
 
-																$udtf->setBranch( $udt_obj->getBranch() );
-																$udtf->setDepartment( $udt_obj->getDepartment() );
-																$udtf->setJob( $udt_obj->getJob() );
-																$udtf->setJobItem( $udt_obj->getJobItem() );
+																$udtf->setBranch( (int)$udt_obj->getBranch() );
+																$udtf->setDepartment( (int)$udt_obj->getDepartment() );
+																$udtf->setJob( (int)$udt_obj->getJob() );
+																$udtf->setJobItem( (int)$udt_obj->getJobItem() );
 
 																if ( $udt_obj->getStartTimeStamp() != '' AND $udt_obj->getEndTimeStamp() != '' ) {
 																	$udtf->setStartType( $udt_obj->getStartType() );
@@ -6996,19 +6492,19 @@ class CalculatePolicy {
 										}
 
 										if ( $total_time != 0 ) { //Need to handle negative values too for things like lunch auto-deduct.
-											Debug::text('Generating UserDateTotal object from Premium Time Policy, ID: '. $this->user_date_total_insert_id .' Object Type ID: '. 40 .' Pay Code ID: '. $pp_obj->getPayCode() .' Total Time: '. $total_time, __FILE__, __LINE__, __METHOD__, 10);
+											Debug::text('Generating UserDateTotal object from Premium Time Policy, ID: '. $this->user_date_total_insert_id .' Object Type ID: '. 40 .' Pay Code ID: '. (int)$pp_obj->getPayCode() .' Total Time: '. $total_time, __FILE__, __LINE__, __METHOD__, 10);
 											if ( !isset( $this->user_date_total[$this->user_date_total_insert_id] ) ) {
 												$udtf = TTnew( 'UserDateTotalFactory' );
 												$udtf->setUser( $this->getUserObject()->getId() );
 												$udtf->setDateStamp( $date_stamp );
 												$udtf->setObjectType( 40 ); //Premium Time
-												$udtf->setSourceObject( TTUUID::castUUID($pp_obj->getId()) );
-												$udtf->setPayCode( $pp_obj->getPayCode() );
+												$udtf->setSourceObject( (int)$pp_obj->getId() );
+												$udtf->setPayCode( (int)$pp_obj->getPayCode() );
 
-												$udtf->setBranch( $udt_obj->getBranch() );
-												$udtf->setDepartment( $udt_obj->getDepartment() );
-												$udtf->setJob( $udt_obj->getJob() );
-												$udtf->setJobItem( $udt_obj->getJobItem() );
+												$udtf->setBranch( (int)$udt_obj->getBranch() );
+												$udtf->setDepartment( (int)$udt_obj->getDepartment() );
+												$udtf->setJob( (int)$udt_obj->getJob() );
+												$udtf->setJobItem( (int)$udt_obj->getJobItem() );
 
 												if ( $udt_obj->getStartTimeStamp() != '' AND $udt_obj->getEndTimeStamp() != '' ) {
 													$udtf->setStartType( $udt_obj->getStartType() );
@@ -7150,19 +6646,19 @@ class CalculatePolicy {
 													if ( $total_time != 0 ) { //Need to handle negative values too for things like lunch auto-deduct.
 														//Debug::text(' Applying	Premium Time!: '. $total_time, __FILE__, __LINE__, __METHOD__, 10);
 
-														Debug::text('Generating UserDateTotal object from Premium Time Policy, ID: '. $this->user_date_total_insert_id .' Object Type ID: '. 40 .' Pay Code ID: '. $pp_obj->getPayCode() .' Total Time: '. $total_time, __FILE__, __LINE__, __METHOD__, 10);
+														Debug::text('Generating UserDateTotal object from Premium Time Policy, ID: '. $this->user_date_total_insert_id .' Object Type ID: '. 40 .' Pay Code ID: '. (int)$pp_obj->getPayCode() .' Total Time: '. $total_time, __FILE__, __LINE__, __METHOD__, 10);
 														if ( !isset( $this->user_date_total[$this->user_date_total_insert_id] ) ) {
 															$udtf = TTnew( 'UserDateTotalFactory' );
 															$udtf->setUser( $this->getUserObject()->getId() );
 															$udtf->setDateStamp( $date_stamp );
 															$udtf->setObjectType( 40 ); //Premium Time
-															$udtf->setSourceObject( TTUUID::castUUID($pp_obj->getId()) );
-															$udtf->setPayCode( $pp_obj->getPayCode() );
+															$udtf->setSourceObject( (int)$pp_obj->getId() );
+															$udtf->setPayCode( (int)$pp_obj->getPayCode() );
 
-															$udtf->setBranch( $udt_obj->getBranch() );
-															$udtf->setDepartment( $udt_obj->getDepartment() );
-															$udtf->setJob( $udt_obj->getJob() );
-															$udtf->setJobItem( $udt_obj->getJobItem() );
+															$udtf->setBranch( (int)$udt_obj->getBranch() );
+															$udtf->setDepartment( (int)$udt_obj->getDepartment() );
+															$udtf->setJob( (int)$udt_obj->getJob() );
+															$udtf->setJobItem( (int)$udt_obj->getJobItem() );
 
 															if ( $udt_obj->getStartTimeStamp() != '' AND $udt_obj->getEndTimeStamp() != '' ) {
 																$udtf->setStartType( $udt_obj->getStartType() );
@@ -7300,19 +6796,19 @@ class CalculatePolicy {
 											if ( isset($shift_data_arr['last_out']) AND isset($tmp_user_date_total_rows[$shift_data_arr['last_out']]) ) {
 												$udt_obj = $tmp_user_date_total_rows[$shift_data_arr['last_out']];
 
-												Debug::text('Generating UserDateTotal object from Premium Time Policy, ID: '. $this->user_date_total_insert_id .' Object Type ID: '. 40 .' Pay Code ID: '. $pp_obj->getPayCode() .' Total Time: '. $total_time, __FILE__, __LINE__, __METHOD__, 10);
+												Debug::text('Generating UserDateTotal object from Premium Time Policy, ID: '. $this->user_date_total_insert_id .' Object Type ID: '. 40 .' Pay Code ID: '. (int)$pp_obj->getPayCode() .' Total Time: '. $total_time, __FILE__, __LINE__, __METHOD__, 10);
 												if ( !isset( $this->user_date_total[$this->user_date_total_insert_id] ) ) {
 													$udtf = TTnew( 'UserDateTotalFactory' );
 													$udtf->setUser( $this->getUserObject()->getId() );
 													$udtf->setDateStamp( $date_stamp );
 													$udtf->setObjectType( 40 ); //Premium Time
-													$udtf->setSourceObject( TTUUID::castUUID($pp_obj->getId()) );
-													$udtf->setPayCode( $pp_obj->getPayCode() );
+													$udtf->setSourceObject( (int)$pp_obj->getId() );
+													$udtf->setPayCode( (int)$pp_obj->getPayCode() );
 
-													$udtf->setBranch( $udt_obj->getBranch() );
-													$udtf->setDepartment( $udt_obj->getDepartment() );
-													$udtf->setJob( $udt_obj->getJob() );
-													$udtf->setJobItem( $udt_obj->getJobItem() );
+													$udtf->setBranch( (int)$udt_obj->getBranch() );
+													$udtf->setDepartment( (int)$udt_obj->getDepartment() );
+													$udtf->setJob( (int)$udt_obj->getJob() );
+													$udtf->setJobItem( (int)$udt_obj->getJobItem() );
 
 													if ( $udt_obj->getStartTimeStamp() != '' AND $udt_obj->getEndTimeStamp() != '' ) {
 														$udtf->setStartType( $udt_obj->getStartType() );
@@ -7366,10 +6862,6 @@ class CalculatePolicy {
 		return FALSE;
 	}
 
-	/**
-	 * @param int $date_stamp EPOCH
-	 * @return array
-	 */
 	function filterPremiumTimePolicy( $date_stamp ) {
 		$pplf = $this->premium_time_policy;
 		if ( is_array( $pplf ) AND count( $pplf ) > 0 ) {
@@ -7419,12 +6911,9 @@ class CalculatePolicy {
 		}
 
 		Debug::text('No premium time policies apply on date: '. TTDate::getDate('DATE', $date_stamp), __FILE__, __LINE__, __METHOD__, 10);
-		return array();
+		return FALSE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function getPremiumTimePolicy() {
 		$this->schedule_premium_time_policy_ids = array();
 
@@ -7453,9 +6942,6 @@ class CalculatePolicy {
 		return FALSE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function calculateAccrualPolicy() {
 		$calculated_date_range = $this->getCalculatedDateRange();
 		if ( is_array($calculated_date_range) ) {
@@ -7464,10 +6950,150 @@ class CalculatePolicy {
 			Debug::Text('  First Date Stamp: '. TTDate::getDate('DATE', $first_date_stamp) .' Last Date Stamp: '. TTDate::getDate('DATE', $last_date_stamp), __FILE__, __LINE__, __METHOD__, 10);
 		}
 
+		$alf = TTnew('AccrualListFactory');
+		$aplf = $this->accrual_policy;
+		if ( is_array($aplf) AND count($aplf) > 0 ) {
+			foreach( $aplf as $ap_obj ) {
+				Debug::text('Hour-Based Accrual Policy: '. $ap_obj->getName(), __FILE__, __LINE__, __METHOD__, 10);
+
+				if ( !isset($this->contributing_shift_policy[$ap_obj->getContributingShiftPolicy()]) ) {
+					Debug::text('No contributing shift policy defined for accrual policy, skipping...', __FILE__, __LINE__, __METHOD__, 10);
+					continue;
+				}
+
+				if ( isset($first_date_stamp) AND isset($last_date_stamp) ) {
+
+					foreach( $this->dates['calculated'] as $date_stamp => $tmp ) {
+						$date_stamp = TTDate::getMiddleDayEpoch($date_stamp); //Optimization - Move outside loop.
+
+						if ( $ap_obj->getMinimumEmployedDays() == 0
+								OR TTDate::getDays( ($date_stamp - $ap_obj->getModifiedHireDate( $this->getUserObject() ) ) ) >= $ap_obj->getMinimumEmployedDays() ) {
+							Debug::Text('  User has been employed long enough.', __FILE__, __LINE__, __METHOD__, 10);
+
+							$inception_total_time = FALSE;
+							if ( $ap_obj->isHourBasedLengthOfService() == TRUE ) {
+								//For hour based length of services, we need to get all time that matches contributing shift policy back to their hire date.
+								if ( $inception_total_time == FALSE ) { //Try to only call to the DB once for the entire range.
+									$this->getUserDateTotalData( $ap_obj->getModifiedHireDate( $this->getUserObject() ), $last_date_stamp );
+
+									//As an optimization, calculate inception total time from the hire date to the first date we calculated.
+									//Then we can just add time from the first date to the current date being calcluated.
+									$base_inception_total_time = $this->getSumUserDateTotalData( $this->filterUserDateTotalDataByContributingShiftPolicy( $ap_obj->getModifiedHireDate( $this->getUserObject() ), ( $first_date_stamp - 86400 ), $this->contributing_shift_policy[$ap_obj->getContributingShiftPolicy()] ) );
+								}
+								$additional_inception_total_time = $this->getSumUserDateTotalData( $this->filterUserDateTotalDataByContributingShiftPolicy( $first_date_stamp, $date_stamp, $this->contributing_shift_policy[$ap_obj->getContributingShiftPolicy()] ) );
+								$inception_total_time = ( $base_inception_total_time + $additional_inception_total_time );
+								Debug::Text('  Inception Total Time: '. $inception_total_time .' Base: '. $base_inception_total_time .' Additional: '. $additional_inception_total_time, __FILE__, __LINE__, __METHOD__, 10);
+							}
+
+							$user_date_total_rows = $this->filterUserDateTotalDataByContributingShiftPolicy( $date_stamp, $date_stamp, $this->contributing_shift_policy[$ap_obj->getContributingShiftPolicy()] );
+							if ( is_array($user_date_total_rows) AND count($user_date_total_rows) > 0 ) {
+								foreach( $user_date_total_rows as $udt_key => $udt_obj ) {
+									//Since object_type_id=50 (absence taken) creates object_type_id=25 records, ignore hour based accruals on object_type_id=50.
+									//This allows for cases where absence time creates overtime and they may want accruals calculated on OT.
+									if ( $udt_obj->getObjectType() == 50 ) {
+										continue;
+									}
+									//Need to check milestone after every UDT row so we can detect switching milestones quickly.
+									//FIXME: Handle switching milestones at exactly the right second, even mid-UDT row.
+									$milestone_obj = $ap_obj->getActiveMilestoneObject( $this->getUserObject(), $date_stamp, $inception_total_time );
+
+									//If Maximum time is set to 0, make that unlimited.
+									if ( is_object($milestone_obj) ) {
+										//Since we compact accrual records now, we need to calculate the balance that is stored in memory and not yet committed to DB, and add it to the DB balance.
+										if ( isset($accrual_compact_arr[(int)$ap_obj->getAccrualPolicyAccount()][(int)$ap_obj->getId()]) ) {
+											$tmp_accrual_balance = array_sum( $accrual_compact_arr[(int)$ap_obj->getAccrualPolicyAccount()][(int)$ap_obj->getId()] );
+										} else {
+											$tmp_accrual_balance = 0;
+										}
+										$accrual_balance = ( $tmp_accrual_balance + $ap_obj->getCurrentAccrualBalance( $this->getUserObject()->getId(), $ap_obj->getAccrualPolicyAccount() ) );
+
+										if ( $milestone_obj->getAnnualMaximumTime() > 0 ) {
+											$annual_accrued_amount = ( $tmp_accrual_balance + $alf->getSumByUserIdAndAccrualPolicyAccountAndTypeAndStartDateAndEndDate( $this->getUserObject()->getId(), $ap_obj->getAccrualPolicyAccount(), array( 76 ), $ap_obj->getCurrentMilestoneRolloverDate( $date_stamp, $this->getUserObject(), TRUE ), $date_stamp ) );
+										} else {
+											$annual_accrued_amount = FALSE;
+										}
+										Debug::Text('	Current Balance: '. $accrual_balance .' Accrual Policy: '. $ap_obj->getName() .'('. $ap_obj->getId() .') Annual Accrued Amount: '. $annual_accrued_amount, __FILE__, __LINE__, __METHOD__, 10);
+
+										if ( ( $milestone_obj->getMaximumTime() == 0 AND $milestone_obj->getAnnualMaximumTime() == 0 )
+												OR ( $accrual_balance < $milestone_obj->getMaximumTime()
+														AND ( $annual_accrued_amount === FALSE OR $annual_accrued_amount < $milestone_obj->getAnnualMaximumTime() ) ) ) {
+											$accrual_amount = $ap_obj->calcAccrualAmount( $milestone_obj, $udt_obj->getTotalTime(), 0);
+
+											if ( $accrual_amount > 0 ) {
+												//If Annual Maximum time is set to 0, make that unlimited.
+												if ( $milestone_obj->getAnnualMaximumTime() > 0 AND ( $annual_accrued_amount + $accrual_amount ) > $milestone_obj->getAnnualMaximumTime() ) {
+													$accrual_amount = bcsub( $milestone_obj->getAnnualMaximumTime(), $annual_accrued_amount, 4 );
+												}
+
+												//If Maximum time is set to 0, make that unlimited.
+												if ( $milestone_obj->getMaximumTime() > 0 AND ( $accrual_balance + $accrual_amount) > $milestone_obj->getMaximumTime() ) {
+													$accrual_amount = bcsub( $milestone_obj->getMaximumTime(), $accrual_balance, 4 );
+												}
+
+												//Debug::Text('	UDT Key: '. $udt_key .' Object Type ID: '. $udt_obj->getObjectType(), __FILE__, __LINE__, __METHOD__, 10);
+												Debug::Text('	Min/Max Adjusted Accrual Amount: '. $accrual_amount .' Limits: Max Balance: '. $milestone_obj->getMaximumTime() .' Annual Max: '. $milestone_obj->getAnnualMaximumTime(), __FILE__, __LINE__, __METHOD__, 10);
+
+												//It would be nice to find a way to compact these accrual records,
+												//as right now there could be many (hundreds) per day and it makes viewing the accrual balance difficult.
+												//Not sure if that is really possible though, as we won't be able to link directly to UserDateTotalID's then
+												//and that will make it impossible to figure out orphaned records.
+												//Solution is to link to the object_type_id=5 (system total time) record for each day.
+												//However we need to add these amounts to the current balance so we can stop adding more even after the maximum balance has been reached.
+												if ( isset($accrual_compact_arr[(int)$ap_obj->getAccrualPolicyAccount()][(int)$ap_obj->getId()][$date_stamp]) ) {
+													$accrual_compact_arr[(int)$ap_obj->getAccrualPolicyAccount()][(int)$ap_obj->getId()][$date_stamp] += $accrual_amount;
+												} else {
+													$accrual_compact_arr[(int)$ap_obj->getAccrualPolicyAccount()][(int)$ap_obj->getId()][$date_stamp] = $accrual_amount;
+												}
+												unset($accrual_amount, $accrual_balance, $new_accrual_balance);
+											} else {
+												Debug::Text('	Accrual Amount is 0...', __FILE__, __LINE__, __METHOD__, 10);
+											}
+										} else {
+											Debug::Text('	Accrual Balance or Annual Maximum is outside Milestone Range. Or no milestone found. Skipping...', __FILE__, __LINE__, __METHOD__, 10);
+										}
+									} else {
+										Debug::Text('	No milestone found. Skipping...', __FILE__, __LINE__, __METHOD__, 10);
+									}
+								}
+							}
+						} else {
+							Debug::Text('  User has only been employed: '. TTDate::getDays( ($date_stamp - $ap_obj->getModifiedHireDate( $this->getUserObject() ) ) ) .' Days, not enough.', __FILE__, __LINE__, __METHOD__, 10);
+						}
+
+						//Handled by deleteSystemTotalTime() instead, in case there are no accrual policies assigned anymore.
+						//AccrualFactory::deleteOrphans( $this->getUserObject()->getId(), $date_stamp );
+					}
+				}
+			}
+
+			//Insert compacted Accrual records.
+			if ( isset($accrual_compact_arr) AND is_array( $accrual_compact_arr ) AND count( $accrual_compact_arr ) > 0 ) {
+				foreach( $accrual_compact_arr as $accrual_policy_account_id => $data1 ) {
+					foreach( $data1 as $accrual_policy_id => $data2 ) {
+						foreach( $data2 as $date_stamp => $total_time ) {
+							$af = TTnew( 'AccrualFactory' );
+							$af->setUser( $this->getUserObject()->getId() );
+							$af->setType( 76 ); //Hour-Based Accrual Policy
+							$af->setAccrualPolicyAccount( $accrual_policy_account_id );
+							$af->setAccrualPolicy( $accrual_policy_id );
+							$af->setUserDateTotalID( $this->new_system_user_date_total_id[TTDate::getMiddleDayEpoch($date_stamp)] ); //Link hour based accruals to just the system total time for each day.
+							$af->setAmount( $total_time );
+							$af->setTimeStamp( $date_stamp );
+							$af->setEnableCalcBalance( TRUE );
+							if ( $af->isValid() ) {
+								$insert_id = $af->Save();
+								Debug::Text('	Adding Accrual Record, ID: '. $insert_id, __FILE__, __LINE__, __METHOD__, 10);
+							}
+						}
+					}
+				}
+			}
+			unset( $accrual_compact_arr, $data1, $data2, $accrual_policy_account_id, $accrual_policy_id, $date_stamp, $total_time );
+		} else {
+			Debug::text('No hour-based accrual policies to calculate...', __FILE__, __LINE__, __METHOD__, 10);
+		}
+
 		//Calculate non-hour based accrual policies, those attached to pay formulas.
-		//  This needs to happen before hour-based accrual policies are calculated, as these are almost certainly negative amounts, and hour-based are mostly positive amounts.
-		//  So if we don't reduce the balance first, they could reach their balance limit prematurely when recalculating a pay period where they have reached their balance and used time, thereby prematurely stopping the accrual early.
-		$accrual_pay_formula_arr = array();
 		if ( isset($first_date_stamp) AND isset($last_date_stamp) ) {
 			//Merge object_type_id=50 rows with new_user_date_total_ids so they can both be handled together.
 			//See below comments regarding object_type_id=50 records and how they need to be handled in a special manner.
@@ -7494,7 +7120,6 @@ class CalculatePolicy {
 					// that way we can handle accruals on them first and not duplicate accruals on other policies that are triggered by the result.
 					$tmp_user_date_total = $this->sortUserDateTotalData( $tmp_user_date_total, 'sortUserDateTotalDataByObjectTypeDescAndID' );
 					foreach( $tmp_user_date_total as $udt_key => $udt_obj ) {
-						$date_stamp = TTDate::getMiddleDayEpoch( $udt_obj->getDateStamp() ); //Optimization - Move outside loop.
 						//Debug::text('bKey: '. $udt_key .' UDT ID: '. $udt_obj->getID() .' Object Type ID: '. $udt_obj->getObjectType() .' Date: '. TTDate::getDate('DATE', $udt_obj->getDateStamp() ), __FILE__, __LINE__, __METHOD__, 10);
 
 						//We have to skip absence taken so when the user enters in an absence schedule, it will create a object_type_id=50 record first
@@ -7516,6 +7141,7 @@ class CalculatePolicy {
 
 						//Use SourceObject by default if its defined, as an Absence Policy may have an override Pay Formula which accrues instead of the pay code itself.
 						//If SourceObject is not defined, then fall back to the PayCode pay formula. For cases where the user adds an override UDT record directly.
+						$policy_object = FALSE;
 						if ( $udt_obj->getSourceObject() > 0 ) {
 							$policy_object = $udt_obj->getSourceObjectObject();
 						} else {
@@ -7541,215 +7167,27 @@ class CalculatePolicy {
 								$af->setAmount( $accrual_amount );
 								$af->setEnableCalcBalance(TRUE);
 
-								Debug::text('Adding Pay Formula Accrual Entry for: '. $accrual_amount .' Based on UDT key: '. $udt_obj->getId() .' Pay Code: '. $udt_obj->getPayCode() .' Source Object: '. $udt_obj->getSourceObject(), __FILE__, __LINE__, __METHOD__, 10);
+								Debug::text('Adding Accrual Entry for: '. $accrual_amount .' Based on UDT key: '. $udt_obj->getId() .' Pay Code: '. $udt_obj->getPayCode() .' Source Object: '. $udt_obj->getSourceObject(), __FILE__, __LINE__, __METHOD__, 10);
 								if ( $af->isValid() ) {
 									$af->Save();
-
-									//Record the exact date and accrual policy that each record is on, so we can properly account for the exact day when the maximum balance might be reached.
-									if ( isset( $accrual_pay_formula_arr[ $pay_formula_policy_obj->getAccrualPolicyAccount() ][ $date_stamp ] ) ) {
-										$accrual_pay_formula_arr[ $pay_formula_policy_obj->getAccrualPolicyAccount() ][ $date_stamp ] += $accrual_amount;
-									} else {
-										$accrual_pay_formula_arr[ $pay_formula_policy_obj->getAccrualPolicyAccount() ][ $date_stamp ] = $accrual_amount;
-									}
 								}
 							}
 						}
 						// else {
 						//	Debug::text('Pay Formula doesnt have accrual policy or rate specified...', __FILE__, __LINE__, __METHOD__, 10);
 						//}
-						unset($policy_object, $pay_formula_policy_obj);
+						unset($policy_object);
 					}
-					unset($accrual_exclusivity_map, $af, $tmp_user_date_total, $date_stamp);
+					unset($accrual_exclusivity_map, $af);
 				}
-				//Debug::Arr( $accrual_pay_formula_arr, 'Accrual Records from Pay Formulas: ', __FILE__, __LINE__, __METHOD__, 10);
 			} else {
 				Debug::text('No non-hour based accrual policies to calculate...', __FILE__, __LINE__, __METHOD__, 10);
 			}
 		}
 
-		$alf = TTnew('AccrualListFactory');
-		$aplf = $this->accrual_policy;
-		if ( is_array($aplf) AND count($aplf) > 0 ) {
-			$accrual_compact_arr = array();
-
-			foreach( $aplf as $ap_obj ) {
-				$accrual_policy_id = TTUUID::castUUID( $ap_obj->getId() );
-				$accrual_policy_account_id = TTUUID::castUUID( $ap_obj->getAccrualPolicyAccount() );
-				Debug::text('Hour-Based Accrual Policy: '. $ap_obj->getName(), __FILE__, __LINE__, __METHOD__, 10);
-
-				if ( !isset($this->contributing_shift_policy[$ap_obj->getContributingShiftPolicy()]) ) {
-					Debug::text('No contributing shift policy defined for accrual policy, skipping...', __FILE__, __LINE__, __METHOD__, 10);
-					continue;
-				}
-
-				$original_balance = $ap_obj->getCurrentAccrualBalance( $this->getUserObject()->getId(), $ap_obj->getAccrualPolicyAccount() );
-				if ( isset($accrual_pay_formula_arr[ $ap_obj->getAccrualPolicyAccount() ]) ) {
-					$original_balance += ( array_sum( $accrual_pay_formula_arr[ $ap_obj->getAccrualPolicyAccount() ] ) * -1 ); //Reverse the pay formula adjustment as if they didn't happen, so we can account for them on a day-by-basis below instead.
-				}
-				Debug::Text('  Original Balance: '. $original_balance, __FILE__, __LINE__, __METHOD__, 10);
-
-				if ( isset($first_date_stamp) AND isset($last_date_stamp) ) {
-
-					$prev_original_balance_adjustment = 0;
-					foreach( $this->dates['calculated'] as $date_stamp => $tmp ) {
-						$date_stamp = TTDate::getMiddleDayEpoch($date_stamp); //Optimization - Move outside loop.
-
-						if ( $ap_obj->getMinimumEmployedDays() == 0
-								OR TTDate::getDays( ($date_stamp - $ap_obj->getModifiedHireDate( $this->getUserObject() ) ) ) >= $ap_obj->getMinimumEmployedDays() ) {
-							Debug::Text('  User has been employed long enough.', __FILE__, __LINE__, __METHOD__, 10);
-
-							$inception_total_time = FALSE;
-							if ( $ap_obj->isHourBasedLengthOfService() == TRUE ) {
-								//For hour based length of services, we need to get all time that matches contributing shift policy back to their hire date.
-								if ( $inception_total_time == FALSE ) { //Try to only call to the DB once for the entire range.
-									$this->getUserDateTotalData( $ap_obj->getModifiedHireDate( $this->getUserObject() ), $last_date_stamp );
-
-									//As an optimization, calculate inception total time from the hire date to the first date we calculated.
-									//Then we can just add time from the first date to the current date being calcluated.
-									$base_inception_total_time = $this->getSumUserDateTotalData( $this->filterUserDateTotalDataByContributingShiftPolicy( $ap_obj->getModifiedHireDate( $this->getUserObject() ), ( $first_date_stamp - 86400 ), $this->contributing_shift_policy[$ap_obj->getContributingShiftPolicy()] ) );
-								}
-								$additional_inception_total_time = $this->getSumUserDateTotalData( $this->filterUserDateTotalDataByContributingShiftPolicy( $first_date_stamp, $date_stamp, $this->contributing_shift_policy[$ap_obj->getContributingShiftPolicy()] ) );
-								$inception_total_time = ( $base_inception_total_time + $additional_inception_total_time );
-								Debug::Text('  Inception Total Time: '. $inception_total_time .' Base: '. $base_inception_total_time .' Additional: '. $additional_inception_total_time, __FILE__, __LINE__, __METHOD__, 10);
-							}
-
-							$user_date_total_rows = $this->filterUserDateTotalDataByContributingShiftPolicy( $date_stamp, $date_stamp, $this->contributing_shift_policy[$ap_obj->getContributingShiftPolicy()] );
-							if ( is_array($user_date_total_rows) AND count($user_date_total_rows) > 0 ) {
-								foreach( $user_date_total_rows as $udt_key => $udt_obj ) {
-									//Debug::text('cKey: '. $udt_key .' UDT ID: '. $udt_obj->getID() .' Object Type ID: '. $udt_obj->getObjectType() .' Date: '. TTDate::getDate('DATE', $udt_obj->getDateStamp() ) .' Start Time: '. TTDate::getDate('DATE+TIME', $udt_obj->getStartTimeStamp() ) .' Total Time: '. $udt_obj->getTotalTime(), __FILE__, __LINE__, __METHOD__, 10);
-
-									//Since object_type_id=50 (absence taken) creates object_type_id=25 records, ignore hour based accruals on object_type_id=50.
-									//This allows for cases where absence time creates overtime and they may want accruals calculated on OT.
-									if ( $udt_obj->getObjectType() == 50 ) {
-										continue;
-									}
-
-									//Since the overall balance is already reduced to take into account pay formula accruals from above, we need to add back in the amounts on each day to properly determine the balance on each date.
-									if ( isset($accrual_pay_formula_arr[$accrual_policy_account_id][$date_stamp]) ) {
-										//Debug::Text('	Found Accrual from Pay Formula on this date, adjusting for it: '. $accrual_pay_formula_arr[$accrual_policy_account_id][$date_stamp], __FILE__, __LINE__, __METHOD__, 10);
-										$original_balance_adjustment = $accrual_pay_formula_arr[$accrual_policy_account_id][$date_stamp];
-										unset($accrual_pay_formula_arr[$accrual_policy_account_id][$date_stamp]); //Once its used, unset it so it can't be used again.
-									} else {
-										$original_balance_adjustment = 0;
-									}
-									Debug::Text('  Original Balance: '. $original_balance .' Adjustment: '. $original_balance_adjustment .' New Balance: '. ( $original_balance + $original_balance_adjustment ), __FILE__, __LINE__, __METHOD__, 10);
-
-									//Need to check milestone after every UDT row so we can detect switching milestones quickly.
-									//FIXME: Handle switching milestones at exactly the right second, even mid-UDT row.
-									$milestone_obj = $ap_obj->getActiveMilestoneObject( $this->getUserObject(), $date_stamp, $inception_total_time );
-
-									//If Maximum time is set to 0, make that unlimited.
-									if ( is_object($milestone_obj) ) {
-										//Since we compact accrual records now, we need to calculate the balance that is stored in memory and not yet committed to DB, and add it to the DB balance.
-										if ( isset($accrual_compact_arr[$accrual_policy_account_id][$accrual_policy_id]) ) {
-											$tmp_accrual_balance = array_sum( $accrual_compact_arr[$accrual_policy_account_id][$accrual_policy_id] );
-										} else {
-											$tmp_accrual_balance = 0;
-										}
-
-										$accrual_balance = ( $original_balance + $original_balance_adjustment + $prev_original_balance_adjustment + $tmp_accrual_balance );
-
-										if ( $milestone_obj->getAnnualMaximumTime() > 0 ) {
-											$annual_accrued_amount = ( $tmp_accrual_balance + $alf->getSumByUserIdAndAccrualPolicyAccountAndTypeAndStartDateAndEndDate( $this->getUserObject()->getId(), $ap_obj->getAccrualPolicyAccount(), array( 76 ), $ap_obj->getCurrentMilestoneRolloverDate( $date_stamp, $this->getUserObject(), TRUE ), $date_stamp ) );
-										} else {
-											$annual_accrued_amount = FALSE;
-										}
-										Debug::Text('	Current Balance: '. $accrual_balance .' (Original: '. $original_balance .' TMP: '. $tmp_accrual_balance .' UDT Total Time: '. $udt_obj->getTotalTime() .') Accrual Policy: '. $ap_obj->getName() .'('. $ap_obj->getId() .') Annual Accrued Amount: '. $annual_accrued_amount, __FILE__, __LINE__, __METHOD__, 10);
-
-										if ( ( $milestone_obj->getMaximumTime() == 0 AND $milestone_obj->getAnnualMaximumTime() == 0 )
-												OR ( $accrual_balance < $milestone_obj->getMaximumTime()
-														AND ( $annual_accrued_amount === FALSE OR $annual_accrued_amount < $milestone_obj->getAnnualMaximumTime() ) ) ) {
-											$accrual_amount = $ap_obj->calcAccrualAmount( $milestone_obj, $udt_obj->getTotalTime(), 0);
-
-											if ( $accrual_amount > 0 ) {
-												//If Annual Maximum time is set to 0, make that unlimited.
-												if ( $milestone_obj->getAnnualMaximumTime() > 0 AND ( $annual_accrued_amount + $accrual_amount ) > $milestone_obj->getAnnualMaximumTime() ) {
-													$accrual_amount = bcsub( $milestone_obj->getAnnualMaximumTime(), $annual_accrued_amount, 4 );
-												}
-
-												//If Maximum time is set to 0, make that unlimited.
-												if ( $milestone_obj->getMaximumTime() > 0 AND ( $accrual_balance + $accrual_amount ) > $milestone_obj->getMaximumTime() ) {
-													$accrual_amount = bcsub( $milestone_obj->getMaximumTime(), $accrual_balance, 4 );
-												}
-
-												//Debug::Text('	UDT Key: '. $udt_key .' Object Type ID: '. $udt_obj->getObjectType(), __FILE__, __LINE__, __METHOD__, 10);
-												Debug::Text('	Min/Max Adjusted Accrual Amount: '. $accrual_amount .' (Adjusted From: '. $udt_obj->getTotalTime() .') Limits: Max Balance: '. $milestone_obj->getMaximumTime() .' Annual Max: '. $milestone_obj->getAnnualMaximumTime() .' Date: '. TTDate::getDate('DATE', $date_stamp ), __FILE__, __LINE__, __METHOD__, 10);
-
-												//It would be nice to find a way to compact these accrual records,
-												//as right now there could be many (hundreds) per day and it makes viewing the accrual balance difficult.
-												//Not sure if that is really possible though, as we won't be able to link directly to UserDateTotalID's then
-												//and that will make it impossible to figure out orphaned records.
-												//Solution is to link to the object_type_id=5 (system total time) record for each day.
-												//However we need to add these amounts to the current balance so we can stop adding more even after the maximum balance has been reached.
-												if ( isset($accrual_compact_arr[$accrual_policy_account_id][$accrual_policy_id][$date_stamp]) ) {
-													$accrual_compact_arr[$accrual_policy_account_id][$accrual_policy_id][$date_stamp] += $accrual_amount;
-												} else {
-													$accrual_compact_arr[$accrual_policy_account_id][$accrual_policy_id][$date_stamp] = $accrual_amount;
-												}
-
-												$prev_original_balance_adjustment += $original_balance_adjustment;
-
-												unset($accrual_amount, $accrual_balance, $new_accrual_balance);
-											} else {
-												Debug::Text('	Accrual Amount is 0...', __FILE__, __LINE__, __METHOD__, 10);
-											}
-										} else {
-											Debug::Text('	Accrual Balance or Annual Maximum is outside Milestone Range. Or no milestone found. Skipping... UDT Total Time: '. $udt_obj->getTotalTime(), __FILE__, __LINE__, __METHOD__, 10);
-										}
-									} else {
-										Debug::Text('	No milestone found. Skipping...', __FILE__, __LINE__, __METHOD__, 10);
-									}
-								}
-							}
-						} else {
-							Debug::Text('  User has only been employed: '. TTDate::getDays( ($date_stamp - $ap_obj->getModifiedHireDate( $this->getUserObject() ) ) ) .' Days, not enough.', __FILE__, __LINE__, __METHOD__, 10);
-						}
-
-						//Handled by deleteSystemTotalTime() instead, in case there are no accrual policies assigned anymore.
-						//AccrualFactory::deleteOrphans( $this->getUserObject()->getId(), $date_stamp );
-					}
-				}
-				unset($accrual_policy_id, $accrual_policy_account_id);
-			}
-
-			//Insert compacted Accrual records.
-			if ( isset($accrual_compact_arr) AND is_array( $accrual_compact_arr ) AND count( $accrual_compact_arr ) > 0 ) {
-				foreach( $accrual_compact_arr as $accrual_policy_account_id => $data1 ) {
-					foreach( $data1 as $accrual_policy_id => $data2 ) {
-						foreach( $data2 as $date_stamp => $total_time ) {
-							//$date_stamp is already ran through getMiddleDayEpoch above.
-							if ( isset($this->new_system_user_date_total_id[$date_stamp]) ) {
-								$af = TTnew( 'AccrualFactory' );
-								$af->setUser( $this->getUserObject()->getId() );
-								$af->setType( 76 ); //Hour-Based Accrual Policy
-								$af->setAccrualPolicyAccount( $accrual_policy_account_id );
-								$af->setAccrualPolicy( $accrual_policy_id );
-								$af->setUserDateTotalID( $this->new_system_user_date_total_id[$date_stamp] ); //Link hour based accruals to just the system total time for each day.
-								$af->setAmount( $total_time );
-								$af->setTimeStamp( $date_stamp );
-								$af->setEnableCalcBalance( TRUE );
-								if ( $af->isValid() ) {
-									$insert_id = $af->Save();
-									Debug::Text( '	Adding Compacted Accrual Record, ID: ' . $insert_id . ' Total Time: ' . $total_time . ' Date: ' . TTDate::getDate( 'DATE', $date_stamp ), __FILE__, __LINE__, __METHOD__, 10 );
-								}
-							} else {
-								Debug::text('  ERROR: Unable to save accrual record due to invalid link to UserDateTotal ID. Date: '. TTDate::getDate( 'DATE', $date_stamp ), __FILE__, __LINE__, __METHOD__, 10);
-							}
-						}
-					}
-				}
-			}
-			unset( $accrual_compact_arr, $data1, $data2, $accrual_policy_account_id, $accrual_policy_id, $date_stamp, $total_time );
-		} else {
-			Debug::text('No hour-based accrual policies to calculate...', __FILE__, __LINE__, __METHOD__, 10);
-		}
-
 		return TRUE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function getAccrualPolicy() {
 		$aplf = TTnew( 'AccrualPolicyListFactory' );
 		$aplf->getByPolicyGroupUserIdAndType( $this->getUserObject()->getId(), 30 ); //Hour based only.
@@ -7766,12 +7204,6 @@ class CalculatePolicy {
 		return FALSE;
 	}
 
-	/**
-	 * @param int $date_stamp EPOCH
-	 * @param object $holiday_policy_obj
-	 * @param bool $ignore_after_eligibility
-	 * @return bool
-	 */
 	function isEligibleForHoliday( $date_stamp, $holiday_policy_obj, $ignore_after_eligibility = FALSE ) {
 		//Make sure the employee has been employed long enough according to labor standards
 		//Also make sure that the employee hasn't been terminated on or before the holiday.
@@ -7793,10 +7225,9 @@ class CalculatePolicy {
 					$shift_on_holiday = count( $this->getDayArrayUserDateTotalData( $this->filterUserDateTotalDataByContributingShiftPolicy( $date_stamp, $date_stamp, $this->contributing_shift_policy[$holiday_policy_obj->getEligibleContributingShiftPolicy()], array( 10, 20, 25, 30 ) ) ) );
 					$scheduled_working_on_holiday = 0;
 					$scheduled_absent_on_holiday = 0;
-					if ( in_array( $holiday_policy_obj->getShiftOnHolidayType(), array(30, 70, 72, 75 ) ) ) {
+					if ( $holiday_policy_obj->getShiftOnHolidayType() == 30 ) {
 						$scheduled_working_on_holiday = count( $this->getScheduleDates( $this->filterScheduleDataByStatus( $date_stamp, $date_stamp, array(10) ) ) );
-					}
-					if ( in_array( $holiday_policy_obj->getShiftOnHolidayType(), array(40, 70, 72, 75 ) ) ) {
+					} elseif ( $holiday_policy_obj->getShiftOnHolidayType() == 40 ) {
 						$scheduled_absent_on_holiday = count( $this->getScheduleDates( $this->filterScheduleDataByStatus( $date_stamp, $date_stamp, array(20) ) ) );
 					}
 					Debug::text( 'ON HOLIDAY: Type: ' . $holiday_policy_obj->getShiftOnHolidayType() . ' Shift: ' . $shift_on_holiday . ' Schedule: Working: ' . $scheduled_working_on_holiday . ' Absent: ' . $scheduled_absent_on_holiday, __FILE__, __LINE__, __METHOD__, 10 );
@@ -7837,48 +7268,8 @@ class CalculatePolicy {
 							Debug::text( 'Employee has worked on the holiday or not scheduled absent!', __FILE__, __LINE__, __METHOD__, 10 );
 							return FALSE;
 						}
-//					} elseif ( $holiday_policy_obj->getShiftOnHolidayType() == 70 ) { //Must not work, and must be scheduled to work.
-//						if ( $shift_on_holiday == 0 AND $scheduled_working_on_holiday > 0 ) {
-//							Debug::text( 'Employee has NOT worked on the holiday and are scheduled to work! Success.', __FILE__, __LINE__, __METHOD__, 10 );
-//						} else {
-//							//$this->is_eligible_holiday_description = TTi18n::getText('Worked holiday when not scheduled');
-//							Debug::text( 'Employee has worked on the holiday when scheduled, or scheduled absent!', __FILE__, __LINE__, __METHOD__, 10 );
-//							return FALSE;
-//						}
-					} elseif ( $holiday_policy_obj->getShiftOnHolidayType() == 72 ) { //Must not work, and must be scheduled absent. This is useful for holidays that fall on a day that the employee *is* normally scheduled to work.
-						if ( $shift_on_holiday == 0 AND $scheduled_absent_on_holiday > 0 ) {
-							Debug::text( 'Employee has NOT worked on the holiday and are scheduled absent! Success.', __FILE__, __LINE__, __METHOD__, 10 );
-						} elseif ( $shift_on_holiday == 0 AND $scheduled_working_on_holiday > 0 ) {
-							//$this->is_eligible_holiday_description = TTi18n::getText('Worked holiday when not scheduled');
-							Debug::text( 'Employee has NOT worked and is scheduled to work on holiday!!', __FILE__, __LINE__, __METHOD__, 10 );
-							return FALSE;
-						} elseif ( $shift_on_holiday == 0 AND $scheduled_absent_on_holiday == 0 AND $scheduled_working_on_holiday == 0 ) {
-							//$this->is_eligible_holiday_description = TTi18n::getText('Worked holiday when scheduled absent');
-							Debug::text( 'Employee has NOT worked on the holiday and NOT scheduled!', __FILE__, __LINE__, __METHOD__, 10 );
-							return FALSE;
-						} elseif ( $shift_on_holiday > 0 ) {
-							//$this->is_eligible_holiday_description = TTi18n::getText('Worked holiday');
-							Debug::text( 'Employee has worked on holiday!!', __FILE__, __LINE__, __METHOD__, 10 );
-							return FALSE;
-						}
-					} elseif ( $holiday_policy_obj->getShiftOnHolidayType() == 75 ) { //Must not work and must not be scheduled to work, or scheduled absent. This is useful for holidays that fall on a day that the employee is not normally scheduled to work.
-						if ( $shift_on_holiday == 0 AND $scheduled_working_on_holiday == 0 AND $scheduled_absent_on_holiday == 0 ) {
-							Debug::text( 'Employee has NOT worked on the holiday and are not scheduled to work, or absent! Success.', __FILE__, __LINE__, __METHOD__, 10 );
-						} elseif ( $shift_on_holiday > 0  ) {
-							//$this->is_eligible_holiday_description = TTi18n::getText('Worked holiday when not scheduled');
-							Debug::text( 'Employee has worked on the holiday when not scheduled!', __FILE__, __LINE__, __METHOD__, 10 );
-							return FALSE;
-						} elseif ( $shift_on_holiday == 0 AND $scheduled_working_on_holiday > 0 ) {
-							//$this->is_eligible_holiday_description = TTi18n::getText('Worked holiday when not scheduled');
-							Debug::text( 'Employee is scheduled to work on holiday!!', __FILE__, __LINE__, __METHOD__, 10 );
-							return FALSE;
-						} elseif ( $shift_on_holiday == 0 AND $scheduled_absent_on_holiday > 0 ) {
-							//$this->is_eligible_holiday_description = TTi18n::getText('Worked holiday when not scheduled');
-							Debug::text( 'Employee is scheduled absent on holiday!!', __FILE__, __LINE__, __METHOD__, 10 );
-							return FALSE;
-						}
-					}
 
+					}
 					unset($shift_on_holiday, $scheduled_working_on_holiday, $scheduled_absent_on_holiday);
 				}
 
@@ -7886,8 +7277,8 @@ class CalculatePolicy {
 					if ( $holiday_policy_obj->getWorkedScheduledDays() == 1 ) { //Scheduled Days
 						Debug::text('BEFORE: Using scheduled days!', __FILE__, __LINE__, __METHOD__, 10);
 
-						//Use 30days as the upper limit. We are passing getScheduleData() a limit option, so performance should be decent.
-						$this->getScheduleData( ( $date_stamp - ( 86400 * 30 ) ), ( $date_stamp - 86400 ), 10, $holiday_policy_obj->getMinimumWorkedPeriodDays(), array( 'a.date_stamp' => 'desc' ) );
+						//Use 365days as the upper limit.
+						$this->getScheduleData( ( $date_stamp - ( 86400 * 365 ) ), ( $date_stamp - 86400 ), 10, $holiday_policy_obj->getMinimumWorkedPeriodDays(), array( 'a.date_stamp' => 'desc' ) );
 
 						$scheduled_date_stamps_before = $this->getScheduleDates( $this->filterScheduleDataByDateAndDirection( $date_stamp, 10, 'desc', $holiday_policy_obj->getMinimumWorkedPeriodDays() ) );
 						//Debug::Arr( (array)$scheduled_date_stamps_before, 'Scheduled DateStamps Before: ', __FILE__, __LINE__, __METHOD__, 10);
@@ -7913,8 +7304,8 @@ class CalculatePolicy {
 					if ( $holiday_policy_obj->getWorkedAfterScheduledDays() == 1 ) { //Scheduled Days
 						Debug::text('AFTER: Using scheduled days!', __FILE__, __LINE__, __METHOD__, 10);
 
-						//Use 30days as the upper limit. We are passing getScheduleData() a limit option, so performance should be decent.
-						$this->getScheduleData( ( $date_stamp + 86400 ), ( $date_stamp + ( 86400 * 30 ) ), 10, $holiday_policy_obj->getMinimumWorkedAfterPeriodDays(), array( 'a.date_stamp' => 'asc' ) );
+						//Use 365days as the upper limit.
+						$this->getScheduleData( ( $date_stamp + 86400 ), time(), 10, $holiday_policy_obj->getMinimumWorkedAfterPeriodDays(), array( 'a.date_stamp' => 'asc' ) );
 
 						$scheduled_date_stamps_after = $this->getScheduleDates( $this->filterScheduleDataByDateAndDirection( $date_stamp, 10, 'asc', $holiday_policy_obj->getMinimumWorkedAfterPeriodDays() ) );
 						//Debug::Arr( (array)$scheduled_date_stamps_after, 'Scheduled DateStamps After: ', __FILE__, __LINE__, __METHOD__, 10);
@@ -7993,11 +7384,6 @@ class CalculatePolicy {
 		return FALSE;
 	}
 
-	/**
-	 * @param int $date_stamp EPOCH
-	 * @param object $holiday_policy_obj
-	 * @return float|int|string
-	 */
 	function getHolidayTime( $date_stamp, $holiday_policy_obj ) {
 		if ( $holiday_policy_obj->getType() == 30 AND isset($this->contributing_shift_policy[$holiday_policy_obj->getContributingShiftPolicy()]) ) { //Average
 			if ( $holiday_policy_obj->getMinimumTime() > 0
@@ -8009,49 +7395,22 @@ class CalculatePolicy {
 
 			$date_stamp = TTDate::getMiddleDayEpoch($date_stamp); //Optimization - Move outside loop.
 
-			if ( $holiday_policy_obj->getAverageTimeFrequencyType() == 20 ) { //Pay Periods
-				$past_pay_period_dates = $this->pay_period_schedule_obj->getStartAndEndDateRangeFromPastPayPeriods( $date_stamp, $holiday_policy_obj->getAverageTimeDays() );
-				if ( is_array($past_pay_period_dates) ) {
-					$filter_start_date = $past_pay_period_dates['start_date'];
-					$filter_end_date = $past_pay_period_dates['end_date'];
-				} else {
-					Debug::text('ERROR: No pay period found, unable to calculate holiday time!', __FILE__, __LINE__, __METHOD__, 10);
-					return 0;
-				}
-			} else { //Days
-				if ( $holiday_policy_obj->getAverageTimeDays() >= 0 ) {
-					$filter_start_date = ( $date_stamp - ( $holiday_policy_obj->getAverageTimeDays() * 86400 ) );
-					$filter_end_date = ( $date_stamp - 86400 );
-				} else {
-					//Allow setting a "Total Time Over" value to -1 along with Average Time Over: -1 to return the time worked on the holiday day itself.
-					$filter_start_date = $date_stamp;
-					$filter_end_date = ( $date_stamp + ( ( abs( $holiday_policy_obj->getAverageTimeDays() ) - 1 ) * 86400 ) );
-				}
-			}
-
 			//Make sure we get all UserDateTotal data going back to the number of days to average the time over.
-			//$this->getUserDateTotalData( ( $date_stamp - ( 86400 * $this->holiday_before_days ) ), ( $date_stamp - 86400 ) );
-			$this->getUserDateTotalData( $filter_start_date, $filter_end_date );
+			$this->getUserDateTotalData( ( $date_stamp - ( 86400 * $this->holiday_before_days ) ), ( $date_stamp - 86400 ) );
 
 			//Debug::text('Start Date: '. TTDate::getDate('DATE', ( $date_stamp - ( $holiday_policy_obj->getAverageTimeDays() * 86400) ) ) .' End: '. TTDate::getDate('DATE', ( $date_stamp - 86400 ) ), __FILE__, __LINE__, __METHOD__, 10);
 			if ( $holiday_policy_obj->getAverageTimeWorkedDays() == TRUE ) {
-				//$last_days_worked_count = count( $this->getDayArrayUserDateTotalData( $this->filterUserDateTotalDataByContributingShiftPolicy( ( $date_stamp - ( $holiday_policy_obj->getAverageTimeDays() * 86400) ), ( $date_stamp - 86400 ), $this->contributing_shift_policy[$holiday_policy_obj->getContributingShiftPolicy()], array(20, 25, 30, 40, 100, 110 ) ) ) ); //Don't include Absence, Lunch, Break (Taken).
-				$last_days_worked_count = count( $this->getDayArrayUserDateTotalData( $this->filterUserDateTotalDataByContributingShiftPolicy( $filter_start_date, $filter_end_date, $this->contributing_shift_policy[$holiday_policy_obj->getContributingShiftPolicy()], array(20, 25, 30, 40, 100, 110 ) ) ) ); //Don't include Absence, Lunch, Break (Taken).
+				$last_days_worked_count = count( $this->getDayArrayUserDateTotalData( $this->filterUserDateTotalDataByContributingShiftPolicy( ( $date_stamp - ( $holiday_policy_obj->getAverageTimeDays() * 86400) ), ( $date_stamp - 86400 ), $this->contributing_shift_policy[$holiday_policy_obj->getContributingShiftPolicy()], array(20, 25, 30, 40, 100, 110 ) ) ) ); //Don't include Absence, Lunch, Break (Taken).
 			} else {
 				$last_days_worked_count = abs( $holiday_policy_obj->getAverageDays() ); //Allow -1 for getting time worked on the current day.
 			}
+			Debug::text('Average time over days: '. $last_days_worked_count, __FILE__, __LINE__, __METHOD__, 10);
 
 			if ( $holiday_policy_obj->getAverageTimeDays() >= 0 ) {
-				//$total_seconds_worked = $this->getSumUserDateTotalData( $this->filterUserDateTotalDataByContributingShiftPolicy( ( $date_stamp - ( $holiday_policy_obj->getAverageTimeDays() * 86400 ) ), ( $date_stamp - 86400 ), $this->contributing_shift_policy[$holiday_policy_obj->getContributingShiftPolicy()], array(20, 25, 30, 40, 100, 110) ) );
-				$total_seconds_worked = $this->getSumUserDateTotalData( $this->filterUserDateTotalDataByContributingShiftPolicy( $filter_start_date, $filter_end_date, $this->contributing_shift_policy[$holiday_policy_obj->getContributingShiftPolicy()], array(20, 25, 30, 40, 100, 110) ) );
+				$total_seconds_worked = $this->getSumUserDateTotalData( $this->filterUserDateTotalDataByContributingShiftPolicy( ( $date_stamp - ( $holiday_policy_obj->getAverageTimeDays() * 86400 ) ), ( $date_stamp - 86400 ), $this->contributing_shift_policy[$holiday_policy_obj->getContributingShiftPolicy()], array(20, 25, 30, 40, 100, 110) ) );
 			} elseif ( $holiday_policy_obj->getAverageTimeDays() < 0 ) { //Allow setting a "Total Time Over" value to -1 along with Average Time Over: -1 to return the time worked on the holiday day itself.
-				//$total_seconds_worked = $this->getSumUserDateTotalData( $this->filterUserDateTotalDataByContributingShiftPolicy( $date_stamp, ( $date_stamp + ( ( abs( $holiday_policy_obj->getAverageTimeDays() ) - 1 ) * 86400 ) ), $this->contributing_shift_policy[$holiday_policy_obj->getContributingShiftPolicy()], array(10, 20, 25, 30, 40, 100, 110) ) ); //Must include 10=Worked Time, as this happens before RegularTime/OverTime is calculated.
-				$total_seconds_worked = $this->getSumUserDateTotalData( $this->filterUserDateTotalDataByContributingShiftPolicy( $filter_start_date, $filter_end_date, $this->contributing_shift_policy[$holiday_policy_obj->getContributingShiftPolicy()], array(10, 20, 25, 30, 40, 100, 110) ) ); //Must include 10=Worked Time, as this happens before RegularTime/OverTime is calculated.
+				$total_seconds_worked = $this->getSumUserDateTotalData( $this->filterUserDateTotalDataByContributingShiftPolicy( $date_stamp, ( $date_stamp + ( ( abs( $holiday_policy_obj->getAverageTimeDays() ) - 1 ) * 86400 ) ), $this->contributing_shift_policy[$holiday_policy_obj->getContributingShiftPolicy()], array(10, 20, 25, 30, 40, 100, 110) ) ); //Must include 10=Worked Time, as this happens before RegularTime/OverTime is calculated.
 			}
-			Debug::text(' Total Time: '. TTDate::getHours($total_seconds_worked) .' Averaged over days: '. $last_days_worked_count, __FILE__, __LINE__, __METHOD__, 10);
-
-			unset($filter_start_date, $filter_end_date);
-
 
 			if ( $last_days_worked_count > 0 ) {
 				$avg_seconds_worked_per_day = bcdiv($total_seconds_worked, $last_days_worked_count);
@@ -8072,7 +7431,7 @@ class CalculatePolicy {
 			}
 
 			//Round to nearest 15mins.
-			if ( $holiday_policy_obj->getRoundIntervalPolicyID() != ''
+			if ( (int)$holiday_policy_obj->getRoundIntervalPolicyID() != 0
 					AND is_object($holiday_policy_obj->getRoundIntervalPolicyObject() ) ) {
 				$avg_seconds_worked_per_day = TTDate::roundTime($avg_seconds_worked_per_day, $holiday_policy_obj->getRoundIntervalPolicyObject()->getInterval(), $holiday_policy_obj->getRoundIntervalPolicyObject()->getRoundType() );
 				Debug::text('Rounding Stat Time To: '. $avg_seconds_worked_per_day, __FILE__, __LINE__, __METHOD__, 10);
@@ -8087,125 +7446,107 @@ class CalculatePolicy {
 		}
 	}
 
-	/**
-	 * @param int $date_stamp EPOCH
-	 * @return bool
-	 */
 	function calculateHolidayPolicy( $date_stamp ) {
-		$holiday_policies = $this->filterHoliday( $date_stamp, NULL, TRUE ); //Only consider holiday policies assigned to policy groups. There may be different holiday policies assigned to contributing shift policies
-		if ( is_array( $holiday_policies ) AND count( $holiday_policies ) > 0 ) {
-			foreach ( $holiday_policies as $holiday_obj ) {
-				Debug::text( ' Found Holiday: ' . $holiday_obj->getName(), __FILE__, __LINE__, __METHOD__, 10 );
+		$holiday_obj = $this->filterHoliday( $date_stamp, NULL, TRUE ); //Only consider holiday policies assigned to policy groups. There may be different holiday policies assigned to contributing shift policies
+		if ( is_object($holiday_obj) ) {
+			Debug::text(' Found Holiday: '. $holiday_obj->getName(), __FILE__, __LINE__, __METHOD__, 10);
 
-				//Check for conflicting/overridden records, so we don't double up on the time.
-				//This policy could calculate 9.52hrs, but the user could override it to 9hrs, so if that happens simply skip calculating the holiday time again.
-				//  There could be a case where there are two holiday policies, one applies in one situation and another in a different situation.
-				//  When it doesn't apply it still tries to create a 0hr entry, which then conflicts with the 2nd policy which may apply for X hours.
-				//  To handle this we only check isConflicting on records where override=TRUE.
-				// 		calculateScheduleAbsence() already checks for any conflicting record, so a holiday absence on the schedule won't override a differing holiday policy average amount already.
-				if ( is_object( $holiday_obj->getHolidayPolicyObject() )
-						AND $holiday_obj->getHolidayPolicyObject()->getAbsencePolicyID() != FALSE
-						AND is_object( $holiday_obj->getHolidayPolicyObject()->getAbsencePolicyObject() )
-						AND $this->isConflictingUserDateTotal( $date_stamp, array(25, 50), $holiday_obj->getHolidayPolicyObject()->getAbsencePolicyObject()->getPayCode(), NULL, NULL, NULL, NULL, TRUE ) == FALSE
-				) {
+			//Check for conflicting/overridden records, so we don't double up on the time.
+			//This policy could calculate 9.52hrs, but the user could override it to 9hrs, so if that happens simply skip calculating the holiday time again.
+			if ( is_object( $holiday_obj->getHolidayPolicyObject() )
+					AND $holiday_obj->getHolidayPolicyObject()->getAbsencePolicyID() != FALSE
+					AND is_object( $holiday_obj->getHolidayPolicyObject()->getAbsencePolicyObject() )
+					AND $this->isConflictingUserDateTotal( $date_stamp, array(25, 50), (int)$holiday_obj->getHolidayPolicyObject()->getAbsencePolicyObject()->getPayCode() ) == FALSE ) {
 
-					//Skip calculating holidays before the employees hire date, as in some cases if they were hired the day after the holiday it would try to put a 0hr absence on the holiday before their hire date.
-					//  We considered just not calculating any policies before the hire date, however that may cause problems with re-hires.
-					if ( $this->getUserObject()->getHireDate() != '' AND TTDate::getBeginDayEpoch( $date_stamp ) < TTDate::getBeginDayEpoch( $this->getUserObject()->getHireDate() ) ) {
-						Debug::Text( 'Skip calculation of holidays before the hire date: ' . TTDate::getDate( 'DATE', $date_stamp ), __FILE__, __LINE__, __METHOD__, 10 );
-						return TRUE;
-					}
-
-					//Skip calculating holidays after the termination date, as currently absences can't be entered after the termination date anyways,
-					// //and a 0hr absence which gets entered almost every time will cause timesheet calculation to fail.
-					if ( $this->getUserObject()->getTerminationDate() != '' AND TTDate::getBeginDayEpoch( $date_stamp ) > TTDate::getBeginDayEpoch( $this->getUserObject()->getTerminationDate() ) ) {
-						Debug::Text( 'Skip calculation of holidays after the termination date: ' . TTDate::getDate( 'DATE', $date_stamp ), __FILE__, __LINE__, __METHOD__, 10 );
-						return TRUE;
-					}
-
-					$holiday_time = 0;
-					if ( $this->isEligibleForHoliday( $date_stamp, $holiday_obj->getHolidayPolicyObject() ) ) {
-						Debug::text( ' User is Eligible for Holiday: ' . $holiday_obj->getName(), __FILE__, __LINE__, __METHOD__, 10 );
-
-						$holiday_time = $this->getHolidayTime( $date_stamp, $holiday_obj->getHolidayPolicyObject() );
-						Debug::text( ' User average time for Holiday: ' . TTDate::getHours( $holiday_time ), __FILE__, __LINE__, __METHOD__, 10 );
-					} else {
-						Debug::text( ' User is not eligible for holiday (adding record with 0 time)...', __FILE__, __LINE__, __METHOD__, 10 );
-					}
-
-					//Need to still record if holiday_time=0 as the user could be scheduled for 8hrs of Stat Holiday
-					//but they aren't eligible to receive any holiday time, if we don't create UDT record with total_time=0
-					//then the scheduled time of 8hrs will be used instead, which is incorrect.
-					//This won't actually get saved, its just used to cause calculateScheduleTime() to ignore this day instead.
-					if ( $holiday_time >= 0 ) {
-						//Try to get the start/end time of the scheduled shift for the holiday, so we can use that as the start/end time for the UDT record.
-						//This helps us match the schedule to the UDT records and apply any Schedule Policy's (which they themselves may contain premium policies).
-						$slf = $this->filterScheduleDataByStatus( $date_stamp, $date_stamp, 20 );
-						if ( is_array( $slf ) AND count( $slf ) > 0 ) {
-							foreach ( $slf as $key => $s_obj ) {
-								if ( $s_obj->getAbsencePolicyID() == $holiday_obj->getHolidayPolicyObject()->getAbsencePolicyID() ) {
-									Debug::text( '   Found Scheduled Shift with the same Absence Policy to match to the UDT record... ID: ' . $s_obj->getID() . ' Start: ' . TTDate::getDate( 'DATE+TIME', $s_obj->getStartTime() ) . ' End: ' . TTDate::getDate( 'DATE+TIME', $s_obj->getEndTime() ), __FILE__, __LINE__, __METHOD__, 10 );
-									$scheduled_shifts[] = $s_obj;
-									break;
-								}
-							}
-						}
-						unset( $slf );
-
-						Debug::text( ' Adding Holiday hours: ' . TTDate::getHours( $holiday_time ) . '(' . $holiday_time . ')', __FILE__, __LINE__, __METHOD__, 10 );
-						if ( !isset( $this->user_date_total[ $this->user_date_total_insert_id ] ) ) {
-							$udtf = TTnew( 'UserDateTotalFactory' );
-							$udtf->setUser( $this->getUserObject()->getId() );
-							$udtf->setDateStamp( $date_stamp );
-							$udtf->setObjectType( 50 ); //Absence
-							$udtf->setSourceObject( $holiday_obj->getHolidayPolicyObject()->getAbsencePolicyID() );
-							$udtf->setPayCode( $holiday_obj->getHolidayPolicyObject()->getAbsencePolicyObject()->getPayCode() );
-
-							$udtf->setBranch( $this->getUserObject()->getDefaultBranch() );
-							$udtf->setDepartment( $this->getUserObject()->getDefaultDepartment() );
-							if ( getTTProductEdition() >= TT_PRODUCT_CORPORATE ) {
-								$udtf->setJob( $this->getUserObject()->getDefaultJob() );
-								$udtf->setJobItem( $this->getUserObject()->getDefaultJobItem() );
-							}
-
-							$udtf->setTotalTime( $holiday_time );
-
-							//See above comments when we get the scheduled shift objects.
-							if ( isset( $scheduled_shifts[0] ) ) {
-								$udtf->setStartType( 10 ); //Normal
-								$udtf->setStartTimeStamp( $scheduled_shifts[0]->getStartTime() );
-								$udtf->setEndType( 10 ); //Normal
-								$udtf->setEndTimeStamp( ( $scheduled_shifts[0]->getStartTime() + $holiday_time ) );
-							}
-
-							$udtf->setBaseHourlyRate( $this->getBaseHourlyRate( $holiday_obj->getHolidayPolicyObject()->getAbsencePolicyObject()->getPayFormulaPolicy(), $udtf->getPayCode(), $date_stamp ) );
-							$udtf->setHourlyRate( $this->getHourlyRate( $holiday_obj->getHolidayPolicyObject()->getAbsencePolicyObject()->getPayFormulaPolicy(), $udtf->getPayCode(), $date_stamp, $udtf->getBaseHourlyRate() ) );
-							$udtf->setHourlyRateWithBurden( $this->getHourlyRateWithBurden( $holiday_obj->getHolidayPolicyObject()->getAbsencePolicyObject()->getPayFormulaPolicy(), $udtf->getPayCode(), $date_stamp, $udtf->getHourlyRate() ) );
-
-							if ( $holiday_time == 0 AND $this->is_eligible_holiday_description != '' ) { //Include note explaining why they are not receiving holiday time.
-								$udtf->setNote( TTi18n::getText( 'Not Eligible for holiday' ) .' ['. $holiday_obj->getHolidayPolicyObject()->getName() .']' .' - '. $this->is_eligible_holiday_description . '.' );
-							}
-
-							$udtf->setEnableCalcSystemTotalTime( FALSE );
-							$udtf->setEnableCalculatePolicy( TRUE );
-							$udtf->preSave(); //Call this so TotalTimeAmount is calculated immediately, as we don't save these records until later.
-
-							if ( $this->isOverriddenUserDateTotalObject( $udtf ) == FALSE ) {
-								//Don't save the record, just add it to the existing array, so it can be included in other calculations.
-								//We will save these records at the end.
-								$this->user_date_total[ $this->user_date_total_insert_id ] = $udtf;
-								$this->user_date_total_insert_id--;
-							}
-						} else {
-							Debug::text( 'ERROR: Duplicate starting ID for some reason! ' . $this->user_date_total_insert_id, __FILE__, __LINE__, __METHOD__, 10 );
-						}
-						unset( $scheduled_shifts );
-					} else {
-						Debug::text( 'No holiday time to utilize...', __FILE__, __LINE__, __METHOD__, 10 );
-					}
-				} else {
-					Debug::text( 'Overridden holiday time, skipping policy calculation...', __FILE__, __LINE__, __METHOD__, 10 );
+				//Skip calculating holidays before the employees hire date, as in some cases if they were hired the day after the holiday it would try to put a 0hr absence on the holiday before their hire date.
+				//  We considered just not calculating any policies before the hire date, however that may cause problems with re-hires.
+				if ( $this->getUserObject()->getHireDate() != '' AND TTDate::getBeginDayEpoch( $date_stamp ) < TTDate::getBeginDayEpoch( $this->getUserObject()->getHireDate() ) ) {
+					Debug::Text('Skip calculation of holidays before the hire date: '. TTDate::getDate('DATE', $date_stamp ), __FILE__, __LINE__, __METHOD__, 10);
+					return TRUE;
 				}
+
+				$holiday_time = 0;
+				if ( $this->isEligibleForHoliday( $date_stamp, $holiday_obj->getHolidayPolicyObject() ) ) {
+					Debug::text(' User is Eligible for Holiday: '. $holiday_obj->getName(), __FILE__, __LINE__, __METHOD__, 10);
+
+					$holiday_time = $this->getHolidayTime( $date_stamp, $holiday_obj->getHolidayPolicyObject() );
+					Debug::text(' User average time for Holiday: '. TTDate::getHours($holiday_time), __FILE__, __LINE__, __METHOD__, 10);
+				} else {
+					Debug::text(' User is not eligible for holiday (adding record with 0 time)...', __FILE__, __LINE__, __METHOD__, 10);
+				}
+
+				//Need to still record if holiday_time=0 as the user could be scheduled for 8hrs of Stat Holiday
+				//but they aren't eligible to receive any holiday time, if we don't create UDT record with total_time=0
+				//then the scheduled time of 8hrs will be used instead, which is incorrect.
+				//This won't actually get saved, its just used to cause calculateScheduleTime() to ignore this day instead.
+				if ( $holiday_time >= 0 ) {
+					//Try to get the start/end time of the scheduled shift for the holiday, so we can use that as the start/end time for the UDT record.
+					//This helps us match the schedule to the UDT records and apply any Schedule Policy's (which they themselves may contain premium policies).
+					$slf = $this->filterScheduleDataByStatus( $date_stamp, $date_stamp, 20 );
+					if ( is_array( $slf ) AND count( $slf ) > 0 ) {
+						foreach( $slf as $key => $s_obj ) {
+							if ( $s_obj->getAbsencePolicyID() == $holiday_obj->getHolidayPolicyObject()->getAbsencePolicyID() ) {
+								Debug::text('   Found Scheduled Shift with the same Absence Policy to match to the UDT record... ID: '. $s_obj->getID() .' Start: '. TTDate::getDate('DATE+TIME', $s_obj->getStartTime() ) .' End: '. TTDate::getDate('DATE+TIME', $s_obj->getEndTime() ), __FILE__, __LINE__, __METHOD__, 10);
+								$scheduled_shifts[] = $s_obj;
+								break;
+							}
+						}
+					}
+					unset($slf);
+
+					Debug::text(' Adding Holiday hours: '. TTDate::getHours($holiday_time) .'('.$holiday_time.')', __FILE__, __LINE__, __METHOD__, 10);
+					if ( !isset( $this->user_date_total[$this->user_date_total_insert_id] ) ) {
+						$udtf = TTnew( 'UserDateTotalFactory' );
+						$udtf->setUser( $this->getUserObject()->getId() );
+						$udtf->setDateStamp( $date_stamp );
+						$udtf->setObjectType( 50 ); //Absence
+						$udtf->setSourceObject( $holiday_obj->getHolidayPolicyObject()->getAbsencePolicyID() );
+						$udtf->setPayCode( (int)$holiday_obj->getHolidayPolicyObject()->getAbsencePolicyObject()->getPayCode() );
+
+						$udtf->setBranch( (int)$this->getUserObject()->getDefaultBranch() );
+						$udtf->setDepartment( (int)$this->getUserObject()->getDefaultDepartment() );
+						if ( getTTProductEdition() >= TT_PRODUCT_CORPORATE ) {
+							$udtf->setJob( (int)$this->getUserObject()->getDefaultJob() );
+							$udtf->setJobItem( (int)$this->getUserObject()->getDefaultJobItem() );
+						}
+
+						$udtf->setTotalTime( $holiday_time );
+
+						//See above comments when we get the scheduled shift objects.
+						if ( isset($scheduled_shifts[0]) ) {
+							$udtf->setStartType( 10 ); //Normal
+							$udtf->setStartTimeStamp( $scheduled_shifts[0]->getStartTime() );
+							$udtf->setEndType( 10 ); //Normal
+							$udtf->setEndTimeStamp( ( $scheduled_shifts[0]->getStartTime() + $holiday_time ) );
+						}
+
+						$udtf->setBaseHourlyRate( $this->getBaseHourlyRate( $holiday_obj->getHolidayPolicyObject()->getAbsencePolicyObject()->getPayFormulaPolicy(), $udtf->getPayCode(), $date_stamp ) );
+						$udtf->setHourlyRate( $this->getHourlyRate( $holiday_obj->getHolidayPolicyObject()->getAbsencePolicyObject()->getPayFormulaPolicy(), $udtf->getPayCode(), $date_stamp, $udtf->getBaseHourlyRate() ) );
+						$udtf->setHourlyRateWithBurden( $this->getHourlyRateWithBurden( $holiday_obj->getHolidayPolicyObject()->getAbsencePolicyObject()->getPayFormulaPolicy(), $udtf->getPayCode(), $date_stamp, $udtf->getHourlyRate() ) );
+
+						if ( $holiday_time == 0 AND $this->is_eligible_holiday_description != '' ) { //Include note explaining why they are not receiving holiday time.
+							$udtf->setNote( TTi18n::getText('Not Eligible for holiday').' - '. $this->is_eligible_holiday_description .'.' );
+						}
+
+						$udtf->setEnableCalcSystemTotalTime(FALSE);
+						$udtf->setEnableCalculatePolicy(TRUE);
+						$udtf->preSave(); //Call this so TotalTimeAmount is calculated immediately, as we don't save these records until later.
+
+						if ( $this->isOverriddenUserDateTotalObject( $udtf ) == FALSE ) {
+							//Don't save the record, just add it to the existing array, so it can be included in other calculations.
+							//We will save these records at the end.
+							$this->user_date_total[$this->user_date_total_insert_id] = $udtf;
+							$this->user_date_total_insert_id--;
+						}
+					} else {
+						Debug::text('ERROR: Duplicate starting ID for some reason! '. $this->user_date_total_insert_id, __FILE__, __LINE__, __METHOD__, 10);
+					}
+					unset($scheduled_shifts);
+				} else {
+					Debug::text('No holiday time to utilize...', __FILE__, __LINE__, __METHOD__, 10);
+				}
+			} else {
+				Debug::text('Overridden holiday time, skipping policy calculation...', __FILE__, __LINE__, __METHOD__, 10);
 			}
 
 			$this->user_date_total = $this->sortUserDateTotalData( $this->user_date_total ); //Sort UDT records once done modifying them. This should help avoid having to sort them everytime we get/filter them.
@@ -8217,18 +7558,11 @@ class CalculatePolicy {
 		return FALSE;
 	}
 
-	/**
-	 * @param int $date_stamp EPOCH
-	 * @param string $holiday UUID_policy_obj
-	 * @param null $assigned_to_policy_group
-	 * @return array
-	 */
 	function filterHoliday( $date_stamp, $holiday_policy_obj = NULL, $assigned_to_policy_group = NULL ) {
 		$hlf = $this->holiday;
 		if ( is_array( $hlf ) AND count( $hlf ) > 0 ) {
 			$date_stamp = TTDate::getMiddleDayEpoch($date_stamp); //Optimization - Move outside loop.
 
-			$retarr = array();
 			foreach( $hlf as $h_obj ) {
 				if ( TTDate::getMiddleDayEpoch( $h_obj->getDateStamp() ) == $date_stamp ) {
 					if (
@@ -8242,9 +7576,8 @@ class CalculatePolicy {
 								$holiday_policy_obj == NULL OR ( is_object( $holiday_policy_obj ) AND $h_obj->getHolidayPolicyID() == $holiday_policy_obj->getId() )
 							)
 						) {
-						//Allow multiple holidays on the same day, as some users have complex situations where certain criteria once met change the holiday hours received.
-						// ie: If they worked 5 of 9 holiday weeks they get 8hrs, if 0 of 9 holiday week days they get 7 hrs.
-						$retarr[] = $h_obj;
+						$retarr = $h_obj; //Can only be one holiday per day. So once we find one break out of the loop.
+						break;
 					}
 				}
 				//else {
@@ -8252,24 +7585,18 @@ class CalculatePolicy {
 				//}
 			}
 
-			if ( isset($retarr) AND count($retarr) > 0 ) {
+			if ( isset($retarr) ) {
 				Debug::text('Found holidays that apply on date: '. count($retarr), __FILE__, __LINE__, __METHOD__, 10);
 				return $retarr;
 			}
 		}
 
 		//Debug::text('No holidays apply on date: '. TTDate::getDate('DATE+TIME', $date_stamp ), __FILE__, __LINE__, __METHOD__, 10);
-		return array();
+		return FALSE;
 	}
 
-	/**
-	 * @param int $start_date EPOCH
-	 * @param int $end_date EPOCH
-	 * @param bool $enable_recalculate_holiday
-	 * @return bool
-	 */
 	function getHolidayData( $start_date, $end_date, $enable_recalculate_holiday = TRUE ) {
-		if ( count( (array)$this->holiday_policy) == 0 ) {
+		if ( count($this->holiday_policy) == 0 ) {
 			Debug::text('No holiday policies, not checking for holidays...', __FILE__, __LINE__, __METHOD__, 10);
 			return FALSE;
 		}
@@ -8319,14 +7646,11 @@ class CalculatePolicy {
 		if ( $hlf->getRecordCount() > 0 ) {
 			Debug::text('Found holiday rows: '. $hlf->getRecordCount(), __FILE__, __LINE__, __METHOD__, 10);
 			foreach( $hlf as $h_obj ) {
-				//Allow duplicate holidays (as long as they are different IDs) with the same date to be assigned to this array
+				//Allow duplicate holidays with the same date to be assigned to this array
 				//As there may be cases where multiple holiday policies are assigned to the employee (through contributing shifts and policy groups)
 				// where some are active  and some are not. If we don't allow duplicates it may always be denied or accepted when it shouldn't be.
-				//In some cases where this function is called multiple times, its possible the data overlaps (due to the start/end date being adjusted above)
-				//   and duplicate (by ID) holiday are returned. Make sure we unique on ID to avoid this.
 				//$this->holiday[$h_obj->getDateStamp()] = $h_obj;
-				//$this->holiday[] = $h_obj;
-				$this->holiday[$h_obj->getId()] = $h_obj;
+				$this->holiday[] = $h_obj;
 
 				if ( $enable_recalculate_holiday == TRUE AND $this->getFlag('holiday') == TRUE ) { //Don't add holidays to pending dates if we aren't calculating them to begin with.
 					$this->addPendingCalculationDate( $h_obj->getDateStamp() ); //Add each holiday to the pending calculation list.
@@ -8340,10 +7664,7 @@ class CalculatePolicy {
 		return FALSE;
 	}
 
-	/**
-	 * @return bool
-	 */
-	function getHolidayPolicy( $date_stamp ) {
+	function getHolidayPolicy() {
 		//Get Holiday policies and determine how many days we need to look ahead/behind in order
 		//to recalculate the holiday eligilibility/time.
 		$this->holiday_before_days = 0;
@@ -8364,22 +7685,9 @@ class CalculatePolicy {
 				if ( $hp_obj->getMinimumWorkedPeriodDays() > $this->holiday_before_days ) {
 					$this->holiday_before_days = $hp_obj->getMinimumWorkedPeriodDays();
 				}
-
-				if ( $hp_obj->getAverageTimeFrequencyType() == 20 ) { //Pay Periods
-					$past_pay_period_dates = $this->pay_period_schedule_obj->getStartAndEndDateRangeFromPastPayPeriods( $date_stamp, $hp_obj->getAverageTimeDays() );
-					if ( is_array($past_pay_period_dates) ) {
-						$min_start_date = $past_pay_period_dates['start_date'];
-
-						if ( TTDate::getDayDifference( $min_start_date, $date_stamp) > $this->holiday_before_days  ) {
-							$this->holiday_before_days = TTDate::getDayDifference( $min_start_date, $date_stamp);
-						}
-					}
-				} else {
-					if ( $hp_obj->getAverageTimeDays() > $this->holiday_before_days ) {
-						$this->holiday_before_days = $hp_obj->getAverageTimeDays();
-					}
+				if ( $hp_obj->getAverageTimeDays() > $this->holiday_before_days ) {
+					$this->holiday_before_days = $hp_obj->getAverageTimeDays();
 				}
-
 				if ( $hp_obj->getMinimumWorkedAfterPeriodDays() > $this->holiday_after_days ) {
 					$this->holiday_after_days = $hp_obj->getMinimumWorkedAfterPeriodDays();
 				}
@@ -8389,7 +7697,6 @@ class CalculatePolicy {
 				}
 			}
 
-			Debug::text('Holiday Before Days: '. $this->holiday_before_days .' After Days: '. $this->holiday_after_days .' Date: '. TTDate::getDate('DATE', $date_stamp), __FILE__, __LINE__, __METHOD__, 10);
 			return TRUE;
 		}
 
@@ -8397,11 +7704,6 @@ class CalculatePolicy {
 		return FALSE;
 	}
 
-	/**
-	 * @param int $user_date_total_arr EPOCH
-	 * @param int $date_stamp EPOCH
-	 * @return bool|mixed
-	 */
 	function getPreviousDayByUserTotalData( $user_date_total_arr, $date_stamp ) {
 		$day_arr = $this->getDayArrayUserDateTotalData( $user_date_total_arr );
 		sort($day_arr);
@@ -8417,10 +7719,6 @@ class CalculatePolicy {
 		return $retval;
 	}
 
-	/**
-	 * @param int $user_date_total_arr EPOCH
-	 * @return array
-	 */
 	function getDayArrayUserDateTotalData( $user_date_total_arr ) {
 		$days = array();
 		if ( is_array($user_date_total_arr) ) {
@@ -8437,10 +7735,6 @@ class CalculatePolicy {
 		return $days;
 	}
 
-	/**
-	 * @param int $user_date_total_arr EPOCH
-	 * @return int
-	 */
 	function getSumUserDateTotalData( $user_date_total_arr ) {
 		$sum = 0;
 		if ( is_array($user_date_total_arr) ) {
@@ -8454,15 +7748,6 @@ class CalculatePolicy {
 	}
 
 	//Returns shift data according to the pay period schedule criteria for use in determining which day punches belong to.
-
-	/**
-	 * @param int $user_date_total_arr EPOCH
-	 * @param int $epoch EPOCH
-	 * @param null $filter
-	 * @param null $maximum_shift_time
-	 * @param null $new_shift_trigger_time
-	 * @return bool
-	 */
 	function getShiftData( $user_date_total_arr, $epoch = NULL, $filter = NULL, $maximum_shift_time = NULL, $new_shift_trigger_time = NULL ) {
 		//EPOCH can be NULL when we just want to get all shift data without any filter
 		if ( $epoch == '' AND ( $filter != '' AND $filter != 'all_with_map' ) ) {
@@ -8478,24 +7763,15 @@ class CalculatePolicy {
 			$new_shift_trigger_time = $this->pay_period_schedule_obj->getNewDayTriggerTime();
 		}
 
-		Debug::text('UDT Rows: '. count( (array)$user_date_total_arr ) .' Date: '. TTDate::getDate('DATE+TIME', $epoch) .'('.$epoch.') MaximumShiftTime: '. $maximum_shift_time .' New Shift Trigger: '. $new_shift_trigger_time .' Filter: '. $filter, __FILE__, __LINE__, __METHOD__, 10);
+		Debug::text('UDT Rows: '. count($user_date_total_arr) .' Date: '. TTDate::getDate('DATE+TIME', $epoch) .'('.$epoch.') MaximumShiftTime: '. $maximum_shift_time .' New Shift Trigger: '. $new_shift_trigger_time .' Filter: '. $filter, __FILE__, __LINE__, __METHOD__, 10);
 		if ( is_array($user_date_total_arr) ) {
 			$shift = 0;
 			$i = 0;
-			$nearest_shift = 0;
+			$nearest_shift_id = 0;
 			$nearest_punch_difference = FALSE;
-			$shift_data = array();
 
 			$user_date_total_arr = $this->sortUserDateTotalData( $user_date_total_arr, 'sortUserDateTotalDataByTimeStampAndAndObjectTypeAndID' ); //Needs to be sorted always to avoid cases where the records are out of order causing the shifts first_in/last_out to be incorrect.
 			foreach( $user_date_total_arr as $udt_key => $udt_obj ) {
-				//When absences are entered on the timesheet directly (overridden) there is no start/end time specified for them,
-				// and they should always be calculated down to a object_type_id=25 (absence) or some other pay code anyways.
-				// Therefore we need to skip them here, otherwise it can cause the shifts to not be calculated properly.
-				if ( in_array( $udt_obj->getObjectType(), array(50, 101, 111) ) ) {
-					Debug::text('    Skipping Absence/Meal/Break (Taken) records...', __FILE__, __LINE__, __METHOD__, 10);
-					continue;
-				}
-
 				Debug::text('  Shift: '. $shift .' UDT ID: '. $udt_obj->getID() .' Key: '. $udt_key .' Object Type: '. $udt_obj->getObjectType() .' Start: '. TTDate::getDate('DATE+TIME', $udt_obj->getStartTimeStamp() ) .' End: '. TTDate::getDate('DATE+TIME', $udt_obj->getEndTimeStamp() ), __FILE__, __LINE__, __METHOD__, 10);
 
 				//Can't use PunchControl object total_time because the record may not be saved yet when editing
@@ -8541,13 +7817,12 @@ class CalculatePolicy {
 						Debug::text('New Shift....', __FILE__, __LINE__, __METHOD__, 10);
 						$shift++;
 					}
+				} elseif ( $i > 0
+							AND isset($prev_punch_arr['time_stamp'])
+							AND abs( ( $prev_punch_arr['time_stamp'] - $udt_obj->getStartTimeStamp() ) ) > $maximum_shift_time ) {
+					Debug::text('	 New shift because two punch_control records exist and punch timestamp exceed maximum shift time.', __FILE__, __LINE__, __METHOD__, 10);
+					$shift++;
 				}
-//				elseif ( $i > 0
-//							AND isset($prev_punch_arr['time_stamp'])
-//							AND abs( ( $prev_punch_arr['time_stamp'] - $udt_obj->getStartTimeStamp() ) ) > $maximum_shift_time ) {
-//					Debug::text('	 New shift because two punch_control records exist and punch timestamp exceed maximum shift time.', __FILE__, __LINE__, __METHOD__, 10);
-//					$shift++;
-//				}
 
 				if ( !isset($shift_data[$shift]['total_time']) ) {
 					$shift_data[$shift]['total_time'] = 0;
@@ -8560,22 +7835,23 @@ class CalculatePolicy {
 
 				//Determine which shift is closest to the given epoch.
 				if ( $filter == 'nearest_shift' ) {
-					$punch_difference_from_epoch = abs( ( $epoch - $udt_obj->getStartTimeStamp() ) );
-					if ( $nearest_punch_difference === FALSE OR $punch_difference_from_epoch <= $nearest_punch_difference ) {
-							Debug::text( 'Nearest Shift Determined to be: ' . $shift . ' Nearest Punch Diff: ' . (int)$nearest_punch_difference . ' Punch Diff: ' . $punch_difference_from_epoch, __FILE__, __LINE__, __METHOD__, 10 );
+				$punch_difference_from_epoch = abs( ( $epoch - $udt_obj->getStartTimeStamp() ) );
+				if ( $nearest_punch_difference === FALSE OR $punch_difference_from_epoch <= $nearest_punch_difference ) {
+						Debug::text( 'Nearest Shift Determined to be: ' . $shift . ' Nearest Punch Diff: ' . (int)$nearest_punch_difference . ' Punch Diff: ' . $punch_difference_from_epoch, __FILE__, __LINE__, __METHOD__, 10 );
 
-						//If two punches have the same timestamp, use the shift that matches the passed punch control object, which is usually the one we are currently editing...
-						//This is for splitting shifts at exactly midnight.
-						if ( $punch_difference_from_epoch != $nearest_punch_difference
-									OR ( $punch_difference_from_epoch == $nearest_punch_difference )
-							) {
-								Debug::text( 'Setting nearest shift...', __FILE__, __LINE__, __METHOD__, 10 );
-							$nearest_shift = $shift;
-							$nearest_punch_difference = $punch_difference_from_epoch;
-						}
+					//If two punches have the same timestamp, use the shift that matches the passed punch control object, which is usually the one we are currently editing...
+					//This is for splitting shifts at exactly midnight.
+					if ( $punch_difference_from_epoch != $nearest_punch_difference
+								OR ( $punch_difference_from_epoch == $nearest_punch_difference )
+						) {
+							Debug::text( 'Setting nearest shift...', __FILE__, __LINE__, __METHOD__, 10 );
+						$nearest_shift_id = $shift;
+						$nearest_punch_difference = $punch_difference_from_epoch;
 					}
 				}
+				}
 
+				//$shift_data[$shift]['user_date_total_ids'][] = $udt_obj->getID();
 				$shift_data[$shift]['user_date_total_keys'][] = $udt_key;
 
 				//Create a mapping of UDT total keys to shift, so we can quickly determine exact which shift a UDT record is assigned to.
@@ -8657,7 +7933,7 @@ class CalculatePolicy {
 					//Only return last shift.
 					$shift_data = $shift_data[$shift];
 				} elseif ( $filter == 'nearest_shift' ) {
-					$shift_data = $shift_data[$nearest_shift];
+					$shift_data = $shift_data[$nearest_shift_id];
 					//Check to make sure the nearest shift is within the new shift trigger time of EPOCH.
 					if ( isset($shift_data['first_in']) ) {
 						$first_in = $shift_data['first_in'];
@@ -8696,11 +7972,6 @@ class CalculatePolicy {
 		return FALSE;
 	}
 
-	/**
-	 * @param $a
-	 * @param $b
-	 * @return int
-	 */
 	function sortUserDateTotalDataByObjectTypeDescAndID( $a, $b ) {
 		//Sort order obtained from: getUserDateTotalData(), if changes are needed, change there too.
 		//array( 'a.date_stamp' => 'asc', 'a.object_type_id' => 'asc', 'a.start_time_stamp' => 'asc', 'a.id' => 'asc' )
@@ -8710,12 +7981,6 @@ class CalculatePolicy {
 			return ( $a->getObjectType() > $b->getObjectType() ) ? (-1) : 1;
 		}
 	}
-
-	/**
-	 * @param $a
-	 * @param $b
-	 * @return int
-	 */
 	function sortUserDateTotalDataByDateAndObjectTypeAndStartTimeStampAndID( $a, $b ) {
 		//Sort order obtained from: getUserDateTotalData(), if changes are needed, change there too.
 		//array( 'a.date_stamp' => 'asc', 'a.object_type_id' => 'asc', 'a.start_time_stamp' => 'asc', 'a.id' => 'asc' )
@@ -8739,12 +8004,6 @@ class CalculatePolicy {
 			return ( $a->getDateStamp() < $b->getDateStamp() ) ? (-1) : 1;
 		}
 	}
-
-	/**
-	 * @param $a
-	 * @param $b
-	 * @return int
-	 */
 	function sortUserDateTotalDataByTimeStampAndAndObjectTypeAndID( $a, $b ) {
 		//This is needed for getShiftData() so the first_in/last_out are always correct. As there seems to be cases wher auto-deduct meal policies may come last.
 		if ( $a->getStartTimeStamp() == $b->getStartTimeStamp() ) {
@@ -8763,11 +8022,6 @@ class CalculatePolicy {
 		}
 	}
 
-	/**
-	 * @param $udtlf
-	 * @param string $sort_function_name
-	 * @return array
-	 */
 	function sortUserDateTotalData( $udtlf, $sort_function_name = 'sortUserDateTotalDataByDateAndObjectTypeAndStartTimeStampAndID' ) {
 		if ( is_array($udtlf) AND $sort_function_name != '' ) {
 			uasort( $udtlf, array( $this, $sort_function_name ) );
@@ -8776,10 +8030,6 @@ class CalculatePolicy {
 		return $udtlf;
 	}
 
-	/**
-	 * @param $policy_arr
-	 * @return mixed
-	 */
 	function sortPolicyByPayCodeDependancy( $policy_arr ) {
 		//Loop through all policies, getting the input ContributingPayCodes and output Pay Code to create dependancy tree.
 		//If only one policy exists, no point in sorting it.
@@ -8802,15 +8052,14 @@ class CalculatePolicy {
 
 					$affect_pay_codes = (array)$policy_obj->getPayCode();
 
-					//$order will get sorted using a natural sort algorithm in the tree class.
 					if ( get_class($policy_obj) == 'PremiumPolicyListFactory' ) {
-						$order = (string)( 40 . str_pad( 9999, 5, 0, STR_PAD_LEFT) . str_pad( $policy_obj->getCreatedDate(), 11, 0, STR_PAD_LEFT) . $policy_obj->getID() );
+						$order = (int)(40 . str_pad( 9999, 5, 0, STR_PAD_LEFT) . str_pad( substr( $policy_obj->getID(), -2), 2, 0, STR_PAD_LEFT));
 					} elseif ( get_class($policy_obj) == 'RegularPolicyListFactory' ) {
-						$order = (string)( 20 . str_pad( $policy_obj->getCalculationOrder(), 5, 0, STR_PAD_LEFT) . str_pad( $policy_obj->getCreatedDate(), 11, 0, STR_PAD_LEFT)  . $policy_obj->getID() );
+						$order = (int)(20 . str_pad( $policy_obj->getCalculationOrder(), 5, 0, STR_PAD_LEFT) . str_pad( substr( $policy_obj->getID(), -2), 2, 0, STR_PAD_LEFT));
 					} elseif ( get_class($policy_obj) == 'OvertimePolicyListFactory' ) {
-						$order = (string)( 30 . str_pad( 9999, 5, 0, STR_PAD_LEFT) . str_pad( $policy_obj->getCreatedDate(), 11, 0, STR_PAD_LEFT) . $policy_obj->getID() );
+						$order = (int)(30 . str_pad( 9999, 5, 0, STR_PAD_LEFT) . str_pad( substr( $policy_obj->getID(), -2), 2, 0, STR_PAD_LEFT));
 					} else {
-						$order = (string)( 99 . str_pad( 9999, 5, 0, STR_PAD_LEFT) . str_pad( $policy_obj->getCreatedDate(), 11, 0, STR_PAD_LEFT) . $policy_obj->getID() );
+						$order = (int)(99 . str_pad( 9999, 5, 0, STR_PAD_LEFT) . str_pad( substr( $policy_obj->getID(), -2), 2, 0, STR_PAD_LEFT));
 					}
 
 					//Debug::Arr( array( $require_pay_codes, $affect_pay_codes ), 'Policy Name: '. $policy_obj->getName() .' Order: '. $order .' Requires/Affects Pay Codes', __FILE__, __LINE__, __METHOD__, 10);
@@ -8822,7 +8071,7 @@ class CalculatePolicy {
 			$sorted_policy_ids = $dependency_tree->getAllNodesInOrder();
 			unset($dependency_tree);
 
-			//Debug::Arr($sorted_policy_ids, 'Sorted Policy IDs Array: ', __FILE__, __LINE__, __METHOD__, 10);
+			Debug::Arr($sorted_policy_ids, 'Sorted Policy IDs Array: ', __FILE__, __LINE__, __METHOD__, 10);
 			if ( is_array($sorted_policy_ids) ) {
 				foreach( $sorted_policy_ids as $tmp => $global_id ) {
 					//Debug::text('Final Sorted Policy Name: '. $policy_order_arr[$global_id]->getName() .' ID: '. $policy_order_arr[$global_id]->getID(), __FILE__, __LINE__, __METHOD__, 10);
@@ -8838,19 +8087,10 @@ class CalculatePolicy {
 		return $policy_arr;
 	}
 
-	/**
-	 * @param int $start_date EPOCH
-	 * @param int $end_date EPOCH
-	 * @param object $contributing_shift_policy_obj
-	 * @param int $object_type_ids ID
-	 * @param array $additional_pay_code_ids
-	 * @param array $additional_src_object_ids
-	 * @return array
-	 */
 	function filterUserDateTotalDataByContributingShiftPolicy( $start_date, $end_date, $contributing_shift_policy_obj, $object_type_ids = NULL, $additional_pay_code_ids = array(), $additional_src_object_ids = array() ) {
 		if ( !is_object( $contributing_shift_policy_obj ) ) {
 			Debug::text('ERROR: Contributing Shift Policy is not an object!', __FILE__, __LINE__, __METHOD__, 10);
-			return array();
+			return FALSE;
 		}
 
 		$udtlf = $this->user_date_total;
@@ -8883,7 +8123,7 @@ class CalculatePolicy {
 			//If object_type_ids includes worked time, we need to automatically add pay_code_id=0 so "AND" can be used on the matching below.
 			//if ( $object_type_ids == NULL OR ( is_array( $object_type_ids ) AND in_array( 10, $object_type_ids ) ) ) { //Worked time.
 			if ( is_array( $object_type_ids ) AND in_array( 10, $object_type_ids ) ) { //Worked time.
-				$pay_code_ids[] = TTUUID::getZeroID();
+				$pay_code_ids[] = 0;
 			}
 
 			$retarr = array();
@@ -8971,21 +8211,15 @@ class CalculatePolicy {
 				return $retarr;
 			} else {
 				//Debug::Arr($pay_code_ids, 'Pay Code IDs: ', __FILE__, __LINE__, __METHOD__, 10);
-				Debug::Arr( array(), 'No UserDateTotal rows matched filter... Start Date: '. ( !is_array( $start_date ) ? TTDate::getDate('DATE', $start_date) : NULL ) .' End Date: '. ( !is_array( $end_date ) ? TTDate::getDate('DATE', $end_date) : NULL ), __FILE__, __LINE__, __METHOD__, 10);
+				Debug::text('No UserDateTotal rows matched filter... Start Date: '. TTDate::getDate('DATE', $start_date) .' End Date: '. TTDate::getDate('DATE', $end_date), __FILE__, __LINE__, __METHOD__, 10);
 			}
 		} else {
 			Debug::text('No UserDateTotal rows available for matching...', __FILE__, __LINE__, __METHOD__, 10);
 		}
 
-		return array();
+		return FALSE;
 	}
 
-	/**
-	 * @param int $start_date EPOCH
-	 * @param int $end_date EPOCH
-	 * @param string $pay_code_ids UUID
-	 * @return array
-	 */
 	function filterUserDateTotalDataByPayCodeIDs( $start_date, $end_date, $pay_code_ids = NULL ) {
 		$udtlf = $this->user_date_total;
 		if ( is_array($udtlf) AND count($udtlf) > 0 ) {
@@ -9008,15 +8242,9 @@ class CalculatePolicy {
 		}
 
 		Debug::Arr($pay_code_ids, 'No user_date_total rows match filter...', __FILE__, __LINE__, __METHOD__, 10);
-		return array();
+		return FALSE;
 	}
 
-	/**
-	 * @param int $start_date EPOCH
-	 * @param int $end_date EPOCH
-	 * @param int $object_type_ids ID
-	 * @return array
-	 */
 	function filterUserDateTotalDataByObjectTypeIDs( $start_date, $end_date, $object_type_ids = NULL ) {
 		$udtlf = $this->user_date_total;
 		if ( is_array($udtlf) AND count($udtlf) > 0 ) {
@@ -9042,15 +8270,9 @@ class CalculatePolicy {
 		}
 
 		Debug::text('No user_date_total rows match filter...', __FILE__, __LINE__, __METHOD__, 10);
-		return array();
+		return FALSE;
 	}
 
-	/**
-	 * @param int $start_date EPOCH
-	 * @param int $end_date EPOCH
-	 * @param int $punch_type_ids ID
-	 * @return array
-	 */
 	function filterUserDateTotalDataByPunchTypeIDs( $start_date, $end_date, $punch_type_ids = NULL ) {
 		$udtlf = $this->user_date_total;
 		if ( is_array($udtlf) AND count($udtlf) > 0 ) {
@@ -9079,14 +8301,9 @@ class CalculatePolicy {
 		}
 
 		Debug::text('No user_date_total rows match filter...', __FILE__, __LINE__, __METHOD__, 10);
-		return array();
+		return FALSE;
 	}
 
-	/**
-	 * @param int $start_date EPOCH
-	 * @param int $end_date EPOCH
-	 * @return bool
-	 */
 	function getShiftStartAndEndUserDateTotal( $start_date, $end_date ) {
 		$udtlf = $this->user_date_total;
 		if ( is_array($udtlf) AND count($udtlf) > 0 ) {
@@ -9126,12 +8343,6 @@ class CalculatePolicy {
 	}
 
 	//Grabs all user_date total data from DB for each date specified.
-
-	/**
-	 * @param int $start_date EPOCH
-	 * @param int $end_date EPOCH
-	 * @return bool
-	 */
 	function getUserDateTotalData( $start_date = NULL, $end_date = NULL ) {
 		$udtlf = TTNew('UserDateTotalListFactory');
 		$filter_data = array(
@@ -9160,11 +8371,6 @@ class CalculatePolicy {
 	}
 
 	//Return dates that we have not already obtained data for.
-
-	/**
-	 * @param int $date_arr EPOCH
-	 * @return mixed
-	 */
 	function getDateRangeFromDateArray( $date_arr ) {
 		sort($date_arr);
 
@@ -9175,11 +8381,6 @@ class CalculatePolicy {
 
 		return $retarr;
 	}
-
-	/**
-	 * @param int $date_stamp EPOCH
-	 * @return array
-	 */
 	function getDatesToObtainDataFor( $date_stamp ) {
 		$retarr = array();
 
@@ -9217,12 +8418,6 @@ class CalculatePolicy {
 	}
 
 	//Gathers all required data to perform the calculations.
-
-	/**
-	 * @param int $date_stamp EPOCH
-	 * @param bool $enable_recalculate_holiday
-	 * @return bool
-	 */
 	function getRequiredData( $date_stamp, $enable_recalculate_holiday = TRUE ) {
 		if ( !is_object( $this->pay_period_schedule_obj ) ) { //HolidayFactory calls this without calling Calculate(), so always make sure a pay period schedule is defined
 			$this->setPayPeriodFromDate( $date_stamp );
@@ -9277,7 +8472,7 @@ class CalculatePolicy {
 				$this->getPayCode(); //Needs to come before getContributingShiftPolicy, but after Reg/OT/Prem policies are obtained.
 				$this->getPayFormulaPolicy();
 
-				$this->getHolidayPolicy( $date_stamp ); //Must come before getContributingShiftPolicy() as it adds additional contributing shift policies to the list.
+				$this->getHolidayPolicy(); //Must come before getContributingShiftPolicy() as it adds additional contributing shift policies to the list.
 				$this->getHolidayData( $date_range['start_date'], $date_range['end_date'], $enable_recalculate_holiday ); //This uses date_stamp as we need to find holidays in the past/future. Must come after getHolidayPolicy()
 
 				$this->getContributingShiftPolicy(); //This adds additional HolidayPolicies to the list... But it can't come before getHolidayPolicy()
@@ -9297,9 +8492,6 @@ class CalculatePolicy {
 		return TRUE;
 	}
 
-	/**
-	 * @return array|bool
-	 */
 	function getCalculatedDateRange() {
 		if ( isset($this->dates['calculated']) AND count($this->dates['calculated']) > 0 ) {
 
@@ -9319,10 +8511,6 @@ class CalculatePolicy {
 		return FALSE;
 	}
 
-	/**
-	 * @param int $date_stamp EPOCH
-	 * @return bool
-	 */
 	function addCalculatedDate( $date_stamp ) {
 		$date_stamp = TTDate::getBeginDayEpoch( $date_stamp );
 		//Remove date from pending calculation first, then add it to the calculated date.
@@ -9334,12 +8522,6 @@ class CalculatePolicy {
 
 		return TRUE;
 	}
-
-	/**
-	 * @param int $start_date EPOCH
-	 * @param int $end_date EPOCH
-	 * @return bool
-	 */
 	function addPendingCalculationDate( $start_date, $end_date = NULL ) {
 		if ( $start_date == '' AND $end_date == '' ) {
 			return FALSE;
@@ -9380,10 +8562,6 @@ class CalculatePolicy {
 
 		return TRUE;
 	}
-
-	/**
-	 * @return bool|mixed
-	 */
 	function getNextPendingDate() {
 		//Debug::Arr($this->dates['pending_calculation'], 'Dates pending calculation still: ', __FILE__, __LINE__, __METHOD__, 10);
 
@@ -9398,9 +8576,6 @@ class CalculatePolicy {
 		return FALSE;
 	}
 
-	/**
-	 * @return bool|mixed
-	 */
 	function getFirstPendingDate() {
 		reset($this->dates['pending_calculation']);
 		$retval = key( $this->dates['pending_calculation'] );
@@ -9411,10 +8586,6 @@ class CalculatePolicy {
 
 		return FALSE;
 	}
-
-	/**
-	 * @return bool|mixed
-	 */
 	function getLastPendingDate() {
 		end($this->dates['pending_calculation']);
 		$retval = key( $this->dates['pending_calculation'] );
@@ -9426,13 +8597,9 @@ class CalculatePolicy {
 		return FALSE;
 	}
 
-	/**
-	 * @param int $date_stamp EPOCH
-	 * @return bool
-	 */
 	function setPayPeriodFromDate( $date_stamp ) {
 		$pay_period_id = PayPeriodListFactory::findPayPeriod( $this->getUserObject()->getId(), $date_stamp );
-		if ( $pay_period_id != '' ) {
+		if ( $pay_period_id > 0 ) {
 			$this->pay_period_obj = $this->getPayPeriodObject( $pay_period_id );
 			$this->pay_period_schedule_obj = $this->pay_period_obj->getPayPeriodScheduleObject();
 		} else {
@@ -9452,10 +8619,6 @@ class CalculatePolicy {
 		return TRUE;
 	}
 
-	/**
-	 * @param int $date_stamp EPOCH
-	 * @return bool|mixed
-	 */
 	private function _calculate( $date_stamp ) {
 		//Make sure we reset these before calculating each day, otherwise they corrupt data in subsequent days.
 		$this->prev_user_date_total_start_time_stamp = NULL;
@@ -9594,10 +8757,6 @@ class CalculatePolicy {
 
 	//Allow calculating up to one week at a time, as we always recalculate the remaining week anyways.
 	//Allow no date_stamp to be passed so we just start from the first pending date instead.
-	/**
-	 * @param bool $date_stamp
-	 * @return bool
-	 */
 	function calculate( $date_stamp = FALSE ) {
 		//Debug::Arr( Debug::backTrace(), 'Calculate: ', __FILE__, __LINE__, __METHOD__, 10);
 
@@ -9642,10 +8801,6 @@ class CalculatePolicy {
 	}
 
 	//Keep saving all data in a separate function so we can do in-memory calculations if necessary.
-
-	/**
-	 * @return bool
-	 */
 	function Save() {
 		if ( !is_object( $this->getUserObject() ) ) { //If the user object isn't set properly, Save() is often still called, so make sure we don't cause a PHP error.
 			Debug::Arr( $this->getUserObject(), 'Invalid UserObject: ', __FILE__, __LINE__, __METHOD__, 10);

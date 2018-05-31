@@ -1,11 +1,10 @@
 JobItemAmendmentViewController = BaseViewController.extend( {
 	el: '#job_item_amendment_view_container',
 
-	_required_files: ['APIJobItemAmendment'],
 	current_default_record: {},
 
-	init: function( options ) {
-		//this._super('initialize', options );
+	initialize: function( options ) {
+		this._super( 'initialize', options );
 		this.edit_view_tpl = 'JobItemAmendmentEditView.html';
 		this.permission_id = 'job_item';
 		this.viewId = 'JobItemAmendment';
@@ -399,7 +398,7 @@ JobItemAmendmentViewController = BaseViewController.extend( {
 	setJobItemAmendmentDefaultData: function() {
 		var $this = this;
 		var job_item_id;
-		if ( TTUUID.isUUID( this.current_edit_record.item_id ) && this.current_edit_record.item_id != TTUUID.zero_id && this.is_add ) {
+		if ( this.current_edit_record.item_id > 0 && this.is_add ) {
 			job_item_id = this.current_edit_record.item_id;
 			this.api['get' + this.api.key_name + 'DefaultData']( job_item_id, {
 				onResult: function( result ) {
@@ -432,10 +431,7 @@ JobItemAmendmentViewController.loadSubView = function( container, beforeViewLoad
 		if ( Global.isSet( container ) ) {
 			container.html( template( args ) );
 			if ( Global.isSet( afterViewLoadedFun ) ) {
-
-				TTPromise.wait('BaseViewController', 'initialize', function() {
-					afterViewLoadedFun(sub_job_item_amendment_view_controller);
-				});
+				afterViewLoadedFun( sub_job_item_amendment_view_controller );
 			}
 		}
 	} );

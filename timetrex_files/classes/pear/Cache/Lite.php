@@ -303,16 +303,6 @@ class Cache_Lite
         	$this->setOption('cacheDir', sys_get_temp_dir() . DIRECTORY_SEPARATOR);
         }
     }
-
-    /**
-     * PHP4 constructor for backwards compatibility with older code
-     *
-     * @param array $options Options
-     */
-    function Cache_Lite($options = array(NULL))
-    {
-        self::__construct($options);
-    }
     
     /**
     * Generic way to set a Cache_Lite option
@@ -708,10 +698,8 @@ class Cache_Lite
         $this->_touchCacheFile();
         $this->_memoryCachingArray[$this->_file] = $data;
         if ($this->_memoryCachingCounter >= $this->_memoryCachingLimit) {
-            $key = key($this->_memoryCachingArray);
-            next($this->_memoryCachingArray);
+            list($key, ) = each($this->_memoryCachingArray);
             unset($this->_memoryCachingArray[$key]);
-            
         } else {
             $this->_memoryCachingCounter = $this->_memoryCachingCounter + 1;
         }

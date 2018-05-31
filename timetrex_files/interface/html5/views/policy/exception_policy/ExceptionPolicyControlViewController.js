@@ -1,16 +1,13 @@
 ExceptionPolicyControlViewController = BaseViewController.extend( {
 	el: '#exception_policy_control_view_container',
-
-	_required_files: ['APIExceptionPolicyControl', 'APIExceptionPolicy'],
-
 	severity_array: null,
 	email_notification_array: null,
 	editor: null,
 	api_exception_policy: null,
 	date_api: null,
 
-	init: function( options ) {
-		//this._super('initialize', options );
+	initialize: function( options ) {
+		this._super( 'initialize', options );
 		this.edit_view_tpl = 'ExceptionPolicyControlEditView.html';
 		this.permission_id = 'exception_policy';
 		this.viewId = 'ExceptionPolicyControl';
@@ -487,7 +484,7 @@ ExceptionPolicyControlViewController = BaseViewController.extend( {
 			var result_data = result.getResult();
 			if ( result_data === true ) {
 				$this.refresh_id = $this.current_edit_record.id;
-			} else if ( TTUUID.isUUID( result_data ) && result_data != TTUUID.zero_id && result_data != TTUUID.not_exist_id ) {
+			} else if ( result_data > 0 ) {
 				$this.refresh_id = result_data;
 			}
 
@@ -512,7 +509,7 @@ ExceptionPolicyControlViewController = BaseViewController.extend( {
 			if ( result_data === true ) {
 				$this.refresh_id = $this.current_edit_record.id;
 
-			} else if ( TTUUID.isUUID( result_data ) && result_data != TTUUID.zero_id && result_data != TTUUID.not_exist_id ) { // as new
+			} else if ( result_data > 0 ) { // as new
 				$this.refresh_id = result_data;
 			}
 
@@ -537,7 +534,7 @@ ExceptionPolicyControlViewController = BaseViewController.extend( {
 			if ( result_data === true ) {
 				$this.refresh_id = $this.current_edit_record.id;
 
-			} else if ( TTUUID.isUUID( result_data ) && result_data != TTUUID.zero_id && result_data != TTUUID.not_exist_id ) { // as new
+			} else if ( result_data > 0 ) { // as new
 				$this.refresh_id = result_data;
 			}
 
@@ -559,7 +556,7 @@ ExceptionPolicyControlViewController = BaseViewController.extend( {
 			if ( result_data === true ) {
 				$this.refresh_id = $this.current_edit_record.id;
 
-			} else if ( TTUUID.isUUID( result_data ) && result_data != TTUUID.zero_id && result_data != TTUUID.not_exist_id ) {
+			} else if ( result_data > 0 ) {
 				$this.refresh_id = result_data;
 			}
 
@@ -582,7 +579,7 @@ ExceptionPolicyControlViewController = BaseViewController.extend( {
 			if ( result_data === true ) {
 				$this.refresh_id = $this.current_edit_record.id;
 
-			} else if ( TTUUID.isUUID( result_data ) && result_data != TTUUID.zero_id && result_data != TTUUID.not_exist_id ) {
+			} else if ( result_data > 0 ) {
 				$this.refresh_id = result_data;
 			}
 

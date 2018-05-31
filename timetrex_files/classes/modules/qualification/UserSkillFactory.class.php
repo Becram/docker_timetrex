@@ -1,7 +1,7 @@
 <?php
 /*********************************************************************************
  * TimeTrex is a Workforce Management program developed by
- * TimeTrex Software Inc. Copyright (C) 2003 - 2018 TimeTrex Software Inc.
+ * TimeTrex Software Inc. Copyright (C) 2003 - 2017 TimeTrex Software Inc.
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Affero General Public License version 3 as published by
@@ -43,12 +43,6 @@ class UserSkillFactory extends Factory {
 	protected $pk_sequence_name = 'user_skill_id_seq'; //PK Sequence name
 	protected $qualification_obj = NULL;
 	//protected $experience_validator_regex = '/^[0-9]{1,250}$/i';
-
-	/**
-	 * @param $name
-	 * @param null $parent
-	 * @return array|null
-	 */
 	function _getFactoryOptions( $name, $parent = NULL ) {
 
 		$retval = NULL;
@@ -123,10 +117,6 @@ class UserSkillFactory extends Factory {
 		return $retval;
 	}
 
-	/**
-	 * @param $data
-	 * @return array
-	 */
 	function _getVariableToFunctionMap( $data ) {
 		$variable_function_map = array(
 										'id' => 'ID',
@@ -157,134 +147,188 @@ class UserSkillFactory extends Factory {
 	}
 
 
-	/**
-	 * @return bool
-	 */
 	function getQualificationObject() {
 		return $this->getGenericObject( 'QualificationListFactory', $this->getQualification(), 'qualification_obj' );
 	}
 
-	/**
-	 * @return bool|mixed
-	 */
 	function getUser() {
-		return $this->getGenericDataValue( 'user_id' );
+		if ( isset($this->data['user_id']) ) {
+			return (int)$this->data['user_id'];
+		}
+		return FALSE;
+	}
+	function setUser($id) {
+		$id = trim($id);
+
+		$ulf = TTnew( 'UserListFactory' );
+
+		if ( $this->Validator->isResultSetWithRows(	'user_id',
+															$ulf->getByID($id),
+															TTi18n::gettext('Invalid Employee')
+															) ) {
+			$this->data['user_id'] = $id;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @param string $value UUID
-	 * @return bool
-	 */
-	function setUser( $value ) {
-		$value = TTUUID::castUUID( $value );
-		return $this->setGenericDataValue( 'user_id', $value );
-	}
-
-	/**
-	 * @return bool
-	 */
 	function getQualification() {
-		return $this->getGenericDataValue( 'qualification_id' );
+		if ( isset( $this->data['qualification_id'] ) ) {
+			return (int)$this->data['qualification_id'];
+		}
+		return FALSE;
 	}
 
-	/**
-	 * @param string $value UUID
-	 * @return bool
-	 */
-	function setQualification( $value ) {
-		$value = TTUUID::castUUID( $value );
-		return $this->setGenericDataValue( 'qualification_id', $value );
+	function setQualification( $id ) {
+		$id = trim( $id );
+
+		$qlf = TTnew( 'QualificationListFactory' );
+
+		if( $this->Validator->isResultSetWithRows( 'qualification_id',
+																	$qlf->getById( $id ),
+																	TTi18n::gettext('Invalid Qualification')
+																	) ) {
+			$this->data['qualification_id'] = $id;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @return bool|int
-	 */
 	function getProficiency() {
-		return $this->getGenericDataValue( 'proficiency_id' );
+		if ( isset( $this->data['proficiency_id'] ) ) {
+			return (int)$this->data['proficiency_id'];
+		}
+		return FALSE;
 	}
 
-	/**
-	 * @param string $value int
-	 * @return bool
-	 */
-	function setProficiency( $value ) {
-		$value = (int)trim( $value );
-		return $this->setGenericDataValue( 'proficiency_id', $value );
+	function setProficiency( $proficiency_id ) {
+		$proficiency_id = trim( $proficiency_id );
+
+		if( $this->Validator->inArrayKey( 'proficiency_id',
+										$proficiency_id,
+										TTi18n::gettext( 'Proficiency is invalid' ),
+										$this->getOptions( 'proficiency' ) ) ) {
+			$this->data['proficiency_id'] = $proficiency_id;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @return bool|string
-	 */
 	function getExperience() {
-		$value = $this->getGenericDataValue( 'experience' );
-		if ( $value !== FALSE AND $value != '' ) {
+		if ( isset($this->data['experience']) AND $this->data['experience'] != '' ) {
 
 			//Because experience is stored in a different column in the database, it doesn't get updated
 			//in real-time. So each time this function is called and EnableCalcExperience is enabled,
 			//calculate the experience again to its always accurate.
 			//This is especially required when no last_used_date is set.
-			$retval = ( $this->getEnableCalcExperience() == TRUE ) ? $this->calcExperience() : ($value / 1000); //Divide by 1000 to convert to non-float value.
+			$retval = ( $this->getEnableCalcExperience() == TRUE ) ? $this->calcExperience() : ($this->data['experience'] / 1000); //Divide by 1000 to convert to non-float value.
 
 			return Misc::removeTrailingZeros( round( $retval, 4 ), 2 );
 		}
 
 		return FALSE;
 	}
-
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setExperience( $value) {
+	function setExperience($value) {
 		//This should always be set as years.
 		$value = $this->Validator->stripNonFloat( trim($value) );
+
 		//Assume they passed in number of seconds, convert to years.
 		if ( $value >= 1000 ) {
-			$value = ( $value / 1000 );
+			$value = TTDate::getYears( $value );
 		}
+
 		if ( $value < 0 ) {
 			$value = 0;
 		}
-		return $this->setGenericDataValue( 'experience', $this->Validator->stripNon32bitInteger( $value * 1000 ) ); //Multiply by 1000 to convert to non-float value.
+
+		if (  ( $value != ''
+				AND
+				$this->Validator->isNumeric(	'experience',
+											$value,
+											TTi18n::gettext('Experience number must only be digits')
+										)
+				AND
+				$this->Validator->isLessThan( 'experience',
+											$value,
+											TTi18n::gettext('Years experience is too high'),
+											110
+										)
+				)
+				OR $value == ''
+			) {
+
+			$this->data['experience'] = $this->Validator->stripNon32bitInteger( $value * 1000 ); //Multiply by 1000 to convert to non-float value.
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @param bool $raw
-	 * @return bool|int
-	 */
 	function getFirstUsedDate( $raw = FALSE ) {
-		return (int)$this->getGenericDataValue( 'first_used_date' );
+		if ( isset($this->data['first_used_date']) ) {
+			return (int)$this->data['first_used_date'];
+		}
+
+		return FALSE;
+	}
+	function setFirstUsedDate($epoch) {
+		$epoch = ( !is_int($epoch) ) ? trim($epoch) : $epoch; //Dont trim integer values, as it changes them to strings.
+
+		if ( $epoch == '' ) {
+			$epoch = NULL;
+		}
+
+		if	( $epoch == NULL
+				OR
+				$this->Validator->isDate(		'first_used_date',
+												$epoch,
+												TTi18n::gettext('First used date is invalid'))
+			) {
+
+			$this->data['first_used_date'] = $epoch;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @param int $value EPOCH
-	 * @return bool
-	 */
-	function setFirstUsedDate( $value ) {
-		$value = ( !is_int($value) ) ? trim($value) : $value; //Dont trim integer values, as it changes them to strings.
-		return $this->setGenericDataValue( 'first_used_date', $value );
-	}
-
-	/**
-	 * @param bool $raw
-	 * @return bool|int
-	 */
 	function getLastUsedDate( $raw = FALSE ) {
-		return (int)$this->getGenericDataValue( 'last_used_date' );
+		if ( isset($this->data['last_used_date']) ) {
+			return (int)$this->data['last_used_date'];
+		}
+
+		return FALSE;
+	}
+	function setLastUsedDate($epoch) {
+		$epoch = ( !is_int($epoch) ) ? trim($epoch) : $epoch; //Dont trim integer values, as it changes them to strings.
+
+		if ( $epoch == '' ) {
+			$epoch = NULL;
+		}
+
+		if	( $epoch == NULL
+				OR
+				$this->Validator->isDate(		'last_used_date',
+												$epoch,
+												TTi18n::gettext('Last used date is invalid'))
+			) {
+
+			$this->data['last_used_date'] = $epoch;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @param int $value EPOCH
-	 * @return bool
-	 */
-	function setLastUsedDate( $value ) {
-		$value = ( !is_int($value) ) ? trim($value) : $value; //Dont trim integer values, as it changes them to strings.
-		return $this->setGenericDataValue( 'last_used_date', $value );
-	}
-
-	/**
-	 * @return bool|float|int
-	 */
 	function calcExperience() {
 		if ( $this->getFirstUsedDate() != '' ) {
 			$last_used_date = $this->getLastUsedDate();
@@ -305,168 +349,97 @@ class UserSkillFactory extends Factory {
 		return FALSE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function getEnableCalcExperience() {
-		return $this->fromBool( $this->getGenericDataValue( 'enable_calc_experience' ) );
-	}
-
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setEnableCalcExperience( $value ) {
-		return $this->setGenericDataValue( 'enable_calc_experience', $this->toBool($value) );
-	}
-
-	/**
-	 * @param bool $raw
-	 * @return bool|int
-	 */
-	function getExpiryDate( $raw = FALSE ) {
-		return (int)$this->getGenericDataValue( 'expiry_date' );
-	}
-
-	/**
-	 * @param int $value EPOCH
-	 * @return bool
-	 */
-	function setExpiryDate( $value ) {
-		$value = ( !is_int($value) ) ? trim($value) : $value; //Dont trim integer values, as it changes them to strings.
-		return $this->setGenericDataValue( 'expiry_date', $value );
-	}
-
-	/**
-	 * @return bool|mixed
-	 */
-	function getDescription() {
-		return $this->getGenericDataValue( 'description' );
-	}
-
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setDescription( $value ) {
-		$value = trim($value);
-		return $this->setGenericDataValue( 'description', $value );
-	}
-
-	/**
-	 * @return bool|string
-	 */
-	function getTag() {
-		//Check to see if any temporary data is set for the tags, if not, make a call to the database instead.
-		//postSave() needs to get the tmp_data.
-		$value = $this->getGenericTempDataValue( 'tags' );
-		if ( $value !== FALSE ) {
-			return $value;
-		}  elseif ( is_object( $this->getQualificationObject() )
-				AND TTUUID::isUUID( $this->getQualificationObject()->getCompany() ) AND $this->getQualificationObject()->getCompany() != TTUUID::getZeroID() AND $this->getQualificationObject()->getCompany() != TTUUID::getNotExistID()
-				AND TTUUID::isUUID( $this->getID() ) AND $this->getID() != TTUUID::getZeroID() AND $this->getID() != TTUUID::getNotExistID() ) {
-			return CompanyGenericTagMapListFactory::getStringByCompanyIDAndObjectTypeIDAndObjectID( $this->getQualificationObject()->getCompany(), 251, $this->getID() );
+		if ( isset( $this->data['enable_calc_experience'] ) ) {
+			return $this->fromBool( $this->data['enable_calc_experience'] );
 		}
 
 		return FALSE;
 	}
 
-	/**
-	 * @param $tags
-	 * @return bool
-	 */
-	function setTag( $value ) {
-		$value = trim($value);
-		//Save the tags in temporary memory to be committed in postSave()
-		return $this->setGenericTempDataValue( 'tags', $value );
-	}
+	function setEnableCalcExperience( $bool ) {
+		$this->data['enable_calc_experience'] = $this->toBool($bool);
 
-
-	/**
-	 * @param bool $ignore_warning
-	 * @return bool
-	 */
-	function Validate( $ignore_warning = TRUE ) {
-		//
-		// BELOW: Validation code moved from set*() functions.
-		//
-		// Employee
-		if ( $this->getUser() !== FALSE ) {
-			$ulf = TTnew( 'UserListFactory' );
-			$this->Validator->isResultSetWithRows(	'user_id',
-															$ulf->getByID($this->getUser()),
-															TTi18n::gettext('Employee must be specified')
-														);
-		}
-		// Qualification
-		if ( $this->getQualification() !== FALSE ) {
-			$qlf = TTnew( 'QualificationListFactory' );
-			$this->Validator->isResultSetWithRows( 'qualification_id',
-															$qlf->getById( $this->getQualification() ),
-															TTi18n::gettext('Skill must be specified')
-														);
-		}
-		// Proficiency
-		if ( $this->getProficiency() !== FALSE ) {
-			$this->Validator->inArrayKey( 'proficiency_id',
-												$this->getProficiency(),
-												TTi18n::gettext( 'Proficiency must be specified' ),
-												$this->getOptions( 'proficiency' )
-											);
-		}
-		// Experience number
-		if ( $this->getExperience() != '' ) {
-			$this->Validator->isNumeric(	'experience',
-													$this->getExperience(),
-													TTi18n::gettext('Years experience must only be digits')
-												);
-			if ( $this->Validator->isError('experience') == FALSE ) {
-				$this->Validator->isLessThan( 'experience',
-													$this->getExperience(),
-													TTi18n::gettext('Years experience is too high'),
-													110
-												);
-			}
-		}
-		// First used date
-		if ( $this->getFirstUsedDate() != '' ) {
-			$this->Validator->isDate(		'first_used_date',
-													$this->getFirstUsedDate(),
-													TTi18n::gettext('First used date is invalid')
-												);
-		}
-		// Last used date
-		if ( $this->getLastUsedDate() != '' ) {
-			$this->Validator->isDate(		'last_used_date',
-													$this->getLastUsedDate(),
-													TTi18n::gettext('Last used date is invalid')
-												);
-		}
-		// Expiry time stamp
-		if ( $this->getExpiryDate() != '' ) {
-			$this->Validator->isDate(		'expiry_date',
-													$this->getExpiryDate(),
-													TTi18n::gettext('Expiry date is invalid')
-												);
-		}
-		// Description
-		if ( $this->getDescription() != '' ) {
-			$this->Validator->isLength( 'description',
-												$this->getDescription(),
-												TTi18n::gettext('Description is invalid'),
-												2, 255
-											);
-		}
-
-		//
-		// ABOVE: Validation code moved from set*() functions.
-		//
 		return TRUE;
 	}
 
-	/**
-	 * @return bool
-	 */
+	function getExpiryDate( $raw = FALSE ) {
+		if ( isset($this->data['expiry_date']) ) {
+			return (int)$this->data['expiry_date'];
+		}
+
+		return FALSE;
+	}
+	function setExpiryDate($epoch) {
+		$epoch = ( !is_int($epoch) ) ? trim($epoch) : $epoch; //Dont trim integer values, as it changes them to strings.
+
+		if ( $epoch == '' ) {
+			$epoch = NULL;
+		}
+
+		if	(	$epoch == NULL
+				OR
+				$this->Validator->isDate(		'expiry_date',
+												$epoch,
+												TTi18n::gettext('Expiry time stamp is invalid'))
+
+			) {
+
+			$this->data['expiry_date'] = $epoch;
+
+			return TRUE;
+		}
+
+		return FALSE;
+	}
+
+	function getDescription() {
+		if ( isset($this->data['description']) ) {
+			return $this->data['description'];
+		}
+		return FALSE;
+	}
+	function setDescription($description) {
+		$description = trim($description);
+
+		if (	$description == ''
+				OR
+				$this->Validator->isLength( 'description',
+											$description,
+											TTi18n::gettext('Description is invalid'),
+											2, 255 )  ) {
+				$this->data['description'] = $description;
+				return	TRUE;
+		}
+
+		return FALSE;
+	}
+
+	function getTag() {
+		//Check to see if any temporary data is set for the tags, if not, make a call to the database instead.
+		//postSave() needs to get the tmp_data.
+		if ( isset($this->tmp_data['tags']) ) {
+			return $this->tmp_data['tags'];
+		} elseif ( is_object( $this->getQualificationObject() ) AND $this->getQualificationObject()->getCompany() > 0 AND $this->getID() > 0 ) {
+			return CompanyGenericTagMapListFactory::getStringByCompanyIDAndObjectTypeIDAndObjectID( $this->getQualificationObject()->getCompany(), 251, $this->getID() );
+		}
+
+		return FALSE;
+	}
+	function setTag( $tags ) {
+		$tags = trim($tags);
+
+		//Save the tags in temporary memory to be committed in postSave()
+		$this->tmp_data['tags'] = $tags;
+
+		return TRUE;
+	}
+
+
+	function Validate( $ignore_warning = TRUE ) {
+		return TRUE;
+	}
+
 	function preSave() {
 		if ( $this->getEnableCalcExperience() == TRUE ) {
 			$this->setExperience( $this->calcExperience() );
@@ -475,9 +448,6 @@ class UserSkillFactory extends Factory {
 		return TRUE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function postSave() {
 		$this->removeCache( $this->getId() );
 		$this->removeCache( $this->getUser().$this->getQualification() );
@@ -490,10 +460,6 @@ class UserSkillFactory extends Factory {
 		return TRUE;
 	}
 
-	/**
-	 * @param $data
-	 * @return bool
-	 */
 	function setObjectFromArray( $data ) {
 
 		if ( is_array( $data ) ) {
@@ -529,11 +495,6 @@ class UserSkillFactory extends Factory {
 		return FALSE;
 	}
 
-	/**
-	 * @param null $include_columns
-	 * @param bool $permission_children_ids
-	 * @return array
-	 */
 	function getObjectAsArray( $include_columns = NULL, $permission_children_ids = FALSE  ) {
 		$data = array();
 		$variable_function_map = $this->getVariableToFunctionMap();
@@ -587,10 +548,6 @@ class UserSkillFactory extends Factory {
 		return $data;
 	}
 
-	/**
-	 * @param $log_action
-	 * @return bool
-	 */
 	function addLog( $log_action ) {
 		return TTLog::addEntry( $this->getId(), $log_action, TTi18n::getText('Skill'), NULL, $this->getTable(), $this );
 	}

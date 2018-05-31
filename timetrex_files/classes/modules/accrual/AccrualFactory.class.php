@@ -1,7 +1,7 @@
 <?php
 /*********************************************************************************
  * TimeTrex is a Workforce Management program developed by
- * TimeTrex Software Inc. Copyright (C) 2003 - 2018 TimeTrex Software Inc.
+ * TimeTrex Software Inc. Copyright (C) 2003 - 2017 TimeTrex Software Inc.
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Affero General Public License version 3 as published by
@@ -46,11 +46,6 @@ class AccrualFactory extends Factory {
 
 	protected $system_type_ids = array(10, 20, 75, 76); //These all special types reserved for system use only.
 
-	/**
-	 * @param $name
-	 * @param null $parent
-	 * @return array|bool|null
-	 */
 	function _getFactoryOptions( $name, $parent = NULL ) {
 		$retval = NULL;
 		switch( $name ) {
@@ -130,10 +125,6 @@ class AccrualFactory extends Factory {
 		return $retval;
 	}
 
-	/**
-	 * @param $data
-	 * @return array
-	 */
 	function _getVariableToFunctionMap( $data ) {
 		$variable_function_map = array(
 										'id' => 'ID',
@@ -161,80 +152,116 @@ class AccrualFactory extends Factory {
 		return $variable_function_map;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function getUserObject() {
 		return $this->getGenericObject( 'UserListFactory', $this->getUser(), 'user_obj' );
 	}
-
-	/**
-	 * @return bool|mixed
-	 */
 	function getUser() {
-		return $this->getGenericDataValue('user_id');
+		if ( isset($this->data['user_id']) ) {
+			return (int)$this->data['user_id'];
+		}
+	}
+	function setUser($id) {
+		$id = trim($id);
+
+		$ulf = TTnew( 'UserListFactory' );
+
+		if ( $this->Validator->isResultSetWithRows(	'user_id',
+															$ulf->getByID($id),
+															TTi18n::gettext('Invalid Employee')
+															) ) {
+			$this->data['user_id'] = $id;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setUser( $value) {
-		$value = TTUUID::castUUID( $value );
-		return $this->setGenericDataValue('user_id', $value);
-	}
-
-	/**
-	 * @return bool|mixed
-	 */
 	function getAccrualPolicyAccount() {
-		return $this->getGenericDataValue('accrual_policy_account_id');
+		if ( isset($this->data['accrual_policy_account_id']) ) {
+			return (int)$this->data['accrual_policy_account_id'];
+		}
+
+		return FALSE;
+	}
+	function setAccrualPolicyAccount($id) {
+		$id = trim($id);
+
+		if ( $id == '' OR empty($id) ) {
+			$id = NULL;
+		}
+
+		$apalf = TTnew( 'AccrualPolicyAccountListFactory' );
+
+		if ( $id == NULL
+				OR
+				$this->Validator->isResultSetWithRows(	'accrual_policy_account',
+													$apalf->getByID($id),
+													TTi18n::gettext('Accrual Account is invalid')
+													) ) {
+
+			$this->data['accrual_policy_account_id'] = $id;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setAccrualPolicyAccount( $value) {
-		$value = TTUUID::castUUID( $value );
-		return $this->setGenericDataValue('accrual_policy_account_id', $value);
-	}
-
-	/**
-	 * @return bool|mixed
-	 */
 	function getAccrualPolicy() {
-		return $this->getGenericDataValue('accrual_policy_id');
+		if ( isset($this->data['accrual_policyid']) ) {
+			return (int)$this->data['accrual_policy_id'];
+		}
+
+		return FALSE;
+	}
+	function setAccrualPolicy($id) {
+		$id = trim($id);
+
+		if ( $id == '' OR empty($id) ) {
+			$id = NULL;
+		}
+
+		$aplf = TTnew( 'AccrualPolicyListFactory' );
+
+		if ( $id == NULL
+				OR
+				$this->Validator->isResultSetWithRows(	'accrual_policy',
+													$aplf->getByID($id),
+													TTi18n::gettext('Accrual Policy is invalid')
+													) ) {
+
+			$this->data['accrual_policy_id'] = $id;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setAccrualPolicy( $value) {
-		$value = TTUUID::castUUID( $value );
-		return $this->setGenericDataValue('accrual_policy_id', $value);
-	}
-
-	/**
-	 * @return int
-	 */
 	function getType() {
-		return (int)$this->getGenericDataValue('type_id');
-	}
+		if ( isset($this->data['type_id']) ) {
+			return (int)$this->data['type_id'];
+		}
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setType( $value) {
+		return FALSE;
+	}
+	function setType($value) {
 		$value = trim($value);
-		return $this->setGenericDataValue( 'type_id', $value );
+
+		if ( $this->Validator->inArrayKey(	'type',
+											$value,
+											TTi18n::gettext('Incorrect Type'),
+											$this->getOptions('type')) ) {
+
+			$this->data['type_id'] = $value;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function isSystemType() {
 		if ( in_array( $this->getType(), $this->system_type_ids ) ) {
 			return TRUE;
@@ -243,54 +270,61 @@ class AccrualFactory extends Factory {
 		return FALSE;
 	}
 
-	/**
-	 * @return bool|mixed
-	 */
 	function getUserDateTotalID() {
-		return $this->getGenericDataValue('user_date_total_id');
+		if ( isset($this->data['user_date_total_id']) ) {
+			return (int)$this->data['user_date_total_id'];
+		}
+
+		return FALSE;
 	}
+	function setUserDateTotalID($id) {
+		$id = trim($id);
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setUserDateTotalID( $value) {
-		$value = TTUUID::castUUID( $value );
+		$udtlf = TTnew( 'UserDateTotalListFactory' );
 
-		return $this->setGenericDataValue('user_date_total_id', $value);
-	}
+		if ( $id == 0
+				OR
+				$this->Validator->isResultSetWithRows(	'user_date_total',
+															$udtlf->getByID($id),
+															TTi18n::gettext('User Date Total ID is invalid')
+															) ) {
+			$this->data['user_date_total_id'] = $id;
 
-	/**
-	 * @param bool $raw
-	 * @return bool|int|mixed
-	 */
-	function getTimeStamp( $raw = FALSE ) {
-		$value = $this->getGenericDataValue('time_stamp');
-		if ( $value !== FALSE ) {
-			if ( $raw === TRUE ) {
-				return $value;
-			} else {
-				return TTDate::strtotime( $value );
-			}
+			return TRUE;
 		}
 
 		return FALSE;
 	}
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setTimeStamp( $value) {
-		$value = ( !is_int($value) ) ? trim($value) : $value; //Dont trim integer values, as it changes them to strings.
-		return $this->setGenericDataValue( 'time_stamp', $value );
+	function getTimeStamp( $raw = FALSE ) {
+		if ( isset($this->data['time_stamp']) ) {
+			if ( $raw === TRUE ) {
+				return $this->data['time_stamp'];
+			} else {
+				return TTDate::strtotime( $this->data['time_stamp'] );
+			}
+		}
+
+		return FALSE;
+	}
+	function setTimeStamp($epoch) {
+		$epoch = ( !is_int($epoch) ) ? trim($epoch) : $epoch; //Dont trim integer values, as it changes them to strings.
+
+		if	(	$this->Validator->isDate(		'times_tamp',
+												$epoch,
+												TTi18n::gettext('Incorrect time stamp'))
+
+			) {
+
+			$this->data['time_stamp'] = $epoch;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @param $amount
-	 * @return bool
-	 */
-	function isValidAmount( $amount) {
+	function isValidAmount($amount) {
 		Debug::text('Type: '. $this->getType() .' Amount: '. $amount, __FILE__, __LINE__, __METHOD__, 10);
 		//Based on type, set Amount() pos/neg
 		switch ( $this->getType() ) {
@@ -317,44 +351,63 @@ class AccrualFactory extends Factory {
 
 	}
 
-	/**
-	 * @return bool|mixed
-	 */
 	function getAmount() {
-		return $this->getGenericDataValue( 'amount' );
-	}
-
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setAmount( $value) {
-		$value = trim($value);
-		if	( empty($value) ) {
-			$value = 0;
+		if ( isset($this->data['amount']) ) {
+			return $this->data['amount'];
 		}
-		return $this->setGenericDataValue( 'amount', $value );
+
+		return FALSE;
+	}
+	function setAmount($int) {
+		$int = trim($int);
+
+		if	( empty($int) ) {
+			$int = 0;
+		}
+
+		if	(	$this->Validator->isNumeric(		'amount',
+													$int,
+													TTi18n::gettext('Incorrect Amount'))
+				AND
+				$this->Validator->isTrue(			'amount',
+											 		$this->isValidAmount($int),
+											 		TTi18n::gettext('Amounts of type "%1" must be a %2 value instead', array( Option::getByKey( $this->getType(), $this->getOptions('type') ), ( ( $int < 0 AND $this->isValidAmount($int) == FALSE ) ? TTi18n::getText('positive') : TTi18n::getText('negative') ) ) ) )
+
+				) {
+			$this->data['amount'] = $int;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @return bool|mixed
-	 */
 	function getNote() {
-		return $this->getGenericDataValue('note');
+		if ( isset($this->data['note']) ) {
+			return $this->data['note'];
+		}
+
+		return FALSE;
+	}
+	function setNote($val) {
+		$val = trim($val);
+
+		if	(	$val == ''
+				OR
+				$this->Validator->isLength(		'note',
+												$val,
+												TTi18n::gettext('Note is too long'),
+												0,
+												1024) ) {
+
+			$this->data['note'] = $val;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setNote( $value) {
-		$value = trim($value);
-		return $this->setGenericDataValue('note', $value);
-	}
-
-	/**
-	 * @return bool
-	 */
 	function getEnableCalcBalance() {
 		if ( isset($this->calc_balance) ) {
 			return $this->calc_balance;
@@ -362,147 +415,36 @@ class AccrualFactory extends Factory {
 
 		return FALSE;
 	}
-
-	/**
-	 * @param $bool
-	 * @return bool
-	 */
-	function setEnableCalcBalance( $bool) {
+	function setEnableCalcBalance($bool) {
 		$this->calc_balance = $bool;
 
 		return TRUE;
 	}
 
-	/**
-	 * @param bool $ignore_warning
-	 * @return bool
-	 */
 	function Validate( $ignore_warning = TRUE ) {
-
-		//
-		// BELOW: Validation code moved from set*() functions.
-		//
-
-		//User
-		if ( $this->Validator->getValidateOnly() == FALSE ) {
-			if ( $this->getUser() == FALSE OR $this->getUser() == TTUUID::getZeroID() ) {
+		if ( $this->Validator->getValidateOnly() == FALSE ) { //Don't do the follow validation checks during Mass Edit.
+			if ( $this->getUser() == FALSE OR $this->getUser() == 0 ) {
 				$this->Validator->isTrue(		'user_id',
 												FALSE,
 												TTi18n::gettext('Please specify an employee'));
 			}
-		}
-		if ( $this->getUser() != '' AND $this->Validator->isError('user_id') == FALSE ) {
-			$ulf = TTnew( 'UserListFactory' );
-			$this->Validator->isResultSetWithRows(	'user_id',
-															$ulf->getByID($this->getUser()),
-															TTi18n::gettext('Invalid Employee')
-														);
-		}
-		// Accrual Policy
-		if ( $this->getAccrualPolicy() != '' AND $this->getAccrualPolicy() != TTUUID::getZeroID() ) {
-			$aplf = TTnew( 'AccrualPolicyListFactory' );
-			$this->Validator->isResultSetWithRows(	'accrual_policy_id',
-													  $aplf->getByID($this->getAccrualPolicy()),
-													  TTi18n::gettext('Accrual Policy is invalid')
-			);
-		}
 
-		// Accrual Policy Account
-		if ( $this->Validator->getValidateOnly() == FALSE ) {
-			if ( $this->getAccrualPolicyAccount() == FALSE OR $this->getAccrualPolicyAccount() == TTUUID::getZeroID() ) {
+			if ( $this->getType() == FALSE OR $this->getType() == 0 ) {
+				$this->Validator->isTrue(		'type_id',
+												FALSE,
+												TTi18n::gettext('Please specify accrual type'));
+			}
+
+			if ( $this->getAccrualPolicyAccount() == FALSE OR $this->getAccrualPolicyAccount() == 0 ) {
 				$this->Validator->isTrue(		'accrual_policy_account_id',
 												FALSE,
 												TTi18n::gettext('Please select an accrual account'));
 			}
 		}
-		if ( $this->getAccrualPolicyAccount() != '' AND $this->Validator->isError('accrual_policy_account_id') == FALSE ) {
-			$apalf = TTnew( 'AccrualPolicyAccountListFactory' );
-			$this->Validator->isResultSetWithRows(	'accrual_policy_account_id',
-														$apalf->getByID($this->getAccrualPolicyAccount()),
-														TTi18n::gettext('Accrual Account is invalid')
-													);
-		}
-		// Type
-		if ( $this->Validator->getValidateOnly() == FALSE ) { //Don't do the follow validation checks during Mass Edit.
-			if ( $this->getType() == FALSE OR $this->getType() == 0 ) {
-				$this->Validator->isTrue(		'type_id',
-													FALSE,
-													TTi18n::gettext('Please specify accrual type'));
-			}
-		}
-		if ( $this->getType() != '' AND $this->Validator->isError('type_id') == FALSE ) {
-			$this->Validator->inArrayKey(	'type_id',
-													$this->getType(),
-													TTi18n::gettext('Incorrect Type'),
-													$this->getOptions('type')
-												);
-		}
-		// UserDateTotal
-		if ( $this->getUserDateTotalID() != '' AND $this->getUserDateTotalID() != TTUUID::getZeroID() ) {
-			$udtlf = TTnew( 'UserDateTotalListFactory' );
-			$this->Validator->isResultSetWithRows(	'user_date_total',
-													  $udtlf->getByID($this->getUserDateTotalID()),
-													  TTi18n::gettext('User Date Total ID is invalid')
-			);
-		}
-
-		// Time stamp
-		if ( $this->getTimeStamp() != '' ) {
-			$this->Validator->isDate(		'times_tamp',
-											$this->getTimeStamp(),
-											TTi18n::gettext('Incorrect time stamp')
-										);
-		}
-
-
-		// Amount
-		if ( $this->getAmount() !== FALSE ) {
-			$this->Validator->isNumeric(		'amount',
-														$this->getAmount(),
-														TTi18n::gettext('Incorrect Amount')
-													);
-			if ( $this->Validator->isError('amount') == FALSE ) {
-				$this->Validator->isTrue(			'amount',
-															$this->isValidAmount($this->getAmount()),
-															TTi18n::gettext('Amounts of type "%1" must be a %2 value instead', array( Option::getByKey( $this->getType(), $this->getOptions('type') ), ( ( $this->getAmount() < 0 AND $this->isValidAmount($this->getAmount()) == FALSE ) ? TTi18n::getText('positive') : TTi18n::getText('negative') ) ) )
-														);
-			}
-		}
-
-		// Note
-		if ( $this->getNote() != '' ) {
-			$this->Validator->isLength(		'note',
-											$this->getNote(),
-											TTi18n::gettext('Note is too long'),
-											0,
-											1024
-										);
-		}
-
-		//
-		// ABOVE: Validation code moved from set*() functions.
-		//
-
-		if ( $this->getDeleted() == TRUE ) {
-			$this->Validator->inArrayKey(	'type_id',
-											 $this->getType(),
-											 TTi18n::gettext( 'Unable to delete system accrual records, modify the employees schedule/timesheet instead' ),
-											 $this->getOptions( 'delete_type' )
-			);
-		} elseif ( $this->isNew(TRUE) == FALSE ) {
-			$this->Validator->inArrayKey(	'type_id',
-											 $this->getType(),
-											 TTi18n::gettext( 'Unable to modify system accrual records' ),
-											 $this->getOptions( 'user_type' )
-			);
-		}
 
 		return TRUE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function preSave() {
 		if ( $this->getTimeStamp() == FALSE ) {
 			$this->setTimeStamp( TTDate::getTime() );
@@ -511,15 +453,13 @@ class AccrualFactory extends Factory {
 		//Delete duplicates before saving.
 		//Or orphaned entries on Sum'ing?
 		//Would have to do it on view as well though.
-		if ( TTUUID::isUUID( $this->getUserDateTotalID() ) AND $this->getUserDateTotalID() != TTUUID::getZeroID() AND $this->getUserDateTotalID() != TTUUID::getNotExistID() ) {
+		if ( $this->getUserDateTotalID() > 0 ) {
 			$alf = TTnew( 'AccrualListFactory' );
 			$alf->getByUserIdAndAccrualPolicyAccountAndAccrualPolicyAndUserDateTotalID( $this->getUser(), $this->getAccrualPolicyAccount(), $this->getAccrualPolicy(), $this->getUserDateTotalID() );
 			Debug::text('Found Duplicate Records: '. (int)$alf->getRecordCount(), __FILE__, __LINE__, __METHOD__, 10);
 			if ( $alf->getRecordCount() > 0 ) {
 				foreach($alf as $a_obj ) {
-					if ( $a_obj->getId() != $this->getId() ) { //Make sure we don't delete the record we are currently editing.
-						$a_obj->Delete();
-					}
+					$a_obj->Delete();
 				}
 			}
 		}
@@ -527,9 +467,6 @@ class AccrualFactory extends Factory {
 		return TRUE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function postSave() {
 		//Calculate balance
 		if ( $this->getEnableCalcBalance() == TRUE ) {
@@ -540,12 +477,7 @@ class AccrualFactory extends Factory {
 		return TRUE;
 	}
 
-	/**
-	 * @param string $user_id UUID
-	 * @param int $date_stamp EPOCH
-	 * @return bool
-	 */
-	static function deleteOrphans( $user_id, $date_stamp ) {
+	static function deleteOrphans($user_id, $date_stamp ) {
 		Debug::text('Attempting to delete Orphaned Records for User ID: '. $user_id .' Date: '. TTDate::getDate('DATE', $date_stamp), __FILE__, __LINE__, __METHOD__, 10);
 		//Remove orphaned entries
 		$alf = TTnew( 'AccrualListFactory' );
@@ -570,10 +502,6 @@ class AccrualFactory extends Factory {
 		return TRUE;
 	}
 
-	/**
-	 * @param $data
-	 * @return bool
-	 */
 	function setObjectFromArray( $data ) {
 		if ( is_array( $data ) ) {
 			$variable_function_map = $this->getVariableToFunctionMap();
@@ -606,11 +534,6 @@ class AccrualFactory extends Factory {
 		return FALSE;
 	}
 
-	/**
-	 * @param null $include_columns
-	 * @param bool $permission_children_ids
-	 * @return array
-	 */
 	function getObjectAsArray( $include_columns = NULL, $permission_children_ids = FALSE  ) {
 		$data = array();
 		$variable_function_map = $this->getVariableToFunctionMap();
@@ -664,10 +587,6 @@ class AccrualFactory extends Factory {
 		return $data;
 	}
 
-	/**
-	 * @param $log_action
-	 * @return bool
-	 */
 	function addLog( $log_action ) {
 		$u_obj = $this->getUserObject();
 		if ( is_object($u_obj) ) {

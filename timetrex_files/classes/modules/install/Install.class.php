@@ -1,7 +1,7 @@
 <?php
 /*********************************************************************************
  * TimeTrex is a Workforce Management program developed by
- * TimeTrex Software Inc. Copyright (C) 2003 - 2018 TimeTrex Software Inc.
+ * TimeTrex Software Inc. Copyright (C) 2003 - 2017 TimeTrex Software Inc.
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Affero General Public License version 3 as published by
@@ -51,39 +51,48 @@ class Install {
 	protected $progress_bar_obj = NULL;
 	protected $AMF_message_id = NULL;
 
-	protected $critical_disabled_functions = array();
 
-	/**
-	 * Install constructor.
-	 */
 	function __construct() {
 		global $config_vars;
-
+		// @codingStandardsIgnoreStart
+		global $cache;
+		//assumed needed
+		// @codingStandardsIgnoreEnd
 		require_once( Environment::getBasePath() .'classes'. DIRECTORY_SEPARATOR .'modules'. DIRECTORY_SEPARATOR .'install'. DIRECTORY_SEPARATOR .'InstallSchema.class.php');
 
 		$this->config_vars = $config_vars;
 
 		//Disable caching so we don't exceed maximum memory settings.
-		//global $cache;
 		//$cache->_onlyMemoryCaching = TRUE; //This shouldn't be required anymore, as it also breaks invalidating cache files.
 
 		ini_set('default_socket_timeout', 5);
 		ini_set('allow_url_fopen', 1);
 
+		//As of PHP v5.3 some SAPI's don't support dl(), however it appears that php.ini can still have it enabled.
+		//Double check to make sure the dl() function exists prior to calling it.
+		if ( version_compare(PHP_VERSION, '5.3.0', '<') AND function_exists('dl') == TRUE AND (bool)ini_get( 'enable_dl' ) == TRUE AND (bool)ini_get( 'safe_mode' ) == FALSE ) {
+			$prefix = (PHP_SHLIB_SUFFIX === 'dll') ? 'php_' : '';
+
+			if ( extension_loaded('mysql') == FALSE ) {
+				@dl($prefix . 'mysql.' . PHP_SHLIB_SUFFIX);
+			}
+
+			if ( extension_loaded('mysqli') == FALSE ) {
+				@dl($prefix . 'mysqli.' . PHP_SHLIB_SUFFIX);
+			}
+
+			if ( extension_loaded('pgsql') == FALSE ) {
+				@dl($prefix . 'pgsql.' . PHP_SHLIB_SUFFIX);
+			}
+		}
+
 		return TRUE;
 	}
 
-	/**
-	 * @return null
-	 */
 	function getDatabaseDriver() {
 		return $this->database_driver;
 	}
 
-	/**
-	 * @param $driver
-	 * @return bool
-	 */
 	function setDatabaseDriver( $driver ) {
 		if ( $this->getDatabaseType( $driver ) !== 1 ) {
 			$this->database_driver = $this->getDatabaseType( $driver );
@@ -94,9 +103,6 @@ class Install {
 		return FALSE;
 	}
 
-	/**
-	 * @return null|ProgressBar
-	 */
 	function getProgressBarObject() {
 		if	( !is_object( $this->progress_bar_obj ) ) {
 			$this->progress_bar_obj = new ProgressBar();
@@ -105,21 +111,12 @@ class Install {
 		return $this->progress_bar_obj;
 	}
 	//Returns the AMF messageID for each individual call.
-
-	/**
-	 * @return bool|null
-	 */
 	function getAMFMessageID() {
 		if ( $this->AMF_message_id != NULL ) {
 			return $this->AMF_message_id;
 		}
 		return FALSE;
 	}
-
-	/**
-	 * @param string $id UUID
-	 * @return bool
-	 */
 	function setAMFMessageID( $id ) {
 		Debug::Text('AMF Message ID: '. $id, __FILE__, __LINE__, __METHOD__, 10);
 		if ( $id != '' ) {
@@ -130,11 +127,8 @@ class Install {
 		return FALSE;
 	}
 
-	/**
-	 * Read .ini file.
-	 * Make sure setup_mode is enabled.
-	 * @return bool
-	 */
+	//Read .ini file.
+	//Make sure setup_mode is enabled.
 	function isInstallMode() {
 		if ( isset($this->config_vars['other']['installer_enabled'])
 				AND $this->config_vars['other']['installer_enabled'] == 1 ) {
@@ -146,11 +140,6 @@ class Install {
 		return FALSE;
 	}
 
-	/**
-	 * @param $key
-	 * @param $msg
-	 * @return bool
-	 */
 	function setExtendedErrorMessage( $key, $msg ) {
 		if ( isset($this->extended_error_messages[$key]) AND in_array( $msg, $this->extended_error_messages[$key] ) ) {
 			return TRUE;
@@ -161,10 +150,6 @@ class Install {
 		return TRUE;
 	}
 
-	/**
-	 * @param null $key
-	 * @return bool|null|string
-	 */
 	function getExtendedErrorMessage( $key = NULL ) {
 		if ( $key != '' ) {
 			if ( isset($this->extended_error_messages[$key]) ) {
@@ -178,17 +163,10 @@ class Install {
 	}
 
 	//Checks if this is the professional version or not
-
-	/**
-	 * @return int
-	 */
 	function getTTProductEdition() {
 		return getTTProductEdition();
 	}
 
-	/**
-	 * @return string
-	 */
 	function getFullApplicationVersion() {
 		$retval = APPLICATION_VERSION;
 
@@ -205,9 +183,6 @@ class Install {
 		return $retval;
 	}
 
-	/**
-	 * @return bool|string
-	 */
 	function getLicenseText() {
 		$license_file = Environment::getBasePath(). DIRECTORY_SEPARATOR .'LICENSE';
 
@@ -222,26 +197,15 @@ class Install {
 		return FALSE;
 	}
 
-	/**
-	 * @param $val
-	 */
 	function setIsUpgrade( $val ) {
 		$this->is_upgrade = (bool)$val;
 	}
-
-	/**
-	 * @return bool
-	 */
 	function getIsUpgrade() {
 		return $this->is_upgrade;
 	}
 
-	/**
-	 * @param object $db_obj
-	 * @return bool
-	 */
 	function setDatabaseConnection( $db_obj ) {
-		if ( is_object( $db_obj ) ) {
+		if ( is_object( $db_obj) ) {
 			if ( $db_obj instanceof ADOdbLoadBalancer ) {
 				$this->temp_db = $db_obj->getConnection( 'master');
 			} elseif ( isset($db_obj->_connectionID) AND is_resource( $db_obj->_connectionID) OR is_object( $db_obj->_connectionID) ) {
@@ -259,10 +223,6 @@ class Install {
 
 		return FALSE;
 	}
-
-	/**
-	 * @return bool|null
-	 */
 	function getDatabaseConnection() {
 		if ( isset($this->temp_db) AND ( is_resource($this->temp_db->_connectionID) OR is_object($this->temp_db->_connectionID)	 ) ) {
 			return $this->temp_db;
@@ -271,15 +231,7 @@ class Install {
 		return FALSE;
 	}
 
-	/**
-	 * @param $type
-	 * @param $host
-	 * @param $user
-	 * @param $password
-	 * @param $database_name
-	 * @return bool
-	 */
-	function setNewDatabaseConnection( $type, $host, $user, $password, $database_name ) {
+	function setNewDatabaseConnection($type, $host, $user, $password, $database_name ) {
 		if ( $this->getDatabaseConnection() !== FALSE ) {
 			$this->getDatabaseConnection()->Close();
 		}
@@ -299,6 +251,7 @@ class Install {
 				return TRUE;
 			}
 		} catch (Exception $e) {
+
 			unset($e);//code standards
 			return FALSE;
 		}
@@ -306,11 +259,7 @@ class Install {
 		return FALSE;
 	}
 
-	/**
-	 * @param $bool
-	 * @return string
-	 */
-	function HumanBoolean( $bool) {
+	function HumanBoolean($bool) {
 		if ( $bool === TRUE OR strtolower(trim($bool)) == 'true' ) {
 			return 'TRUE';
 		} else {
@@ -318,10 +267,6 @@ class Install {
 		}
 	}
 
-	/**
-	 * @param $new_config_vars
-	 * @return bool|mixed
-	 */
 	function writeConfigFile( $new_config_vars ) {
 		if ( is_writeable( CONFIG_FILE ) ) {
 
@@ -399,18 +344,18 @@ class Install {
 						}
 					}
 
+					Debug::text('Modified Config File!', __FILE__, __LINE__, __METHOD__, 9);
 					//Debug::Arr($data, 'New Config File!', __FILE__, __LINE__, __METHOD__, 9);
 					$retval = $config->writeConfig( CONFIG_FILE, 'inicommented' );
-					Debug::text('Modified Config File! writeConfig Result: '. $retval, __FILE__, __LINE__, __METHOD__, 9);
 
 					//Make sure the first line in the file contains "die".
 					$contents = file_get_contents( CONFIG_FILE );
 
 					//Make sure we add back in the PHP code for security reasons.
 					//BitRock seems to want to remove this and re-arrange the INI file as well for some odd reason.
-					if ( stripos( $contents, '<?php' ) === FALSE ) {
+					if ( stripos( $contents, ';<?php' ) === FALSE ) {
 						Debug::text('Adding back in security feature...', __FILE__, __LINE__, __METHOD__, 9);
-						$contents = "; <?php die('Unauthorized Access...'); //SECURITY MECHANISM, DO NOT REMOVE//?>\n".$contents;
+						$contents = ";<?php die('Unauthorized Access...'); //SECURITY MECHANISM, DO NOT REMOVE//?>\n".$contents;
 					}
 					file_put_contents( CONFIG_FILE, $contents );
 
@@ -424,9 +369,6 @@ class Install {
 		return FALSE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function setVersions() {
 		if ( is_array($this->versions) ) {
 			foreach( $this->versions as $name => $value ) {
@@ -445,17 +387,11 @@ class Install {
 
 		return TRUE;
 	}
-
 	/*
 
 		Database Schema functions
 
 	*/
-
-	/**
-	 * @param $database_name
-	 * @return bool
-	 */
 	function checkDatabaseExists( $database_name ) {
 		Debug::text('Database Name: '. $database_name, __FILE__, __LINE__, __METHOD__, 9);
 		$db_conn = $this->getDatabaseConnection();
@@ -475,10 +411,6 @@ class Install {
 		return FALSE;
 	}
 
-	/**
-	 * @param $database_name
-	 * @return bool
-	 */
 	function createDatabase( $database_name ) {
 		Debug::text('Database Name: '. $database_name, __FILE__, __LINE__, __METHOD__, 9);
 
@@ -502,10 +434,6 @@ class Install {
 		return $dict->ExecuteSQLArray($sqlarray);
 	}
 
-	/**
-	 * @param $table_name
-	 * @return bool
-	 */
 	function checkTableExists( $table_name ) {
 		Debug::text('Table Name: '. $table_name, __FILE__, __LINE__, __METHOD__, 9);
 		$db_conn = $this->getDatabaseConnection();
@@ -525,26 +453,8 @@ class Install {
 		return FALSE;
 	}
 
-	/**
-	 * @return bool
-	 */
-	function checkSystemSettingTableExists() {
-		global $config_vars;
-		if ( $this->checkDatabaseExists( $config_vars['database']['database_name'] ) == TRUE ) {
-			if ( $this->checkTableExists( 'company' ) == TRUE ) {
-				return TRUE;
-			}
-		}
-
-		return FALSE;
-	}
-
 	//Get all schema versions
 	//A=Community, B=Professional, C=Corporate, D=Enterprise, T=Tax
-	/**
-	 * @param array $group
-	 * @return array
-	 */
 	function getAllSchemaVersions( $group = array('A', 'B', 'C', 'D') ) {
 		if ( !is_array($group) ) {
 			$group = array( $group );
@@ -575,9 +485,6 @@ class Install {
 		return $schema_versions;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function handleSchemaGroupChange() {
 		//Pre v7.0, if the database version is less than 7.0 we need to *copy* the schema version from group B to C so we don't try to upgrade the database with old schemas.
 		if ( $this->getIsUpgrade() == TRUE ) {
@@ -626,14 +533,8 @@ class Install {
 
 	//Creates DB schema starting at and including start_version, and ending at, including end version.
 	//Starting at NULL is first version, ending at NULL is last version.
-	/**
-	 * @param null $start_version
-	 * @param null $end_version
-	 * @param array $group
-	 * @return bool
-	 */
 	function createSchemaRange( $start_version = NULL, $end_version = NULL, $group = array('A', 'B', 'C', 'D') ) {
-		global $cache, $config_vars, $PRIMARY_KEY_IS_UUID;
+		global $cache, $progress_bar, $config_vars;
 
 		if ( $this->checkDatabaseSchema() == 1 ) {
 			return FALSE;
@@ -662,26 +563,12 @@ class Install {
 		$total_schema_versions = count($schema_versions);
 		if ( is_array($schema_versions) AND $total_schema_versions > 0 ) {
 			//$this->getDatabaseConnection()->StartTrans();
-			if ( $this->is_upgrade == TRUE ) {
+			if ( $this->is_upgrade ) {
 				$msg = TTi18n::getText('Upgrading database');
-				if ( (int)SystemSettingFactory::getSystemSettingValueByKey( 'schema_version_group_A' ) < 1100 ) {
-					Debug::Text( '  Upgrading database before schema first UUID schema version... Setting PRIMARY_KEY_IS_UUID = FALSE', __FILE__, __LINE__, __METHOD__, 1);
-					$PRIMARY_KEY_IS_UUID = FALSE;
-					$config_vars['other']['disable_audit_log'] = TRUE; //After v11, when UUID is disabled, disable all audit logging too.
-				}
-
 			} else {
 				$msg = TTi18n::getText('Initializing database');
-				Debug::Text( '  Initializing database... Setting PRIMARY_KEY_IS_UUID = FALSE', __FILE__, __LINE__, __METHOD__, 1);
-				$PRIMARY_KEY_IS_UUID = FALSE;
-				$config_vars['other']['disable_audit_log'] = TRUE; //After v11, when UUID is disabled, disable all audit logging too.
 			}
-
-			if ( PHP_SAPI != 'cli' ) { //Don't bother updating progress bar when being run from the CLI.
-				$this->getProgressBarObject()->start( $this->getAMFMessageID(), $total_schema_versions, NULL, $msg );
-			}
-
-			//Sequences are no longer used after the change to UUID in v11.
+			$this->getProgressBarObject()->start( $this->getAMFMessageID(), $total_schema_versions, NULL, $msg );
 			$this->initializeSequences(); //Initialize sequences before we start the schema upgrade to hopefully avoid duplicate key errors.
 
 			$x = 0;
@@ -697,9 +584,12 @@ class Install {
 
 					$create_schema_result = $this->createSchema( $schema_version );
 
-					if ( PHP_SAPI != 'cli' ) {
-						$this->getProgressBarObject()->set( $this->getAMFMessageID(), $x );
+					if ( is_object($progress_bar) ) {
+						$progress_bar->setValue( Misc::calculatePercent( $x, $total_schema_versions ) );
+						$progress_bar->display();
 					}
+
+					$this->getProgressBarObject()->set( $this->getAMFMessageID(), $x );
 
 					if ( $create_schema_result === FALSE ) {
 						Debug::text('CreateSchema Failed! On Version: '. $schema_version, __FILE__, __LINE__, __METHOD__, 9);
@@ -707,8 +597,6 @@ class Install {
 						return FALSE;
 					}
 					$this->getDatabaseConnection()->CompleteTrans();
-
-					$this->postCreateSchema( $schema_version, $create_schema_result ); //This must be called outside the transaction, so it can handle things like VACUUM.
 				}
 
 				//Fast way to clear memory caching only between schema upgrades to make sure it doesn't get too big.
@@ -717,12 +605,8 @@ class Install {
 
 				$x++;
 			}
+			$this->getProgressBarObject()->stop( $this->getAMFMessageID() );
 
-			if ( PHP_SAPI != 'cli' ) {
-				$this->getProgressBarObject()->stop( $this->getAMFMessageID() );
-			}
-
-			//Sequences are no longer used after the change to UUID in v11.
 			$this->initializeSequences(); //Initialize sequences after we finish as well just in case new errors were created during upgrade...
 
 			//$this->getDatabaseConnection()->FailTrans();
@@ -746,10 +630,6 @@ class Install {
 		return TRUE;
 	}
 
-	/**
-	 * @param $version
-	 * @return bool
-	 */
 	function createSchema( $version ) {
 		if ( $version == '' ) {
 			return FALSE;
@@ -760,8 +640,7 @@ class Install {
 		$group = substr( $version, -1, 1);
 		$version_number = substr( $version, 0, (strlen($version) - 1));
 
-		global $PRIMARY_KEY_IS_UUID;
-		Debug::text('Version: '. $version .' Version Number: '. $version_number .' Group: '. $group .' Primary Key UUID: '. (int)$PRIMARY_KEY_IS_UUID, __FILE__, __LINE__, __METHOD__, 9);
+		Debug::text('Version: '. $version .' Version Number: '. $version_number .' Group: '. $group, __FILE__, __LINE__, __METHOD__, 9);
 
 		//Only create schema if current system settings do not exist, or they are
 		//older then this current schema version.
@@ -790,39 +669,14 @@ class Install {
 			$install = TRUE;
 		}
 
-		if ( $install === TRUE ) {
+		if ( $install == TRUE ) {
 			$is_obj = new InstallSchema( $this->getDatabaseDriver(), $version, $this->getDatabaseConnection(), $this->getIsUpgrade() );
-			$retval = $is_obj->InstallSchema();
-		} else {
-			$retval = 'SKIP'; //Schema wasn't installed, so we need a 3rd retval to tell postCreateSchema() that the schema didn't fail, but was skipped instead.
-			//Debug::text('  SKIPPING schema version...', __FILE__, __LINE__, __METHOD__, 9);
-		}
-
-		return $retval;
-	}
-
-	function postCreateSchema( $schema_version, $create_schema_result ) {
-		if ( $create_schema_result === TRUE ) { //Only run post functions when the schema was actually installed and not skipped because the schema version is already ahead.
-			if ( $this->getDatabaseType() == 'postgresql' ) {
-				if ( $schema_version == '1100A' ) { //Large UUID change.
-					Debug::text( '    Running VACUUM FULL ANALYZE...', __FILE__, __LINE__, __METHOD__, 9 );
-					$this->getDatabaseConnection()->Execute( 'VACUUM FULL ANALYZE' );
-				}
-			}
-		} else {
-			Debug::text( '  NOT running postCreateSchema() functions, schema version failed or was skipped...', __FILE__, __LINE__, __METHOD__, 9 );
+			return $is_obj->InstallSchema();
 		}
 
 		return TRUE;
 	}
 
-	/**
-	 * @param object $obj
-	 * @param $table
-	 * @param $class
-	 * @param $db_conn
-	 * @return bool
-	 */
 	function initializeSequence( $obj, $table, $class, $db_conn ) {
 		$next_insert_id = $obj->getNextInsertId();
 		Debug::Text('Table: '. $table .' Class: '. $class .' Sequence Name: '. $obj->getSequenceName() .' Next Insert ID: '. $next_insert_id, __FILE__, __LINE__, __METHOD__, 10);
@@ -852,16 +706,7 @@ class Install {
 
 	//Only required with MySQL, this can help prevent race conditions when creating new tables.
 	//It will also correct any corrupt sequences that don't match their parent tables.
-	/**
-	 * @return bool
-	 */
 	function initializeSequences() {
-		global $PRIMARY_KEY_IS_UUID;
-		if ( $PRIMARY_KEY_IS_UUID == TRUE ) {
-			Debug::Text('  Skipping sequence initialization, in UUID mode!', __FILE__, __LINE__, __METHOD__, 10);
-			return TRUE; //Sequences can be ignored when using UUID primary keys.
-		}
-
 		require_once( Environment::getBasePath() . DIRECTORY_SEPARATOR . 'includes'. DIRECTORY_SEPARATOR .'TableMap.inc.php');
 		global $global_table_map;
 
@@ -880,8 +725,6 @@ class Install {
 				if ( $obj->getSequenceName() != '' ) {
 					$this->initializeSequence( $obj, $table, $class, $db_conn );
 				}
-			} else {
-				Debug::Text('  Missing class for table: '. $table .' Class: '. $class, __FILE__, __LINE__, __METHOD__, 10);
 			}
 		}
 
@@ -894,18 +737,11 @@ class Install {
 
 	*/
 
-	/**
-	 * @return string
-	 */
 	function getPHPVersion() {
 		return PHP_VERSION;
 	}
 
-	/**
-	 * @param null $php_version
-	 * @return int
-	 */
-	function checkPHPVersion( $php_version = NULL) {
+	function checkPHPVersion($php_version = NULL) {
 		// Return
 		// 0 = OK
 		// 1 = Invalid
@@ -922,8 +758,8 @@ class Install {
 		}
 		Debug::text('Comparing with Version: '. $php_version, __FILE__, __LINE__, __METHOD__, 9);
 
-		$min_version = '5.4.0';
-		$max_version = '7.2.99'; //Change install.php as well, as some versions break backwards compatibility, so we need early checks as well.
+		$min_version = '5.3.0';
+		$max_version = '7.0.99'; //Change install.php as well, as some versions break backwards compatibility, so we need early checks as well.
 
 		$unsupported_versions = array('');
 
@@ -965,10 +801,6 @@ class Install {
 		return $retval;
 	}
 
-	/**
-	 * @param null $type
-	 * @return int|string
-	 */
 	function getDatabaseType( $type = NULL ) {
 		if ( $type != '' ) {
 			$db_type = $type;
@@ -988,9 +820,6 @@ class Install {
 		return $retval;
 	}
 
-	/**
-	 * @return mixed|null
-	 */
 	function getMemoryLimit() {
 		//
 		// NULL = unlimited
@@ -1010,30 +839,18 @@ class Install {
 		return $limit;
 	}
 
-	/**
-	 * @return string
-	 */
 	function getPHPConfigFile() {
 		return get_cfg_var("cfg_file_path");
 	}
 
-	/**
-	 * @return mixed|string
-	 */
 	function getConfigFile() {
 		return CONFIG_FILE;
 	}
 
-	/**
-	 * @return string
-	 */
 	function getPHPIncludePath() {
 		return get_cfg_var("include_path");
 	}
 
-	/**
-	 * @return array|bool|null
-	 */
 	function getDatabaseVersion() {
 		$db_conn = $this->getDatabaseConnection();
 		if ( $db_conn == FALSE ) {
@@ -1059,33 +876,27 @@ class Install {
 		return FALSE;
 	}
 
-	/**
-	 * @return array
-	 */
 	function getDatabaseTypeArray() {
 		$retval = array();
-		$retval['postgres8'] = 'PostgreSQL';
-//		if ( function_exists('pg_connect') ) {
-//			$retval['postgres8'] = 'PostgreSQL v9.1+';
-//
-//			// set edb_redwood_date = 'off' must be set, otherwise enterpriseDB
-//			// changes all date columns to timestamp columns and breaks TimeTrex.
-//			//$retval['enterprisedb'] = 'EnterpriseDB (DISABLE edb_redwood_date)';
-//		}
-//		if ( function_exists('mysqli_real_connect') ) {
-//			$retval['mysqli'] = 'NOT SUPPORTED - MySQLi (v5.5+ w/InnoDB)';
-//		}
-//		//MySQLt driver is no longer supported, as it causes conflicts with ADODB and complex queries.
-//		if ( function_exists('mysql_connect') ) {
-//			$retval['mysqlt'] = 'NOT SUPPORTED - MySQL (Legacy Driver - NOT SUPPORTED, use MYSQLi instead!)';
-//		}
+
+		if ( function_exists('pg_connect') ) {
+			$retval['postgres8'] = 'PostgreSQL v9.1+';
+
+			// set edb_redwood_date = 'off' must be set, otherwise enterpriseDB
+			// changes all date columns to timestamp columns and breaks TimeTrex.
+			//$retval['enterprisedb'] = 'EnterpriseDB (DISABLE edb_redwood_date)';
+		}
+		if ( function_exists('mysqli_real_connect') ) {
+			$retval['mysqli'] = 'MySQLi (v5.5+ w/InnoDB)';
+		}
+		//MySQLt driver is no longer supported, as it causes conflicts with ADODB and complex queries.
+		if ( function_exists('mysql_connect') ) {
+			$retval['mysqlt'] = 'MySQL (Legacy Driver - NOT SUPPORTED, use MYSQLi instead!)';
+		}
 
 		return $retval;
 	}
 
-	/**
-	 * @return int
-	 */
 	function checkFilePermissions() {
 		// Return
 		//
@@ -1094,12 +905,6 @@ class Install {
 		// 2 = Unsupported
 		if ( PRODUCTION == FALSE OR DEPLOYMENT_ON_DEMAND == TRUE ) {
 			return 0; //Skip permission checks.
-		}
-
-		$is_root_user = Misc::isCurrentOSUserRoot();
-		if ( $is_root_user == TRUE ) {
-			$web_server_user = Misc::findWebServerOSUser();
-			Debug::Text('Current user is root, attempt to fix any permissions that fail... New User: '. $web_server_user, __FILE__, __LINE__, __METHOD__, 10);
 		}
 
 		$dirs = array();
@@ -1115,12 +920,9 @@ class Install {
 			$dirs[] = $this->config_vars['path']['storage'];
 		}
 
-		$dirs[] = realpath( dirname( __FILE__) . DIRECTORY_SEPARATOR .'..'. DIRECTORY_SEPARATOR .'..'. DIRECTORY_SEPARATOR .'..'. DIRECTORY_SEPARATOR );
+		$dirs[] = dirname( __FILE__) . DIRECTORY_SEPARATOR .'..'. DIRECTORY_SEPARATOR .'..'. DIRECTORY_SEPARATOR .'..'. DIRECTORY_SEPARATOR;
 
-		if ( PHP_SAPI != 'cli' ) { //Don't bother updating progress bar when being run from the CLI.
-			$this->getProgressBarObject()->start( $this->getAMFMessageID(), 10000, NULL, TTi18n::getText( 'Check File Permission...' ) );
-		}
-
+		$this->getProgressBarObject()->start( $this->getAMFMessageID(), 9000, NULL, TTi18n::getText('Check File Permission...') );
 		$i = 0;
 		foreach( $dirs as $dir ) {
 			Debug::Text('Checking directory readable/writable: '. $dir, __FILE__, __LINE__, __METHOD__, 10);
@@ -1128,23 +930,18 @@ class Install {
 				try {
 					$rdi = new RecursiveDirectoryIterator( $dir, RecursiveIteratorIterator::SELF_FIRST );
 					foreach ( new RecursiveIteratorIterator( $rdi ) as $file_name => $cur ) {
-						if (
-								//strcmp( basename($file_name), '.') == 0 OR //Make sure we do check "." (the current directory). As permissions could be denied on it, but allowed on all sub-dirs/files.
-								file_exists( $file_name ) == FALSE //Its possible if it takes a long time to iterate the files, they could be gone by the time we get to them, so just check them again.
+						if ( strcmp( basename($file_name), '.') == 0
 								OR strcmp( basename($file_name), '..' ) == 0
-								OR strpos( $file_name, '.git' ) !== FALSE
 								OR strcmp( basename($file_name), '.htaccess' ) == 0 ) { //.htaccess files often aren't writable by the webserver.
 							continue;
 						}
 
-						if ( $is_root_user == TRUE AND $web_server_user != FALSE AND @fileowner( $file_name ) === 0 ) { //Check if file is owned by root. If so, change the owner before we check is readable/writable.
-							Debug::Text('  Changing ownership of: '. $file_name, __FILE__, __LINE__, __METHOD__, 10);
-							@chown( $file_name, $web_server_user );
-							@chgrp( $file_name, $web_server_user );
-						}
+						$this->getProgressBarObject()->set( $this->getAMFMessageID(), $i );
+
+						$i++;
 
 						//Debug::Text('Checking readable/writable: '. $file_name, __FILE__, __LINE__, __METHOD__, 10);
-						if ( file_exists( $file_name ) AND is_readable( $file_name ) == FALSE ) {
+						if ( is_readable( $file_name ) == FALSE ) {
 							Debug::Text('File or directory is not readable: '. $file_name, __FILE__, __LINE__, __METHOD__, 10);
 							$this->setExtendedErrorMessage( 'checkFilePermissions', 'Not Readable: '. $file_name );
 							return 1; //Invalid
@@ -1155,39 +952,24 @@ class Install {
 							$this->setExtendedErrorMessage( 'checkFilePermissions', 'Not writable: '. $file_name );
 							return 1; //Invalid
 						}
-
-						//Do this last, as it can take a long time on some systems using a slow file system.
-						if ( PHP_SAPI != 'cli' AND ( $i % 100 ) == 0 )  {
-							$this->getProgressBarObject()->set( $this->getAMFMessageID(), $i );
-						}
-
-						$i++;
 					}
 					unset($cur); //code standards
 				} catch( Exception $e ) {
 					Debug::Text('Failed opening/reading file or directory: '. $e->getMessage(), __FILE__, __LINE__, __METHOD__, 10);
 					return 1;
 				}
-			} else {
-				Debug::Text('Failed reading directory: '. $dir, __FILE__, __LINE__, __METHOD__, 10);
-				$this->setExtendedErrorMessage( 'checkFilePermissions', 'Not Readable: '. $dir );
-				return 1;
 			}
+
 		}
 
-		if ( PHP_SAPI != 'cli' ) {
-			$this->getProgressBarObject()->set( $this->getAMFMessageID(), 10000 );
+		$this->getProgressBarObject()->set( $this->getAMFMessageID(), 9000 );
 
-			$this->getProgressBarObject()->stop( $this->getAMFMessageID() );
-		}
+		$this->getProgressBarObject()->stop( $this->getAMFMessageID() );
 
-		Debug::Text('All Files/Directories ('. $i .') are readable/writable!', __FILE__, __LINE__, __METHOD__, 10);
+		Debug::Text('All Files/Directories are readable/writable!', __FILE__, __LINE__, __METHOD__, 10);
 		return 0;
 	}
 
-	/**
-	 * @return int
-	 */
 	function checkFileChecksums() {
 		// Return
 		//
@@ -1209,9 +991,7 @@ class Install {
 			unset($checksum_data);
 			if ( is_array($checksums) ) {
 
-				if ( PHP_SAPI != 'cli' ) { //Don't bother updating progress bar when being run from the CLI.
-					$this->getProgressBarObject()->start( $this->getAMFMessageID(), count( $checksums ), NULL, TTi18n::getText( 'Check File Checksums...' ) );
-				}
+				$this->getProgressBarObject()->start( $this->getAMFMessageID(), count($checksums), NULL, TTi18n::getText('Check File Checksums...') );
 
 				$i = 0;
 				foreach($checksums as $checksum_line ) {
@@ -1257,18 +1037,12 @@ class Install {
 						unset($split_line, $file_name, $checksum);
 					}
 
-					if ( PHP_SAPI != 'cli' AND ( $i % 100 ) == 0 ) {
-						$this->getProgressBarObject()->set( $this->getAMFMessageID(), $i );
-					}
+					$this->getProgressBarObject()->set( $this->getAMFMessageID(), $i );
 
 					$i++;
 
 				}
-
-				if ( PHP_SAPI != 'cli' ) {
-					$this->getProgressBarObject()->stop( $this->getAMFMessageID() );
-				}
-
+				$this->getProgressBarObject()->stop( $this->getAMFMessageID() );
 				return 0; //OK
 			}
 		} else {
@@ -1279,31 +1053,26 @@ class Install {
 		return 1; //Invalid
 	}
 
-	/**
-	 * @return int
-	 */
 	function checkDatabaseType() {
 		// Return
 		//
 		// 0 = OK
 		// 1 = Invalid
-		// 2 = mysql type in ini
+		// 2 = Unsupported
 
 		$retval = 1;
 
-		global $config_vars;
-		if ( isset($config_vars['database']['type']) AND strncmp($config_vars['database']['type'], 'mysql', 5) == 0 ) {
-			$retval = 2;
-		} elseif ( function_exists('pg_connect') ) {
+		if ( function_exists('pg_connect') ) {
 			$retval = 0;
+		} elseif ( function_exists('mysqli_real_connect') ) {
+			$retval = 0;
+		} elseif ( function_exists('mysql_connect') ) {
+			$retval = 2;
 		}
 
 		return $retval;
 	}
 
-	/**
-	 * @return int
-	 */
 	function checkDatabaseVersion() {
 		$db_version = (string)$this->getDatabaseVersion();
 		if ( $db_version == NULL ) {
@@ -1315,55 +1084,48 @@ class Install {
 			if ( $db_version == NULL OR version_compare( $db_version, '9.1', '>=') == 1 ) {
 				return 0;
 			}
+		} elseif ( $this->getDatabaseType() == 'mysql' ) {
+			if ( version_compare( $db_version, '5.5.0', '>=') == 1 ) {
+				return 0;
+			}
 		}
-//		elseif ( $this->getDatabaseType() == 'mysql' ) {
-//			if ( version_compare( $db_version, '5.5.0', '>=') == 1 ) {
-//				return 0;
-//			}
-//		}
 
 		Debug::Text('ERROR: Database version failed!', __FILE__, __LINE__, __METHOD__, 10);
 		return 1;
 	}
 
-//	/**
-//	 * @return bool
-//	 */
-//	function checkDatabaseEngine() {
-//		//
-//		// For MySQL only, this checks to make sure InnoDB is enabled!
-//		//
-//		Debug::Text('Checking DatabaseEngine...', __FILE__, __LINE__, __METHOD__, 10);
-//		if ($this->getDatabaseType() != 'mysql' ) {
-//			return TRUE;
-//		}
-//
-//		$db_conn = $this->getDatabaseConnection();
-//		if ( $db_conn == FALSE ) {
-//			Debug::text('No Database Connection.', __FILE__, __LINE__, __METHOD__, 9);
-//			return FALSE;
-//		}
-//
-//		$query = 'show engines';
-//		$storage_engines = $db_conn->getAll($query);
-//		//Debug::Arr($storage_engines, 'Available Storage Engines:', __FILE__, __LINE__, __METHOD__, 9);
-//		if ( is_array($storage_engines) ) {
-//			foreach( $storage_engines as $data ) {
-//				Debug::Text('Engine: '. $data['Engine'] .' Support: '. $data['Support'], __FILE__, __LINE__, __METHOD__, 10);
-//				if ( strtolower($data['Engine']) == 'innodb' AND ( strtolower($data['Support']) == 'yes' OR strtolower($data['Support']) == 'default' )	 ) {
-//					Debug::text('InnoDB is available!', __FILE__, __LINE__, __METHOD__, 9);
-//					return TRUE;
-//				}
-//			}
-//		}
-//
-//		Debug::text('InnoDB is NOT available!', __FILE__, __LINE__, __METHOD__, 9);
-//		return FALSE;
-//	}
+	function checkDatabaseEngine() {
+		//
+		// For MySQL only, this checks to make sure InnoDB is enabled!
+		//
+		Debug::Text('Checking DatabaseEngine...', __FILE__, __LINE__, __METHOD__, 10);
+		if ($this->getDatabaseType() != 'mysql' ) {
+			return TRUE;
+		}
 
-	/**
-	 * @return bool|int
-	 */
+		$db_conn = $this->getDatabaseConnection();
+		if ( $db_conn == FALSE ) {
+			Debug::text('No Database Connection.', __FILE__, __LINE__, __METHOD__, 9);
+			return FALSE;
+		}
+
+		$query = 'show engines';
+		$storage_engines = $db_conn->getAll($query);
+		//Debug::Arr($storage_engines, 'Available Storage Engines:', __FILE__, __LINE__, __METHOD__, 9);
+		if ( is_array($storage_engines) ) {
+			foreach( $storage_engines as $data ) {
+				Debug::Text('Engine: '. $data['Engine'] .' Support: '. $data['Support'], __FILE__, __LINE__, __METHOD__, 10);
+				if ( strtolower($data['Engine']) == 'innodb' AND ( strtolower($data['Support']) == 'yes' OR strtolower($data['Support']) == 'default' )	 ) {
+					Debug::text('InnoDB is available!', __FILE__, __LINE__, __METHOD__, 9);
+					return TRUE;
+				}
+			}
+		}
+
+		Debug::text('InnoDB is NOT available!', __FILE__, __LINE__, __METHOD__, 9);
+		return FALSE;
+	}
+
 	function checkDatabaseSchema() {
 		if ( getTTProductEdition() == TT_PRODUCT_COMMUNITY ) {
 			$db_conn = $this->getDatabaseConnection();
@@ -1385,9 +1147,6 @@ class Install {
 		return 0;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function isSUDOinstalled() {
 		if ( OPERATING_SYSTEM == 'LINUX' ) {
 			exec( 'which sudo', $output, $exit_code );
@@ -1399,16 +1158,21 @@ class Install {
 		return FALSE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function getWebServerUser() {
-		return Misc::getCurrentOSUser();
+		if ( OPERATING_SYSTEM == 'LINUX' ) {
+			if ( function_exists('posix_geteuid') AND function_exists('posix_getpwuid') ) {
+				$user = posix_getpwuid( posix_geteuid() );
+				Debug::text('Webserver running as User: '. $user['name'], __FILE__, __LINE__, __METHOD__, 9);
+
+				return $user['name'];
+			} else {
+				Debug::text('POSIX extension not installed, unable to determine webserver user...', __FILE__, __LINE__, __METHOD__, 9);
+			}
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @return bool|string
-	 */
 	function getScheduleMaintenanceJobsCommand() {
 		$command = FALSE;
 		if ( OPERATING_SYSTEM == 'LINUX' ) {
@@ -1425,9 +1189,6 @@ class Install {
 		return $command;
 	}
 
-	/**
-	 * @return int
-	 */
 	function ScheduleMaintenanceJobs() {
 		$command = $this->getScheduleMaintenanceJobsCommand();
 		if ( $command != '' ) {
@@ -1441,23 +1202,12 @@ class Install {
 		return 1; //Fail so we can display the command to the user instead.
 	}
 
-	/**
-	 * @return string
-	 */
 	function getBaseURL() {
 		return Misc::getURLProtocol() .'://'. Misc::getHostName( TRUE ).Environment::getBaseURL().'install/install.php'; //Check for a specific file, so we can be sure its not incorrect.
 	}
-
-	/**
-	 * @return mixed
-	 */
 	function getRecommendedBaseURL() {
 		return str_replace('install', '', dirname( $_SERVER['SCRIPT_NAME'] ) );
 	}
-
-	/**
-	 * @return int
-	 */
 	function checkBaseURL() {
 		$url = $this->getBaseURL();
 		$headers = @get_headers($url);
@@ -1471,23 +1221,13 @@ class Install {
 		return 0; //Found
 	}
 
-	/**
-	 * @return string
-	 */
 	function getPHPOpenBaseDir() {
 		return ini_get('open_basedir');
 	}
-
-	/**
-	 * @return string
-	 */
 	function getPHPCLIDirectory() {
 		return dirname( $this->getPHPCLI() );
 	}
 
-	/**
-	 * @return int
-	 */
 	function checkPHPOpenBaseDir() {
 		$open_basedir = $this->getPHPOpenBaseDir();
 		Debug::Text('Open BaseDir: '. $open_basedir, __FILE__, __LINE__, __METHOD__, 9);
@@ -1511,9 +1251,6 @@ class Install {
 		return 1;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function getPHPCLI() {
 		if ( isset($this->config_vars['path']['php_cli']) ) {
 			return $this->config_vars['path']['php_cli'];
@@ -1521,10 +1258,6 @@ class Install {
 
 		return FALSE;
 	}
-
-	/**
-	 * @return int
-	 */
 	function checkPHPCLIBinary() {
 		if ( $this->getPHPCLI() != '' ) {
 			//Sometimes the user may mistaken make the PHP CLI the directory, rather than the executeable itself. Make sure we catch that case.
@@ -1536,9 +1269,6 @@ class Install {
 		return 1;
 	}
 
-	/**
-	 * @return int
-	 */
 	function checkDiskSpace() {
 		$free_space = disk_free_space( dirname( __FILE__ ) );
 		$total_space = disk_total_space( dirname( __FILE__ ) );
@@ -1555,23 +1285,16 @@ class Install {
 		return 1;
 	}
 
-	/**
-	 * @return string
-	 */
 	function getPHPCLIRequirementsCommand() {
 		$command = '"'. $this->getPHPCLI() .'" "'. Environment::getBasePath() .'tools'. DIRECTORY_SEPARATOR .'unattended_upgrade.php" --config "'. CONFIG_FILE .'" --requirements_only --web_installer';
 		return $command;
 	}
 	//Only check this if *not* being called from the CLI to prevent infinite loops.
-
-	/**
-	 * @return int
-	 */
 	function checkPHPCLIRequirements() {
 		if ( $this->checkPHPCLIBinary() === 0 ) {
 			$command = $this->getPHPCLIRequirementsCommand();
 			exec( $command, $output, $exit_code );
-			Debug::Arr($output, 'PHP CLI Requirements Command: '. $command .' Exit Code: '. $exit_code .' Output: ', __FILE__, __LINE__, __METHOD__, 10);
+			Debug::Arr($output, 'PHP CLI Requirements Command: '. $command .' Output: ', __FILE__, __LINE__, __METHOD__, 10);
 			if ( $exit_code == 0 ) {
 				return 0;
 			} else {
@@ -1582,9 +1305,6 @@ class Install {
 		return 1;
 	}
 
-	/**
-	 * @return int
-	 */
 	function checkPEAR() {
 		@include_once('PEAR.php');
 
@@ -1595,9 +1315,6 @@ class Install {
 		return 1;
 	}
 
-	/**
-	 * @return int
-	 */
 	function checkPEARHTTP_Download() {
 		include_once('HTTP/Download.php');
 
@@ -1608,9 +1325,6 @@ class Install {
 		return 1;
 	}
 
-	/**
-	 * @return int
-	 */
 	function checkPEARValidate() {
 		include_once('Validate.php');
 
@@ -1621,9 +1335,6 @@ class Install {
 		return 1;
 	}
 
-	/**
-	 * @return int
-	 */
 	function checkPEARValidate_Finance() {
 		include_once('Validate/Finance.php');
 
@@ -1634,9 +1345,6 @@ class Install {
 		return 1;
 	}
 
-	/**
-	 * @return int
-	 */
 	function checkPEARValidate_Finance_CreditCard() {
 		include_once('Validate/Finance/CreditCard.php');
 
@@ -1647,9 +1355,6 @@ class Install {
 		return 1;
 	}
 
-	/**
-	 * @return int
-	 */
 	function checkPEARNET_Curl() {
 		include_once('Net/Curl.php');
 
@@ -1660,9 +1365,6 @@ class Install {
 		return 1;
 	}
 
-	/**
-	 * @return int
-	 */
 	function checkPEARMail() {
 		include_once('Mail.php');
 
@@ -1673,9 +1375,6 @@ class Install {
 		return 1;
 	}
 
-	/**
-	 * @return int
-	 */
 	function checkPEARMail_Mime() {
 		include_once('Mail/mime.php');
 
@@ -1686,9 +1385,6 @@ class Install {
 		return 1;
 	}
 
-	/**
-	 * @return int
-	 */
 	function checkZIP() {
 		if ( class_exists('ZipArchive') ) {
 			return 0;
@@ -1697,9 +1393,6 @@ class Install {
 		return 1;
 	}
 
-	/**
-	 * @return int
-	 */
 	function checkMAIL() {
 		if ( function_exists('mail') ) {
 			return 0;
@@ -1708,9 +1401,6 @@ class Install {
 		return 1;
 	}
 
-	/**
-	 * @return int
-	 */
 	function checkGETTEXT() {
 		if ( function_exists('gettext') ) {
 			return 0;
@@ -1719,9 +1409,6 @@ class Install {
 		return 1;
 	}
 
-	/**
-	 * @return int
-	 */
 	function checkINTL() {
 		//Don't make this a hard requirement in v10 upgrade as its too close to the end of the year.
 		return 0;
@@ -1733,9 +1420,6 @@ class Install {
 //		return 1;
 	}
 
-	/**
-	 * @return int
-	 */
 	function checkBCMATH() {
 		if ( function_exists('bcscale') ) {
 			return 0;
@@ -1744,9 +1428,6 @@ class Install {
 		return 1;
 	}
 
-	/**
-	 * @return int
-	 */
 	function checkMBSTRING() {
 		if ( function_exists('mb_detect_encoding') ) {
 			return 0;
@@ -1756,10 +1437,6 @@ class Install {
 	}
 
 	//No longer required, used pure PHP implemented TTDate::EasterDays() instead.
-
-	/**
-	 * @return int
-	 */
 	function checkCALENDAR() {
 		if ( function_exists('easter_date') ) {
 			return 0;
@@ -1768,9 +1445,6 @@ class Install {
 		return 1;
 	}
 
-	/**
-	 * @return int
-	 */
 	function checkSOAP() {
 		if ( class_exists('SoapServer') ) {
 			return 0;
@@ -1779,20 +1453,14 @@ class Install {
 		return 1;
 	}
 
-	/**
-	 * @return int
-	 */
-	//function checkMCRYPT() {
-	//	if ( function_exists('mcrypt_module_open') ) {
-	//		return 0;
-	//	}
-	//
-	//	return 1;
-	//}
+	function checkMCRYPT() {
+		if ( function_exists('mcrypt_module_open') ) {
+			return 0;
+		}
 
-	/**
-	 * @return int
-	 */
+		return 1;
+	}
+
 	function checkOpenSSL() {
 		//FIXME: Automated installer on OSX/Linux doesnt compile SSL into PHP.
 		if ( function_exists('openssl_encrypt') OR strtoupper( substr(PHP_OS, 0, 3) ) !== 'WIN' ) {
@@ -1802,9 +1470,6 @@ class Install {
 		return 1;
 	}
 
-	/**
-	 * @return int
-	 */
 	function checkGD() {
 		if ( function_exists('imagefontheight') ) {
 			return 0;
@@ -1813,9 +1478,6 @@ class Install {
 		return 1;
 	}
 
-	/**
-	 * @return int
-	 */
 	function checkJSON() {
 		if ( function_exists('json_decode') ) {
 			return 0;
@@ -1825,10 +1487,6 @@ class Install {
 	}
 
 	//Not currently mandatory, but can be useful to provide better SOAP timeouts.
-
-	/**
-	 * @return int
-	 */
 	function checkCURL() {
 		if ( function_exists('curl_exec') ) {
 			return 0;
@@ -1837,9 +1495,6 @@ class Install {
 		return 1;
 	}
 
-	/**
-	 * @return int
-	 */
 	function checkSimpleXML() {
 		if ( class_exists('SimpleXMLElement') ) {
 			return 0;
@@ -1849,9 +1504,6 @@ class Install {
 	}
 
 
-	/**
-	 * @return int
-	 */
 	function checkWritableConfigFile() {
 		if ( is_writable( CONFIG_FILE ) ) {
 			return 0;
@@ -1860,9 +1512,6 @@ class Install {
 		return 1;
 	}
 
-	/**
-	 * @return int
-	 */
 	function checkWritableCacheDirectory() {
 		if ( isset($this->config_vars['cache']['dir']) AND is_dir($this->config_vars['cache']['dir']) AND is_writable($this->config_vars['cache']['dir']) ) {
 			return 0;
@@ -1870,10 +1519,6 @@ class Install {
 
 		return 1;
 	}
-
-	/**
-	 * @return int
-	 */
 	function checkSafeCacheDirectory() {
 		//Make sure the storage path isn't inside an publically accessible directory
 		if ( isset($this->config_vars['cache']['dir']) AND Misc::isSubDirectory( $this->config_vars['cache']['dir'], Environment::getBasePath() ) == FALSE ) {
@@ -1883,17 +1528,10 @@ class Install {
 		return 1;
 	}
 
-	/**
-	 * @param string $exclude_regex_filter
-	 * @return bool
-	 */
-	function cleanCacheDirectory( $exclude_regex_filter = '\.ZIP|\.lock|.state|upgrade_staging' ) {
+	function cleanCacheDirectory( $exclude_regex_filter = '\.ZIP|\.lock|upgrade_staging' ) {
 		return Misc::cleanDir( $this->config_vars['cache']['dir'], TRUE, TRUE, FALSE, $exclude_regex_filter ); //Don't clean UPGRADE.ZIP file and 'upgrade_staging' directory.
 	}
 
-	/**
-	 * @return bool
-	 */
 	function cleanOrphanFiles() {
 		if ( PRODUCTION == TRUE ) {
 			//Load delete file list.
@@ -1927,9 +1565,6 @@ class Install {
 		return TRUE;
 	}
 
-	/**
-	 * @return int
-	 */
 	function checkCleanCacheDirectory() {
 		if ( DEPLOYMENT_ON_DEMAND == FALSE ) {
 			if ( is_dir( $this->config_vars['cache']['dir'] ) ) {
@@ -1937,7 +1572,7 @@ class Install {
 
 				if ( is_array($raw_cache_files) AND count($raw_cache_files) > 0 ) {
 					foreach( $raw_cache_files as $cache_file ) {
-						if ( $cache_file != '.' AND $cache_file != '..' AND stristr( $cache_file, '.state') === FALSE AND stristr( $cache_file, '.lock') === FALSE AND stristr( $cache_file, '.ZIP') === FALSE AND stristr( $cache_file, 'upgrade_staging') === FALSE) { //Ignore UPGRADE.ZIP files.
+						if ( $cache_file != '.' AND $cache_file != '..' AND stristr( $cache_file, '.lock') === FALSE AND stristr( $cache_file, '.ZIP') === FALSE AND stristr( $cache_file, 'upgrade_staging') === FALSE) { //Ignore UPGRADE.ZIP files.
 							return 1;
 						}
 					}
@@ -1948,9 +1583,6 @@ class Install {
 		return 0;
 	}
 
-	/**
-	 * @return int
-	 */
 	function checkWritableStorageDirectory() {
 		if ( isset($this->config_vars['path']['storage']) AND is_dir($this->config_vars['path']['storage']) AND is_writable($this->config_vars['path']['storage']) ) {
 			return 0;
@@ -1958,10 +1590,6 @@ class Install {
 
 		return 1;
 	}
-
-	/**
-	 * @return int
-	 */
 	function checkSafeStorageDirectory() {
 		//Make sure the storage path isn't inside an publically accessible directory
 		if ( isset($this->config_vars['path']['storage']) AND Misc::isSubDirectory( $this->config_vars['path']['storage'], Environment::getBasePath() ) == FALSE ) {
@@ -1971,9 +1599,6 @@ class Install {
 		return 1;
 	}
 
-	/**
-	 * @return int
-	 */
 	function checkWritableLogDirectory() {
 		if ( isset($this->config_vars['path']['log']) AND is_dir($this->config_vars['path']['log']) AND is_writable($this->config_vars['path']['log']) ) {
 			return 0;
@@ -1981,10 +1606,6 @@ class Install {
 
 		return 1;
 	}
-
-	/**
-	 * @return int
-	 */
 	function checkSafeLogDirectory() {
 		//Make sure the storage path isn't inside an publically accessible directory
 		if ( isset($this->config_vars['path']['log']) AND Misc::isSubDirectory( $this->config_vars['path']['log'], Environment::getBasePath() ) == FALSE ) {
@@ -1994,42 +1615,6 @@ class Install {
 		return 1;
 	}
 
-	/**
-	 * @return array
-	 */
-	function getCriticalFunctionList() {
-		$critical_functions = array( 'system', 'exec', 'passthru' , 'shell_exec', 'curl', 'curl_exec', 'curl_multi_exec', 'parse_ini_file', 'unlink', 'rename', 'eval' ); //'pcntl_alarm'
-		return $critical_functions;
-	}
-
-	/**
-	 * @return string
-	 */
-	function getCriticalDisabledFunctionList() {
-		return implode(',', $this->critical_disabled_functions );
-	}
-
-	/**
-	 * Check to see if they have disabled functions in there PHP.ini file.
-	 * This can cause all sorts of strange failures, but most often they have system(), exec() and other OS/file system related functions disabled that completely breaks things.
-	 * @return int
-	 */
-	function checkPHPDisabledFunctions() {
-		$critical_functions = $this->getCriticalFunctionList();
-		$disabled_functions = explode(',', ini_get('disable_functions') );
-
-		$this->critical_disabled_functions = array_intersect( $critical_functions, $disabled_functions );
-		if ( count($this->critical_disabled_functions) == 0 ) {
-			return 0;
-		}
-
-		Debug::Arr($this->critical_disabled_functions, 'Disabled functions that must be enabled: ', __FILE__, __LINE__, __METHOD__, 10);
-		return 1;
-	}
-
-	/**
-	 * @return int
-	 */
 	function checkPHPSafeMode() {
 		if ( ini_get('safe_mode') != '1' ) {
 			return 0;
@@ -2038,9 +1623,6 @@ class Install {
 		return 1;
 	}
 
-	/**
-	 * @return int
-	 */
 	function checkPHPAllowURLFopen() {
 		if ( ini_get('allow_url_fopen') == '1' ) {
 			return 0;
@@ -2049,9 +1631,6 @@ class Install {
 		return 1;
 	}
 
-	/**
-	 * @return int
-	 */
 	function checkPHPMemoryLimit() {
 		//If changing the minimum memory limit, update Global.inc.php as well, because it always tries to force the memory limit to this value.
 		if ( $this->getMemoryLimit() == NULL OR $this->getMemoryLimit() >= (512 * 1000 * 1000) ) { //512Mbytes - Use * 1000 rather than * 1024 so its easier to determine the limit in Global.inc.php and increase it.
@@ -2061,9 +1640,6 @@ class Install {
 		return 1;
 	}
 
-	/**
-	 * @return int
-	 */
 	function checkPHPMagicQuotesGPC() {
 		if ( get_magic_quotes_gpc() == 1 ) {
 			return 1;
@@ -2072,17 +1648,11 @@ class Install {
 		return 0;
 	}
 
-	/**
-	 * @return string
-	 */
 	function getCurrentTimeTrexVersion() {
 		//return '1.2.1';
 		return APPLICATION_VERSION;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function getLatestTimeTrexVersion() {
 		if ( $this->checkSOAP() == 0 ) {
 			$ttsc = new TimeTrexSoapClient();
@@ -2092,9 +1662,6 @@ class Install {
 		return FALSE;
 	}
 
-	/**
-	 * @return int
-	 */
 	function checkTimeTrexVersion() {
 		$current_version = $this->getCurrentTimeTrexVersion();
 		$latest_version = $this->getLatestTimeTrexVersion();
@@ -2108,11 +1675,6 @@ class Install {
 		return 2;
 	}
 
-	/**
-	 * @param bool $post_install_requirements_only
-	 * @param bool $exclude_check
-	 * @return int
-	 */
 	function checkAllRequirements( $post_install_requirements_only = FALSE, $exclude_check = FALSE ) {
 		// Return
 		//
@@ -2182,14 +1744,13 @@ class Install {
 		}
 
 		$retarr[$this->checkPHPSafeMode()]++;
-		$retarr[$this->checkPHPDisabledFunctions()]++;
 		$retarr[$this->checkPHPAllowURLFopen()]++;
 		$retarr[$this->checkPHPMemoryLimit()]++;
 		$retarr[$this->checkPHPMagicQuotesGPC()]++;
 
 		if ( $this->getTTProductEdition() >= TT_PRODUCT_CORPORATE ) {
 			$retarr[$this->checkPEARValidate()]++;
-			//$retarr[$this->checkMCRYPT()]++;
+			$retarr[$this->checkMCRYPT()]++;
 		}
 
 		//Debug::Arr($retarr, 'RetArr: ', __FILE__, __LINE__, __METHOD__, 9);
@@ -2203,11 +1764,6 @@ class Install {
 		}
 	}
 
-	/**
-	 * @param bool $post_install_requirements_only
-	 * @param bool $exclude_check
-	 * @return array|bool
-	 */
 	function getFailedRequirements( $post_install_requirements_only = FALSE, $exclude_check = FALSE ) {
 		$fail_all = FALSE;
 
@@ -2351,9 +1907,6 @@ class Install {
 		if ( $fail_all == TRUE OR $this->checkPHPSafeMode() != 0 ) {
 			$retarr[] = 'PHPSafeMode';
 		}
-		if ( $fail_all == TRUE OR $this->checkPHPDisabledFunctions() != 0 ) {
-			$retarr[] = 'PHPDisabledFunctions';
-		}
 		if ( $fail_all == TRUE OR $this->checkPHPAllowURLFopen() != 0 ) {
 			$retarr[] = 'PHPAllowURLFopen';
 		}
@@ -2369,9 +1922,9 @@ class Install {
 				$retarr[] = 'PEARVal';
 			}
 
-			//if ( $fail_all == TRUE OR $this->checkMCRYPT() != 0 ) {
-			//	$retarr[] = 'MCRYPT';
-			//}
+			if ( $fail_all == TRUE OR $this->checkMCRYPT() != 0 ) {
+				$retarr[] = 'MCRYPT';
+			}
 		}
 
 		if ( isset($retarr) ) {
@@ -2380,96 +1933,5 @@ class Install {
 
 		return FALSE;
 	}
-
-	/**
-	 * Used by InstallSchema_1100*
-	 * @param $matches
-	 * @return bool|int|string
-	 */
-	function regexConvertToUUIDNoHash( $matches ) {
-		return $this->regexConvertToUUID($matches, FALSE);
-	}
-	/**
-	 * @param $matches
-	 * @return bool|int|string
-	 */
-	function regexConvertToUUID( $matches, $include_hash = TRUE ) {
-		$id = '';
-		if ( isset( $matches[3] ) ) {
-			if ( $include_hash == TRUE ) {
-				$id = '#';
-			}
-			$id .= $matches[1] .':'. TTUUID::convertIntToUUID( $matches[3] );
-			if ( isset( $matches[4] ) ) {
-				$id .= $matches[4];
-			}
-			if ( $include_hash == TRUE ) {
-				$id .= '#';
-			}
-		} else {
-			$id = $matches[0];
-		}
-		return $id;
-	}
-
-	/**
-	 * Used by InstallSchema_1100*
-	 * takes a listfactory result set as first argument.
-	 * @param $array
-	 * @return array
-	 */
-	function convertArrayElementsToUUID( $array ) {
-		if ( !is_array($array) ) {
-			return $array;
-		}
-
-		$recombined_array = array();
-		foreach( $array as $key => $item ) {
-			if( is_numeric( $item ) ) {
-				$recombined_array[$key] = TTUUID::convertIntToUUID( $item );
-			} elseif ( is_array( $item ) ) {
-				$recombined_array[$key] = $this->convertArrayElementsToUUID( $item );
-			} else {
-				$recombined_array[$key] = $item;
-			}
-		}
-
-		return $recombined_array;
-	}
-
-	function processColumns($columns_data) {
-		$retval = array();
-		if ( is_array( $columns_data ) ) {
-			foreach ( $columns_data as $key => $value ) {
-				$pattern = array('/^(\w+)(\-)([0-9]{1,10})(_\w+|)$/', '/^(PA|PR|PU|PY)()(\d+)$/','/^(custom_column)()(\d+)$/');
-
-				$new_key = preg_replace_callback( $pattern, array($this, 'regexConvertToUUIDNoHash'), trim( $key ) );
-				$new_value = preg_replace_callback( $pattern, array($this, 'regexConvertToUUIDNoHash'), $value );
-				if ( $new_key !== FALSE AND $new_value !== FALSE ) {
-					$retval[$new_key] = $new_value;
-				} elseif( $new_key !== FALSE AND $new_value == FALSE ) {
-					$retval[$key] = $value;
-				} elseif( $new_key == FALSE AND $new_value !== FALSE ) {
-					$retval[$key] = $new_value;
-				} else {
-					$retval[$key] = $value;
-				}
-
-			}
-		}
-		return $retval;
-	}
-
-//	function convertComboColumns( $matches ) {
-//		if ( (count( $matches ) === 3 OR count( $matches ) === 4) AND is_numeric( $matches[2] ) ) {
-//
-//			$retval =  $matches[1].':'.TTUUID::convertIntToUUID( (int)$matches[2] );
-//			if ( isset($matches[3]) ) {
-//				$retval .= $matches[3];
-//			}
-//			return $retval;
-//		}
-//		return FALSE;
-//	}
 }
 ?>

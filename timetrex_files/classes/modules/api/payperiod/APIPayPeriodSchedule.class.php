@@ -1,7 +1,7 @@
 <?php
 /*********************************************************************************
  * TimeTrex is a Workforce Management program developed by
- * TimeTrex Software Inc. Copyright (C) 2003 - 2018 TimeTrex Software Inc.
+ * TimeTrex Software Inc. Copyright (C) 2003 - 2017 TimeTrex Software Inc.
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Affero General Public License version 3 as published by
@@ -41,9 +41,6 @@
 class APIPayPeriodSchedule extends APIFactory {
 	protected $main_class = 'PayPeriodScheduleFactory';
 
-	/**
-	 * APIPayPeriodSchedule constructor.
-	 */
 	public function __construct() {
 		parent::__construct(); //Make sure parent constructor is always called.
 
@@ -52,9 +49,9 @@ class APIPayPeriodSchedule extends APIFactory {
 
 	/**
 	 * Get options for dropdown boxes.
-	 * @param bool|string $name Name of options to return, ie: 'columns', 'type', 'status'
+	 * @param string $name Name of options to return, ie: 'columns', 'type', 'status'
 	 * @param mixed $parent Parent name/ID of options to return if data is in hierarchical format. (ie: Province)
-	 * @return bool|array
+	 * @return array
 	 */
 	function getOptions( $name = FALSE, $parent = NULL ) {
 		if ( $name == 'columns'
@@ -97,7 +94,6 @@ class APIPayPeriodSchedule extends APIFactory {
 	/**
 	 * Get user data for one or more users.
 	 * @param array $data filter data
-	 * @param bool $disable_paging
 	 * @return array
 	 */
 	function getPayPeriodSchedule( $data = NULL, $disable_paging = FALSE ) {
@@ -113,7 +109,7 @@ class APIPayPeriodSchedule extends APIFactory {
 
 		//Allow getting users from other companies, so we can change admin contacts when using the master company.
 		if ( isset($data['filter_data']['company_id'])
-				AND TTUUID::isUUID( $data['filter_data']['company_id'] ) AND $data['filter_data']['company_id'] != TTUUID::getZeroID() AND $data['filter_data']['company_id'] != TTUUID::getNotExistID()
+				AND $data['filter_data']['company_id'] > 0
 				AND ( $this->getPermissionObject()->Check('company', 'enabled') AND $this->getPermissionObject()->Check('company', 'view') ) ) {
 			$company_id = $data['filter_data']['company_id'];
 		} else {
@@ -139,9 +135,8 @@ class APIPayPeriodSchedule extends APIFactory {
 
 	/**
 	 * Export data to csv
-	 * @param string $format file format (csv)
 	 * @param array $data filter data
-	 * @param bool $disable_paging
+	 * @param string $format file format (csv)
 	 * @return array
 	 */
 	function exportPayPeriodSchedule( $format = 'csv', $data = NULL, $disable_paging = TRUE) {
@@ -170,9 +165,7 @@ class APIPayPeriodSchedule extends APIFactory {
 	/**
 	 * Set user data for one or more users.
 	 * @param array $data user data
-	 * @param bool $validate_only
-	 * @param bool $ignore_warning
-	 * @return array|bool
+	 * @return array
 	 */
 	function setPayPeriodSchedule( $data, $validate_only = FALSE, $ignore_warning = TRUE ) {
 		$validate_only = (bool)$validate_only;
@@ -195,18 +188,18 @@ class APIPayPeriodSchedule extends APIFactory {
 			$permission_children_ids = $this->getPermissionChildren();
 		}
 
-		list( $data, $total_records ) = $this->convertToMultipleRecords( $data );
+		extract( $this->convertToMultipleRecords($data) );
 		Debug::Text('Received data for: '. $total_records .' PayPeriodSchedules', __FILE__, __LINE__, __METHOD__, 10);
 		Debug::Arr($data, 'Data: ', __FILE__, __LINE__, __METHOD__, 10);
 
 		$validator_stats = array('total_records' => $total_records, 'valid_records' => 0 );
-		$validator = $save_result = $key = FALSE;
+		$validator = $save_result = FALSE;
 		if ( is_array($data) AND $total_records > 0 ) {
 			foreach( $data as $key => $row ) {
 				$primary_validator = new Validator();
 				$lf = TTnew( 'PayPeriodScheduleListFactory' );
 				$lf->StartTransaction();
-				if ( isset($row['id']) AND $row['id'] != '' ) {
+				if ( isset($row['id']) AND $row['id'] > 0 ) {
 					//Modifying existing object.
 					//Get user object, so we can only modify just changed data for specific records if needed.
 					$lf->getByIdAndCompanyId( $row['id'], $this->getCurrentCompanyObject()->getId() );
@@ -222,7 +215,7 @@ class APIPayPeriodSchedule extends APIFactory {
 									OR ( $this->getPermissionObject()->Check('pay_period_schedule', 'edit_child') AND $this->getPermissionObject()->isChild( $lf->getCurrent()->getId(), $permission_children_ids ) === TRUE )
 								) ) {
 
-							Debug::Text('Row Exists, getting current data for ID: '. $row['id'], __FILE__, __LINE__, __METHOD__, 10);
+							Debug::Text('Row Exists, getting current data: ', $row['id'], __FILE__, __LINE__, __METHOD__, 10);
 							$lf = $lf->getCurrent();
 							$row = array_merge( $lf->getObjectAsArray(), $row );
 						} else {
@@ -290,10 +283,10 @@ class APIPayPeriodSchedule extends APIFactory {
 	/**
 	 * Delete one or more users.
 	 * @param array $data user data
-	 * @return array|bool
+	 * @return array
 	 */
 	function deletePayPeriodSchedule( $data ) {
-		if ( !is_array($data) ) {
+		if ( is_numeric($data) ) {
 			$data = array($data);
 		}
 
@@ -313,14 +306,14 @@ class APIPayPeriodSchedule extends APIFactory {
 		Debug::Arr($data, 'Data: ', __FILE__, __LINE__, __METHOD__, 10);
 
 		$total_records = count($data);
-		$validator = $save_result = $key = FALSE;
+		$validator = $save_result = FALSE;
 		$validator_stats = array('total_records' => $total_records, 'valid_records' => 0 );
 		if ( is_array($data) AND $total_records > 0 ) {
 			foreach( $data as $key => $id ) {
 				$primary_validator = new Validator();
 				$lf = TTnew( 'PayPeriodScheduleListFactory' );
 				$lf->StartTransaction();
-				if ( $id != '' ) {
+				if ( is_numeric($id) ) {
 					//Modifying existing object.
 					//Get user object, so we can only modify just changed data for specific records if needed.
 					$lf->getByIdAndCompanyId( $id, $this->getCurrentCompanyObject()->getId() );
@@ -331,7 +324,7 @@ class APIPayPeriodSchedule extends APIFactory {
 								OR ( $this->getPermissionObject()->Check('pay_period_schedule', 'delete_own') AND $this->getPermissionObject()->isOwner( $lf->getCurrent()->getCreatedBy(), $lf->getCurrent()->getID() ) === TRUE )
 								OR ( $this->getPermissionObject()->Check('pay_period_schedule', 'delete_child') AND $this->getPermissionObject()->isChild( $lf->getCurrent()->getId(), $permission_children_ids ) === TRUE )) {
 
-							Debug::Text('Record Exists, deleting record ID: '. $id, __FILE__, __LINE__, __METHOD__, 10);
+							Debug::Text('Record Exists, deleting record: ', $id, __FILE__, __LINE__, __METHOD__, 10);
 							$lf = $lf->getCurrent();
 						} else {
 							$primary_validator->isTrue( 'permission', FALSE, TTi18n::gettext('Delete permission denied') );
@@ -387,11 +380,6 @@ class APIPayPeriodSchedule extends APIFactory {
 		return $this->returnHandler( FALSE );
 	}
 
-	/**
-	 * @param int $type_id
-	 * @param int $example_dates EPOCH
-	 * @return array|bool
-	 */
 	function detectPayPeriodScheduleSettings( $type_id, $example_dates ) {
 		$ppsf = TTnew('PayPeriodScheduleFactory');
 
@@ -413,11 +401,6 @@ class APIPayPeriodSchedule extends APIFactory {
 		return $this->returnHandler( FALSE ); //return true so Flex doesn't display an error message.
 	}
 
-	/**
-	 * @param int $type_id
-	 * @param int $start_date EPOCH
-	 * @return array|bool
-	 */
 	function detectPayPeriodScheduleDates( $type_id, $start_date ) {
 		$ppsf = TTnew('PayPeriodScheduleFactory');
 		$retval = $ppsf->detectPayPeriodScheduleDates( $type_id, $start_date );

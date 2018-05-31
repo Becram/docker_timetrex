@@ -1,11 +1,9 @@
 SchedulePolicyViewController = BaseViewController.extend( {
 	el: '#schedule_policy_view_container',
 
-	_required_files: ['APISchedulePolicy', 'APIOvertimePolicy', 'APIAbsencePolicy', 'APIMealPolicy', 'APIBreakPolicy', 'APIRegularTimePolicy', 'APIPremiumPolicy'],
-
 	over_time_policy_api: null,
-	init: function( options ) {
-		//this._super('initialize', options );
+	initialize: function( options ) {
+		this._super( 'initialize', options );
 		this.edit_view_tpl = 'SchedulePolicyEditView.html';
 		this.permission_id = 'schedule_policy';
 		this.viewId = 'SchedulePolicy';
@@ -82,7 +80,7 @@ SchedulePolicyViewController = BaseViewController.extend( {
 			custom_first_label: $.i18n._( '-- No Meal --' ),
 			addition_source_function: this.onMealOrBreakSourceCreate,
 			added_items: [
-				{value: TTUUID.zero_id, label: $.i18n._( '-- Defined By Policy Group --' )}
+				{value: 0, label: $.i18n._( '-- Defined By Policy Group --' )}
 			]
 		} );
 		this.addEditFieldToColumn( $.i18n._( 'Meal Policy' ), form_item_input, tab_schedule_policy_column1 );
@@ -99,7 +97,7 @@ SchedulePolicyViewController = BaseViewController.extend( {
 			custom_first_label: '-- ' + $.i18n._( 'No Break' ) + ' --',
 			addition_source_function: this.onMealOrBreakSourceCreate,
 			added_items: [
-				{value: TTUUID.zero_id, label: '-- ' + $.i18n._( 'Defined By Policy Group' ) + ' --'}
+				{value: 0, label: '-- ' + $.i18n._( 'Defined By Policy Group' ) + ' --'}
 			]
 		} );
 		this.addEditFieldToColumn( $.i18n._( 'Break Policy' ), form_item_input, tab_schedule_policy_column1 );
@@ -261,7 +259,7 @@ SchedulePolicyViewController = BaseViewController.extend( {
 		var first_item = {};
 		$.each( display_columns, function( index, content ) {
 
-			first_item.id = TTUUID.zero_id;
+			first_item.id = 0;
 			first_item[content.name] = $.i18n._( '-- Defined By Policy Group --' );
 
 			return false;

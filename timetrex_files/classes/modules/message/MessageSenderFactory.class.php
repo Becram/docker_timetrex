@@ -1,7 +1,7 @@
 <?php
 /*********************************************************************************
  * TimeTrex is a Workforce Management program developed by
- * TimeTrex Software Inc. Copyright (C) 2003 - 2018 TimeTrex Software Inc.
+ * TimeTrex Software Inc. Copyright (C) 2003 - 2017 TimeTrex Software Inc.
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Affero General Public License version 3 as published by
@@ -43,92 +43,80 @@ class MessageSenderFactory extends Factory {
 	protected $pk_sequence_name = 'message_sender_id_seq'; //PK Sequence name
 	protected $obj_handler = NULL;
 
-	/**
-	 * @return mixed
-	 */
 	function getUser() {
-		return $this->getGenericDataValue( 'user_id' );
+		return (int)$this->data['user_id'];
 	}
+	function setUser($id) {
+		$id = trim($id);
 
-	/**
-	 * @param string $value UUID
-	 * @return bool
-	 */
-	function setUser( $value) {
-		$value = TTUUID::castUUID( $value );
-		return $this->setGenericDataValue( 'user_id', $value );
-	}
+		$ulf = TTnew( 'UserListFactory' );
 
-	/**
-	 * @return bool|mixed
-	 */
-	function getParent() {
-		return $this->getGenericDataValue( 'parent_id' );
-	}
-
-	/**
-	 * @param string $value UUID
-	 * @return bool
-	 */
-	function setParent( $value) {
-		$value = TTUUID::castUUID( $value );
-		return $this->setGenericDataValue( 'parent_id', $value );
-	}
-
-	/**
-	 * @return bool|mixed
-	 */
-	function getMessageControl() {
-		return $this->getGenericDataValue( 'message_control_id' );
-	}
-
-	/**
-	 * @param string $value UUID
-	 * @return bool
-	 */
-	function setMessageControl( $value) {
-		$value = TTUUID::castUUID( $value );
-		return $this->setGenericDataValue( 'message_control_id', $value );
-	}
-	/**
-	 * @return bool
-	 */
-	function Validate() {
-		//
-		// BELOW: Validation code moved from set*() functions.
-		//
-		// Employee
-		if ( $this->getUser() != TTUUID::getZeroID() ) {
-			$ulf = TTnew( 'UserListFactory' );
-			$this->Validator->isResultSetWithRows(	'user',
-															$ulf->getByID($this->getUser()),
+		if ( $id == 0
+				OR $this->Validator->isResultSetWithRows(	'user',
+															$ulf->getByID($id),
 															TTi18n::gettext('Invalid Employee')
-														);
-		}
-		// Parent
-		if ( $this->getParent() != TTUUID::getZeroID() ) {
-			$mslf = TTnew( 'MessageSenderListFactory' );
-			$this->Validator->isResultSetWithRows(	'parent',
-															$mslf->getByID($this->getParent()),
-															TTi18n::gettext('Parent is invalid')
-														);
-		}
-		// Message Control
-		$mclf = TTnew( 'MessageControlListFactory' );
-		$this->Validator->isResultSetWithRows(	'message_control_id',
-														$mclf->getByID($this->getMessageControl()),
-														TTi18n::gettext('Message Control is invalid')
-													);
+															) ) {
+			$this->data['user_id'] = $id;
 
-		//
-		// ABOVE: Validation code moved from set*() functions.
-		//
-		return TRUE;
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @return bool
-	 */
+	function getParent() {
+		if ( isset($this->data['parent_id']) ) {
+			return (int)$this->data['parent_id'];
+		}
+
+		return FALSE;
+	}
+	function setParent($id) {
+		$id = trim($id);
+
+		if ( empty($id) ) {
+			$id = 0;
+		}
+
+		$mslf = TTnew( 'MessageSenderListFactory' );
+
+		if ( $id == 0
+				OR $this->Validator->isResultSetWithRows(	'parent',
+															$mslf->getByID($id),
+															TTi18n::gettext('Parent is invalid')
+															) ) {
+			$this->data['parent_id'] = $id;
+
+			return TRUE;
+		}
+
+		return FALSE;
+	}
+
+	function getMessageControl() {
+		if ( isset($this->data['message_control_id']) ) {
+			return (int)$this->data['message_control_id'];
+		}
+
+		return FALSE;
+	}
+	function setMessageControl($id) {
+		$id = trim($id);
+
+		$mclf = TTnew( 'MessageControlListFactory' );
+
+		if ( $this->Validator->isResultSetWithRows(	'message_control_id',
+													$mclf->getByID($id),
+													TTi18n::gettext('Message Control is invalid')
+													) ) {
+			$this->data['message_control_id'] = $id;
+
+			return TRUE;
+		}
+
+		return FALSE;
+	}
+
 	function postSave() {
 		return TRUE;
 	}

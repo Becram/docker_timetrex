@@ -1,7 +1,7 @@
 <?php
 /*********************************************************************************
  * TimeTrex is a Workforce Management program developed by
- * TimeTrex Software Inc. Copyright (C) 2003 - 2018 TimeTrex Software Inc.
+ * TimeTrex Software Inc. Copyright (C) 2003 - 2017 TimeTrex Software Inc.
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Affero General Public License version 3 as published by
@@ -70,14 +70,8 @@ if ( !isset($config_vars['other']['disable_backup'])
 
 				$filepath = $backup_dir . DIRECTORY_SEPARATOR . $file;
 				if ( !is_dir( $filepath ) ) {
-					//Be more strict with regex to avoid: PHP ERROR - WARNING(2): filemtime(): stat failed for C:\TimeTrex\timetrex\maint\..\..\timetrex_database_???.sql File: C:\TimeTrex\timetrex\maint\MiscDaily.php Line: 74
-					if ( preg_match( '/timetrex_database_[A-Za-z0-9\-]+\.sql/i', $file) == 1 ) {
-						$file_mtime = @filemtime($filepath);
-						if ( $file_mtime !== FALSE ) {
-							$backup_history_files[$file_mtime] = $filepath;
-						} else {
-							Debug::Text('ERROR: Unable to get filemtime on: '. $filepath, __FILE__, __LINE__, __METHOD__, 10);
-						}
+					if ( preg_match( '/timetrex_database.*\.sql/i', $file) == 1 ) {
+						$backup_history_files[filemtime($filepath)] = $filepath;
 					}
 				}
 			}
@@ -88,9 +82,7 @@ if ( !isset($config_vars['other']['disable_backup'])
 			reset($backup_history_files);
 			$delete_backup_file = current($backup_history_files);
 			Debug::Text('Deleting oldest backup: '. $delete_backup_file .' Of Total: '. count($backup_history_files), __FILE__, __LINE__, __METHOD__, 10);
-			if ( @unlink( $delete_backup_file ) == FALSE ) { //PHP ERROR - WARNING(2): unlink(C:\TimeTrex\timetrex\maint\..\..\timetrex_database_20160322.sql): Permission denied File: C:\TimeTrex\timetrex\maint\MiscDaily.php Line: 85
-				Debug::Text('ERROR: Unable to delete backup file, possible permission denied error?', __FILE__, __LINE__, __METHOD__, 10);
-			}
+			unlink( $delete_backup_file );
 			unset($delete_backup_file);
 		}
 	}
@@ -107,21 +99,21 @@ if ( !isset($config_vars['other']['disable_log_rotate'])
 								'recurse' => FALSE,
 								'file' => 'timetrex.log',
 								'frequency' => 'DAILY',
-								'history' => 10 ); //Keep more than a weeks worth, so we can better diagnose maintenance jobs that just run once per week.
+								'history' => 7 );
 
 	$log_rotate_config[] = array(
 								'directory' => $config_vars['path']['log'] . DIRECTORY_SEPARATOR . 'client',
 								'recurse' => TRUE,
 								'file' => '*',
 								'frequency' => 'DAILY',
-								'history' => 10 );
+								'history' => 7 );
 
 	$log_rotate_config[] = array(
 								'directory' => $config_vars['path']['log'] . DIRECTORY_SEPARATOR . 'time_clock',
 								'recurse' => TRUE,
 								'file' => '*',
 								'frequency' => 'DAILY',
-								'history' => 10 );
+								'history' => 7 );
 
 	$lr = new LogRotate( $log_rotate_config );
 	$lr->Rotate();

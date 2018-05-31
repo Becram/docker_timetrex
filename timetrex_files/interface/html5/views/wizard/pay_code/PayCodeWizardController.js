@@ -2,8 +2,8 @@ PayCodeWizardController = BaseWizardController.extend( {
 
 	el: '.wizard',
 
-	init: function( options ) {
-		//this._super('initialize', options );
+	initialize: function( options ) {
+		this._super( 'initialize', options );
 
 		this.title = $.i18n._( 'Migrate Pay Codes' );
 		this.steps = 2;

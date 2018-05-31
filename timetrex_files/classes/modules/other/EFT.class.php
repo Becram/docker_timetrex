@@ -1,7 +1,7 @@
 <?php
 /*********************************************************************************
  * TimeTrex is a Workforce Management program developed by
- * TimeTrex Software Inc. Copyright (C) 2003 - 2018 TimeTrex Software Inc.
+ * TimeTrex Software Inc. Copyright (C) 2003 - 2017 TimeTrex Software Inc.
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Affero General Public License version 3 as published by
@@ -94,16 +94,11 @@ class EFT {
 	var $line_ending = "\r\n";
 
 	var $file_prefix_data = NULL; //Leading data in the file, primarily for RBC routing lines.
-	var $file_postfix_data = NULL;
 	var $header_data = NULL;
 	var $data = NULL;
 
 	var $compiled_data = NULL;
 
-	/**
-	 * EFT constructor.
-	 * @param null $options
-	 */
 	function __construct( $options = NULL ) {
 		Debug::Text(' Contruct... ', __FILE__, __LINE__, __METHOD__, 10);
 
@@ -112,20 +107,12 @@ class EFT {
 		return TRUE;
 	}
 
-	/**
-	 * @param $value
-	 * @return mixed
-	 */
 	function removeDecimal( $value ) {
 		$retval = str_replace('.', '', number_format( $value, 2, '.', '') );
 
 		return $retval;
 	}
 
-	/**
-	 * @param int $epoch EPOCH
-	 * @return string
-	 */
 	function toJulian( $epoch ) {
 
 		$year = str_pad( date('y', $epoch), 3, 0, STR_PAD_LEFT);
@@ -140,10 +127,6 @@ class EFT {
 		return $retval;
 	}
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
 	function isAlphaNumeric( $value ) {
 		/*
 		//if ( preg_match('/^[-0-9A-Z\ ]+$/', $value) ) {
@@ -157,10 +140,6 @@ class EFT {
 		return TRUE;
 	}
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
 	function isNumeric( $value ) {
 		if ( preg_match('/^[-0-9]+$/', $value) ) {
 			return TRUE;
@@ -169,10 +148,6 @@ class EFT {
 		return FALSE;
 	}
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
 	function isFloat( $value ) {
 		if ( preg_match('/^[-0-9\.]+$/', $value) ) {
 			return TRUE;
@@ -181,9 +156,6 @@ class EFT {
 		return FALSE;
 	}
 
-	/**
-	 * @return bool|null
-	 */
 	function getFilePrefixData() {
 		if ( isset($this->file_prefix_data) ) {
 			return $this->file_prefix_data;
@@ -191,41 +163,12 @@ class EFT {
 
 		return FALSE;
 	}
-
-	/**
-	 * @param $data
-	 * @return bool
-	 */
 	function setFilePrefixData( $data ) {
 		$this->file_prefix_data = $data;
 
 		return TRUE;
 	}
 
-	/**
-	 * @return bool|null
-	 */
-	function getFilePostfixData() {
-		if ( isset($this->file_postfix_data) ) {
-			return $this->file_postfix_data;
-		}
-
-		return FALSE;
-	}
-
-	/**
-	 * @param $data
-	 * @return bool
-	 */
-	function setFilePostfixData( $data ) {
-		$this->file_postfix_data = $data;
-
-		return TRUE;
-	}
-
-	/**
-	 * @return bool|null
-	 */
 	function getFileFormat() {
 		if ( isset($this->file_format) ) {
 			return $this->file_format;
@@ -233,31 +176,18 @@ class EFT {
 
 		return FALSE;
 	}
-
-	/**
-	 * @param $format
-	 * @return bool
-	 */
-	function setFileFormat( $format) {
+	function setFileFormat($format) {
 		$this->file_format = $format;
 
 		return TRUE;
 	}
 
-	/**
-	 * @return mixed
-	 */
 	function getBusinessNumber() {
 		if ( isset($this->header_data['business_number']) ) {
 			return $this->header_data['business_number'];
 		}
 	}
-
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setBusinessNumber( $value) {
+	function setBusinessNumber($value) {
 		if ( $this->isAlphaNumeric( $value ) AND strlen( $value ) <= 10 ) {
 			$this->header_data['business_number'] = $value;
 
@@ -267,20 +197,12 @@ class EFT {
 		return FALSE;
 	}
 
-	/**
-	 * @return mixed
-	 */
 	function getOriginatorID() {
 		if ( isset($this->header_data['originator_id']) ) {
 			return $this->header_data['originator_id'];
 		}
 	}
-
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setOriginatorID( $value) {
+	function setOriginatorID($value) {
 		$value = trim($value);
 		if ( $this->isAlphaNumeric( $value ) AND strlen( $value ) <= 10 ) {
 			$this->header_data['originator_id'] = $value;
@@ -291,20 +213,12 @@ class EFT {
 		return FALSE;
 	}
 
-	/**
-	 * @return mixed
-	 */
 	function getOriginatorShortName() {
 		if ( isset($this->header_data['originator_short_name']) ) {
 			return $this->header_data['originator_short_name'];
 		}
 	}
-
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setOriginatorShortName( $value) {
+	function setOriginatorShortName($value) {
 		$value = trim($value);
 		if ( $this->isAlphaNumeric( $value ) AND strlen( $value ) <= 26 ) {
 			$this->header_data['originator_short_name'] = $value;
@@ -315,20 +229,12 @@ class EFT {
 		return FALSE;
 	}
 
-	/**
-	 * @return mixed
-	 */
 	function getFileCreationNumber() {
 		if ( isset($this->header_data['file_creation_number']) ) {
 			return $this->header_data['file_creation_number'];
 		}
 	}
-
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setFileCreationNumber( $value) {
+	function setFileCreationNumber($value) {
 		if ( $this->isNumeric( $value ) AND strlen( $value ) <= 4 ) {
 			$this->header_data['file_creation_number'] = $value;
 
@@ -338,20 +244,12 @@ class EFT {
 		return FALSE;
 	}
 
-	/**
-	 * @return mixed
-	 */
 	function getInitialEntryNumber() {
 		if ( isset($this->header_data['initial_entry_number']) ) {
 			return $this->header_data['initial_entry_number'];
 		}
 	}
-
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setInitialEntryNumber( $value) {
+	function setInitialEntryNumber($value) {
 		if ( $this->isNumeric( $value ) AND strlen( $value ) <= 15 ) {
 			$this->header_data['initial_entry_number'] = $value;
 
@@ -361,20 +259,12 @@ class EFT {
 		return FALSE;
 	}
 
-	/**
-	 * @return mixed
-	 */
 	function getFileCreationDate() {
 		if ( isset($this->header_data['file_creation_date']) ) {
 			return $this->header_data['file_creation_date'];
 		}
 	}
-
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setFileCreationDate( $value) {
+	function setFileCreationDate($value) {
 		if ( $value != '' ) {
 			$this->header_data['file_creation_date'] = $value;
 
@@ -384,20 +274,12 @@ class EFT {
 		return FALSE;
 	}
 
-	/**
-	 * @return mixed
-	 */
 	function getDataCenter() {
 		if ( isset($this->header_data['data_center']) ) {
 			return $this->header_data['data_center'];
 		}
 	}
-
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setDataCenter( $value) {
+	function setDataCenter($value) {
 		if ( $this->isNumeric( $value ) AND strlen( $value ) <= 10 ) {
 			$this->header_data['data_center'] = $value;
 
@@ -406,21 +288,12 @@ class EFT {
 
 		return FALSE;
 	}
-
-	/**
-	 * @return mixed
-	 */
 	function getDataCenterName() {
 		if ( isset($this->header_data['data_center_name']) ) {
 			return $this->header_data['data_center_name'];
 		}
 	}
-
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setDataCenterName( $value) {
+	function setDataCenterName($value) {
 		$value = trim($value);
 		if ( $this->isAlphaNumeric( $value ) AND strlen( $value ) <= 23 ) {
 			$this->header_data['data_center_name'] = $value;
@@ -431,36 +304,9 @@ class EFT {
 		return FALSE;
 	}
 
-	/**
-	 * @return mixed
-	 */
-	function getCurrencyISOCode() {
-		if ( isset($this->header_data['currency_iso_code']) ) {
-			return $this->header_data['currency_iso_code'];
-		}
-	}
-
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setCurrencyISOCode( $value) {
-		$value = trim($value);
-		if ( $this->isAlphaNumeric( $value ) AND strlen( $value ) <= 3 ) {
-			$this->header_data['currency_iso_code'] = $value;
-
-			return TRUE;
-		}
-
-		return FALSE;
-	}
-
 	//
 	//See similar function in EFT_Record class.
 	//
-	/**
-	 * @return bool
-	 */
 	function getBatchBusinessNumber() {
 		if ( isset($this->header_data['batch_business_number']) ) {
 			return $this->header_data['batch_business_number'];
@@ -471,12 +317,7 @@ class EFT {
 
 		return FALSE;
 	}
-
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setBatchBusinessNumber( $value) {
+	function setBatchBusinessNumber($value) {
 		if ( $this->isAlphaNumeric( $value ) AND strlen( $value ) <= 10 ) {
 			$this->header_data['batch_business_number'] = $value;
 
@@ -487,10 +328,6 @@ class EFT {
 	}
 
 	//See similar function in EFT_Record class.
-
-	/**
-	 * @return string
-	 */
 	function getBatchServiceCode() {
 		if ( isset($this->header_data['batch_service_code']) ) {
 			return $this->header_data['batch_service_code'];
@@ -498,12 +335,7 @@ class EFT {
 			return 'PPD'; //Prearranged Payment and Deposit Entry type transactions
 		}
 	}
-
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setBatchServiceCode( $value) {
+	function setBatchServiceCode($value) {
 		$value = strtoupper(trim($value));
 		if ( $this->isAlphaNumeric( $value ) AND strlen( $value ) <= 3 ) {
 			$this->header_data['batch_service_code'] = $value;
@@ -514,9 +346,6 @@ class EFT {
 		return FALSE;
 	}
 
-	/**
-	 * @return string
-	 */
 	function getBatchEntryDescription() {
 		if ( isset($this->header_data['batch_entry_description']) ) {
 			return $this->header_data['batch_entry_description'];
@@ -524,12 +353,7 @@ class EFT {
 			return 'PAYROLL'; //Prearranged Payment and Deposit Entry type transactions
 		}
 	}
-
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setBatchEntryDescription( $value) {
+	function setBatchEntryDescription($value) {
 		$value = strtoupper(trim($value));
 		if ( $this->isAlphaNumeric( $value ) AND strlen( $value ) <= 10 ) {
 			$this->header_data['batch_entry_description'] = $value;
@@ -543,10 +367,6 @@ class EFT {
 	//See similar function in EFT_Record class.
 	//
 
-	/**
-	 * @param $key
-	 * @return bool
-	 */
 	function getOtherData( $key ) {
 		if ( isset($this->header_data[$key]) ) {
 			return $this->header_data[$key];
@@ -554,24 +374,13 @@ class EFT {
 
 		return FALSE;
 	}
-
-	/**
-	 * @param $key
-	 * @param $value
-	 * @return bool
-	 */
-	function setOtherData( $key, $value) {
+	function setOtherData($key, $value) {
 		$this->header_data[$key] = $value;
 
 		return TRUE;
 	}
 
-	/**
-	 * @param $a
-	 * @param $b
-	 * @return int
-	 */
-	private function usortByBusinessNumberAndServiceCodeAndEntryDescriptionAndDueDateAndType( $a, $b) {
+	private function usortByBusinessNumberAndServiceCodeAndEntryDescriptionAndDueDateAndType($a, $b) {
 		if ( !isset($a->record_data['business_number']) ) {
 			$a->record_data['business_number'] = FALSE;
 		}
@@ -597,12 +406,7 @@ class EFT {
 
 				if ( $a->record_data['entry_description'] == $b->record_data['entry_description'] ) {
 					if ( $a->record_data['due_date'] == $b->record_data['due_date'] ) {
-
-						if ( $a->record_data['type'] == $b->record_data['type'] ) {
-							return strcmp( $a->record_data['name'], $b->record_data['name'] );
-						} else {
-							return strcmp( $a->record_data['type'], $b->record_data['type'] );
-						}
+						return strcmp( $a->record_data['type'], $b->record_data['type'] );
 					} else {
 						return ( $a->record_data['due_date'] < $b->record_data['due_date'] ) ? (-1) : 1; //Sort ASC.
 					}
@@ -617,9 +421,6 @@ class EFT {
 		}
 	}
 
-	/**
-	 * @return bool
-	 */
 	private function sortRecords() {
 		if ( is_array($this->data) ) {
 			return usort( $this->data, array( $this, 'usortByBusinessNumberAndServiceCodeAndEntryDescriptionAndDueDateAndType' ) );
@@ -628,16 +429,11 @@ class EFT {
 		return FALSE;
 	}
 
-	/**
-	 * @param object $obj
-	 * @return bool
-	 */
 	function setRecord( $obj ) {
 		if ( is_object( $obj ) ) {
 
 			//Need this to handle switching transactions between batches with ACH record types.
 			if ( strtoupper( $this->getFileFormat() ) == 'ACH' ) {
-
 				$obj->setBusinessNumber( $this->getBatchBusinessNumber() );
 				$obj->setServiceCode( $this->getBatchServiceCode() );
 				$obj->setEntryDescription( $this->getBatchEntryDescription() );
@@ -655,17 +451,11 @@ class EFT {
 	Functions to help process the data.
 	*/
 
-	/**
-	 * @param $value
-	 * @param $length
-	 * @param $type
-	 * @return string
-	 */
 	function padRecord( $value, $length, $type ) {
 		$type = strtolower($type);
 
 		//Trim record incase its too long.
-		$value = substr( $value, 0, $length); //Starts at 0, adn $length is total length. So we don't need to minus one from the length.
+		$value = substr( $value, 0, $length);
 
 		switch ($type) {
 			case 'n':
@@ -682,48 +472,22 @@ class EFT {
 		return $retval;
 	}
 
-	/**
-	 * @param $line
-	 * @param $length
-	 * @return string
-	 */
-	function padLine( $line, $length, $include_line_ending = TRUE ) {
+	function padLine( $line, $length ) {
 		$retval = str_pad( $line, $length, ' ', STR_PAD_RIGHT);
 
-		if ( $include_line_ending == TRUE ) {
-			$retval .= $this->line_ending;
-		}
-
-		return $retval;
+		return $retval.$this->line_ending;
 	}
 
 
-	/**
-	 * @return bool|string
-	 */
+
 	function getCompiledData() {
 		if ( $this->compiled_data !== NULL AND $this->compiled_data !== FALSE ) {
-			$retval = '';
-
-			if ( trim( $this->getFilePrefixData() ) != '' ) {
-				$retval .= $this->getFilePrefixData() ."\r\n";
-			}
-
-			$retval .= $this->compiled_data;
-
-			if ( trim( $this->getFilePostfixData() ) != '' ) {
-				$retval .= "\r\n" . $this->getFilePostfixData(); //Compiled data doesn't have line endings on the last line, so need to insert them before the postfix line.
-			}
-
-			return $retval;
+			return $this->getFilePrefixData().$this->compiled_data;
 		}
 
 		return FALSE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function compile() {
 		/*
 			$file_format_class_name = 'EFT_File_Format_'.$this->getFileFormat().'()';
@@ -741,9 +505,9 @@ class EFT {
 			case 105:
 				$file_format_obj = new EFT_File_Format_105($this->header_data, $this->data);
 				break;
-//			case 'HSBC':
-//				$file_format_obj = new EFT_File_Format_HSBC($this->data);
-//				break;
+			case 'HSBC':
+				$file_format_obj = new EFT_File_Format_HSBC($this->data);
+				break;
 			case 'BEANSTREAM':
 				$file_format_obj = new EFT_File_Format_BEANSTREAM($this->data);
 				break;
@@ -761,6 +525,7 @@ class EFT {
 			$compiled_data = $file_format_obj->_compile();
 			if ( $compiled_data !== FALSE ) {
 				$this->compiled_data = $compiled_data;
+
 				return TRUE;
 			}
 		}
@@ -769,18 +534,13 @@ class EFT {
 	}
 
 
-	/**
-	 * @param $file_name
-	 * @return bool
-	 */
-	function save( $file_name) {
+	function save($file_name) {
 		//saves processed data to a file.
 
-		$compiled_data = $this->getCompiledData();
-		if ( $compiled_data !== FALSE ) {
+		if ( $this->getCompiledData() !== FALSE ) {
 
 			if ( is_writable( dirname($file_name) ) AND !file_exists($file_name) ) {
-				if ( file_put_contents($file_name, $compiled_data ) > 0 ) {
+				if ( file_put_contents($file_name, $this->getCompiledData() ) > 0 ) {
 					Debug::Text('Write successfull:', __FILE__, __LINE__, __METHOD__, 10);
 
 					return TRUE;
@@ -806,19 +566,12 @@ class EFT_record extends EFT {
 
 	var $record_data = NULL;
 
-	/**
-	 * EFT_record constructor.
-	 * @param null $options
-	 */
 	function __construct( $options = NULL ) {
 		Debug::Text(' EFT_Record Contruct... ', __FILE__, __LINE__, __METHOD__, 10);
 
 		return TRUE;
 	}
 
-	/**
-	 * @return bool|string
-	 */
 	function getType() {
 		if ( isset($this->record_data['type']) ) {
 			return strtoupper($this->record_data['type']);
@@ -827,11 +580,7 @@ class EFT_record extends EFT {
 		return FALSE;
 	}
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setType( $value) {
+	function setType($value) {
 		$value = strtolower($value);
 
 		if ( $value == 'd' OR $value == 'c' ) {
@@ -843,9 +592,6 @@ class EFT_record extends EFT {
 		return FALSE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function getCPACode() {
 		if ( isset($this->record_data['cpa_code']) ) {
 			return $this->record_data['cpa_code'];
@@ -854,11 +600,7 @@ class EFT_record extends EFT {
 		return FALSE;
 	}
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setCPACode( $value) {
+	function setCPACode($value) {
 		//200 - Payroll deposit
 		//460 - Accounts Payable
 		//470 - Fees/Dues
@@ -874,9 +616,6 @@ class EFT_record extends EFT {
 		return FALSE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function getAmount() {
 		if ( isset($this->record_data['amount']) ) {
 			return $this->record_data['amount'];
@@ -885,11 +624,7 @@ class EFT_record extends EFT {
 		return FALSE;
 	}
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setAmount( $value) {
+	function setAmount($value) {
 		if ( $this->isFloat( $value ) AND strlen( $value ) <= 10 ) {
 			$this->record_data['amount'] = $value;
 
@@ -899,9 +634,6 @@ class EFT_record extends EFT {
 		return FALSE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function getDueDate() {
 		if ( isset($this->record_data['due_date']) ) {
 			return $this->record_data['due_date'];
@@ -910,11 +642,7 @@ class EFT_record extends EFT {
 		return FALSE;
 	}
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setDueDate( $value) {
+	function setDueDate($value) {
 		if ( $value != '' ) {
 			$this->record_data['due_date'] = $value;
 
@@ -927,9 +655,6 @@ class EFT_record extends EFT {
 	//
 	//ACH Only, helps set the batches based on different criteria.
 	//
-	/**
-	 * @return bool
-	 */
 	function getBusinessNumber() {
 		if ( isset($this->record_data['business_number']) ) {
 			return $this->record_data['business_number'];
@@ -937,12 +662,7 @@ class EFT_record extends EFT {
 
 		return FALSE;
 	}
-
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setBusinessNumber( $value) {
+	function setBusinessNumber($value) {
 		if ( $this->isAlphaNumeric( $value ) AND strlen( $value ) <= 10 ) {
 			$this->record_data['business_number'] = $value;
 
@@ -952,9 +672,6 @@ class EFT_record extends EFT {
 		return FALSE;
 	}
 
-	/**
-	 * @return string
-	 */
 	function getServiceCode() {
 		if ( isset($this->record_data['service_code']) ) {
 			return $this->record_data['service_code'];
@@ -962,12 +679,7 @@ class EFT_record extends EFT {
 			return 'PPD'; //Prearranged Payment and Deposit Entry type transactions
 		}
 	}
-
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setServiceCode( $value) {
+	function setServiceCode($value) {
 		$value = strtoupper(trim($value));
 		if ( $this->isAlphaNumeric( $value ) AND strlen( $value ) <= 3 ) {
 			$this->record_data['service_code'] = $value;
@@ -978,9 +690,6 @@ class EFT_record extends EFT {
 		return FALSE;
 	}
 
-	/**
-	 * @return string
-	 */
 	function getEntryDescription() {
 		if ( isset($this->record_data['entry_description']) ) {
 			return $this->record_data['entry_description'];
@@ -988,12 +697,7 @@ class EFT_record extends EFT {
 			return 'PAYROLL'; //Prearranged Payment and Deposit Entry type transactions
 		}
 	}
-
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setEntryDescription( $value) {
+	function setEntryDescription($value) {
 		$value = strtoupper(trim($value));
 		if ( $this->isAlphaNumeric( $value ) AND strlen( $value ) <= 10 ) {
 			$this->record_data['entry_description'] = $value;
@@ -1004,9 +708,6 @@ class EFT_record extends EFT {
 		return FALSE;
 	}
 
-	/**
-	 * @return string
-	 */
 	function getBatchKey() {
 		return trim( $this->getBusinessNumber().$this->getServiceCode().$this->getEntryDescription().$this->getDueDate() );
 	}
@@ -1015,9 +716,6 @@ class EFT_record extends EFT {
 	//
 
 
-	/**
-	 * @return bool
-	 */
 	function getInstitution() {
 		if ( isset($this->record_data['institution']) ) {
 			return $this->record_data['institution'];
@@ -1026,11 +724,7 @@ class EFT_record extends EFT {
 		return FALSE;
 	}
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setInstitution( $value) {
+	function setInstitution($value) {
 		if ( $this->isNumeric( $value ) AND strlen( $value ) <= 3 ) {
 			$this->record_data['institution'] = $value;
 
@@ -1040,9 +734,6 @@ class EFT_record extends EFT {
 		return FALSE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function getTransit() {
 		if ( isset($this->record_data['transit']) ) {
 			return $this->record_data['transit'];
@@ -1051,11 +742,7 @@ class EFT_record extends EFT {
 		return FALSE;
 	}
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setTransit( $value) {
+	function setTransit($value) {
 		if ( $this->isNumeric( $value ) AND strlen( $value ) <= 9 ) { //EFT Transit <= 5, ACH Transit/Routing <= 9:
 			$this->record_data['transit'] = $value;
 
@@ -1065,9 +752,6 @@ class EFT_record extends EFT {
 		return FALSE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function getAccount() {
 		if ( isset($this->record_data['account']) ) {
 			return $this->record_data['account'];
@@ -1076,11 +760,7 @@ class EFT_record extends EFT {
 		return FALSE;
 	}
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setAccount( $value) {
+	function setAccount($value) {
 		if ( $this->isAlphaNumeric( $value ) AND strlen( $value ) <= 17 ) { //Needs to be 17 digits for US, 13 for CAD?
 			$this->record_data['account'] = $value;
 
@@ -1090,9 +770,6 @@ class EFT_record extends EFT {
 		return FALSE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function getOriginatorShortName() {
 		if ( isset($this->record_data['originator_short_name']) ) {
 			return $this->record_data['originator_short_name'];
@@ -1101,12 +778,8 @@ class EFT_record extends EFT {
 		return FALSE;
 	}
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setOriginatorShortName( $value) {
-		if ( $this->isAlphaNumeric( $value ) ) { //Max of 15 chars for EFT, but 23 for ACH, so it will be trimmed automatically by the record handler.
+	function setOriginatorShortName($value) {
+		if ( $this->isAlphaNumeric( $value ) AND strlen( $value ) <= 15 ) {
 			$this->record_data['originator_short_name'] = $value;
 
 			return TRUE;
@@ -1115,9 +788,6 @@ class EFT_record extends EFT {
 		return FALSE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function getName() {
 		if ( isset($this->record_data['name']) ) {
 			return $this->record_data['name'];
@@ -1126,13 +796,9 @@ class EFT_record extends EFT {
 		return FALSE;
 	}
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setName( $value) {
+	function setName($value) {
 		//Payor or Payee name
-		if ( $this->isAlphaNumeric( $value ) ) { //Trimmed automatically to correct size in padRecord()
+		if ( $this->isAlphaNumeric( $value ) AND strlen( $value ) <= 30 ) {
 			$this->record_data['name'] = $value;
 
 			return TRUE;
@@ -1141,23 +807,16 @@ class EFT_record extends EFT {
 		return FALSE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function getOriginatorLongName() {
-		if ( isset($this->record_data['originator_long_name']) ) { //Trimmed automatically to correct size in padRecord()
+		if ( isset($this->record_data['originator_long_name']) ) {
 			return $this->record_data['originator_long_name'];
 		}
 
 		return FALSE;
 	}
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setOriginatorLongName( $value) {
-		if ( $this->isAlphaNumeric( $value ) ) { //Trimmed automatically to correct size in padRecord()
+	function setOriginatorLongName($value) {
+		if ( $this->isAlphaNumeric( $value ) AND strlen( $value ) <= 30 ) {
 			$this->record_data['originator_long_name'] = $value;
 
 			return TRUE;
@@ -1166,9 +825,6 @@ class EFT_record extends EFT {
 		return FALSE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function getOriginatorReferenceNumber() {
 		if ( isset($this->record_data['originator_reference_number']) ) {
 			return $this->record_data['originator_reference_number'];
@@ -1177,12 +833,8 @@ class EFT_record extends EFT {
 		return FALSE;
 	}
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setOriginatorReferenceNumber( $value) { //Trimmed automatically to correct size in padRecord()
-		if ( $this->isAlphaNumeric( $value ) ) {
+	function setOriginatorReferenceNumber($value) {
+		if ( $this->isAlphaNumeric( $value ) AND strlen( $value ) <= 19 ) {
 			$this->record_data['originator_reference_number'] = $value;
 
 			return TRUE;
@@ -1191,9 +843,6 @@ class EFT_record extends EFT {
 		return FALSE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function getReturnInstitution() {
 		if ( isset($this->record_data['return_institution']) ) {
 			return $this->record_data['return_institution'];
@@ -1202,11 +851,7 @@ class EFT_record extends EFT {
 		return FALSE;
 	}
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setReturnInstitution( $value) {
+	function setReturnInstitution($value) {
 		//Must be 0004 for TD?
 		if ( $this->isNumeric( $value ) AND strlen( $value ) <= 3 ) {
 			$this->record_data['return_institution'] = $value;
@@ -1217,9 +862,6 @@ class EFT_record extends EFT {
 		return FALSE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function getReturnTransit() {
 		if ( isset($this->record_data['return_transit']) ) {
 			return $this->record_data['return_transit'];
@@ -1228,11 +870,7 @@ class EFT_record extends EFT {
 		return FALSE;
 	}
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setReturnTransit( $value) {
+	function setReturnTransit($value) {
 		if ( $this->isNumeric( $value ) AND strlen( $value ) <= 5 ) {
 			$this->record_data['return_transit'] = $value;
 
@@ -1242,9 +880,6 @@ class EFT_record extends EFT {
 		return FALSE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function getReturnAccount() {
 		if ( isset($this->record_data['return_account']) ) {
 			return $this->record_data['return_account'];
@@ -1253,11 +888,7 @@ class EFT_record extends EFT {
 		return FALSE;
 	}
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setReturnAccount( $value) {
+	function setReturnAccount($value) {
 		if ( $this->isAlphaNumeric( $value ) AND strlen( $value ) <= 12 ) {
 			$this->record_data['return_account'] = $value;
 
@@ -1267,10 +898,6 @@ class EFT_record extends EFT {
 		return FALSE;
 	}
 
-	/**
-	 * @param $key
-	 * @return bool
-	 */
 	function getOtherData( $key ) {
 		if ( isset($this->record_data[$key]) ) {
 			return $this->record_data[$key];
@@ -1279,12 +906,7 @@ class EFT_record extends EFT {
 		return FALSE;
 	}
 
-	/**
-	 * @param $key
-	 * @param $value
-	 * @return bool
-	 */
-	function setOtherData( $key, $value) {
+	function setOtherData($key, $value) {
 		$this->record_data[$key] = $value;
 
 		return TRUE;
@@ -1294,18 +916,13 @@ class EFT_record extends EFT {
 
 
 /**
- * CPA005 Specification: https://www.payments.ca/sites/default/files/standard-005.pdf
+ * CPA005 Specification: http://www.google.ca/url?sa=t&source=web&cd=2&ved=0CBkQFjAB&url=https%3A%2F%2Fwww.rbcroyalbank.com%2Fach%2Ffile-451771.pdf&rct=j&q=CPA%20005%20file%20format&ei=KMK8TNqaE46osQORn-ScDw&usg=AFQjCNECApa4o_mADTwtF4WIrBDf6cZq9w
  * @package Modules\Other
  */
 class EFT_File_Format_1464 Extends EFT {
 	var $header_data = NULL;
 	var $data = NULL;
 
-	/**
-	 * EFT_File_Format_1464 constructor.
-	 * @param null $header_data
-	 * @param $data
-	 */
 	function __construct( $header_data, $data ) {
 		Debug::Text(' EFT_Format_1464 Contruct... ', __FILE__, __LINE__, __METHOD__, 10);
 
@@ -1315,14 +932,11 @@ class EFT_File_Format_1464 Extends EFT {
 		return TRUE;
 	}
 
-	/**
-	 * @return bool|string
-	 */
 	private function compileHeader() {
 		$line[] = 'A'; //A Record
 		$line[] = '000000001'; //A Record number
 		$line[] = $this->padRecord( $this->getOriginatorID(), 10, 'AN');
-		$line[] = $this->padRecord( substr( $this->getFileCreationNumber(), -4 ), 4, 'N');
+		$line[] = $this->padRecord( $this->getFileCreationNumber(), 4, 'N');
 		$line[] = $this->padRecord( $this->toJulian( $this->getFileCreationDate() ), 6, 'N');
 		$line[] = $this->padRecord( $this->getDataCenter(), 5, 'N');
 
@@ -1334,21 +948,18 @@ class EFT_File_Format_1464 Extends EFT {
 		}
 		unset($sanity_check_1);
 
-		$line[] = str_repeat(' ', 20); //Blank
-
-		if ( $this->getCurrencyISOCode() != '' ) {
-			$line[] = $this->getCurrencyISOCode(); //56-58 - Currency ISO Code, ie: CAD/USD
-		}
-
-		if ( $this->getOtherData('sub_file_format') == 30 ) { //CIBC
+		if ( $this->getOtherData('cibc_settlement_account') !== FALSE ) {
 			//FIXME: The settlement account series (01) needs to be in each record between 252 and 253 (N) as well
 			//Some banks, specifically CIBC require a mandatory Settlement Account Series that is the return bank account.
 			//This seems to be only for their pre-funded settlement option.
+			$line[] = str_repeat(' ', 20); //Blank
+
+			$line[] = 'CAD'; //Currency CAD/USD
 			$line[] = str_repeat(' ', 1190); //Blank
 			$line[] = '0001'; //Version Number (always 0001) - Starts at 1249
 			$line[] = '01'; //Number of Settlement Account Series (always 01)
-			$line[] = '0'.$this->padRecord( $this->getOtherData('settlement_institution'), 3, 'N').$this->padRecord( $this->getOtherData('settlement_transit'), 5, 'N');
-			$line[] = $this->padRecord( $this->getOtherData('settlement_account'), 12, 'AN');
+			$line[] = '0'.$this->padRecord( $this->getOtherData('cibc_settlement_institution'), 3, 'N').$this->padRecord( $this->getOtherData('cibc_settlement_transit'), 5, 'N');
+			$line[] = $this->padRecord( $this->getOtherData('cibc_settlement_account'), 12, 'AN');
 
 			$sanity_check_2 = strlen( implode('', $line) );
 			Debug::Text('Digits to end of Settlement Account: '. $sanity_check_2 .' - Should be: 1275', __FILE__, __LINE__, __METHOD__, 10);
@@ -1366,9 +977,6 @@ class EFT_File_Format_1464 Extends EFT {
 		return $retval;
 	}
 
-	/**
-	 * @return array|bool
-	 */
 	private function compileRecords() {
 		//gets all Detail records.
 
@@ -1381,22 +989,22 @@ class EFT_File_Format_1464 Extends EFT {
 		foreach ( $this->data as $key => $record ) {
 			//Debug::Arr($record, 'Record Object:', __FILE__, __LINE__, __METHOD__, 10);
 
-			$line[] = $record->getType(); //Position: 1
-			$line[] = $this->padRecord($i, 9, 'N'); //Position: 2-10
+			$line[] = $record->getType();
+			$line[] = $this->padRecord($i, 9, 'N');
 
-			$line[] = $this->padRecord( $this->getOriginatorID(), 10, 'AN'); //Position: 11-24
-			$line[] = $this->padRecord( substr( $this->getFileCreationNumber(), -4 ), 4, 'N'); //Includes above
+			$line[] = $this->padRecord( $this->getOriginatorID(), 10, 'AN');
+			$line[] = $this->padRecord( $this->getFileCreationNumber(), 4, 'N');
 
-			$line[] = $this->padRecord( $record->getCPACode(), 3, 'N'); //Position: 25-27
-			$line[] = $this->padRecord( $this->removeDecimal( $record->getAmount() ), 10, 'N'); //Position: 28-37
+			$line[] = $this->padRecord( $record->getCPACode(), 3, 'N');
+			$line[] = $this->padRecord( $this->removeDecimal( $record->getAmount() ), 10, 'N');
 
-			$line[] = $this->padRecord( $this->toJulian( $record->getDueDate() ), 6, 'N'); //Position: 38-43
+			$line[] = $this->padRecord( $this->toJulian( $record->getDueDate() ), 6, 'N');
 
-			$line[] = '0'.$this->padRecord( $record->getInstitution(), 3, 'N').$this->padRecord( $record->getTransit(), 5, 'N'); //Position: 44-52
-			$line[] = $this->padRecord( $record->getAccount(), 12, 'AN'); //Position: 53-64
+			$line[] = '0'.$this->padRecord( $record->getInstitution(), 3, 'N').$this->padRecord( $record->getTransit(), 5, 'N');
+			$line[] = $this->padRecord( $record->getAccount(), 12, 'AN');
 
-			$line[] = str_repeat('0', 22); //Reserved Position: 65-86
-			$line[] = str_repeat('0', 3); //Reserved Position: 87-89
+			$line[] = str_repeat('0', 22); //Reserved
+			$line[] = str_repeat('0', 3); //Reserved
 
 			$sanity_check_1 = strlen( implode('', $line) );
 			Debug::Text('Digits to Originator Short Name: '. $sanity_check_1 .' - Should be: 89', __FILE__, __LINE__, __METHOD__, 10);
@@ -1406,15 +1014,15 @@ class EFT_File_Format_1464 Extends EFT {
 			}
 			unset($sanity_check_1);
 
-			$line[] = $this->padRecord( $record->getOriginatorShortName(), 15, 'AN'); //Position: 90-104
-			$line[] = $this->padRecord( $record->getName(), 30, 'AN'); //Position: 105-134
+			$line[] = $this->padRecord( $record->getOriginatorShortName(), 15, 'AN');
+			$line[] = $this->padRecord( $record->getName(), 30, 'AN');
 
-			$line[] = $this->padRecord( $record->getOriginatorLongName(), 30, 'AN'); //Position: 135-164
-			$line[] = $this->padRecord( $this->getOriginatorID(), 10, 'AN'); //Position: 165-174
-			$line[] = $this->padRecord( $record->getOriginatorReferenceNumber(), 19, 'AN'); //Position: 175-193
+			$line[] = $this->padRecord( $record->getOriginatorLongName(), 30, 'AN');
+			$line[] = $this->padRecord( $this->getOriginatorID(), 10, 'AN');
+			$line[] = $this->padRecord( $record->getOriginatorReferenceNumber(), 19, 'AN');
 
-			$line[] = '0'.$this->padRecord( $record->getReturnInstitution(), 3, 'N').$this->padRecord( $record->getReturnTransit(), 5, 'N'); //Position: 194-202
-			$line[] = $this->padRecord( $record->getReturnAccount(), 12, 'AN'); //Position: 203-214
+			$line[] = '0'.$this->padRecord( $record->getReturnInstitution(), 3, 'N').$this->padRecord( $record->getReturnTransit(), 5, 'N');
+			$line[] = $this->padRecord( $record->getReturnAccount(), 12, 'AN');
 
 			$sanity_check_2 = strlen( implode('', $line) );
 			Debug::Text('Digits to END of return account: '. $sanity_check_2 .' - Should be: 214', __FILE__, __LINE__, __METHOD__, 10);
@@ -1424,14 +1032,14 @@ class EFT_File_Format_1464 Extends EFT {
 			}
 			unset($sanity_check_2);
 
-			$line[] = $this->padRecord( NULL, 15, 'AN'); //215-229 - Originators Sundry Info. -- Blank
-			$line[] = $this->padRecord( NULL, 22, 'AN'); //230-251 - Filler -- Blank
-			if ( $this->getOtherData('sub_file_format') == 30 ) { //CIBC
-				$line[] = $this->padRecord( '01', 2, 'AN'); //252-253 - Settlement Code, always '01'
+			$line[] = $this->padRecord( NULL, 15, 'AN'); //Originators Sundry Info. -- Blank
+			$line[] = $this->padRecord( NULL, 22, 'AN'); //Stored Trace Number -- Blank
+			if ( $this->getOtherData('cibc_settlement_account') !== FALSE ) {
+				$line[] = $this->padRecord( '01', 2, 'AN'); //Settlement Code, always '01'
 			} else {
-				$line[] = $this->padRecord( NULL, 2, 'AN'); //252-253 - Settlement Code -- Blank
+				$line[] = $this->padRecord( NULL, 2, 'AN'); //Settlement Code -- Blank
 			}
-			$line[] = $this->padRecord( NULL, 11, 'N'); //254-264 - Invalid Data Element, must be 0's for HSBC to accept it -- Blank
+			$line[] = $this->padRecord( NULL, 11, 'N'); //Invalid Data Element, must be 0's for HSBC to accept it -- Blank
 
 			$sanity_check_3 = strlen( implode('', $line) );
 			Debug::Text('Digits to END of invalid data element: '. $sanity_check_3 .' - Should be: 264', __FILE__, __LINE__, __METHOD__, 10);
@@ -1460,9 +1068,6 @@ class EFT_File_Format_1464 Extends EFT {
 		return FALSE;
 	}
 
-	/**
-	 * @return bool|string
-	 */
 	private function compileFooter() {
 		if ( count($this->data) == 0 ) {
 			return FALSE;
@@ -1474,7 +1079,7 @@ class EFT_File_Format_1464 Extends EFT {
 		$line[] = $this->padRecord( (count($this->data) + 2), 9, 'N'); //add 2, 1 for the A record, and 1 for the Z record.
 
 		$line[] = $this->padRecord( $this->getOriginatorID(), 10, 'AN');
-		$line[] = $this->padRecord( substr( $this->getFileCreationNumber(), -4 ), 4, 'N');
+		$line[] = $this->padRecord( $this->getFileCreationNumber(), 4, 'N');
 
 		//Loop and get total value and number of records.
 		$d_record_total = 0;
@@ -1502,7 +1107,7 @@ class EFT_File_Format_1464 Extends EFT {
 		$line[] = $this->padRecord( NULL, 14, 'N'); //Invalid Data Element, must be 0's for HSBC to accept it -- Blank
 		$line[] = $this->padRecord( NULL, 8, 'N'); //Invalid Data Element, must be 0's for HSBC to accept it -- Blank
 
-		$retval = $this->padLine( implode('', $line), 1464, FALSE ); //Last line in file, don't include line ending so we don't get blank lines.
+		$retval = $this->padLine( implode('', $line), 1464 );
 
 		Debug::Text('Z Record:'. $retval, __FILE__, __LINE__, __METHOD__, 10);
 
@@ -1510,9 +1115,6 @@ class EFT_File_Format_1464 Extends EFT {
 
 	}
 
-	/**
-	 * @return bool|string
-	 */
 	function _compile() {
 		//Processes all the data, padding it, converting dates to julian, incrementing
 		//record numbers.
@@ -1541,11 +1143,6 @@ class EFT_File_Format_105 Extends EFT {
 	var $header_data = NULL;
 	var $data = NULL;
 
-	/**
-	 * EFT_File_Format_105 constructor.
-	 * @param null $header_data
-	 * @param $data
-	 */
 	function __construct( $header_data, $data ) {
 		Debug::Text(' EFT_Format_105 Contruct... ', __FILE__, __LINE__, __METHOD__, 10);
 
@@ -1555,16 +1152,13 @@ class EFT_File_Format_105 Extends EFT {
 		return TRUE;
 	}
 
-	/**
-	 * @return string
-	 */
 	private function compileHeader() {
 		$line[] = 'A'; //A Record
 		$line[] = '000000001'; //A Record number
 
 		//This should be the scotia bank "Customer Number"
 		$line[] = $this->padRecord( $this->getOriginatorID(), 10, 'AN');
-		$line[] = $this->padRecord( substr( $this->getFileCreationNumber(), -4 ), 4, 'N');
+		$line[] = $this->padRecord( $this->getFileCreationNumber(), 4, 'N');
 		$line[] = $this->padRecord( $this->toJulian( $this->getFileCreationDate() ), 6, 'N');
 		$line[] = $this->padRecord( $this->getDataCenter(), 5, 'N');
 		$line[] = 'D';
@@ -1576,9 +1170,6 @@ class EFT_File_Format_105 Extends EFT {
 		return $retval;
 	}
 
-	/**
-	 * @return bool|string
-	 */
 	private function compileCustomerHeader() {
 		$record = $this->data[0]; //Just use info from first record;
 
@@ -1601,9 +1192,6 @@ class EFT_File_Format_105 Extends EFT {
 		return FALSE;
 	}
 
-	/**
-	 * @return array|bool
-	 */
 	private function compileRecords() {
 		//gets all Detail records.
 
@@ -1660,9 +1248,6 @@ class EFT_File_Format_105 Extends EFT {
 		return FALSE;
 	}
 
-	/**
-	 * @return bool|string
-	 */
 	private function compileFooter() {
 		if ( count($this->data) == 0 ) {
 			return FALSE;
@@ -1672,7 +1257,7 @@ class EFT_File_Format_105 Extends EFT {
 		$line[] = $this->padRecord( NULL, 9, 'AN');
 
 		$line[] = $this->padRecord( $this->getOriginatorID(), 10, 'AN');
-		$line[] = $this->padRecord( substr( $this->getFileCreationNumber(), -4 ), 4, 'N');
+		$line[] = $this->padRecord( $this->getFileCreationNumber(), 4, 'N');
 
 		//Loop and get total value and number of records.
 		$d_record_total = 0;
@@ -1703,9 +1288,6 @@ class EFT_File_Format_105 Extends EFT {
 
 	}
 
-	/**
-	 * @return bool|string
-	 */
 	function _compile() {
 		//Processes all the data, padding it, converting dates to julian, incrementing
 		//record numbers.
@@ -1725,6 +1307,90 @@ class EFT_File_Format_105 Extends EFT {
 		return FALSE;
 	}
 }
+
+
+/**
+ * @package Modules\Other
+ */
+class EFT_File_Format_HSBC Extends EFT {
+	var $data = NULL;
+
+	function __construct( $data ) {
+		Debug::Text(' EFT_Format_HSBC Contruct... ', __FILE__, __LINE__, __METHOD__, 10);
+
+		$this->data = $data;
+
+		return TRUE;
+	}
+
+	private function compileRecords() {
+		//gets all Detail records.
+
+		if ( count($this->data) == 0 ) {
+			Debug::Text('No data for D Record:', __FILE__, __LINE__, __METHOD__, 10);
+			return FALSE;
+		}
+
+		$i = 2;
+		foreach ( $this->data as $key => $record ) {
+			//Debug::Arr($record, 'Record Object:', __FILE__, __LINE__, __METHOD__, 10);
+			if ( $record->getType() == 'D' ) {
+				$record_type = 'R'; //Receivable
+			} else {
+				$record_type = 'P'; //Payable
+			}
+			$line[] = $record_type;
+
+			$line[] = $record->getOriginatorReferenceNumber();
+
+			$line[] = '0'.$this->padRecord( $record->getInstitution(), 3, 'N').$this->padRecord( $record->getTransit(), 5, 'N');
+
+			$line[] = $record->getAccount();
+
+			$line[] = $this->padRecord( $this->removeDecimal( $record->getAmount() ), 10, 'N');
+
+			$line[] = date('m/d/Y', $record->getDueDate() );
+
+			$line[] = $record->getName();
+
+			$line[] = 'B'; //BiWeekly
+
+			$line[] = $record->getReturnAccount();
+
+			$line[] = $this->padRecord($record->getCPACode(), 3, 'N');
+
+			$d_record = '"'.implode('","', $line).'"';
+			Debug::Text('D Record:'. $d_record .' - Length: '. strlen($d_record), __FILE__, __LINE__, __METHOD__, 10);
+
+			$retval[] = $d_record;
+
+			unset($line);
+			unset($d_record);
+
+			$i++;
+		}
+
+		if ( isset($retval) ) {
+			return $retval;
+		}
+
+		return FALSE;
+	}
+
+	function _compile() {
+		//Processes all the data, padding it.
+		$compiled_data = @implode("\r\n", $this->compileRecords() );
+
+		if ( strlen( $compiled_data ) >= 50 ) {
+			return $compiled_data;
+		}
+
+		Debug::Text('Not enough compiled data!', __FILE__, __LINE__, __METHOD__, 10);
+
+		return FALSE;
+	}
+}
+
 
 /**
  * @package Modules\Other
@@ -1760,11 +1426,6 @@ class EFT_File_Format_ACH Extends EFT {
 
 	protected $batch_number = 1;
 
-	/**
-	 * EFT_File_Format_ACH constructor.
-	 * @param null $header_data
-	 * @param $data
-	 */
 	function __construct( $header_data, $data ) {
 		Debug::Text(' EFT_Format_ACH Contruct... ', __FILE__, __LINE__, __METHOD__, 10);
 
@@ -1774,9 +1435,6 @@ class EFT_File_Format_ACH Extends EFT {
 		return TRUE;
 	}
 
-	/**
-	 * @return string
-	 */
 	private function compileFileHeader() {
 		$line[] = '1'; //1 Record
 		$line[] = '01'; //Priority code
@@ -1808,14 +1466,6 @@ class EFT_File_Format_ACH Extends EFT {
 		return $retval;
 	}
 
-	/**
-	 * @param $type
-	 * @param $business_number
-	 * @param $service_code
-	 * @param $entry_description
-	 * @param int $due_date EPOCH
-	 * @return string
-	 */
 	private function compileBatchHeader( $type, $business_number, $service_code, $entry_description, $due_date ) {
 		$line[] = '5'; //5 Record
 
@@ -1846,14 +1496,6 @@ class EFT_File_Format_ACH Extends EFT {
 		return $retval;
 	}
 
-	/**
-	 * @param $type
-	 * @param $record_count
-	 * @param $batch_debit_amount
-	 * @param $batch_credit_amount
-	 * @param $hash
-	 * @return string
-	 */
 	private function compileBatchControl( $type, $record_count, $batch_debit_amount, $batch_credit_amount, $hash ) {
 		$line[] = '8'; //8 Record
 
@@ -1884,10 +1526,6 @@ class EFT_File_Format_ACH Extends EFT {
 		return $retval;
 	}
 
-	/**
-	 * @param $records
-	 * @return bool|string
-	 */
 	private function getRecordTypes( $records ) {
 		$retval = FALSE;
 		foreach( $records as $key => $record ) {
@@ -1901,9 +1539,6 @@ class EFT_File_Format_ACH Extends EFT {
 		return $retval;
 	}
 
-	/**
-	 * @return array|bool
-	 */
 	private function compileRecords() {
 		//gets all Detail records.
 
@@ -1960,7 +1595,7 @@ class EFT_File_Format_ACH Extends EFT {
 				$line[] = $this->padRecord( $transaction_type, 2, 'N'); //Transaction code - 22=Deposit destined for checking account, 32=Deposit destined for savings account
 
 				$line[] = $this->padRecord( substr($record->getTransit(), 0, 8), 8, 'N'); //Transit
-				$line[] = $this->padRecord( substr($record->getTransit(), 8, 1), 1, 'N'); //Check Digit
+				$line[] = $this->padRecord( substr($record->getTransit(), -1, 1), 1, 'AN'); //Check Digit
 				$line[] = $this->padRecord( $record->getAccount(), 17, 'AN'); //Account number
 				$line[] = $this->padRecord( $this->removeDecimal( $record->getAmount() ), 10, 'N'); //Amount
 				$line[] = $this->padRecord( $record->getOriginatorReferenceNumber(), 15, 'AN'); //transaction identification number
@@ -2002,9 +1637,6 @@ class EFT_File_Format_ACH Extends EFT {
 		return FALSE;
 	}
 
-	/**
-	 * @return bool|string
-	 */
 	private function compileFileControl() {
 		if ( count($this->data) == 0 ) {
 			return FALSE;
@@ -2058,10 +1690,6 @@ class EFT_File_Format_ACH Extends EFT {
 		return $retval;
 	}
 
-	/**
-	 * @param $compiled_data
-	 * @return null|string
-	 */
 	function compileFileControlPadding( $compiled_data ) {
 		$total_records = substr_count( $compiled_data, "\n" );
 
@@ -2077,15 +1705,12 @@ class EFT_File_Format_ACH Extends EFT {
 		}
 
 		if ( isset($line) ) {
-			return trim( implode('', $line) ); //Make sure there are no blank lines at the end, so if any file postfix line is appended there isn't a blank line inbetween.
+			return implode('', $line);
 		}
 
 		return NULL;
 	}
 
-	/**
-	 * @return bool|string
-	 */
 	function _compile() {
 		//Processes all the data, padding it, converting dates to julian, incrementing
 		//record numbers.
@@ -2113,10 +1738,6 @@ class EFT_File_Format_ACH Extends EFT {
 class EFT_File_Format_BEANSTREAM Extends EFT {
 	var $data = NULL;
 
-	/**
-	 * EFT_File_Format_BEANSTREAM constructor.
-	 * @param null $data
-	 */
 	function __construct( $data ) {
 		Debug::Text(' EFT_Format_BEANSTREAM Contruct... ', __FILE__, __LINE__, __METHOD__, 10);
 
@@ -2125,9 +1746,6 @@ class EFT_File_Format_BEANSTREAM Extends EFT {
 		return TRUE;
 	}
 
-	/**
-	 * @return array|bool
-	 */
 	private function compileRecords() {
 		//gets all Detail records.
 
@@ -2183,9 +1801,6 @@ class EFT_File_Format_BEANSTREAM Extends EFT {
 		return FALSE;
 	}
 
-	/**
-	 * @return bool|string
-	 */
 	function _compile() {
 		//Processes all the data, padding it.
 		$compiled_data = @implode("\r\n", $this->compileRecords() );

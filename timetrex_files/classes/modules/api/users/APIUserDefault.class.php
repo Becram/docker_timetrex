@@ -1,7 +1,7 @@
 <?php
 /*********************************************************************************
  * TimeTrex is a Workforce Management program developed by
- * TimeTrex Software Inc. Copyright (C) 2003 - 2018 TimeTrex Software Inc.
+ * TimeTrex Software Inc. Copyright (C) 2003 - 2017 TimeTrex Software Inc.
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Affero General Public License version 3 as published by
@@ -41,9 +41,6 @@
 class APIUserDefault extends APIFactory {
 	protected $main_class = 'UserDefaultFactory';
 
-	/**
-	 * APIUserDefault constructor.
-	 */
 	public function __construct() {
 		parent::__construct(); //Make sure parent constructor is always called.
 
@@ -80,8 +77,7 @@ class APIUserDefault extends APIFactory {
 	/**
 	 * Get UserDefault data for one or more UserDefaultes.
 	 * @param array $data filter data
-	 * @param bool $disable_paging
-	 * @return array|bool
+	 * @return array
 	 */
 	function getUserDefault( $data = NULL, $disable_paging = FALSE ) {
 		if ( !$this->getPermissionObject()->Check('user', 'enabled')
@@ -134,9 +130,7 @@ class APIUserDefault extends APIFactory {
 	/**
 	 * Set UserDefault data for one or more UserDefaultes.
 	 * @param array $data UserDefault data
-	 * @param bool $validate_only
-	 * @param bool $ignore_warning
-	 * @return array|bool
+	 * @return array
 	 */
 	function setUserDefault( $data, $validate_only = FALSE, $ignore_warning = TRUE ) {
 		$validate_only = (bool)$validate_only;
@@ -155,12 +149,12 @@ class APIUserDefault extends APIFactory {
 			Debug::Text('Validating Only!', __FILE__, __LINE__, __METHOD__, 10);
 		}
 
-		list( $data, $total_records ) = $this->convertToMultipleRecords( $data );
+		extract( $this->convertToMultipleRecords($data) );
 		Debug::Text('Received data for: '. $total_records .' UserDefaults', __FILE__, __LINE__, __METHOD__, 10);
 		Debug::Arr($data, 'Data: ', __FILE__, __LINE__, __METHOD__, 10);
 
 		$validator_stats = array('total_records' => $total_records, 'valid_records' => 0 );
-		$validator = $save_result = $key = FALSE;
+		$validator = $save_result = FALSE;
 		if ( is_array($data) AND $total_records > 0 ) {
 			$this->getProgressBarObject()->start( $this->getAMFMessageID(), $total_records );
 
@@ -168,7 +162,7 @@ class APIUserDefault extends APIFactory {
 				$primary_validator = new Validator();
 				$lf = TTnew( 'UserDefaultListFactory' );
 				$lf->StartTransaction();
-				if ( isset($row['id']) AND $row['id'] != '' ) {
+				if ( isset($row['id']) AND $row['id'] > 0 ) {
 					//Modifying existing object.
 					//Get UserDefault object, so we can only modify just changed data for specific records if needed.
 					$lf->getByIdAndCompanyId( $row['id'], $this->getCurrentCompanyObject()->getId() );
@@ -181,7 +175,7 @@ class APIUserDefault extends APIFactory {
 								$this->getPermissionObject()->Check('user', 'edit')
 								) ) {
 
-							Debug::Text('Row Exists, getting current data for ID: '. $row['id'], __FILE__, __LINE__, __METHOD__, 10);
+							Debug::Text('Row Exists, getting current data: ', $row['id'], __FILE__, __LINE__, __METHOD__, 10);
 							$lf = $lf->getCurrent();
 							$row = array_merge( $lf->getObjectAsArray(), $row );
 						} else {
@@ -245,10 +239,10 @@ class APIUserDefault extends APIFactory {
 	/**
 	 * Delete one or more UserDefaults.
 	 * @param array $data UserDefault data
-	 * @return array|bool
+	 * @return array
 	 */
 	function deleteUserDefault( $data ) {
-		if ( !is_array($data) ) {
+		if ( is_numeric($data) ) {
 			$data = array($data);
 		}
 
@@ -265,7 +259,7 @@ class APIUserDefault extends APIFactory {
 		Debug::Arr($data, 'Data: ', __FILE__, __LINE__, __METHOD__, 10);
 
 		$total_records = count($data);
-		$validator = $save_result = $key = FALSE;
+		$validator = $save_result = FALSE;
 		$validator_stats = array('total_records' => $total_records, 'valid_records' => 0 );
 		if ( is_array($data) AND $total_records > 0 ) {
 			$this->getProgressBarObject()->start( $this->getAMFMessageID(), $total_records );
@@ -274,14 +268,14 @@ class APIUserDefault extends APIFactory {
 				$primary_validator = new Validator();
 				$lf = TTnew( 'UserDefaultListFactory' );
 				$lf->StartTransaction();
-				if ( $id != '' ) {
+				if ( is_numeric($id) ) {
 					//Modifying existing object.
 					//Get UserDefault object, so we can only modify just changed data for specific records if needed.
 					$lf->getByIdAndCompanyId( $id, $this->getCurrentCompanyObject()->getId() );
 					if ( $lf->getRecordCount() == 1 ) {
 						//Object exists, check edit permissions
 						if ( $this->getPermissionObject()->Check('user', 'delete') ) {
-							Debug::Text('Record Exists, deleting record ID: '. $id, __FILE__, __LINE__, __METHOD__, 10);
+							Debug::Text('Record Exists, deleting record: ', $id, __FILE__, __LINE__, __METHOD__, 10);
 							$lf = $lf->getCurrent();
 						} else {
 							$primary_validator->isTrue( 'permission', FALSE, TTi18n::gettext('Delete permission denied') );
@@ -336,7 +330,7 @@ class APIUserDefault extends APIFactory {
 	 * @return array
 	 */
 	function copyUserDefault( $data ) {
-		if ( !is_array($data) ) {
+		if ( is_numeric($data) ) {
 			$data = array($data);
 		}
 

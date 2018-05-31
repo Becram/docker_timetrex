@@ -79,10 +79,11 @@ var APICompany = ServiceCaller.extend( {
 
 		return this.argumentsHandler( this.className, 'exportCompany', arguments );
 
-	},
-
-	deleteImage: function() {
-		return this.argumentsHandler( this.className, 'deleteImage', arguments );
 	}
+
+
+
+
+
 
 } );

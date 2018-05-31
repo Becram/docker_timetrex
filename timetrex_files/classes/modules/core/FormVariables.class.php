@@ -1,7 +1,7 @@
 <?php
 /*********************************************************************************
  * TimeTrex is a Workforce Management program developed by
- * TimeTrex Software Inc. Copyright (C) 2003 - 2018 TimeTrex Software Inc.
+ * TimeTrex Software Inc. Copyright (C) 2003 - 2017 TimeTrex Software Inc.
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Affero General Public License version 3 as published by
@@ -39,14 +39,7 @@
  * @package Core
  */
 class FormVariables {
-	/**
-	 * @param $form_variables
-	 * @param string $form_type
-	 * @param bool $filter_input
-	 * @param array $filter_ignore_name_arr
-	 * @return array
-	 */
-	static function getVariables( $form_variables, $form_type = 'BOTH', $filter_input = TRUE, $filter_ignore_name_arr = array('next_page', 'batch_next_page') ) {
+	static function getVariables($form_variables, $form_type = 'BOTH', $filter_input = TRUE, $filter_ignore_name_arr = array('next_page', 'batch_next_page') ) {
 		$form_type = trim(strtoupper($form_type));
 
 		$retarr = array();
@@ -63,7 +56,6 @@ class FormVariables {
 						if ( isset($_POST[$variable_name]) ) {
 							$retarr[$variable_name] = $_POST[$variable_name];
 						}
-						break;
 					default:
 						if ( isset($_GET[$variable_name]) ) {
 							$retarr[$variable_name] = $_GET[$variable_name];
@@ -93,11 +85,7 @@ class FormVariables {
 		return array();
 	}
 
-	/**
-	 * @param $arr
-	 * @return bool
-	 */
-	static function RecurseFilterArray( &$arr) {
+	static function RecurseFilterArray(&$arr) {
 		if ( !is_array($arr) ) {
 			return FALSE;
 		}
@@ -113,20 +101,11 @@ class FormVariables {
 		return TRUE;
 	}
 
-	/**
-	 * @param $val
-	 * @return string
-	 */
 	static function sanitize( $val ) {
 		return @htmlspecialchars( str_ireplace( array('javascript:', 'src=', 'www.example.com'), '', $val ), ENT_QUOTES, 'UTF-8' ); //Supress warnings due to invalid multibyte sequences
 	}
 
 	//Reverse sanitation for when HTML is allowed. Make sure we purify the HTML after though.
-
-	/**
-	 * @param $val
-	 * @return string
-	 */
 	static function reverseSanitize( $val ) {
 		return htmlspecialchars_decode( $val );
 	}

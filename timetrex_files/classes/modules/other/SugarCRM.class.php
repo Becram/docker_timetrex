@@ -1,7 +1,7 @@
 <?php
 /*********************************************************************************
  * TimeTrex is a Workforce Management program developed by
- * TimeTrex Software Inc. Copyright (C) 2003 - 2018 TimeTrex Software Inc.
+ * TimeTrex Software Inc. Copyright (C) 2003 - 2017 TimeTrex Software Inc.
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Affero General Public License version 3 as published by
@@ -34,9 +34,6 @@
  * the words "Powered by TimeTrex".
  ********************************************************************************/
 
-/**
- * Class SugarCRM
- */
 class SugarCRM {
 	private $soap_client_obj = NULL;
 	private $session_id = NULL;
@@ -45,19 +42,12 @@ class SugarCRM {
 	private $sugarcrm_user_name = NULL;
 	private $sugarcrm_password = NULL;
 
-	/**
-	 * SugarCRM constructor.
-	 * @param null $url
-	 */
 	function __construct( $url = NULL ) {
 		if ( $url != '' ) {
 			$this->sugarcrm_url = $url;
 		}
 	}
 
-	/**
-	 * @return null|SoapClient
-	 */
 	function getSoapObject() {
 		if ( $this->soap_client_obj == NULL ) {
 			ini_set('default_socket_timeout', 300); //This helps prevent "Error fetching HTTP headers" SOAP error.
@@ -78,13 +68,9 @@ class SugarCRM {
 		return $this->soap_client_obj;
 	}
 
-	/**
-	 * @param $data
-	 * @return array|bool
-	 */
 	function convertToNameValueList( $data ) {
 		if ( is_array($data) ) {
-
+			
 			$retarr = array();
 			foreach( $data as $key => $value ) {
 				$row = new stdClass();
@@ -99,11 +85,6 @@ class SugarCRM {
 		return FALSE;
 	}
 
-	/**
-	 * @param null $user_name
-	 * @param null $password
-	 * @return bool
-	 */
 	function login( $user_name = NULL, $password = NULL ) {
 		if ( $user_name == '' ) {
 			$user_name = $this->sugarcrm_user_name;
@@ -145,9 +126,6 @@ class SugarCRM {
 		return FALSE;
 	}
 
-	/**
-	 * @return mixed
-	 */
 	function getUserGUID() {
 		$user_guid = $this->getSoapObject()->get_user_id( $this->session_id );
 		Debug::Text('User GUID: '. $user_guid, __FILE__, __LINE__, __METHOD__, 10);
@@ -155,9 +133,6 @@ class SugarCRM {
 		return $user_guid;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function getAvailableModules() {
 		$result = $this->getSoapObject()->get_available_modules( $this->session_id );
 		Debug::Arr($result, 'bSOAP Result Array: ', __FILE__, __LINE__, __METHOD__, 10);
@@ -166,14 +141,6 @@ class SugarCRM {
 	}
 
 	//Search by account name as well, if the email doesn't match but company name does.
-
-	/**
-	 * @param $search_field
-	 * @param $search_value
-	 * @param string $select_fields
-	 * @param string $limit
-	 * @return SugarCRMReturnHandler
-	 */
 	function getLeads( $search_field, $search_value, $select_fields = '', $limit = '' ) {
 		switch( $search_field ) {
 			case 'id':
@@ -203,14 +170,6 @@ class SugarCRM {
 	}
 
 	//Search by account name as well, if the email doesn't match but company name does.
-
-	/**
-	 * @param $search_field
-	 * @param $search_value
-	 * @param string $select_fields
-	 * @param string $limit
-	 * @return SugarCRMReturnHandler
-	 */
 	function getContacts( $search_field, $search_value, $select_fields = '', $limit = '' ) {
 		switch( $search_field ) {
 			case 'email':
@@ -233,13 +192,6 @@ class SugarCRM {
 		return new SugarCRMReturnHandler( $result, $select_fields, $limit );
 	}
 
-	/**
-	 * @param $search_field
-	 * @param $search_value
-	 * @param string $select_fields
-	 * @param string $limit
-	 * @return SugarCRMReturnHandler
-	 */
 	function getEmails( $search_field, $search_value, $select_fields = '', $limit = '' ) {
 		Debug::Text('Get Emails for Field: '. $search_field .' Value: '.  $search_value, __FILE__, __LINE__, __METHOD__, 10);
 
@@ -254,13 +206,6 @@ class SugarCRM {
 		return new SugarCRMReturnHandler( $result, $select_fields, $limit );
 	}
 
-	/**
-	 * @param $search_field
-	 * @param $search_value
-	 * @param string $select_fields
-	 * @param string $limit
-	 * @return SugarCRMReturnHandler
-	 */
 	function getCalls( $search_field, $search_value, $select_fields = '', $limit = '' ) {
 		Debug::Text('Get Calls for Field: '. $search_field .' Value: '.	 $search_value, __FILE__, __LINE__, __METHOD__, 10);
 
@@ -280,11 +225,6 @@ class SugarCRM {
 		return new SugarCRMReturnHandler( $result, $select_fields, $limit );
 	}
 
-	/**
-	 * @param string $id UUID
-	 * @param $status
-	 * @return bool
-	 */
 	function setLeadStatus( $id, $status ) {
 
 		$data = array(
@@ -307,10 +247,6 @@ class SugarCRM {
 		return FALSE;
 	}
 
-	/**
-	 * @param $data
-	 * @return SugarCRMReturnHandler
-	 */
 	function setContact( $data ) {
 		/*
 		Fields:
@@ -332,10 +268,6 @@ class SugarCRM {
 		return new SugarCRMReturnHandler( $result );
 	}
 
-	/**
-	 * @param $data
-	 * @return SugarCRMReturnHandler
-	 */
 	function setLead( $data ) {
 		/*
 		Fields:
@@ -361,10 +293,6 @@ class SugarCRM {
 		return new SugarCRMReturnHandler( $result );
 	}
 
-	/**
-	 * @param $data
-	 * @return SugarCRMReturnHandler
-	 */
 	function setCall( $data ) {
 		/*
 		Fields:
@@ -386,10 +314,6 @@ class SugarCRM {
 		return new SugarCRMReturnHandler( $result );
 	}
 
-	/**
-	 * @param $data
-	 * @return SugarCRMReturnHandler
-	 */
 	function setEmail( $data ) {
 		// - http://panther.sugarcrm.com/forums/showthread.php?t=68490&highlight=set_entry+email
 		/*
@@ -410,13 +334,6 @@ class SugarCRM {
 		return new SugarCRMReturnHandler( $result );
 	}
 
-	/**
-	 * @param $module1
-	 * @param string $module1_id UUID
-	 * @param $module2
-	 * @param string $module2_id UUID
-	 * @return SugarCRMReturnHandler
-	 */
 	function setRelationship( $module1, $module1_id, $module2, $module2_id ) {
 		//Examples on relating contacts/leads to emails.
 		//$result = $sugarcrm->setRelationship( 'Contacts', '5b3826da-78d8-568a-73f3-43d92903b54d', 'Emails', '5c5a8553-f3d1-ce01-3b66-4dbc746092d7' );
@@ -437,20 +354,11 @@ class SugarCRM {
 	}
 }
 
-/**
- * Class SugarCRMReturnHandler
- */
 class SugarCRMReturnHandler {
 	protected $result_data = NULL;
 	protected $select_fields = array();
 	protected $limit = NULL;
 
-	/**
-	 * SugarCRMReturnHandler constructor.
-	 * @param $result_data
-	 * @param array $select_fields
-	 * @param string $limit
-	 */
 	function __construct( $result_data, $select_fields = array(), $limit = '' ) {
 		$this->result_data = $result_data;
 		$this->select_fields = $select_fields;
@@ -459,14 +367,10 @@ class SugarCRMReturnHandler {
 		return TRUE;
 	}
 
-	/**
-	 * @param $data
-	 * @return array|bool
-	 */
 	function convertFromNameValueList( $data ) {
 		//Debug::Arr($data, 'Raw data to convert: ', __FILE__, __LINE__, __METHOD__, 10);
 		if ( isset($data->name_value_list) ) {
-
+			
 			$retarr = array();
 			foreach( $data->name_value_list as $field ) {
 				$retarr[$field->name] = $field->value;
@@ -479,9 +383,6 @@ class SugarCRMReturnHandler {
 		return FALSE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function isFault() {
 		if ( get_class( $this->result_data ) == 'SoapFault' ) {
 			return TRUE;
@@ -490,9 +391,6 @@ class SugarCRMReturnHandler {
 		return FALSE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function isValid() {
 		if ( $this->isFault() == TRUE AND is_soap_fault( $this->result_data ) ) {
 			trigger_error('SOAP Fault: (Code: '. $this->result_data->faultcode .', String: '. $this->result_data->faultstring .')', E_USER_NOTICE);
@@ -507,9 +405,6 @@ class SugarCRMReturnHandler {
 		return FALSE;
 	}
 
-	/**
-	 * @return bool|int
-	 */
 	function getRecordCount() {
 		if ( isset($this->result_data->result_count) ) {
 			return (int)$this->result_data->result_count;
@@ -519,11 +414,6 @@ class SugarCRMReturnHandler {
 	}
 
 	//Returns the array of just one row.
-
-	/**
-	 * @param array $select_fields
-	 * @return array|bool
-	 */
 	function getRow( $select_fields = array() ) {
 		if ( $this->result_data->error->number == 0 AND isset($this->result_data->result_count) AND $this->result_data->result_count == 1 AND count($this->result_data->entry_list ) == 1 ) {
 			//One row
@@ -545,10 +435,6 @@ class SugarCRMReturnHandler {
 	}
 
 	//Returns one column from one row returned.
-
-	/**
-	 * @return bool|mixed
-	 */
 	function getOne() {
 		//Debug::Arr($this->result_data, 'Handle Result Array: ', __FILE__, __LINE__, __METHOD__, 10);
 		if ( $this->result_data->error->number == 0 AND isset($this->result_data->result_count) AND $this->result_data->result_count == 1 AND count( $this->result_data->entry_list ) == 1 ) {
@@ -580,22 +466,15 @@ class SugarCRMReturnHandler {
 	}
 
 	//Used by getResult()
-
-	/**
-	 * @param $result
-	 * @param array $select_fields
-	 * @param string $limit
-	 * @return array|bool
-	 */
 	function handleResult( $result, $select_fields = array(), $limit = '' ) {
 		if ( !is_array($select_fields) ) {
 			$select_fields = array($select_fields);
 		}
 
 		if ( $result->error->number == 0 AND isset($result->result_count) AND $result->result_count > 0 ) {
-
+			
 			$retarr = array();
-
+			
 			if ( is_array( $result->entry_list ) ) {
 				//Use getOne or getRow() if only one result is returned.
 				foreach( $result->entry_list as $row ) {
@@ -618,11 +497,6 @@ class SugarCRMReturnHandler {
 		return FALSE;
 	}
 
-	/**
-	 * @param array $select_fields
-	 * @param string $limit
-	 * @return array|bool
-	 */
 	function getResult( $select_fields = array(), $limit = '') {
 		if ( count($select_fields) == 0 ) {
 			$select_fields = $this->select_fields;

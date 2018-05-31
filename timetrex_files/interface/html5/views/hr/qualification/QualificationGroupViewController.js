@@ -1,14 +1,11 @@
 QualificationGroupViewController = BaseViewController.extend( {
 	el: '#qualification_group_view_container',
-
-	_required_files:['APIQualificationGroup'],
-
 	tree_mode: null,
 	grid_table_name: null,
 	grid_select_id_array: null,
 	//Must set el here and can only set string, so events can work
-	init: function( options ) {
-		//this._super('initialize', options );
+	initialize: function( options ) {
+		this._super( 'initialize', options );
 		this.edit_view_tpl = 'QualificationGroupEditView.html';
 		this.permission_id = 'qualification';
 		this.viewId = 'QualificationGroup';
@@ -340,19 +337,10 @@ QualificationGroupViewController = BaseViewController.extend( {
 			allow_multiple_selection: false,
 			layout_name: ALayoutIDs.TREE_COLUMN,
 			navigation_mode: true,
-			show_search_inputs: false,
-			on_tree_grid_row_select: function( id, tree_mode_collapse) {
-				$this.onTreeGridNavigationRowSelect( id, tree_mode_collapse );
-			}
+			show_search_inputs: false
 		} );
 
-		var left_click = navigation_div.find('.left-click');
-		var right_click = navigation_div.find('.right-click');
-		left_click.attr('src', Global.getRealImagePath('images/left_arrow.png'));
-		right_click.attr('src', Global.getRealImagePath('images/right_arrow.png'));
-
 		this.setNavigation();
-		this.setNavigationArrowsEnabled();
 
 
 		//Tab 0 start

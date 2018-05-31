@@ -1,7 +1,7 @@
 <?php
 /*********************************************************************************
  * TimeTrex is a Workforce Management program developed by
- * TimeTrex Software Inc. Copyright (C) 2003 - 2018 TimeTrex Software Inc.
+ * TimeTrex Software Inc. Copyright (C) 2003 - 2017 TimeTrex Software Inc.
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Affero General Public License version 3 as published by
@@ -35,9 +35,6 @@
  ********************************************************************************/
 
 
-/**
- * Class PurgeDatabase
- */
 class PurgeDatabase {
 	static $parent_table_column_map = array(
 											'users' => 'user_id',
@@ -100,21 +97,6 @@ class PurgeDatabase {
 										'client_payment' => array(
 														'client'
 														),
-										'legal_entity' => array(
-														'company'
-														),
-										'remittance_source_account' => array(
-														'legal_entity',
-														),
-										'remittance_destination_account' => array(
-														'users',
-														),
-										'payroll_remittance_agency' => array(
-														'legal_entity',
-														),
-										'payroll_remittance_agency_event' => array(
-														'payroll_remittance_agency',
-														),
 										'company_deduction' => array(
 														'company',
 														),
@@ -136,9 +118,6 @@ class PurgeDatabase {
 										'currency' => array(
 														'company'
 														),
-										'currency_rate' => array(
-														'currency'
-										),
 										'department' => array(
 														'company'
 														),
@@ -148,9 +127,6 @@ class PurgeDatabase {
 														),
 										'department_branch_user' => array(
 														'users'
-														),
-										'government_document' => array(
-														'users',
 														),
 										'document' => array(
 														'company',
@@ -229,9 +205,7 @@ class PurgeDatabase {
 										'job_item_group' => array(
 														'company'
 														),
-										'geo_fence' => array(
-														'company'
-														),
+
 
 
 
@@ -274,12 +248,6 @@ class PurgeDatabase {
 										'user_contact' => array(
 														'users'
 														),
-										'user_setting' => array(
-														'users'
-														),
-										'company_setting' => array(
-														'company'
-														),
 
 
 										'job_vacancy' => array(
@@ -316,13 +284,6 @@ class PurgeDatabase {
 										'job_applicant_license' => array(
 														'job_applicant',
 														),
-										'recruitment_portal_config' => array(
-														'company',
-														),
-										'recruitment_portal_field_map' => array(
-														'company',
-														),
-
 										'expense_policy' => array(
 														'company'
 														),
@@ -381,9 +342,6 @@ class PurgeDatabase {
 														),
 										'pay_stub_entry_account' => array(
 														'company'
-														),
-										'pay_stub_transaction' => array(
-														'pay_stub',
 														),
 										'pay_stub_entry_account_link' => array(
 														'company'
@@ -493,10 +451,6 @@ class PurgeDatabase {
 										'request' => array(
 														'users',
 														),
-										'request_schedule' => array(
-														'request',
-														),
-
 										'roe' => array(
 														'users'
 														),
@@ -610,9 +564,6 @@ class PurgeDatabase {
 														)
 										);
 
-	/**
-	 * @return bool
-	 */
 	static function Execute() {
 		global $db;
 
@@ -635,11 +586,6 @@ class PurgeDatabase {
 								'company_deduction_pay_stub_entry_account' => 120,
 								'company_generic_map' => 120,
 								'company_user_count' => 120,
-								'legal_entity' => 120,
-								'remittance_source_account' => 45,
-								'remittance_destination_account' => 120,
-								'payroll_remittance_agency' => 45,
-								'payroll_remittance_agency_event' => 45,
 								'authentication' => 2, //Sessions.
 								'hierarchy_user' => 45,
 								'hierarchy_object_type' => 45,
@@ -657,7 +603,6 @@ class PurgeDatabase {
 								'wage_group' => 45,
 								'cron' => 45,
 								'currency' => 120,
-								'currency_rate' => 120,
 								'contributing_pay_code_policy' => 45,
 								'contributing_shift_policy' => 45,
 								'department' => 45,
@@ -690,7 +635,6 @@ class PurgeDatabase {
 								'pay_stub_entry' => 120,
 								'pay_stub_entry_account' => 120,
 								'pay_stub_entry_account_link' => 120,
-								'pay_stub_transaction' => 120,
 								'permission' => 45,
 								'permission_control' => 45,
 								'permission_user' => 45,
@@ -729,8 +673,6 @@ class PurgeDatabase {
 								'user_title' => 45,
 								'user_wage' => 120,
 								'user_report_data' => 45,
-								'user_setting' => 120,
-								'company_setting' => 45,
 								'users' => 120,
 								'recurring_schedule' => 0, //Delete these immediately.
 								'bread_crumb' => 45,
@@ -757,7 +699,6 @@ class PurgeDatabase {
 
 		if ( getTTProductEdition() >= TT_PRODUCT_PROFESSIONAL ) {
 			$purge_professional_tables = array(
-								'request_schedule' => 45,
 								'report_schedule' => 45,
 								'report_custom_column' => 45,
 								);
@@ -779,7 +720,6 @@ class PurgeDatabase {
 								'premium_policy_job_item_group' => 45,
 								'area_policy' => 45,
 								'area_policy_location' => 45,
-								'government_document' => 120,
 								'document' => 45,
 								'document_attachment' => 45,
 								'document_group' => 45,
@@ -798,7 +738,6 @@ class PurgeDatabase {
 								'job_item_amendment' => 45,
 								'job_item_group' => 45,
 								'job_item_group_tree' => 45,
-								'geo_fence' => 45,
 								'payment_gateway' => 45,
 								'payment_gateway_currency' => 45,
 								'payment_gateway_credit_card_type' => 45,
@@ -829,8 +768,6 @@ class PurgeDatabase {
 								'job_applicant_license' => 45,
 								'job_applicant' => 45,
 								'job_application' => 45,
-								'recruitment_portal_config' => 45,
-								'recruitment_portal_field_map' => 45,
 								'expense_policy' => 45,
 								'user_expense' => 45,
 								);
@@ -843,9 +780,9 @@ class PurgeDatabase {
 		if ( is_array( $purge_tables ) AND is_array( $current_tables ) ) {
 			$db->StartTrans();
 			foreach( $purge_tables as $table => $expire_days ) {
-//				if ( PRODUCTION == FALSE ) {
-//					$expire_days = 0;
-//				}
+				//if ( PRODUCTION == FALSE ) {
+					//$expire_days = 0;
+				//}
 
 				if ( in_array($table, $current_tables) ) {
 					$query = array();
@@ -942,6 +879,7 @@ class PurgeDatabase {
 							$query[] = 'DELETE FROM '. $table .' as a USING users as d, company as e WHERE a.user_id = d.id AND d.company_id = e.id AND ( d.status_id = 20 ) AND ( a.updated_date <= '. (time() - (86400 * ($expire_days * 3))) .' AND d.updated_date <= '. (time() - (86400 * ($expire_days * 3))) .' AND e.updated_date <= '. (time() - (86400 * ($expire_days * 3))) .')';
 							break;
 						case 'user_identification':
+						case 'user_generic_data':
 						case 'pay_period_time_sheet_verify':
 						case 'message_sender':
 						case 'message_recipient':
@@ -958,15 +896,10 @@ class PurgeDatabase {
 							break;
 						case 'authorizations':
 							//Only delete authorization rows from deleted requests.
-							//  Make sure we try still try to purge old authorization type_ids (10,20,30), as they could be left laying around from long-time customers.
-							$query[] = 'DELETE FROM '. $table .' as a USING request as b WHERE a.object_type_id in (10, 20, 30, 50, 1010, 1020, 1030, 1040, 1100) AND a.object_id = b.id AND ( b.deleted = 1 ) AND ( b.updated_date <= '. (time() - (86400 * ($expire_days))) .' AND a.updated_date <= '. (time() - (86400 * ($expire_days))) .' AND b.updated_date <= '. (time() - (86400 * ($expire_days))) .')';
+							$query[] = 'DELETE FROM '. $table .' as a USING request as b WHERE a.object_type_id in (50, 1010, 1020, 1030, 1040, 1100) AND a.object_id = b.id AND ( b.deleted = 1 ) AND ( b.updated_date <= '. (time() - (86400 * ($expire_days))) .' AND a.updated_date <= '. (time() - (86400 * ($expire_days))) .' AND b.updated_date <= '. (time() - (86400 * ($expire_days))) .')';
 
-							$query[] = 'DELETE FROM '. $table .' as a WHERE a.object_type_id in (10, 20, 30, 50, 1010, 1020, 1030, 1040, 1100) AND NOT EXISTS ( select 1 from request as b WHERE a.object_id = b.id)';
+							$query[] = 'DELETE FROM '. $table .' as a WHERE a.object_type_id in (50, 1010, 1020, 1030, 1040, 1100) AND NOT EXISTS ( select 1 from request as b WHERE a.object_id = b.id)';
 							$query[] = 'DELETE FROM '. $table .' as a WHERE a.object_type_id in (90) AND NOT EXISTS ( select 1 from pay_period_time_sheet_verify as b WHERE a.object_id = b.id)';
-
-							if ( getTTProductEdition() >= TT_PRODUCT_ENTERPRISE ) {
-								$query[] = 'DELETE FROM ' . $table . ' as a WHERE a.object_type_id in (200) AND NOT EXISTS ( select 1 from user_expense as b WHERE a.object_id = b.id)';
-							}
 							break;
 						case 'station':
 							//Delete stations that haven't been used (allowed_date) or updated in over two years. Only consider PC/WirelessWeb stations types though.
@@ -1000,7 +933,7 @@ class PurgeDatabase {
 							$query[] = 'DELETE FROM '. $table .' as a WHERE NOT EXISTS ( select 1 from company as b WHERE a.company_id = b.id )';
 
 							//bank_account can have user_id is NULL or user_id = 0, we don't want to purge those records in either case.
-							$query[] = 'DELETE FROM '. $table .' as a WHERE ( a.user_id is NOT NULL AND a.user_id != \''. TTUUID::getZeroID() .'\' ) AND NOT EXISTS ( select 1 from users as b WHERE a.user_id = b.id )';
+							$query[] = 'DELETE FROM '. $table .' as a WHERE ( a.user_id is NOT NULL AND a.user_id != 0 ) AND NOT EXISTS ( select 1 from users as b WHERE a.user_id = b.id )';
 							break;
 						case 'user_group_tree':
 						case 'document_group_tree':
@@ -1065,7 +998,6 @@ class PurgeDatabase {
 						case 'shipping_policy_object':
 						case 'payment_gateway_currency':
 						case 'payment_gateway_credit_card_type':
-						case 'recruitment_portal_field_map':
 							break;
 						//Purge old tables from previous versions.
 						case 'message':
@@ -1110,7 +1042,7 @@ class PurgeDatabase {
 
 								//Delete rows where the parent table rows are already deleted.
 								//Keep records where ID = 0 or NULL as those can still be valid in some cases.
-								$query[] = 'DELETE FROM '. $table .' as a WHERE a.'. $parent_table_column .' != \''. TTUUID::getZeroID() .'\' AND a.'. $parent_table_column .' is NOT NULL AND NOT EXISTS ( SELECT 1 FROM '. $parent_table .' as b WHERE a.'. $parent_table_column .' = b.id )';
+								$query[] = 'DELETE FROM '. $table .' as a WHERE a.'. $parent_table_column .' != 0 AND a.'. $parent_table_column .' is NOT NULL AND NOT EXISTS ( SELECT 1 FROM '. $parent_table .' as b WHERE a.'. $parent_table_column .' = b.id )';
 							}
 
 							unset($parent_table_column, $parent_table);
@@ -1152,7 +1084,7 @@ class PurgeDatabase {
 					if ( $plf->getRecordCount() > 0 ) {
 						foreach( $plf as $p_obj ) {
 							Debug::text('  Punch ID: '. $p_obj->getID() .' Date: '. TTDate::getDate('DATE+TIME', $p_obj->getTimeStamp() ) .' Image File Name: '. $p_obj->getImageFileName(), __FILE__, __LINE__, __METHOD__, 10);
-							$query = 'UPDATE '. $plf->getTable() .' SET has_image = 0 WHERE id = \''. TTUUID::castUUID($p_obj->getID()) .'\'';
+							$query = 'UPDATE '. $plf->getTable() .' SET has_image = 0 WHERE id = '. (int)$p_obj->getID();
 							if ( $plf->db->Execute( $query ) !== FALSE ) {
 								$p_obj->cleanStoragePath();
 							} else {
@@ -1170,12 +1102,6 @@ class PurgeDatabase {
 
 			//$db->FailTrans();
 			$db->CompleteTrans();
-
-			//Since deleting a lot of records especially in system_log can cause large planning times of queries that select from that table. This manifested itself in the Audit tab taking 2-3 seconds to load.
-			// Therefore force a regular vacuum to run on the entire database once we are done. We could also tune the autovacuum parameters more for these tables to be extra sure.
-			Debug::text('  Start VACUUM...', __FILE__, __LINE__, __METHOD__, 10);
-			$db->Execute( 'VACUUM ANALYZE' );
-			Debug::text('  Done VACUUM...', __FILE__, __LINE__, __METHOD__, 10);
 		}
 		unset($purge_tables, $current_tables, $query);
 		Debug::Text('Purging database tables complete: '. TTDate::getDate('DATE+TIME', time() ), __FILE__, __LINE__, __METHOD__, 10);

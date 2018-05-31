@@ -1,7 +1,6 @@
 AccrualViewController = BaseViewController.extend( {
 	el: '#accrual_view_container',
 	type_array: null,
-	_required_files: ['APIAccrualBalance', 'APIAccrual', 'APIUserGroup', 'APIAccrualPolicyAccount', 'APIBranch', 'APIDepartment'],
 
 	user_group_api: null,
 	user_group_array: null,
@@ -21,8 +20,8 @@ AccrualViewController = BaseViewController.extend( {
 
 //	  parent_filter: null,
 
-	init: function( options ) {
-		//this._super('initialize', options );
+	initialize: function( options ) {
+		this._super( 'initialize', options );
 		this.edit_view_tpl = 'AccrualEditView.html';
 		this.permission_id = 'accrual';
 		this.viewId = 'Accrual';
@@ -50,7 +49,7 @@ AccrualViewController = BaseViewController.extend( {
 			this.initData();
 		}
 		this.setSelectRibbonMenuIfNecessary( 'Accrual' );
-		TTPromise.resolve('AccrualViewController', 'init');
+
 	},
 
 	initPermission: function() {
@@ -421,38 +420,6 @@ AccrualViewController = BaseViewController.extend( {
 		return this._getFilterColumnsFromDisplayColumns( column_filter, true );
 	},
 
-	onGridSelectAll: function(){
-		this.edit_enabled = this.editEnabled();
-		this.delete_enabled = this.deleteEnabled()
-		this.setDefaultMenu();
-	},
-
-	deleteEnabled: function(){
-		var grid_selected_id_array = this.getGridSelectIdArray();
-		if ( grid_selected_id_array.length > 0 ) {
-			for ( var i = grid_selected_id_array.length -1; i >= 0; i-- ) {
-				var selected_item = this.getRecordFromGridById(grid_selected_id_array[i]);
-				if (Global.isSet(this.delete_type_array[selected_item.type_id])) {
-					return true;
-				}
-			}
-		}
-		return false;
-	},
-
-	editEnabled: function() {
-		var grid_selected_id_array = this.getGridSelectIdArray();
-		if ( grid_selected_id_array.length > 0 ) {
-			for ( var i = grid_selected_id_array.length -1; i >= 0; i-- ) {
-				var selected_item = this.getRecordFromGridById(grid_selected_id_array[i]);
-				if (Global.isSet(this.user_type_array[selected_item.type_id])) {
-					return true;
-				}
-			}
-		}
-		return false;
-	},
-
 	onGridSelectRow: function() {
 
 		var selected_item = null;
@@ -462,8 +429,18 @@ AccrualViewController = BaseViewController.extend( {
 		if ( grid_selected_length > 0 ) {
 			selected_item = this.getRecordFromGridById( grid_selected_id_array[0] );
 
-			this.edit_enabled = this.editEnabled();
-			this.delete_enabled = this.deleteEnabled()
+			if ( Global.isSet( this.user_type_array[selected_item.type_id] ) ) {
+				this.edit_enabled = true;
+			} else {
+				this.edit_enabled = false;
+			}
+
+			if ( Global.isSet( this.delete_type_array[selected_item.type_id] ) ) {
+				this.delete_enabled = true;
+			} else {
+				this.delete_enabled = false;
+
+			}
 		}
 
 		this.setDefaultMenu();
@@ -1133,7 +1110,7 @@ AccrualViewController = BaseViewController.extend( {
 		filter.filter_data = Global.convertLayoutFilterToAPIFilter( this.select_layout );
 		filter.filter_sort = this.select_layout.data.filter_sort;
 
-		if ( TTUUID.isUUID(this.refresh_id) && !this.sub_view_mode ) {
+		if ( this.refresh_id > 0 && !this.sub_view_mode ) {
 			filter.filter_data = {};
 			filter.filter_data.id = this.refresh_id;
 		} else {
@@ -1153,7 +1130,7 @@ AccrualViewController = BaseViewController.extend( {
 					result_data = Global.formatGridData( result_data, $this.api.key_name );
 				}
 
-				if ( TTUUID.isUUID($this.refresh_id) && !$this.sub_view_mode ) {
+				if ( $this.refresh_id > 0 && !$this.sub_view_mode ) {
 					$this.refresh_id = null;
 					var grid_source_data = $this.grid.getGridParam( 'data' );
 					var len = grid_source_data.length;
@@ -1280,34 +1257,28 @@ AccrualViewController.loadView = function() {
 
 	Global.loadViewSource( 'Accrual', 'AccrualView.html', function( result ) {
 
-		TTPromise.wait('BaseViewController', 'initialize', function () {
+		var args = {};
+		var template = _.template( result );
 
-			var args = {};
-			var template = _.template(result);
-
-			Global.contentContainer().html(template(args));
-		});
+		Global.contentContainer().html( template( args ) );
 	} )
 
 };
 
 AccrualViewController.loadSubView = function( container, beforeViewLoadedFun, afterViewLoadedFun ) {
+
 	Global.loadViewSource( 'Accrual', 'SubAccrualView.html', function( result ) {
-
 		var args = {};
-		var template = _.template(result);
+		var template = _.template( result );
 
-		if (Global.isSet(beforeViewLoadedFun)) {
+		if ( Global.isSet( beforeViewLoadedFun ) ) {
 			beforeViewLoadedFun();
 		}
 
-		if (Global.isSet(container)) {
-			container.html(template(args));
-			if (Global.isSet(afterViewLoadedFun)) {
-				TTPromise.add('AccrualViewController', 'init');
-				TTPromise.wait('AccrualViewController', 'init', function () {
-					afterViewLoadedFun(sub_accrual_view_controller);
-				});
+		if ( Global.isSet( container ) ) {
+			container.html( template( args ) );
+			if ( Global.isSet( afterViewLoadedFun ) ) {
+				afterViewLoadedFun( sub_accrual_view_controller );
 			}
 		}
 	} )

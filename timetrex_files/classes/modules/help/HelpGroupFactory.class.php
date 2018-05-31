@@ -1,7 +1,7 @@
 <?php
 /*********************************************************************************
  * TimeTrex is a Workforce Management program developed by
- * TimeTrex Software Inc. Copyright (C) 2003 - 2018 TimeTrex Software Inc.
+ * TimeTrex Software Inc. Copyright (C) 2003 - 2017 TimeTrex Software Inc.
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Affero General Public License version 3 as published by
@@ -41,194 +41,110 @@
 class HelpGroupFactory extends Factory {
 	protected $table = 'help_group';
 	protected $pk_sequence_name = 'help_group_id_seq'; //PK Sequence name
-
-	/**
-	 * @return mixed
-	 */
 	function getHelpGroupControl() {
-		return $this->getGenericDataValue( 'help_group_control_id' );
+		return (int)$this->data['help_group_control_id'];
+	}
+	function setHelpGroupControl($id) {
+		$id = trim($id);
+		
+		$hgclf = TTnew( 'HelpGroupControlListFactory' );
+		
+		if ( $this->Validator->isResultSetWithRows(	'help_group_control',
+													$hgclf->getByID($id),
+													TTi18n::gettext('Help Group Control is invalid')
+													) ) {
+			$this->data['help_group_control_id'] = $id;
+		
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @param string $value UUID
-	 * @return bool
-	 */
-	function setHelpGroupControl( $value) {
-		$value = TTUUID::castUUID( $value );
-		return $this->setGenericDataValue( 'help_group_control_id', $value );
-	}
-
-	/**
-	 * @return mixed
-	 */
 	function getHelp() {
-		return $this->getGenericDataValue( 'help_id' );
+		return (int)$this->data['help_id'];
 	}
+	function setHelp($id) {
+		$id = trim($id);
+		
+		$hlf = TTnew( 'HelpListFactory' );
+		
+		if ( $this->Validator->isResultSetWithRows(	'help',
+													$hlf->getByID($id),
+													TTi18n::gettext('Help Entry is invalid')
+															) ) {
+			$this->data['help_id'] = $id;
+		
+			return TRUE;
+		}
 
-	/**
-	 * @param string $value UUID
-	 * @return bool
-	 */
-	function setHelp( $value) {
-		$value = TTUUID::castUUID( $value );
-		return $this->setGenericDataValue( 'help_id', $value );
+		return FALSE;
 	}
-
-	/**
-	 * @return mixed
-	 */
+	
 	function getOrder() {
-		return $this->getGenericDataValue( 'order_value' );
+		return $this->data['order_value'];
 	}
-
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setOrder( $value) {
+	function setOrder($value) {
 		$value = trim($value);
-		return $this->setGenericDataValue( 'order_value', $value );
+				
+		if ( $this->Validator->isNumeric(	'order',
+											$value,
+											TTi18n::gettext('Order is invalid')
+													) ) {
+			$this->data['order_value'] = $value;
+		
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
 	//This table doesn't have any of these columns, so overload the functions.
-
-	/**
-	 * @return bool
-	 */
 	function getDeleted() {
 		return FALSE;
 	}
-
-	/**
-	 * @param $bool
-	 * @return bool
-	 */
-	function setDeleted( $bool) {
+	function setDeleted($bool) {		
 		return FALSE;
 	}
-
-	/**
-	 * @return bool
-	 */
+	
 	function getCreatedDate() {
 		return FALSE;
 	}
-
-	/**
-	 * @param int $epoch EPOCH
-	 * @return bool
-	 */
-	function setCreatedDate( $epoch = NULL) {
-		return FALSE;
+	function setCreatedDate($epoch = NULL) {
+		return FALSE;		
 	}
-
-	/**
-	 * @return bool
-	 */
 	function getCreatedBy() {
 		return FALSE;
 	}
-
-	/**
-	 * @param string $id UUID
-	 * @return bool
-	 */
-	function setCreatedBy( $id = NULL) {
-		return FALSE;
+	function setCreatedBy($id = NULL) {
+		return FALSE;		
 	}
 
-	/**
-	 * @return bool
-	 */
 	function getUpdatedDate() {
 		return FALSE;
 	}
-
-	/**
-	 * @param int $epoch EPOCH
-	 * @return bool
-	 */
-	function setUpdatedDate( $epoch = NULL) {
-		return FALSE;
+	function setUpdatedDate($epoch = NULL) {
+		return FALSE;		
 	}
-
-	/**
-	 * @return bool
-	 */
 	function getUpdatedBy() {
 		return FALSE;
 	}
-
-	/**
-	 * @param string $id UUID
-	 * @return bool
-	 */
-	function setUpdatedBy( $id = NULL) {
-		return FALSE;
+	function setUpdatedBy($id = NULL) {
+		return FALSE;	
 	}
 
 
-	/**
-	 * @return bool
-	 */
 	function getDeletedDate() {
 		return FALSE;
 	}
-
-	/**
-	 * @param int $epoch EPOCH
-	 * @return bool
-	 */
-	function setDeletedDate( $epoch = NULL) {
+	function setDeletedDate($epoch = NULL) {		
 		return FALSE;
 	}
-
-	/**
-	 * @return bool
-	 */
 	function getDeletedBy() {
 		return FALSE;
 	}
-
-	/**
-	 * @param string $id UUID
-	 * @return bool
-	 */
-	function setDeletedBy( $id = NULL) {
+	function setDeletedBy($id = NULL) {		
 		return FALSE;
-	}
-
-	/**
-	 * @param string $id UUID
-	 * @return bool
-	 */
-	function Validate() {
-		//
-		// BELOW: Validation code moved from set*() functions.
-		//
-		// Help Group Control
-		$hgclf = TTnew( 'HelpGroupControlListFactory' );
-		$this->Validator->isResultSetWithRows(	'help_group_control',
-														$hgclf->getByID($this->getHelpGroupControl()),
-														TTi18n::gettext('Help Group Control is invalid')
-													);
-		// Help Entry
-		$hlf = TTnew( 'HelpListFactory' );
-		$this->Validator->isResultSetWithRows(	'help',
-														$hlf->getByID($this->getHelp()),
-														TTi18n::gettext('Help Entry is invalid')
-													);
-		// Order
-		$this->Validator->isNumeric(	'order',
-												$this->getOrder(),
-												TTi18n::gettext('Order is invalid')
-											);
-
-
-		//
-		// ABOVE: Validation code moved from set*() functions.
-		//
-		return TRUE;
 	}
 }
 ?>

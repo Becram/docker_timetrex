@@ -2,8 +2,8 @@ ResetForgotPasswordWizardController = BaseWizardController.extend( {
 
 	el: '.wizard',
 
-	init: function() {
-		//this._super('initialize' );
+	initialize: function() {
+		this._super( 'initialize' );
 
 		this.title = $.i18n._( 'Reset Password' );
 		this.steps = 1;
@@ -121,9 +121,7 @@ ResetForgotPasswordWizardController = BaseWizardController.extend( {
 		this.stepsWidgetDic[1].new_password.clearErrorStyle();
 		this.stepsWidgetDic[1].confirm_password.clearErrorStyle();
 
-		if ( typeof LocalCacheData.all_url_args.key == 'undefined'  ) {
-			this.stepsWidgetDic[1].confirm_password.setErrorStyle($.i18n._('Password reset key is invalid, please try resetting your password again (u)'), true);
-		} else if ( !new_password ) {
+		if ( !new_password ) {
 			this.stepsWidgetDic[1].new_password.setErrorStyle( $.i18n._( 'New password can\'t be empty' ), true );
 		} else if ( new_password !== confirm_password ) {
 			this.stepsWidgetDic[1].confirm_password.setErrorStyle( $.i18n._( 'New password does not match' ), true );

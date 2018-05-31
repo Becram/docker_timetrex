@@ -1,7 +1,7 @@
 <?php
 /*********************************************************************************
  * TimeTrex is a Workforce Management program developed by
- * TimeTrex Software Inc. Copyright (C) 2003 - 2018 TimeTrex Software Inc.
+ * TimeTrex Software Inc. Copyright (C) 2003 - 2017 TimeTrex Software Inc.
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Affero General Public License version 3 as published by
@@ -46,11 +46,6 @@ class AuthorizationFactory extends Factory {
 	protected $obj_handler_obj = NULL;
 	protected $hierarchy_arr = NULL;
 
-	/**
-	 * @param $name
-	 * @param null $parent
-	 * @return array|null
-	 */
 	function _getFactoryOptions( $name, $parent = NULL ) {
 
 		$retval = NULL;
@@ -112,10 +107,6 @@ class AuthorizationFactory extends Factory {
 		return $retval;
 	}
 
-	/**
-	 * @param $data
-	 * @return array
-	 */
 	function _getVariableToFunctionMap( $data ) {
 		$variable_function_map = array(
 										'id' => 'ID',
@@ -128,35 +119,25 @@ class AuthorizationFactory extends Factory {
 		return $variable_function_map;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function getCurrentUserObject() {
 		return $this->getGenericObject( 'UserListFactory', $this->getCurrentUser(), 'user_obj' );
 	}
 
 	//Stores the current user in memory, so we can determine if its the employee verifying, or a superior.
-
-	/**
-	 * @return mixed
-	 */
 	function getCurrentUser() {
-		return $this->getGenericTempDataValue( 'current_user_id' );
+		if ( isset($this->tmp_data['current_user_id']) ) {
+			return $this->tmp_data['current_user_id'];
+		}
+	}
+	function setCurrentUser($id) {
+		$id = trim($id);
+
+		$this->tmp_data['current_user_id'] = $id;
+
+		return TRUE;
 	}
 
-	/**
-	 * @param string $value UUID
-	 * @return bool
-	 */
-	function setCurrentUser( $value) {
-		$value = trim($value);
-		return $this->setGenericTempDataValue( 'current_user_id', $value );
-	}
 
-
-	/**
-	 * @return array|bool|null
-	 */
 	function getHierarchyArray() {
 		if ( is_array($this->hierarchy_arr) ) {
 			return $this->hierarchy_arr;
@@ -168,7 +149,7 @@ class AuthorizationFactory extends Factory {
 				$current_obj = $this->getObjectHandler()->getCurrent();
 				$object_user_id = $current_obj->getUser();
 
-				if ( TTUUID::isUUID( $object_user_id ) AND $object_user_id != TTUUID::getZeroID() AND $object_user_id != TTUUID::getNotExistID() ) {
+				if ( $object_user_id > 0 ) {
 					Debug::Text(' Authorizing User ID: '. $user_id, __FILE__, __LINE__, __METHOD__, 10);
 					Debug::Text(' Object User ID: '. $object_user_id, __FILE__, __LINE__, __METHOD__, 10);
 
@@ -193,9 +174,6 @@ class AuthorizationFactory extends Factory {
 	}
 
 
-	/**
-	 * @return array|bool
-	 */
 	function getHierarchyChildLevelArray() {
 		$retval = array();
 
@@ -223,10 +201,6 @@ class AuthorizationFactory extends Factory {
 		return FALSE;
 	}
 
-	/**
-	 * @param bool $force
-	 * @return bool|mixed
-	 */
 	function getHierarchyCurrentLevelArray( $force = FALSE ) {
 		$retval = FALSE;
 
@@ -259,13 +233,10 @@ class AuthorizationFactory extends Factory {
 		return $retval;
 	}
 
-	/**
-	 * @return array|bool|mixed
-	 */
 	function getHierarchyParentLevelArray() {
 		$retval = FALSE;
 
-		$user_id = TTUUID::castUUID($this->getCurrentUser());
+		$user_id = (int)$this->getCurrentUser();
 		$parent_arr = array_reverse( (array)$this->getHierarchyArray() );
 		if ( is_array( $parent_arr ) AND count( $parent_arr ) > 0 ) {
 			$next_level = FALSE;
@@ -294,10 +265,6 @@ class AuthorizationFactory extends Factory {
 	}
 
 	//This will return false if it can't find a hierarchy, or if its at the top level (1) and can't find a higher level.
-
-	/**
-	 * @return bool|int|string
-	 */
 	function getNextHierarchyLevel() {
 		$retval = FALSE;
 
@@ -320,15 +287,9 @@ class AuthorizationFactory extends Factory {
 		return $retval;
 	}
 
-	/**
-	 * @param string $company_id UUID
-	 * @param string $user_id UUID
-	 * @param int $hierarchy_type_id
-	 * @return int|mixed
-	 */
 	static function getInitialHierarchyLevel( $company_id, $user_id, $hierarchy_type_id ) {
 		$hierarchy_highest_level = 99;
-		if ( $company_id != '' AND $user_id != '' AND $hierarchy_type_id > 0 ) {
+		if ( $company_id > 0 AND $user_id > 0 AND $hierarchy_type_id > 0 ) {
 			$hlf = TTnew( 'HierarchyListFactory' );
 			$hierarchy_arr = $hlf->getHierarchyParentByCompanyIdAndUserIdAndObjectTypeID( $company_id, $user_id, $hierarchy_type_id, FALSE );
 			if ( isset( $hierarchy_arr ) AND is_array( $hierarchy_arr ) ) {
@@ -360,9 +321,6 @@ class AuthorizationFactory extends Factory {
 		return $hierarchy_highest_level;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function isValidParent() {
 		$user_id = $this->getCurrentUser();
 		$parent_arr = $this->getHierarchyArray();
@@ -380,9 +338,6 @@ class AuthorizationFactory extends Factory {
 		return FALSE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function isFinalAuthorization() {
 		$user_id = $this->getCurrentUser();
 		$parent_arr = $this->getHierarchyArray();
@@ -398,9 +353,6 @@ class AuthorizationFactory extends Factory {
 		return FALSE;
 	}
 
-	/**
-	 * @return null|object
-	 */
 	function getObjectHandler() {
 		if ( is_object($this->obj_handler) ) {
 			return $this->obj_handler;
@@ -426,56 +378,60 @@ class AuthorizationFactory extends Factory {
 		}
 	}
 
-	/**
-	 * @return bool|int
-	 */
 	function getObjectType() {
-		return $this->getGenericDataValue( 'object_type_id' );
+		if ( isset($this->data['object_type_id']) ) {
+			return (int)$this->data['object_type_id'];
+		}
+
+		return FALSE;
+	}
+	function setObjectType($type) {
+		$type = trim($type);
+
+		if ( $this->Validator->inArrayKey(	'object_type',
+											$type,
+											TTi18n::gettext('Object Type is invalid'),
+											$this->getOptions('object_type')) ) {
+
+			$this->data['object_type_id'] = $type;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setObjectType( $value) {
-		$value = (int)trim($value);
-		return $this->setGenericDataValue( 'object_type_id', $value );
-	}
-
-	/**
-	 * @return bool|mixed
-	 */
 	function getObject() {
-		return $this->getGenericDataValue( 'object_id' );
+		if ( isset($this->data['object_id']) ) {
+			return (int)$this->data['object_id'];
+		}
+
+		return FALSE;
+	}
+	function setObject($id) {
+		$id = trim($id);
+
+		if (	$this->Validator->isResultSetWithRows(	'object',
+														( is_object( $this->getObjectHandler() ) ) ? $this->getObjectHandler()->getByID($id) : FALSE,
+														TTi18n::gettext('Object ID is invalid')
+														) ) {
+			$this->data['object_id'] = $id;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @param string $value UUID
-	 * @return bool
-	 */
-	function setObject( $value) {
-		$value = TTUUID::castUUID( $value );
-		return $this->setGenericDataValue( 'object_id', $value );
-	}
-
-	/**
-	 * @return bool
-	 */
 	function getAuthorized() {
-		return $this->fromBool( $this->getGenericDataValue( 'authorized' ) );
+		return $this->fromBool( $this->data['authorized'] );
+	}
+	function setAuthorized($bool) {
+		$this->data['authorized'] = $this->toBool($bool);
+
+		return TRUE;
 	}
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setAuthorized( $value) {
-		return $this->setGenericDataValue( 'authorized', $this->toBool($value) );
-	}
-
-	/**
-	 * @return bool
-	 */
 	function clearHistory() {
 		Debug::text('Clearing Authorization History For Type: '. $this->getObjectType() .' ID: '. $this->getObject(), __FILE__, __LINE__, __METHOD__, 10);
 
@@ -494,67 +450,49 @@ class AuthorizationFactory extends Factory {
 		return TRUE;
 	}
 
-	/**
-	 * @return object
-	 */
 	function getObjectHandlerObject() {
 		if ( is_object($this->obj_handler_obj) ) {
 			return $this->obj_handler_obj;
 		} else {
+			$is_final_authorization = $this->isFinalAuthorization();
+
 			//Get user_id of object.
 			$this->getObjectHandler()->getByID( $this->getObject() );
 			$this->obj_handler_obj = $this->getObjectHandler()->getCurrent();
-			if ( method_exists( $this->obj_handler_obj, 'setCurrentUser' ) AND $this->obj_handler_obj->getCurrentUser() != $this->getCurrentUser() ) { //Required for authorizing TimeSheets from MyAccount -> TimeSheet Authorization.
-				//$this->obj_handler_obj->setCurrentUser( $this->getCurrentUser() );
+			if ( $this->getAuthorized() === TRUE ) {
+				if ( $is_final_authorization === TRUE ) {
+					if ( $this->getCurrentUser() != $this->obj_handler_obj->getUser() ) {
+						Debug::Text('  Approving Authorization... Final Authorizing Object: '. $this->getObject() .' - Type: '. $this->getObjectType(), __FILE__, __LINE__, __METHOD__, 10);
+						$this->obj_handler_obj->setAuthorizationLevel( 1 );
+						$this->obj_handler_obj->setStatus(50); //Active/Authorized
+						$this->obj_handler_obj->setAuthorized(TRUE);
+					} else {
+						Debug::Text('  Currently logged in user is authorizing (or submitting as new) their own request, not authorizing...', __FILE__, __LINE__, __METHOD__, 10);
+					}
+				} else {
+					Debug::text('  Approving Authorization, moving to next level up...', __FILE__, __LINE__, __METHOD__, 10);
+					$current_level = $this->obj_handler_obj->getAuthorizationLevel();
+					if ( $current_level > 1 ) { //Highest level is 1, so no point in making it less than that.
+
+						//Get the next level above the current user doing the authorization, in case they have dropped down a level or two.
+						$next_level = $this->getNextHierarchyLevel();
+						if ( $next_level !== FALSE AND $next_level < $current_level ) {
+							Debug::text('  Current Level: '. $current_level .' Moving Up To Level: '. $next_level, __FILE__, __LINE__, __METHOD__, 10);
+							$this->obj_handler_obj->setAuthorizationLevel( $next_level );
+						}
+					}
+					unset( $current_level, $next_level );
+				}
+			} else {
+				Debug::text('  Declining Authorization...', __FILE__, __LINE__, __METHOD__, 10);
+				$this->obj_handler_obj->setStatus(55); //'AUTHORIZATION DECLINED'
+				$this->obj_handler_obj->setAuthorized(FALSE);
 			}
 
 			return $this->obj_handler_obj;
 		}
 	}
 
-	/**
-	 * @return boolean
-	 */
-	function setObjectHandlerStatus() {
-		$is_final_authorization = $this->isFinalAuthorization();
-
-		$this->obj_handler_obj = $this->getObjectHandlerObject();
-		if ( $this->getAuthorized() === TRUE ) {
-			if ( $is_final_authorization === TRUE ) {
-				if ( $this->getCurrentUser() != $this->obj_handler_obj->getUser() ) {
-					Debug::Text('  Approving Authorization... Final Authorizing Object: '. $this->getObject() .' - Type: '. $this->getObjectType(), __FILE__, __LINE__, __METHOD__, 10);
-					$this->obj_handler_obj->setAuthorizationLevel( 1 );
-					$this->obj_handler_obj->setStatus(50); //Active/Authorized
-					$this->obj_handler_obj->setAuthorized(TRUE);
-				} else {
-					Debug::Text('  Currently logged in user is authorizing (or submitting as new) their own request, not authorizing...', __FILE__, __LINE__, __METHOD__, 10);
-				}
-			} else {
-				Debug::text('  Approving Authorization, moving to next level up...', __FILE__, __LINE__, __METHOD__, 10);
-				$current_level = $this->obj_handler_obj->getAuthorizationLevel();
-				if ( $current_level > 1 ) { //Highest level is 1, so no point in making it less than that.
-
-					//Get the next level above the current user doing the authorization, in case they have dropped down a level or two.
-					$next_level = $this->getNextHierarchyLevel();
-					if ( $next_level !== FALSE AND $next_level < $current_level ) {
-						Debug::text('  Current Level: '. $current_level .' Moving Up To Level: '. $next_level, __FILE__, __LINE__, __METHOD__, 10);
-						$this->obj_handler_obj->setAuthorizationLevel( $next_level );
-					}
-				}
-				unset( $current_level, $next_level );
-			}
-		} else {
-			Debug::text('  Declining Authorization...', __FILE__, __LINE__, __METHOD__, 10);
-			$this->obj_handler_obj->setStatus(55); //'AUTHORIZATION DECLINED'
-			$this->obj_handler_obj->setAuthorized(FALSE);
-		}
-
-		return TRUE;
-	}
-
-	/**
-	 * @return array|bool
-	 */
 	function getEmailAuthorizationAddresses() {
 		$object_handler_user_id = $this->getObjectHandlerObject()->getUser(); //Object handler (request) user_id.
 
@@ -634,9 +572,6 @@ class AuthorizationFactory extends Factory {
 		return FALSE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function emailAuthorization() {
 		Debug::Text('emailAuthorization: ', __FILE__, __LINE__, __METHOD__, 10);
 
@@ -764,14 +699,7 @@ class AuthorizationFactory extends Factory {
 	}
 
 	//Used by Request/TimeSheetVerification/Expense when initially saving a record to notify the immediate superiors, rather than using the message notification.
-
-	/**
-	 * @param string $current_user_id UUID
-	 * @param int $object_type_id
-	 * @param string $object_id UUID
-	 * @return bool
-	 */
-	static function emailAuthorizationOnInitialObjectSave( $current_user_id, $object_type_id, $object_id) {
+	static function emailAuthorizationOnInitialObjectSave($current_user_id, $object_type_id, $object_id) {
 		$authorization_obj = TTNew('AuthorizationFactory');
 		$authorization_obj->setObjectType( $object_type_id );
 		$authorization_obj->setObject( $object_id );
@@ -783,39 +711,16 @@ class AuthorizationFactory extends Factory {
 	}
 
 
-	/**
-	 * @param bool $ignore_warning
-	 * @return bool
-	 */
 	function Validate( $ignore_warning = TRUE ) {
-		//
-		// BELOW: Validation code moved from set*() functions.
-		//
-		// Object Type
-		$this->Validator->inArrayKey(	'object_type',
-												$this->getObjectType(),
-												TTi18n::gettext('Object Type is invalid'),
-												$this->getOptions('object_type')
-											);
-		// Object ID
-		$this->Validator->isResultSetWithRows(	'object',
-												( is_object( $this->getObjectHandler() ) ) ? $this->getObjectHandler()->getByID($this->getObject()) : FALSE,
-												TTi18n::gettext('Object ID is invalid')
-											);
-		//
-		// ABOVE: Validation code moved from set*() functions.
-		//
 		if ( $this->getDeleted() === FALSE
 				AND $this->isFinalAuthorization() === FALSE
 				AND $this->isValidParent() === FALSE ) {
 			$this->Validator->isTrue(		'parent',
 											FALSE,
-											TTi18n::gettext('Employee authorizing this object is not a parent of it'));
+											TTi18n::gettext('User authorizing this object is not a parent of it'));
 
 			return FALSE;
 		}
-
-		$this->setObjectHandlerStatus();
 
 		if ( $this->getDeleted() == FALSE AND is_object( $this->getObjectHandlerObject() ) AND $this->getObjectHandlerObject()->isValid() == FALSE ) {
 			Debug::text('  ObjectHandler Validation Failed, pass validation errors up the chain...', __FILE__, __LINE__, __METHOD__, 10);
@@ -825,9 +730,6 @@ class AuthorizationFactory extends Factory {
 		return TRUE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function preSave() {
 		//Debug::Text(' Calling preSave!: ', __FILE__, __LINE__, __METHOD__, 10);
 		$this->StartTransaction();
@@ -835,9 +737,6 @@ class AuthorizationFactory extends Factory {
 		return TRUE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function postSave() {
 		if ( $this->getDeleted() == FALSE ) {
 			if ( is_object( $this->getObjectHandlerObject() ) AND $this->getObjectHandlerObject()->isValid() == TRUE ) {
@@ -873,10 +772,6 @@ class AuthorizationFactory extends Factory {
 		return TRUE;
 	}
 
-	/**
-	 * @param $data
-	 * @return bool
-	 */
 	function setObjectFromArray( $data ) {
 		if ( is_array( $data ) ) {
 			$variable_function_map = $this->getVariableToFunctionMap();
@@ -902,11 +797,6 @@ class AuthorizationFactory extends Factory {
 		return FALSE;
 	}
 
-	/**
-	 * @param null $include_columns
-	 * @param bool $permission_children_ids
-	 * @return array
-	 */
 	function getObjectAsArray( $include_columns = NULL, $permission_children_ids = FALSE ) {
 		$data = array();
 		$variable_function_map = $this->getVariableToFunctionMap();
@@ -936,10 +826,6 @@ class AuthorizationFactory extends Factory {
 		return $data;
 	}
 
-	/**
-	 * @param $log_action
-	 * @return bool
-	 */
 	function addLog( $log_action ) {
 		if ($this->getAuthorized() === TRUE ) {
 			$authorized = TTi18n::getText('True');

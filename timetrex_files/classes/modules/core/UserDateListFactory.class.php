@@ -1,7 +1,7 @@
 <?php
 /*********************************************************************************
  * TimeTrex is a Workforce Management program developed by
- * TimeTrex Software Inc. Copyright (C) 2003 - 2018 TimeTrex Software Inc.
+ * TimeTrex Software Inc. Copyright (C) 2003 - 2017 TimeTrex Software Inc.
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Affero General Public License version 3 as published by
@@ -40,14 +40,7 @@
  */
 class UserDateListFactory extends UserDateFactory implements IteratorAggregate {
 
-	/**
-	 * @param int $limit Limit the number of records returned
-	 * @param int $page Page number of records to return for pagination
-	 * @param array $where Additional SQL WHERE clause in format of array( $column => $filter, ... ). ie: array( 'id' => 1, ... )
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return $this
-	 */
-	function getAll( $limit = NULL, $page = NULL, $where = NULL, $order = NULL) {
+	function getAll($limit = NULL, $page = NULL, $where = NULL, $order = NULL) {
 		$query = '
 					select	*
 					from	'. $this->getTable() .'
@@ -60,19 +53,13 @@ class UserDateListFactory extends UserDateFactory implements IteratorAggregate {
 		return $this;
 	}
 
-	/**
-	 * @param string $id UUID
-	 * @param array $where Additional SQL WHERE clause in format of array( $column => $filter, ... ). ie: array( 'id' => 1, ... )
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return bool|UserDateListFactory
-	 */
-	function getById( $id, $where = NULL, $order = NULL) {
+	function getById($id, $where = NULL, $order = NULL) {
 		if ( $id == '') {
 			return FALSE;
 		}
 
 		$ph = array(
-					'id' => TTUUID::castUUID($id),
+					'id' => (int)$id,
 					);
 
 
@@ -95,13 +82,7 @@ class UserDateListFactory extends UserDateFactory implements IteratorAggregate {
 		return $this;
 	}
 
-	/**
-	 * @param string $id UUID
-	 * @param array $where Additional SQL WHERE clause in format of array( $column => $filter, ... ). ie: array( 'id' => 1, ... )
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return bool|UserDateListFactory
-	 */
-	function getByIds( $id, $where = NULL, $order = NULL) {
+	function getByIds($id, $where = NULL, $order = NULL) {
 		if ( $id == '') {
 			return FALSE;
 		}
@@ -111,7 +92,7 @@ class UserDateListFactory extends UserDateFactory implements IteratorAggregate {
 		$query = '
 					select	*
 					from	'. $this->getTable() .'
-					where	id in ('. $this->getListSQL( $id, $ph, 'uuid' ) .')
+					where	id in ('. $this->getListSQL( $id, $ph, 'int' ) .')
 						AND deleted = 0';
 		$query .= $this->getWhereSQL( $where );
 		$query .= $this->getSortSQL( $order );
@@ -121,12 +102,7 @@ class UserDateListFactory extends UserDateFactory implements IteratorAggregate {
 		return $this;
 	}
 
-	/**
-	 * @param string $company_id UUID
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return bool|UserDateListFactory
-	 */
-	function getByCompanyId( $company_id, $order = NULL) {
+	function getByCompanyId($company_id, $order = NULL) {
 		if ( $company_id == '') {
 			return FALSE;
 		}
@@ -134,7 +110,7 @@ class UserDateListFactory extends UserDateFactory implements IteratorAggregate {
 		$uf = new UserFactory();
 
 		$ph = array(
-					'company_id' => TTUUID::castUUID($company_id),
+					'company_id' => (int)$company_id,
 					);
 
 		$query = '
@@ -151,13 +127,7 @@ class UserDateListFactory extends UserDateFactory implements IteratorAggregate {
 		return $this;
 	}
 
-	/**
-	 * @param string $id UUID
-	 * @param string $company_id UUID
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return bool|UserDateListFactory
-	 */
-	function getByIdAndCompanyId( $id, $company_id, $order = NULL) {
+	function getByIdAndCompanyId($id, $company_id, $order = NULL) {
 		if ( $id == '') {
 			return FALSE;
 		}
@@ -169,8 +139,8 @@ class UserDateListFactory extends UserDateFactory implements IteratorAggregate {
 		$uf = new UserFactory();
 
 		$ph = array(
-					'company_id' => TTUUID::castUUID($company_id),
-					'id' => TTUUID::castUUID($id),
+					'company_id' => (int)$company_id,
+					'id' => (int)$id,
 					);
 
 		$query = '
@@ -188,16 +158,7 @@ class UserDateListFactory extends UserDateFactory implements IteratorAggregate {
 		return $this;
 	}
 
-	/**
-	 * @param string $company_id UUID
-	 * @param int $start_date EPOCH
-	 * @param int $end_date EPOCH
-	 * @param $status
-	 * @param array $where Additional SQL WHERE clause in format of array( $column => $filter, ... ). ie: array( 'id' => 1, ... )
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return bool|UserDateListFactory
-	 */
-	function getByCompanyIdAndStartDateAndEndDateAndPayPeriodStatus( $company_id, $start_date, $end_date, $status, $where = NULL, $order = NULL) {
+	function getByCompanyIdAndStartDateAndEndDateAndPayPeriodStatus($company_id, $start_date, $end_date, $status, $where = NULL, $order = NULL) {
 		if ( $company_id == '') {
 			return FALSE;
 		}
@@ -221,7 +182,7 @@ class UserDateListFactory extends UserDateFactory implements IteratorAggregate {
 		$ppf = new PayPeriodFactory();
 
 		$ph = array(
-					'company_id' => TTUUID::castUUID($company_id),
+					'company_id' => (int)$company_id,
 					'start_date' => $this->db->BindDate( $start_date ),
 					'end_date' => $this->db->BindDate( $end_date ),
 					);
@@ -245,18 +206,13 @@ class UserDateListFactory extends UserDateFactory implements IteratorAggregate {
 		return $this;
 	}
 
-	/**
-	 * @param string $user_id UUID
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return bool|UserDateListFactory
-	 */
-	function getByUserId( $user_id, $order = NULL) {
+	function getByUserId($user_id, $order = NULL) {
 		if ( $user_id == '') {
 			return FALSE;
 		}
 
 		$ph = array(
-					'user_id' => TTUUID::castUUID($user_id),
+					'user_id' => (int)$user_id,
 					);
 
 		$query = '
@@ -271,18 +227,13 @@ class UserDateListFactory extends UserDateFactory implements IteratorAggregate {
 		return $this;
 	}
 
-	/**
-	 * @param string $pay_period_id UUID
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return bool|UserDateListFactory
-	 */
-	function getByPayPeriodId( $pay_period_id, $order = NULL) {
+	function getByPayPeriodId($pay_period_id, $order = NULL) {
 		if ( $pay_period_id == '' ) {
 			return FALSE;
 		}
 
 		$ph = array(
-					'pay_period_id' => TTUUID::castUUID($pay_period_id),
+					'pay_period_id' => (int)$pay_period_id,
 					);
 
 		$query = '
@@ -297,11 +248,7 @@ class UserDateListFactory extends UserDateFactory implements IteratorAggregate {
 		return $this;
 	}
 
-	/**
-	 * @param int $date EPOCH
-	 * @return bool|UserDateListFactory
-	 */
-	function getByDate( $date) {
+	function getByDate($date) {
 		if ( $date == '' ) {
 			return FALSE;
 		}
@@ -326,12 +273,7 @@ class UserDateListFactory extends UserDateFactory implements IteratorAggregate {
 		return $this;
 	}
 
-	/**
-	 * @param string $user_id UUID
-	 * @param int $date EPOCH
-	 * @return bool|UserDateListFactory
-	 */
-	function getByUserIdAndDate( $user_id, $date) {
+	function getByUserIdAndDate($user_id, $date) {
 		if ( $user_id === '' ) {
 			return FALSE;
 		}
@@ -341,7 +283,7 @@ class UserDateListFactory extends UserDateFactory implements IteratorAggregate {
 		}
 
 		$ph = array(
-					'user_id' => TTUUID::castUUID($user_id),
+					'user_id' => (int)$user_id,
 					'date' => $this->db->BindDate( $date ),
 					);
 
@@ -360,15 +302,7 @@ class UserDateListFactory extends UserDateFactory implements IteratorAggregate {
 		return $this;
 	}
 
-	/**
-	 * @param string $user_ids UUID
-	 * @param int $start_date EPOCH
-	 * @param int $end_date EPOCH
-	 * @param array $where Additional SQL WHERE clause in format of array( $column => $filter, ... ). ie: array( 'id' => 1, ... )
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return bool|UserDateListFactory
-	 */
-	function getByUserIdAndStartDateAndEndDate( $user_ids, $start_date, $end_date, $where = NULL, $order = NULL) {
+	function getByUserIdAndStartDateAndEndDate($user_ids, $start_date, $end_date, $where = NULL, $order = NULL) {
 		if ( $user_ids == '' ) {
 			return FALSE;
 		}
@@ -399,7 +333,7 @@ class UserDateListFactory extends UserDateFactory implements IteratorAggregate {
 					where
 						date_stamp >= ?
 						AND date_stamp <= ?
-						AND user_id in ('. $this->getListSQL( $user_ids, $ph, 'uuid') .')
+						AND user_id in ('. $this->getListSQL( $user_ids, $ph, 'int' ) .')
 						AND deleted = 0
 					';
 		$query .= $this->getWhereSQL( $where );
@@ -410,15 +344,7 @@ class UserDateListFactory extends UserDateFactory implements IteratorAggregate {
 		return $this;
 	}
 
-	/**
-	 * @param string $user_ids UUID
-	 * @param int $start_date EPOCH
-	 * @param int $end_date EPOCH
-	 * @param array $where Additional SQL WHERE clause in format of array( $column => $filter, ... ). ie: array( 'id' => 1, ... )
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return bool|UserDateListFactory
-	 */
-	function getByUserIdAndStartDateAndEndDateAndEmptyPayPeriod( $user_ids, $start_date, $end_date, $where = NULL, $order = NULL) {
+	function getByUserIdAndStartDateAndEndDateAndEmptyPayPeriod($user_ids, $start_date, $end_date, $where = NULL, $order = NULL) {
 		if ( $user_ids == '' ) {
 			return FALSE;
 		}
@@ -449,8 +375,8 @@ class UserDateListFactory extends UserDateFactory implements IteratorAggregate {
 					where
 						date_stamp >= ?
 						AND date_stamp <= ?
-						AND user_id in ('. $this->getListSQL( $user_ids, $ph, 'uuid') .')
-						AND ( pay_period_id = \''. TTUUID::getZeroID() .'\' OR pay_period_id IS NULL )
+						AND user_id in ('. $this->getListSQL( $user_ids, $ph, 'int' ) .')
+						AND ( pay_period_id = 0 OR pay_period_id IS NULL )
 						AND deleted = 0
 					';
 		$query .= $this->getWhereSQL( $where );
@@ -461,14 +387,7 @@ class UserDateListFactory extends UserDateFactory implements IteratorAggregate {
 		return $this;
 	}
 
-	/**
-	 * @param string $user_id UUID
-	 * @param string $pay_period_id UUID
-	 * @param array $where Additional SQL WHERE clause in format of array( $column => $filter, ... ). ie: array( 'id' => 1, ... )
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return bool|UserDateListFactory
-	 */
-	function getByUserIdAndPayPeriodID( $user_id, $pay_period_id, $where = NULL, $order = NULL) {
+	function getByUserIdAndPayPeriodID($user_id, $pay_period_id, $where = NULL, $order = NULL) {
 		if ( $user_id == '' ) {
 			return FALSE;
 		}
@@ -492,8 +411,8 @@ class UserDateListFactory extends UserDateFactory implements IteratorAggregate {
 					select	*
 					from	'. $this->getTable() .'
 					where
-						user_id in ('. $this->getListSQL( $user_id, $ph, 'uuid' ) .')
-						AND pay_period_id in ('. $this->getListSQL( $pay_period_id, $ph, 'uuid' ) .')
+						user_id in ('. $this->getListSQL( $user_id, $ph, 'int' ) .')
+						AND pay_period_id in ('. $this->getListSQL( $pay_period_id, $ph, 'int' ) .')
 						AND deleted = 0
 					';
 
@@ -505,14 +424,7 @@ class UserDateListFactory extends UserDateFactory implements IteratorAggregate {
 		return $this;
 	}
 
-	/**
-	 * @param string $company_id UUID
-	 * @param string $pay_period_id UUID
-	 * @param array $where Additional SQL WHERE clause in format of array( $column => $filter, ... ). ie: array( 'id' => 1, ... )
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return bool|UserDateListFactory
-	 */
-	function getByCompanyIdAndPayPeriodID( $company_id, $pay_period_id, $where = NULL, $order = NULL) {
+	function getByCompanyIdAndPayPeriodID($company_id, $pay_period_id, $where = NULL, $order = NULL) {
 		if ( $company_id == '' ) {
 			return FALSE;
 		}
@@ -533,8 +445,8 @@ class UserDateListFactory extends UserDateFactory implements IteratorAggregate {
 		$uf = new UserFactory();
 
 		$ph = array(
-					'company_id' => TTUUID::castUUID($company_id),
-					//'pay_period_id' => TTUUID::castUUID($pay_period_id),
+					'company_id' => (int)$company_id,
+					//'pay_period_id' => (int)$pay_period_id,
 					);
 
 		$query = '
@@ -544,7 +456,7 @@ class UserDateListFactory extends UserDateFactory implements IteratorAggregate {
 					where
 						a.user_id = b.id
 						AND b.company_id = ?
-						AND a.pay_period_id in ('. $this->getListSQL( $pay_period_id, $ph, 'uuid' ) .')
+						AND a.pay_period_id in ('. $this->getListSQL( $pay_period_id, $ph, 'int' ) .')
 						AND ( a.deleted = 0 AND b.deleted = 0 )
 					';
 
@@ -557,13 +469,6 @@ class UserDateListFactory extends UserDateFactory implements IteratorAggregate {
 	}
 
 	//Used by calcQuickExceptions maintenance job to speed up finding days that need to have exceptions calculated throughout the day.
-
-	/**
-	 * @param int $start_date EPOCH
-	 * @param int $end_date EPOCH
-	 * @param int $pay_period_status_id
-	 * @return bool|UserDateListFactory
-	 */
 	function getMidDayExceptionsByStartDateAndEndDateAndPayPeriodStatus( $start_date, $end_date, $pay_period_status_id ) {
 		if ( $start_date == '' ) {
 			return FALSE;
@@ -656,15 +561,7 @@ class UserDateListFactory extends UserDateFactory implements IteratorAggregate {
 
 	*/
 
-	/**
-	 * @param $time_period
-	 * @param string $user_ids UUID
-	 * @param string $company_id UUID
-	 * @param int $start_date EPOCH
-	 * @param int $end_date EPOCH
-	 * @return bool|UserDateListFactory
-	 */
-	function getDaysWorkedByTimePeriodAndUserIdAndCompanyIdAndStartDateAndEndDate( $time_period, $user_ids, $company_id, $start_date, $end_date ) {
+	function getDaysWorkedByTimePeriodAndUserIdAndCompanyIdAndStartDateAndEndDate($time_period, $user_ids, $company_id, $start_date, $end_date ) {
 		if ( $time_period == '' ) {
 			return FALSE;
 		}
@@ -698,7 +595,7 @@ class UserDateListFactory extends UserDateFactory implements IteratorAggregate {
 		$pcf = new PunchControlFactory();
 
 		$ph = array(
-					'company_id' => TTUUID::castUUID($company_id),
+					'company_id' => (int)$company_id,
 					'start_date' => $this->db->BindDate( $start_date ),
 					'end_date' => $this->db->BindDate( $end_date ),
 					);
@@ -719,7 +616,7 @@ class UserDateListFactory extends UserDateFactory implements IteratorAggregate {
 							AND b.company_id = ?
 							AND a.date_stamp >= ?
 							AND a.date_stamp <= ?
-							AND a.user_id in ('. $this->getListSQL( $user_ids, $ph, 'uuid') .')
+							AND a.user_id in ('. $this->getListSQL( $user_ids, $ph, 'int' ) .')
 							AND exists(
 										select id
 										from '. $pcf->getTable() .' as z
@@ -737,12 +634,6 @@ class UserDateListFactory extends UserDateFactory implements IteratorAggregate {
 		return $this;
 	}
 
-	/**
-	 * @param string $user_id UUID
-	 * @param int $date EPOCH
-	 * @param $deleted
-	 * @return bool|UserDateListFactory
-	 */
 	function deleteByUserIdAndDateAndDeleted( $user_id, $date, $deleted ) {
 		if ( $user_id == '' ) {
 			return FALSE;
@@ -757,7 +648,7 @@ class UserDateListFactory extends UserDateFactory implements IteratorAggregate {
 		}
 
 		$ph = array(
-					'user_id' => TTUUID::castUUID($user_id),
+					'user_id' => (int)$user_id,
 					'date' => $this->db->BindDate( $date ),
 					'deleted' => (int)$deleted
 					);
@@ -776,11 +667,7 @@ class UserDateListFactory extends UserDateFactory implements IteratorAggregate {
 		return $this;
 	}
 
-	/**
-	 * @param $lf
-	 * @return array|bool
-	 */
-	function getArrayByListFactory( $lf) {
+	function getArrayByListFactory($lf) {
 		if ( !is_object($lf) ) {
 			return FALSE;
 		}

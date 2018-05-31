@@ -1,11 +1,6 @@
 StationViewController = BaseViewController.extend( {
 	el: '#station_view_container',
 
-	_required_files: {
-		10: ["APIStation", "APIUserGroup", "APIUserPreference", "APIBranch", "APIDepartment"],
-		20: ["APIJob", "APIJobItem", ],
-	},
-
 	user_group_api: null,
 	status_array: null,
 	type_array: null,
@@ -13,7 +8,6 @@ StationViewController = BaseViewController.extend( {
 	time_zone_array: null,
 	time_clock_command_array: null,
 	mode_flag_array: null,
-	default_mode_flag_array: null,
 	poll_frequency_array: null,
 	push_frequency_array: null,
 	partial_push_frequency_array: null,
@@ -24,8 +18,8 @@ StationViewController = BaseViewController.extend( {
 
 	user_preference_api: null,
 
-	init: function( options ) {
-		//this._super('initialize', options );
+	initialize: function( options ) {
+		this._super( 'initialize', options );
 		this.edit_view_tpl = 'StationEditView.html';
 		this.permission_id = 'station';
 		this.viewId = 'Station';
@@ -70,6 +64,17 @@ StationViewController = BaseViewController.extend( {
 			{option_name: 'department_selection_type', field_name: null, api: null}
 
 		];
+
+//		this.initDropDownOption( 'status' );
+//		this.initDropDownOption( 'type' );
+//		this.initDropDownOption( 'time_zone', 'time_zone', $this.user_preference_api );
+//		this.initDropDownOption( 'time_clock_command' );
+//		this.initDropDownOption( 'poll_frequency' );
+//		this.initDropDownOption( 'push_frequency' );
+//		this.initDropDownOption( 'partial_push_frequency' );
+//		this.initDropDownOption( 'group_selection_type' );
+//		this.initDropDownOption( 'branch_selection_type' );
+//		this.initDropDownOption( 'department_selection_type' );
 
 		this.initDropDownOptions( options, function( result ) {
 
@@ -225,7 +230,7 @@ StationViewController = BaseViewController.extend( {
 
 	onEmployeeGroupSelectionTypeChange: function() {
 
-		if ( parseInt( this.current_edit_record['user_group_selection_type_id'] ) == 10 ) {
+		if ( parseInt( this.current_edit_record['user_group_selection_type_id'] ) === 10 ) {
 			this.edit_view_ui_dic['group'].setEnabled( false );
 		} else {
 			this.edit_view_ui_dic['user_group_selection_type_id'].setValue( this.current_edit_record['user_group_selection_type_id'] );
@@ -233,7 +238,7 @@ StationViewController = BaseViewController.extend( {
 		}
 	},
 	onBranchSelectionTypeChange: function() {
-		if ( parseInt( this.current_edit_record['branch_selection_type_id'] ) == 10 ) {
+		if ( parseInt( this.current_edit_record['branch_selection_type_id'] ) === 10 ) {
 
 			this.edit_view_ui_dic['branch'].setEnabled( false );
 		} else {
@@ -242,7 +247,7 @@ StationViewController = BaseViewController.extend( {
 		}
 	},
 	onDepartmentSelectionTypeChange: function() {
-		if ( parseInt( this.current_edit_record['department_selection_type_id'] ) == 10 ) {
+		if ( parseInt( this.current_edit_record['department_selection_type_id'] ) === 10 ) {
 			this.edit_view_ui_dic['department'].setEnabled( false );
 		} else {
 			this.edit_view_ui_dic['department_selection_type_id'].setValue( this.current_edit_record['department_selection_type_id'] );
@@ -251,19 +256,19 @@ StationViewController = BaseViewController.extend( {
 	},
 
 	onTypeChange: function() {
-		if ( parseInt( this.current_edit_record['type_id'] ) == 100 ||
-			parseInt( this.current_edit_record['type_id'] ) == 150 ||
-			parseInt( this.current_edit_record['type_id'] ) == 28 ||
-			parseInt( this.current_edit_record['type_id'] ) == 65 ) {
+		if ( parseInt( this.current_edit_record['type_id'] ) === 100 ||
+			parseInt( this.current_edit_record['type_id'] ) === 150 ||
+			parseInt( this.current_edit_record['type_id'] ) === 28 ||
+			parseInt( this.current_edit_record['type_id'] ) === 65 ) {
 
 			$( this.edit_view_tab.find( 'ul li' )[2] ).show();
 			var tab_2_label = this.edit_view.find( 'a[ref=tab_time_clock]' );
 
-			if ( parseInt( this.current_edit_record['type_id'] ) == 100 ||
-				parseInt( this.current_edit_record['type_id'] ) == 150 ) {
+			if ( parseInt( this.current_edit_record['type_id'] ) === 100 ||
+				parseInt( this.current_edit_record['type_id'] ) === 150 ) {
 				tab_2_label.text( $.i18n._( 'TimeClock' ) );
 
-				if ( parseInt( this.current_edit_record['type_id'] ) != 150 ) {
+				if ( parseInt( this.current_edit_record['type_id'] ) !== 150 ) {
 					this.attachElement( 'manual_command' );
 					this.attachElement( 'push_frequency' );
 					this.attachElement( 'partial_push_frequency' );
@@ -283,18 +288,10 @@ StationViewController = BaseViewController.extend( {
 				this.detachElement( 'manual_command' );
 				this.detachElement( 'push_frequency' );
 				this.detachElement( 'partial_push_frequency' );
+
 			}
-
-
 
 			this.initModeFlag();
-
-			//#2590 - ensure field is only visible in valid types.
-			if ( parseInt( this.current_edit_record['type_id'] ) == 65 ) {
-				this.initDefaultModeFlag();
-			} else {
-				this.edit_view_ui_dic['default_mode_flag'].parents('.edit-view-form-item-div').hide();
-			}
 
 		} else {
 			$( this.edit_view_tab.find( 'ul li' )[2] ).hide();
@@ -314,21 +311,6 @@ StationViewController = BaseViewController.extend( {
 
 				$this.edit_view_ui_dic['mode_flag'].setSourceData( result_data );
 				$this.edit_view_ui_dic['mode_flag'].setValue( $this.current_edit_record.mode_flag );
-
-			}
-		} );
-	},
-
-	initDefaultModeFlag: function() {
-		var $this = this;
-		this.api.getOptions( 'default_mode_flag', this.current_edit_record.type_id, true, {
-			onResult: function( result ) {
-				var result_data = Global.buildRecordArray( result.getResult() );
-
-				$this.edit_view_ui_dic['default_mode_flag'].setSourceData( result_data );
-				var value = ( $this.current_edit_record.default_mode_flag != 0 ) ? $this.current_edit_record.default_mode_flag : TTUUID.zero_id;
-				$this.edit_view_ui_dic['default_mode_flag'].setValue( value );
-				$this.edit_view_ui_dic['default_mode_flag'].parents('.edit-view-form-item-div').show();
 
 			}
 		} );
@@ -383,7 +365,7 @@ StationViewController = BaseViewController.extend( {
 			this.edit_view_ui_dic['manual_command'].setEnabled( false );
 			runButton.attr( 'disabled', true );
 		} else {
-			runButton.off('click').on('click', function() {
+			runButton.click( function() {
 				$this.onSaveAndContinue( true );
 			} );
 		}
@@ -942,17 +924,6 @@ StationViewController = BaseViewController.extend( {
 			field: 'mode_flag'
 		} );
 		this.addEditFieldToColumn( $.i18n._( 'Configuration Modes' ), form_item_input, tab_time_clock_column2, '', null, null, true );
-
-		// Default Punch Mode
-		form_item_input = Global.loadWidgetByName( FormItemType.AWESOME_BOX );
-		form_item_input.AComboBox( {
-			allow_multiple_selection: false,
-			layout_name: ALayoutIDs.OPTION_COLUMN,
-			show_search_inputs: true,
-			set_empty: true,
-			field: 'default_mode_flag'
-		} );
-		this.addEditFieldToColumn( $.i18n._( 'Default Punch Mode' ), form_item_input, tab_time_clock_column2 ); //, '', null, null, true );
 	},
 
 	buildSearchFields: function() {

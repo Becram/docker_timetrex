@@ -1,7 +1,7 @@
 <?php
 /*********************************************************************************
  * TimeTrex is a Workforce Management program developed by
- * TimeTrex Software Inc. Copyright (C) 2003 - 2018 TimeTrex Software Inc.
+ * TimeTrex Software Inc. Copyright (C) 2003 - 2017 TimeTrex Software Inc.
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Affero General Public License version 3 as published by
@@ -51,30 +51,25 @@ class PayStubCalculationTest extends PHPUnit_Framework_TestCase {
 		$dd->setEnableQuickPunch( FALSE ); //Helps prevent duplicate punch IDs and validation failures.
 		$dd->setUserNamePostFix( '_'.uniqid( NULL, TRUE ) ); //Needs to be super random to prevent conflicts and random failing tests.
 		$this->company_id = $dd->createCompany();
-		$this->legal_entity_id = $dd->createLegalEntity( $this->company_id, 10 );
 		Debug::text('Company ID: '. $this->company_id, __FILE__, __LINE__, __METHOD__, 10);
 
-		$this->currency_id = $dd->createCurrency( $this->company_id, 10 );
+		$dd->createCurrency( $this->company_id, 10 );
 
 		//$dd->createPermissionGroups( $this->company_id, 40 ); //Administrator only.
 
 		$dd->createPayStubAccount( $this->company_id );
 		$this->createPayStubAccounts();
+		$this->createPayStubAccrualAccount();
 		$dd->createPayStubAccountLink( $this->company_id );
 		$this->getPayStubAccountLinkArray();
 
 		//Company Deductions
-		$dd->createCompanyDeduction( $this->company_id, $this->user_id, $this->legal_entity_id );
+		$dd->createCompanyDeduction( $this->company_id );
 		$this->createCompanyDeductions();
 
 		$dd->createUserWageGroups( $this->company_id );
 
-		$remittance_source_account_ids[$this->legal_entity_id][] = $dd->createRemittanceSourceAccount( $this->company_id, $this->legal_entity_id, $this->currency_id, 10  ); // Check
-		$remittance_source_account_ids[$this->legal_entity_id][] = $dd->createRemittanceSourceAccount( $this->company_id, $this->legal_entity_id, $this->currency_id, 20  ); // US - EFT
-		$remittance_source_account_ids[$this->legal_entity_id][] = $dd->createRemittanceSourceAccount( $this->company_id, $this->legal_entity_id, $this->currency_id, 30  ); // CA - EFT
-
-		//createUser() also handles remittance destination accounts.
-		$this->user_id = $dd->createUser( $this->company_id, $this->legal_entity_id, 100, NULL, NULL, NULL, NULL, NULL, NULL, NULL, $remittance_source_account_ids );
+		$this->user_id = $dd->createUser( $this->company_id, 100 );
 
 		$this->createPayPeriodSchedule();
 		$this->createPayPeriods();
@@ -194,7 +189,7 @@ class PayStubCalculationTest extends PHPUnit_Framework_TestCase {
 			'employer_contribution' => CompanyDeductionFactory::getPayStubEntryAccountByCompanyIDAndTypeAndFuzzyName($this->company_id, 40, 'Employer Total Contributions'),
 			'net_pay' => CompanyDeductionFactory::getPayStubEntryAccountByCompanyIDAndTypeAndFuzzyName($this->company_id, 40, 'Net Pay'),
 			'regular_time' => CompanyDeductionFactory::getPayStubEntryAccountByCompanyIDAndTypeAndFuzzyName($this->company_id, 10, 'Regular Time'),
-			'vacation_accrual_release' => CompanyDeductionFactory::getPayStubEntryAccountByCompanyIDAndTypeAndFuzzyName($this->company_id, 10, 'Vacation - Accrual Release'),
+			'vacation_accrual_release' => CompanyDeductionFactory::getPayStubEntryAccountByCompanyIDAndTypeAndFuzzyName($this->company_id, 10, 'Vacation Accrual Release'),
 			'vacation_accrual' => CompanyDeductionFactory::getPayStubEntryAccountByCompanyIDAndTypeAndFuzzyName($this->company_id, 50, 'Vacation Accrual'),
 			'cpp' => CompanyDeductionFactory::getPayStubEntryAccountByCompanyIDAndTypeAndFuzzyName($this->company_id, 20, 'CPP'),
 			'ei' => CompanyDeductionFactory::getPayStubEntryAccountByCompanyIDAndTypeAndFuzzyName($this->company_id, 20, 'EI'),
@@ -318,7 +313,7 @@ class PayStubCalculationTest extends PHPUnit_Framework_TestCase {
 			$pseal_obj->setEmployeeCPP( CompanyDeductionFactory::getPayStubEntryAccountByCompanyIDAndTypeAndFuzzyName($this->company_id, 20, 'CPP') );
 			$pseal_obj->Save();
 		} else {
-			Debug::text('PayStubEntryAccountLink ID: FAILED!', __FILE__, __LINE__, __METHOD__, 10);
+			Debug::text('zzzPayStubEntryAccountLink ID: FAILED!', __FILE__, __LINE__, __METHOD__, 10);
 		}
 		*/
 
@@ -326,33 +321,10 @@ class PayStubCalculationTest extends PHPUnit_Framework_TestCase {
 	}
 
 	function createCompanyDeductions() {
-		//Vacation Accrual Calculation.
-		$cdf = new CompanyDeductionFactory();
-		$cdf->setCompany( $this->company_id );
-		$cdf->setLegalEntity( $this->legal_entity_id );
-		$cdf->setStatus( 10 ); //Enabled
-		$cdf->setType( 20 ); //Deduction
-		$cdf->setName( 'Vacation Accrual' );
-		$cdf->setCalculation( 10 );
-		$cdf->setCalculationOrder( 50 );
-		//$cdf->setPayStubEntryAccount( $vacation_accrual_id );
-		$cdf->setPayStubEntryAccount( CompanyDeductionFactory::getPayStubEntryAccountByCompanyIDAndTypeAndFuzzyName($this->company_id, 50, 'Vacation Accrual') );
-		$cdf->setUserValue1( 4 );
-
-		if ( $cdf->isValid() ) {
-			$cdf->Save(FALSE);
-
-			$cdf->setIncludePayStubEntryAccount( array( CompanyDeductionFactory::getPayStubEntryAccountByCompanyIDAndTypeAndFuzzyName($this->company_id, 40, 'Total Gross') ) );
-
-			if ( $cdf->isValid() ) {
-				$cdf->Save();
-			}
-		}
 
 		//Test Wage Base amount
 		$cdf = new CompanyDeductionFactory();
 		$cdf->setCompany( $this->company_id );
-		$cdf->setLegalEntity( $this->legal_entity_id );
 		$cdf->setStatus( 10 ); //Enabled
 		$cdf->setType( 10 ); //Tax
 		$cdf->setName( 'Union Dues' );
@@ -375,7 +347,6 @@ class PayStubCalculationTest extends PHPUnit_Framework_TestCase {
 		//Test Wage Exempt Amount
 		$cdf = new CompanyDeductionFactory();
 		$cdf->setCompany( $this->company_id );
-		$cdf->setLegalEntity( $this->legal_entity_id );
 		$cdf->setStatus( 10 ); //Enabled
 		$cdf->setType( 10 ); //Tax
 		$cdf->setName( 'Union Dues2' );
@@ -399,7 +370,6 @@ class PayStubCalculationTest extends PHPUnit_Framework_TestCase {
 		//Test Advanced Percent Calculation maximum amount.
 		$cdf = new CompanyDeductionFactory();
 		$cdf->setCompany( $this->company_id );
-		$cdf->setLegalEntity( $this->legal_entity_id );
 		$cdf->setStatus( 10 ); //Enabled
 		$cdf->setType( 10 ); //Tax
 		$cdf->setName( 'Test Advanced Percent 1' );
@@ -421,7 +391,6 @@ class PayStubCalculationTest extends PHPUnit_Framework_TestCase {
 		//Test Advanced Percent Calculation maximum amount.
 		$cdf = new CompanyDeductionFactory();
 		$cdf->setCompany( $this->company_id );
-		$cdf->setLegalEntity( $this->legal_entity_id );
 		$cdf->setStatus( 10 ); //Enabled
 		$cdf->setType( 10 ); //Tax
 		$cdf->setName( 'Test Advanced Percent 2' );
@@ -444,7 +413,6 @@ class PayStubCalculationTest extends PHPUnit_Framework_TestCase {
 		if ( getTTProductEdition() >= TT_PRODUCT_PROFESSIONAL ) {
 			$cdf = new CompanyDeductionFactory();
 			$cdf->setCompany( $this->company_id );
-			$cdf->setLegalEntity( $this->legal_entity_id );
 			$cdf->setStatus( 10 );
 			$cdf->setType( 30 );
 			$cdf->setName( 'Test Custom Formula' );
@@ -475,7 +443,6 @@ class PayStubCalculationTest extends PHPUnit_Framework_TestCase {
 
 			$cdf = new CompanyDeductionFactory();
 			$cdf->setCompany( $this->company_id );
-			$cdf->setLegalEntity( $this->legal_entity_id );
 			$cdf->setStatus( 10 );
 			$cdf->setType( 20 );
 			$cdf->setName( 'Test Custom Formula 1' );
@@ -506,7 +473,6 @@ class PayStubCalculationTest extends PHPUnit_Framework_TestCase {
 
 			$cdf = new CompanyDeductionFactory();
 			$cdf->setCompany( $this->company_id );
-			$cdf->setLegalEntity( $this->legal_entity_id );
 			$cdf->setStatus( 10 );
 			$cdf->setType( 20 );
 			$cdf->setName( 'Test Custom Formula 2' );
@@ -554,7 +520,6 @@ class PayStubCalculationTest extends PHPUnit_Framework_TestCase {
 
 		$cdf = new CompanyDeductionFactory();
 		$cdf->setCompany( $this->company_id );
-		$cdf->setLegalEntity( $this->legal_entity_id );
 		$cdf->setStatus( 10 ); //Enabled
 		$cdf->setType( 10 ); //Tax
 		$cdf->setName( 'EI - Employee' );
@@ -573,7 +538,6 @@ class PayStubCalculationTest extends PHPUnit_Framework_TestCase {
 
 		$cdf = new CompanyDeductionFactory();
 		$cdf->setCompany( $this->company_id );
-		$cdf->setLegalEntity( $this->legal_entity_id );
 		$cdf->setStatus( 10 ); //Enabled
 		$cdf->setType( 10 ); //Tax
 		$cdf->setName( 'CPP - Employee' );
@@ -678,6 +642,63 @@ class PayStubCalculationTest extends PHPUnit_Framework_TestCase {
 
 		return TRUE;
 	}
+
+	function createPayStubAccrualAccount() {
+		Debug::text('Saving.... Vacation Accrual', __FILE__, __LINE__, __METHOD__, 10);
+		$pseaf = new PayStubEntryAccountFactory();
+		$pseaf->setCompany( $this->company_id );
+		$pseaf->setStatus(10);
+		$pseaf->setType(50);
+		$pseaf->setName('Vacation Accrual');
+		$pseaf->setOrder(400);
+
+		if ( $pseaf->isValid() ) {
+			$vacation_accrual_id = $pseaf->Save();
+
+			Debug::text('Saving.... Earnings - Vacation Accrual Release', __FILE__, __LINE__, __METHOD__, 10);
+			$pseaf = new PayStubEntryAccountFactory();
+			$pseaf->setCompany( $this->company_id );
+			$pseaf->setStatus(10);
+			$pseaf->setType(10);
+			$pseaf->setName('Vacation Accrual Release');
+			$pseaf->setOrder(180);
+			$pseaf->setAccrual($vacation_accrual_id);
+
+			if ( $pseaf->isValid() ) {
+				$pseaf->Save();
+			}
+
+			//unset($vaction_accrual_id);
+
+			//Don't need this because we are doing it manually.
+			Debug::text('Saving.... Vacation Accrual Deduction', __FILE__, __LINE__, __METHOD__, 10);
+			$cdf = new CompanyDeductionFactory();
+			$cdf->setCompany( $this->company_id );
+			$cdf->setStatus( 10 ); //Enabled
+			$cdf->setType( 20 ); //Deduction
+			$cdf->setName( 'Vacation Accrual' );
+			$cdf->setCalculation( 10 );
+			$cdf->setCalculationOrder( 50 );
+			$cdf->setPayStubEntryAccount( $vacation_accrual_id );
+			$cdf->setUserValue1( 4 );
+
+			if ( $cdf->isValid() ) {
+				Debug::text('bSaving.... Vacation Accrual Deduction', __FILE__, __LINE__, __METHOD__, 10);
+				$cdf->Save(FALSE);
+
+				$cdf->setIncludePayStubEntryAccount( array( CompanyDeductionFactory::getPayStubEntryAccountByCompanyIDAndTypeAndFuzzyName($this->company_id, 40, 'Total Gross') ) );
+
+				if ( $cdf->isValid() ) {
+					$cdf->Save();
+				}
+			}
+
+
+		}
+
+		return TRUE;
+	}
+
 
 	function getPayStubEntryArray( $pay_stub_id ) {
 		//Check Pay Stub to make sure it was created correctly.
@@ -799,7 +820,7 @@ class PayStubCalculationTest extends PHPUnit_Framework_TestCase {
 		//Vacation Accrual Release percent PS amendment
 		$psaf = new PayStubAmendmentFactory();
 		$psaf->setUser( $this->user_id );
-		$psaf->setPayStubEntryNameId( CompanyDeductionFactory::getPayStubEntryAccountByCompanyIDAndTypeAndFuzzyName($this->company_id, 10, 'Vacation - Accrual Release') );
+		$psaf->setPayStubEntryNameId( CompanyDeductionFactory::getPayStubEntryAccountByCompanyIDAndTypeAndFuzzyName($this->company_id, 10, 'Vacation Accrual Release') );
 		$psaf->setStatus( 50 ); //Active
 
 		$psaf->setType( 20 );
@@ -999,7 +1020,7 @@ class PayStubCalculationTest extends PHPUnit_Framework_TestCase {
 							'premium_2' => CompanyDeductionFactory::getPayStubEntryAccountByCompanyIDAndTypeAndFuzzyName($this->company_id, 10, 'Premium 2'),
 							'bonus' => CompanyDeductionFactory::getPayStubEntryAccountByCompanyIDAndTypeAndFuzzyName($this->company_id, 10, 'Bonus'),
 							'other' => CompanyDeductionFactory::getPayStubEntryAccountByCompanyIDAndTypeAndFuzzyName($this->company_id, 10, 'Commission'),
-							'vacation_accrual_release' => CompanyDeductionFactory::getPayStubEntryAccountByCompanyIDAndTypeAndFuzzyName($this->company_id, 10, 'Vacation - Accrual Release'),
+							'vacation_accrual_release' => CompanyDeductionFactory::getPayStubEntryAccountByCompanyIDAndTypeAndFuzzyName($this->company_id, 10, 'Vacation Accrual Release'),
 							'federal_income_tax' => CompanyDeductionFactory::getPayStubEntryAccountByCompanyIDAndTypeAndFuzzyName($this->company_id, 20, 'US - Federal Income Tax'),
 							'state_income_tax' => CompanyDeductionFactory::getPayStubEntryAccountByCompanyIDAndTypeAndFuzzyName($this->company_id, 20, 'NY - State Income Tax'),
 							'state_disability' => CompanyDeductionFactory::getPayStubEntryAccountByCompanyIDAndTypeAndFuzzyName($this->company_id, 20, 'NY - Disability Insurance'),
@@ -1035,26 +1056,12 @@ class PayStubCalculationTest extends PHPUnit_Framework_TestCase {
 		$this->assertEquals( $pse_arr[$pse_accounts['bonus']][0]['amount'], '100.00' );
 		$this->assertEquals( $pse_arr[$pse_accounts['bonus']][0]['ytd_amount'], '100.00' );
 
-
-		//NOTICE: After switching to UUID, it caused ordering by ID (specifically in CalculatePayStub->getOrderedDeductionAndPSAmendment() ) to be inconsistent from one run to the next.
-		//		  This casued failures here because 240.80 and 1000.00 could be in reverse order.
-		//		  In this case, the sort order doesn't really matter, as long as its consistent, which it would be for customers.
-		// 		  However when running unit tests it can switch from one test to another, so lets account for that.
 		//YTD adjustment
-		if ( $pse_arr[$pse_accounts['other']][0]['amount'] == '240.80' ) {
-			$this->assertEquals( $pse_arr[$pse_accounts['other']][0]['amount'], '240.80' );
-			$this->assertEquals( $pse_arr[$pse_accounts['other']][0]['ytd_amount'], '0.00' );
-			//Fixed amount PS amendment
-			$this->assertEquals( $pse_arr[$pse_accounts['other']][1]['amount'], '1000.00' );
-			$this->assertEquals( $pse_arr[$pse_accounts['other']][1]['ytd_amount'], '1240.80' );
-		} else {
-			//Fixed amount PS amendment
-			$this->assertEquals( $pse_arr[$pse_accounts['other']][0]['amount'], '1000.00' );
-			$this->assertEquals( $pse_arr[$pse_accounts['other']][0]['ytd_amount'], '0.00' );
-
-			$this->assertEquals( $pse_arr[$pse_accounts['other']][1]['amount'], '240.80' );
-			$this->assertEquals( $pse_arr[$pse_accounts['other']][1]['ytd_amount'], '1240.80' );
-		}
+		$this->assertEquals( $pse_arr[$pse_accounts['other']][0]['amount'], '240.80' );
+		$this->assertEquals( $pse_arr[$pse_accounts['other']][0]['ytd_amount'], '0.00' );
+		//Fixed amount PS amendment
+		$this->assertEquals( $pse_arr[$pse_accounts['other']][1]['amount'], '1000.00' );
+		$this->assertEquals( $pse_arr[$pse_accounts['other']][1]['ytd_amount'], '1240.80' );
 
 		$this->assertEquals( $pse_arr[$pse_accounts['premium_2']][0]['amount'], '10.00' );
 		$this->assertEquals( $pse_arr[$pse_accounts['premium_2']][0]['ytd_amount'], '0.00' );
@@ -1193,7 +1200,7 @@ class PayStubCalculationTest extends PHPUnit_Framework_TestCase {
 								'premium_2' => CompanyDeductionFactory::getPayStubEntryAccountByCompanyIDAndTypeAndFuzzyName($this->company_id, 10, 'Premium 2'),
 								'bonus' => CompanyDeductionFactory::getPayStubEntryAccountByCompanyIDAndTypeAndFuzzyName($this->company_id, 10, 'Bonus'),
 								'other' => CompanyDeductionFactory::getPayStubEntryAccountByCompanyIDAndTypeAndFuzzyName($this->company_id, 10, 'Commission'),
-								'vacation_accrual_release' => CompanyDeductionFactory::getPayStubEntryAccountByCompanyIDAndTypeAndFuzzyName($this->company_id, 10, 'Vacation - Accrual Release'),
+								'vacation_accrual_release' => CompanyDeductionFactory::getPayStubEntryAccountByCompanyIDAndTypeAndFuzzyName($this->company_id, 10, 'Vacation Accrual Release'),
 								'federal_income_tax' => CompanyDeductionFactory::getPayStubEntryAccountByCompanyIDAndTypeAndFuzzyName($this->company_id, 20, 'US - Federal Income Tax'),
 								'state_income_tax' => CompanyDeductionFactory::getPayStubEntryAccountByCompanyIDAndTypeAndFuzzyName($this->company_id, 20, 'NY - State Income Tax'),
 								'state_disability' => CompanyDeductionFactory::getPayStubEntryAccountByCompanyIDAndTypeAndFuzzyName($this->company_id, 20, 'NY - Disability Insurance'),
@@ -1232,25 +1239,12 @@ class PayStubCalculationTest extends PHPUnit_Framework_TestCase {
 			$this->assertEquals( $pse_arr[$pse_accounts['bonus']][0]['amount'], '100.00' );
 			$this->assertEquals( $pse_arr[$pse_accounts['bonus']][0]['ytd_amount'], '100.00' );
 
-			//NOTICE: After switching to UUID, it caused ordering by ID (specifically in CalculatePayStub->getOrderedDeductionAndPSAmendment() ) to be inconsistent from one run to the next.
-			//		  This casued failures here because 240.80 and 1000.00 could be in reverse order.
-			//		  In this case, the sort order doesn't really matter, as long as its consistent, which it would be for customers.
-			// 		  However when running unit tests it can switch from one test to another, so lets account for that.
 			//YTD adjustment
-			if ( $pse_arr[$pse_accounts['other']][0]['amount'] == '240.80' ) {
-				$this->assertEquals( $pse_arr[$pse_accounts['other']][0]['amount'], '240.80' );
-				$this->assertEquals( $pse_arr[$pse_accounts['other']][0]['ytd_amount'], '0.00' );
-				//Fixed amount PS amendment
-				$this->assertEquals( $pse_arr[$pse_accounts['other']][1]['amount'], '1000.00' );
-				$this->assertEquals( $pse_arr[$pse_accounts['other']][1]['ytd_amount'], '1240.80' );
-			} else {
-				//Fixed amount PS amendment
-				$this->assertEquals( $pse_arr[$pse_accounts['other']][0]['amount'], '1000.00' );
-				$this->assertEquals( $pse_arr[$pse_accounts['other']][0]['ytd_amount'], '0.00' );
-
-				$this->assertEquals( $pse_arr[$pse_accounts['other']][1]['amount'], '240.80' );
-				$this->assertEquals( $pse_arr[$pse_accounts['other']][1]['ytd_amount'], '1240.80' );
-			}
+			$this->assertEquals( $pse_arr[$pse_accounts['other']][0]['amount'], '240.80' );
+			$this->assertEquals( $pse_arr[$pse_accounts['other']][0]['ytd_amount'], '0.00' );
+			//Fixed amount PS amendment
+			$this->assertEquals( $pse_arr[$pse_accounts['other']][1]['amount'], '1000.00' );
+			$this->assertEquals( $pse_arr[$pse_accounts['other']][1]['ytd_amount'], '1240.80' );
 
 			$this->assertEquals( $pse_arr[$pse_accounts['premium_2']][0]['amount'], '10.00' );
 			$this->assertEquals( $pse_arr[$pse_accounts['premium_2']][0]['ytd_amount'], '0.00' );
@@ -1399,7 +1393,7 @@ class PayStubCalculationTest extends PHPUnit_Framework_TestCase {
 							'premium_2' => CompanyDeductionFactory::getPayStubEntryAccountByCompanyIDAndTypeAndFuzzyName($this->company_id, 10, 'Premium 2'),
 							'bonus' => CompanyDeductionFactory::getPayStubEntryAccountByCompanyIDAndTypeAndFuzzyName($this->company_id, 10, 'Bonus'),
 							'other' => CompanyDeductionFactory::getPayStubEntryAccountByCompanyIDAndTypeAndFuzzyName($this->company_id, 10, 'Commission'),
-							'vacation_accrual_release' => CompanyDeductionFactory::getPayStubEntryAccountByCompanyIDAndTypeAndFuzzyName($this->company_id, 10, 'Vacation - Accrual Release'),
+							'vacation_accrual_release' => CompanyDeductionFactory::getPayStubEntryAccountByCompanyIDAndTypeAndFuzzyName($this->company_id, 10, 'Vacation Accrual Release'),
 							'federal_income_tax' => CompanyDeductionFactory::getPayStubEntryAccountByCompanyIDAndTypeAndFuzzyName($this->company_id, 20, 'US - Federal Income Tax'),
 							'state_income_tax' => CompanyDeductionFactory::getPayStubEntryAccountByCompanyIDAndTypeAndFuzzyName($this->company_id, 20, 'NY - State Income Tax'),
 							'state_disability' => CompanyDeductionFactory::getPayStubEntryAccountByCompanyIDAndTypeAndFuzzyName($this->company_id, 20, 'NY - Disability Insurance'),
@@ -1662,7 +1656,6 @@ class PayStubCalculationTest extends PHPUnit_Framework_TestCase {
 	function testCPPAgeLimitsA() {
 		$cdf = new CompanyDeductionFactory();
 		$cdf->setCompany( $this->company_id );
-		$cdf->setLegalEntity( $this->legal_entity_id );
 		$cdf->setStatus( 10 ); //Enabled
 		$cdf->setType( 10 ); //Tax
 		$cdf->setName( 'CPP' );
@@ -1836,7 +1829,6 @@ class PayStubCalculationTest extends PHPUnit_Framework_TestCase {
 	function testCPPAgeLimitsB() {
 		$cdf = new CompanyDeductionFactory();
 		$cdf->setCompany( $this->company_id );
-		$cdf->setLegalEntity( $this->legal_entity_id );
 		$cdf->setStatus( 10 ); //Enabled
 		$cdf->setType( 10 ); //Tax
 		$cdf->setName( 'CPP' );

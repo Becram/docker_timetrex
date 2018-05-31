@@ -1,7 +1,7 @@
 <?php
 /*********************************************************************************
  * TimeTrex is a Workforce Management program developed by
- * TimeTrex Software Inc. Copyright (C) 2003 - 2018 TimeTrex Software Inc.
+ * TimeTrex Software Inc. Copyright (C) 2003 - 2017 TimeTrex Software Inc.
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Affero General Public License version 3 as published by
@@ -40,9 +40,6 @@
  */
 class PunchSummaryReport extends Report {
 
-	/**
-	 * PunchSummaryReport constructor.
-	 */
 	function __construct() {
 		$this->title = TTi18n::getText('Punch Summary Report');
 		$this->file_name = 'punch_summary_report';
@@ -52,11 +49,6 @@ class PunchSummaryReport extends Report {
 		return TRUE;
 	}
 
-	/**
-	 * @param string $user_id UUID
-	 * @param string $company_id UUID
-	 * @return bool
-	 */
 	protected function _checkPermissions( $user_id, $company_id ) {
 		if ( $this->getPermissionObject()->Check('report', 'enabled', $user_id, $company_id )
 				AND $this->getPermissionObject()->Check('report', 'view_punch_summary', $user_id, $company_id ) ) { //Piggyback on timesheet summary permissions.
@@ -66,25 +58,17 @@ class PunchSummaryReport extends Report {
 		return FALSE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	protected function _validateConfig() {
 		$config = $this->getConfig();
 
 		//Make sure some time period is selected.
-		if ( ( !isset($config['filter']['time_period']) AND !isset($config['filter']['pay_period_id']) ) OR ( isset($config['filter']['time_period']) AND isset($config['filter']['time_period']['time_period']) AND $config['filter']['time_period']['time_period'] == TTUUID::getZeroId() ) ) {
+		if ( !isset($config['filter']['time_period']) AND !isset($config['filter']['pay_period_id']) ) {
 			$this->validator->isTrue( 'time_period', FALSE, TTi18n::gettext('No time period defined for this report') );
 		}
 
 		return TRUE;
 	}
 
-	/**
-	 * @param $name
-	 * @param null $params
-	 * @return array|bool|mixed|null
-	 */
 	protected function _getOptions( $name, $params = NULL ) {
 		$retval = NULL;
 		switch( $name ) {
@@ -103,7 +87,7 @@ class PunchSummaryReport extends Report {
 										//Static Columns - Aggregate functions can't be used on these.
 										'-1000-template' => TTi18n::gettext('Template'),
 										'-1010-time_period' => TTi18n::gettext('Time Period'),
-										'-2000-legal_entity_id' => TTi18n::gettext('Legal Entity'),
+
 										'-2010-user_status_id' => TTi18n::gettext('Employee Status'),
 										'-2020-user_group_id' => TTi18n::gettext('Employee Group'),
 										'-2030-user_title_id' => TTi18n::gettext('Employee Title'),
@@ -748,11 +732,6 @@ class PunchSummaryReport extends Report {
 	}
 
 	//Get raw data for report
-
-	/**
-	 * @param null $format
-	 * @return bool
-	 */
 	function _getData( $format = NULL ) {
 		$this->tmp_data = array('punch' => array(), 'user' => array(), 'verified_timesheet' => array() );
 
@@ -970,10 +949,6 @@ class PunchSummaryReport extends Report {
 	}
 
 	//PreProcess data such as calculating additional columns from raw data etc...
-
-	/**
-	 * @return bool
-	 */
 	function _preProcess() {
 		$this->getProgressBarObject()->start( $this->getAMFMessageID(), count($this->tmp_data['punch']), NULL, TTi18n::getText('Pre-Processing Data...') );
 

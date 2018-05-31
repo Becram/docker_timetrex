@@ -1,18 +1,19 @@
 PayStubSummaryReportViewController = ReportBaseViewController.extend( {
 
-	_required_files: ['APIPayStubSummaryReport', 'APIPayStub', 'APIPayrollRemittanceAgency', 'APICurrency'],
-
-	initReport: function( options ) {
+	initialize: function( options ) {
+		this.__super( 'initialize', options );
 		this.script_name = 'PayStubSummaryReport';
 		this.viewId = 'PayStubSummaryReport';
 		this.context_menu_name = $.i18n._( 'Pay Stub Summary' );
 		this.navigation_label = $.i18n._( 'Saved Report' ) +':';
 		this.view_file = 'PayStubSummaryReportView.html';
 		this.api = new (APIFactory.getAPIClass( 'APIPayStubSummaryReport' ))();
+		this.buildContextMenu();
+
 	},
 
 	onReportMenuClick: function( id ) {
-		this.processTransactions( id );
+		this.onViewClick( id );
 	},
 
 	buildContextMenuModels: function() {
@@ -128,15 +129,47 @@ PayStubSummaryReportViewController = ReportBaseViewController.extend( {
 			permission: null
 		} );
 
-		var direct_deposit = new RibbonSubMenu( {
-			label: $.i18n._( 'Process<br>Transactions' ),
+		var print_checks = new RibbonSubMenu( {label: $.i18n._( 'Print Checks' ),
+			id: ContextMenuIconName.print_checks,
+			group: export_group,
+			icon: 'print_checks-35x35.png',
+			type: RibbonSubMenuType.NAVIGATION,
+			items: [],
+			permission_result: true,
+			permission: true} );
+
+		var export_cheque_result = new (APIFactory.getAPIClass( 'APIPayStub' ))().getOptions( 'export_cheque', {async: false} ).getResult();
+
+		export_cheque_result = Global.buildRecordArray( export_cheque_result );
+
+		for ( var i = 0; i < export_cheque_result.length; i++ ) {
+			var item = export_cheque_result[i];
+			var btn = new RibbonSubMenuNavItem( {label: item.label,
+				id: item.value,
+				nav: print_checks
+			} );
+		}
+
+		var direct_deposit = new RibbonSubMenu( {label: $.i18n._( 'Direct Deposit' ),
 			id: ContextMenuIconName.direct_deposit,
 			group: export_group,
 			icon: 'direct_deposit-35x35.png',
+			type: RibbonSubMenuType.NAVIGATION,
 			items: [],
 			permission_result: true,
-			permission: true
-		} );
+			permission: true} );
+
+		var direct_deposit_result = new (APIFactory.getAPIClass( 'APIPayStub' ))().getOptions( 'export_eft', {async: false} ).getResult();
+
+		direct_deposit_result = Global.buildRecordArray( direct_deposit_result );
+
+		for ( i = 0; i < direct_deposit_result.length; i++ ) {
+			item = direct_deposit_result[i];
+			btn = new RibbonSubMenuNavItem( {label: item.label,
+				id: item.value,
+				nav: direct_deposit
+			} );
+		}
 
 		return [menu];
 
@@ -218,15 +251,13 @@ PayStubSummaryReportViewController = ReportBaseViewController.extend( {
 
 		switch ( id ) {
 			case ContextMenuIconName.view:
-				ProgressBar.showOverlay();
 				this.onViewClick();
 				break;
 			case ContextMenuIconName.view_html:
-				ProgressBar.showOverlay();
+
 				this.onViewClick('html');
 				break;
 			case ContextMenuIconName.view_html_new_window:
-				ProgressBar.showOverlay();
 				this.onViewClick('html', true);
 				break;
 			case ContextMenuIconName.export_excel:
@@ -246,13 +277,6 @@ PayStubSummaryReportViewController = ReportBaseViewController.extend( {
 				break;
 			case ContextMenuIconName.employer_pay_stubs: //All report view
 				this.onViewClick( 'pdf_employer_pay_stub' )
-				break;
-			case ContextMenuIconName.direct_deposit:
-				if ( !this.validate( true ) ) {
-					return;
-				}
-
-				IndexViewController.openWizardController('ProcessTransactionsWizardController', {filter_data: this.visible_report_values} );
 				break;
 		}
 	}

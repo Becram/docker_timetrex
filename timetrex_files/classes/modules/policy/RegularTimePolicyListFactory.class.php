@@ -1,7 +1,7 @@
 <?php
 /*********************************************************************************
  * TimeTrex is a Workforce Management program developed by
- * TimeTrex Software Inc. Copyright (C) 2003 - 2018 TimeTrex Software Inc.
+ * TimeTrex Software Inc. Copyright (C) 2003 - 2017 TimeTrex Software Inc.
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Affero General Public License version 3 as published by
@@ -40,14 +40,7 @@
  */
 class RegularTimePolicyListFactory extends RegularTimePolicyFactory implements IteratorAggregate {
 
-	/**
-	 * @param int $limit Limit the number of records returned
-	 * @param int $page Page number of records to return for pagination
-	 * @param array $where Additional SQL WHERE clause in format of array( $column => $filter, ... ). ie: array( 'id' => 1, ... )
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return $this
-	 */
-	function getAll( $limit = NULL, $page = NULL, $where = NULL, $order = NULL) {
+	function getAll($limit = NULL, $page = NULL, $where = NULL, $order = NULL) {
 		$query = '
 					select	*
 					from	'. $this->getTable() .'
@@ -60,13 +53,7 @@ class RegularTimePolicyListFactory extends RegularTimePolicyFactory implements I
 		return $this;
 	}
 
-	/**
-	 * @param string $id UUID
-	 * @param array $where Additional SQL WHERE clause in format of array( $column => $filter, ... ). ie: array( 'id' => 1, ... )
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return bool|RegularTimePolicyListFactory
-	 */
-	function getById( $id, $where = NULL, $order = NULL) {
+	function getById($id, $where = NULL, $order = NULL) {
 		if ( $id == '') {
 			return FALSE;
 		}
@@ -74,7 +61,7 @@ class RegularTimePolicyListFactory extends RegularTimePolicyFactory implements I
 		$this->rs = $this->getCache($id);
 		if ( $this->rs === FALSE ) {
 			$ph = array(
-						'id' => TTUUID::castUUID($id),
+						'id' => (int)$id,
 						);
 
 			$query = '
@@ -93,14 +80,7 @@ class RegularTimePolicyListFactory extends RegularTimePolicyFactory implements I
 		return $this;
 	}
 
-	/**
-	 * @param string $id UUID
-	 * @param string $company_id UUID
-	 * @param array $where Additional SQL WHERE clause in format of array( $column => $filter, ... ). ie: array( 'id' => 1, ... )
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return bool|RegularTimePolicyListFactory
-	 */
-	function getByIdAndCompanyId( $id, $company_id, $where = NULL, $order = NULL) {
+	function getByIdAndCompanyId($id, $company_id, $where = NULL, $order = NULL) {
 		if ( $id == '') {
 			return FALSE;
 		}
@@ -117,7 +97,7 @@ class RegularTimePolicyListFactory extends RegularTimePolicyFactory implements I
 		}
 
 		$ph = array(
-					'company_id' => TTUUID::castUUID($company_id),
+					'company_id' => (int)$company_id,
 					);
 
 		$query = '
@@ -125,7 +105,7 @@ class RegularTimePolicyListFactory extends RegularTimePolicyFactory implements I
 					from	'. $this->getTable() .'
 					where
 						company_id = ?
-						AND id in ('. $this->getListSQL( $id, $ph, 'uuid' ) .')
+						AND id in ('. $this->getListSQL( $id, $ph, 'int' ) .')
 						AND deleted = 0';
 		$query .= $this->getWhereSQL( $where );
 		$query .= $this->getSortSQL( $order, $strict );
@@ -135,13 +115,7 @@ class RegularTimePolicyListFactory extends RegularTimePolicyFactory implements I
 		return $this;
 	}
 
-	/**
-	 * @param string $id UUID
-	 * @param array $where Additional SQL WHERE clause in format of array( $column => $filter, ... ). ie: array( 'id' => 1, ... )
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return bool|RegularTimePolicyListFactory
-	 */
-	function getByCompanyId( $id, $where = NULL, $order = NULL) {
+	function getByCompanyId($id, $where = NULL, $order = NULL) {
 		if ( $id == '') {
 			return FALSE;
 		}
@@ -158,7 +132,7 @@ class RegularTimePolicyListFactory extends RegularTimePolicyFactory implements I
 		$spf = new SchedulePolicyFactory();
 
 		$ph = array(
-					'id' => TTUUID::castUUID($id),
+					'id' => (int)$id,
 					);
 
 
@@ -179,14 +153,6 @@ class RegularTimePolicyListFactory extends RegularTimePolicyFactory implements I
 		return $this;
 	}
 
-	/**
-	 * @param string $company_id UUID
-	 * @param string $id UUID
-	 * @param int $limit Limit the number of records returned
-	 * @param array $where Additional SQL WHERE clause in format of array( $column => $filter, ... ). ie: array( 'id' => 1, ... )
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return bool|RegularTimePolicyListFactory
-	 */
 	function getByCompanyIdAndPayCodeId( $company_id, $id, $limit = NULL, $where = NULL, $order = NULL) {
 		if ( $id == '') {
 			return FALSE;
@@ -204,7 +170,7 @@ class RegularTimePolicyListFactory extends RegularTimePolicyFactory implements I
 		}
 
 		$ph = array(
-					'company_id' => TTUUID::castUUID($company_id),
+					'company_id' => (int)$company_id,
 					);
 
 		$query = '
@@ -212,7 +178,7 @@ class RegularTimePolicyListFactory extends RegularTimePolicyFactory implements I
 					from	'. $this->getTable() .'
 					where
 						company_id = ?
-						AND pay_code_id in ('. $this->getListSQL( $id, $ph, 'uuid' ) .')
+						AND pay_code_id in ('. $this->getListSQL( $id, $ph, 'int' ) .')
 						AND deleted = 0';
 		$query .= $this->getWhereSQL( $where );
 		$query .= $this->getSortSQL( $order, $strict );
@@ -222,59 +188,7 @@ class RegularTimePolicyListFactory extends RegularTimePolicyFactory implements I
 		return $this;
 	}
 
-	/**
-	 * @param string $company_id UUID
-	 * @param string $pay_code_id UUID
-	 * @param string $pay_formula_policy_id UUID
-	 * @param int $limit Limit the number of records returned
-	 * @param array $where Additional SQL WHERE clause in format of array( $column => $filter, ... ). ie: array( 'id' => 1, ... )
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return bool|RegularTimePolicyListFactory
-	 */
-	function getByCompanyIdAndPayCodeIdAndPayFormulaPolicyId( $company_id, $pay_code_id, $pay_formula_policy_id, $limit = NULL, $where = NULL, $order = NULL) {
-		if ( $pay_code_id == '') {
-			return FALSE;
-		}
-
-		if ( $company_id == '') {
-			return FALSE;
-		}
-
-		if ( $order == NULL ) {
-			$order = array( 'name' => 'asc' );
-			$strict = FALSE;
-		} else {
-			$strict = TRUE;
-		}
-
-		$ph = array(
-				'company_id' => TTUUID::castUUID($company_id),
-		);
-
-		$query = '
-					select	*
-					from	'. $this->getTable() .'
-					where
-						company_id = ?
-						AND pay_code_id in ('. $this->getListSQL( $pay_code_id, $ph, 'uuid' ) .')
-						AND pay_formula_policy_id in ('. $this->getListSQL( $pay_formula_policy_id, $ph, 'uuid' ) .')
-						AND deleted = 0';
-		$query .= $this->getWhereSQL( $where );
-		$query .= $this->getSortSQL( $order, $strict );
-
-		$this->ExecuteSQL( $query, $ph, $limit );
-
-		return $this;
-	}
-
-	/**
-	 * @param string $id UUID
-	 * @param string $pay_formula_policy_id UUID
-	 * @param array $where Additional SQL WHERE clause in format of array( $column => $filter, ... ). ie: array( 'id' => 1, ... )
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return bool|RegularTimePolicyListFactory
-	 */
-	function getByCompanyIdAndPayFormulaPolicyId( $id, $pay_formula_policy_id, $where = NULL, $order = NULL) {
+	function getByCompanyIdAndPayFormulaPolicyId($id, $pay_formula_policy_id, $where = NULL, $order = NULL) {
 		if ( $id == '') {
 			return FALSE;
 		}
@@ -291,7 +205,7 @@ class RegularTimePolicyListFactory extends RegularTimePolicyFactory implements I
 		}
 
 		$ph = array(
-					'id' => TTUUID::castUUID($id),
+					'id' => (int)$id,
 					);
 
 
@@ -299,7 +213,7 @@ class RegularTimePolicyListFactory extends RegularTimePolicyFactory implements I
 					select	*
 					from	'. $this->getTable() .' as a
 					where	company_id = ?
-						AND pay_formula_policy_id in ('. $this->getListSQL( $pay_formula_policy_id, $ph, 'uuid' ) .')
+						AND pay_formula_policy_id in ('. $this->getListSQL( $pay_formula_policy_id, $ph, 'int' ) .')
 						AND deleted = 0';
 		$query .= $this->getWhereSQL( $where );
 		$query .= $this->getSortSQL( $order, $strict );
@@ -309,14 +223,7 @@ class RegularTimePolicyListFactory extends RegularTimePolicyFactory implements I
 		return $this;
 	}
 
-	/**
-	 * @param string $id UUID
-	 * @param string $contributing_shift_policy_id UUID
-	 * @param array $where Additional SQL WHERE clause in format of array( $column => $filter, ... ). ie: array( 'id' => 1, ... )
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return bool|RegularTimePolicyListFactory
-	 */
-	function getByCompanyIdAndContributingShiftPolicyId( $id, $contributing_shift_policy_id, $where = NULL, $order = NULL) {
+	function getByCompanyIdAndContributingShiftPolicyId($id, $contributing_shift_policy_id, $where = NULL, $order = NULL) {
 		if ( $id == '') {
 			return FALSE;
 		}
@@ -333,7 +240,7 @@ class RegularTimePolicyListFactory extends RegularTimePolicyFactory implements I
 		}
 
 		$ph = array(
-					'id' => TTUUID::castUUID($id),
+					'id' => (int)$id,
 					);
 
 
@@ -341,7 +248,7 @@ class RegularTimePolicyListFactory extends RegularTimePolicyFactory implements I
 					select	*
 					from	'. $this->getTable() .' as a
 					where	company_id = ?
-						AND contributing_shift_policy_id in ('. $this->getListSQL( $contributing_shift_policy_id, $ph, 'uuid' ) .')
+						AND contributing_shift_policy_id in ('. $this->getListSQL( $contributing_shift_policy_id, $ph, 'int' ) .')
 						AND deleted = 0';
 		$query .= $this->getWhereSQL( $where );
 		$query .= $this->getSortSQL( $order, $strict );
@@ -351,13 +258,7 @@ class RegularTimePolicyListFactory extends RegularTimePolicyFactory implements I
 		return $this;
 	}
 
-	/**
-	 * @param string $user_id UUID
-	 * @param array $where Additional SQL WHERE clause in format of array( $column => $filter, ... ). ie: array( 'id' => 1, ... )
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return bool|RegularTimePolicyListFactory
-	 */
-	function getByPolicyGroupUserId( $user_id, $where = NULL, $order = NULL) {
+	function getByPolicyGroupUserId($user_id, $where = NULL, $order = NULL) {
 		if ( $user_id == '') {
 			return FALSE;
 		}
@@ -374,7 +275,7 @@ class RegularTimePolicyListFactory extends RegularTimePolicyFactory implements I
 		$cgmf = new CompanyGenericMapFactory();
 
 		$ph = array(
-					'user_id' => TTUUID::castUUID($user_id),
+					'user_id' => (int)$user_id,
 					);
 
 		$query = '
@@ -397,20 +298,13 @@ class RegularTimePolicyListFactory extends RegularTimePolicyFactory implements I
 		return $this;
 	}
 
-	/**
-	 * @param string $user_id UUID
-	 * @param string $id UUID
-	 * @param array $where Additional SQL WHERE clause in format of array( $column => $filter, ... ). ie: array( 'id' => 1, ... )
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return bool|RegularTimePolicyListFactory
-	 */
-	function getByPolicyGroupUserIdOrId( $user_id, $id = NULL, $where = NULL, $order = NULL) {
+	function getByPolicyGroupUserIdOrId($user_id, $id = NULL, $where = NULL, $order = NULL) {
 		if ( $user_id == '') {
 			return FALSE;
 		}
 
 		if ( $id == '') {
-			$id = TTUUID::getZeroID();
+			$id = 0;
 		}
 
 		if ( $order == NULL ) {
@@ -426,7 +320,7 @@ class RegularTimePolicyListFactory extends RegularTimePolicyFactory implements I
 		$rtpf = new RegularTimePolicyFactory();
 
 		$ph = array(
-					'user_id' => TTUUID::castUUID($user_id),
+					'user_id' => (int)$user_id,
 					);
 
 		$query = '
@@ -447,7 +341,7 @@ class RegularTimePolicyListFactory extends RegularTimePolicyFactory implements I
 					from
 							'. $rtpf->getTable() .' as e
 					where
-							e.id in ('. $this->getListSQL( $id, $ph, 'uuid' ) .')
+							e.id in ('. $this->getListSQL( $id, $ph, 'int' ) .')
 							AND e.deleted = 0
 						';
 
@@ -459,15 +353,6 @@ class RegularTimePolicyListFactory extends RegularTimePolicyFactory implements I
 		return $this;
 	}
 
-	/**
-	 * @param string $company_id UUID
-	 * @param $filter_data
-	 * @param int $limit Limit the number of records returned
-	 * @param int $page Page number of records to return for pagination
-	 * @param array $where Additional SQL WHERE clause in format of array( $column => $filter, ... ). ie: array( 'id' => 1, ... )
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return bool|RegularTimePolicyListFactory
-	 */
 	function getAPISearchByCompanyIdAndArrayCriteria( $company_id, $filter_data, $limit = NULL, $page = NULL, $where = NULL, $order = NULL ) {
 		if ( $company_id == '') {
 			return FALSE;
@@ -505,13 +390,12 @@ class RegularTimePolicyListFactory extends RegularTimePolicyFactory implements I
 		$cgmf = new CompanyGenericMapFactory();
 
 		$ph = array(
-					'company_id' => TTUUID::castUUID($company_id),
+					'company_id' => (int)$company_id,
 					);
 
 		$query = '
-					select	
+					select	a.*,
 							_ADODB_COUNT
-							a.*,
 							(
 								CASE WHEN EXISTS ( select 1 from '. $cgmf->getTable() .' as w, '. $pgf->getTable() .' as v where w.company_id = a.company_id AND w.object_type_id = 100 AND w.map_id = a.id AND w.object_id = v.id AND v.deleted = 0 ) THEN 1 ELSE 0 END
 							) as in_use,
@@ -528,16 +412,16 @@ class RegularTimePolicyListFactory extends RegularTimePolicyFactory implements I
 					where	a.company_id = ?
 					';
 
-		$query .= ( isset($filter_data['permission_children_ids']) ) ? $this->getWhereClauseSQL( 'a.created_by', $filter_data['permission_children_ids'], 'uuid_list', $ph ) : NULL;
-		$query .= ( isset($filter_data['id']) ) ? $this->getWhereClauseSQL( 'a.id', $filter_data['id'], 'uuid_list', $ph ) : NULL;
-		$query .= ( isset($filter_data['exclude_id']) ) ? $this->getWhereClauseSQL( 'a.id', $filter_data['exclude_id'], 'not_uuid_list', $ph ) : NULL;
+		$query .= ( isset($filter_data['permission_children_ids']) ) ? $this->getWhereClauseSQL( 'a.created_by', $filter_data['permission_children_ids'], 'numeric_list', $ph ) : NULL;
+		$query .= ( isset($filter_data['id']) ) ? $this->getWhereClauseSQL( 'a.id', $filter_data['id'], 'numeric_list', $ph ) : NULL;
+		$query .= ( isset($filter_data['exclude_id']) ) ? $this->getWhereClauseSQL( 'a.id', $filter_data['exclude_id'], 'not_numeric_list', $ph ) : NULL;
 
 		$query .= ( isset($filter_data['name']) ) ? $this->getWhereClauseSQL( 'a.name', $filter_data['name'], 'text', $ph ) : NULL;
 		$query .= ( isset($filter_data['description']) ) ? $this->getWhereClauseSQL( 'a.description', $filter_data['description'], 'text', $ph ) : NULL;
 
-		$query .= ( isset($filter_data['contributing_shift_policy_id']) ) ? $this->getWhereClauseSQL( 'a.contributing_shift_policy_id', $filter_data['contributing_shift_policy_id'], 'uuid_list', $ph ) : NULL;
-		$query .= ( isset($filter_data['pay_code_id']) ) ? $this->getWhereClauseSQL( 'a.pay_code_id', $filter_data['pay_code_id'], 'uuid_list', $ph ) : NULL;
-		$query .= ( isset($filter_data['pay_formula_policy_id']) ) ? $this->getWhereClauseSQL( 'a.pay_formula_policy_id', $filter_data['pay_formula_policy_id'], 'uuid_list', $ph ) : NULL;
+		$query .= ( isset($filter_data['contributing_shift_policy_id']) ) ? $this->getWhereClauseSQL( 'a.contributing_shift_policy_id', $filter_data['contributing_shift_policy_id'], 'numeric_list', $ph ) : NULL;
+		$query .= ( isset($filter_data['pay_code_id']) ) ? $this->getWhereClauseSQL( 'a.pay_code_id', $filter_data['pay_code_id'], 'numeric_list', $ph ) : NULL;
+		$query .= ( isset($filter_data['pay_formula_policy_id']) ) ? $this->getWhereClauseSQL( 'a.pay_formula_policy_id', $filter_data['pay_formula_policy_id'], 'numeric_list', $ph ) : NULL;
 
 		$query .= ( isset($filter_data['created_by']) ) ? $this->getWhereClauseSQL( array('a.created_by', 'y.first_name', 'y.last_name'), $filter_data['created_by'], 'user_id_or_name', $ph ) : NULL;
 		$query .= ( isset($filter_data['updated_by']) ) ? $this->getWhereClauseSQL( array('a.updated_by', 'z.first_name', 'z.last_name'), $filter_data['updated_by'], 'user_id_or_name', $ph ) : NULL;

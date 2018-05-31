@@ -1,7 +1,7 @@
 <?php
 /*********************************************************************************
  * TimeTrex is a Workforce Management program developed by
- * TimeTrex Software Inc. Copyright (C) 2003 - 2018 TimeTrex Software Inc.
+ * TimeTrex Software Inc. Copyright (C) 2003 - 2017 TimeTrex Software Inc.
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Affero General Public License version 3 as published by
@@ -54,11 +54,6 @@ class ImportUser extends Import {
 	public $pay_period_schedule_options = FALSE;
 	public $hierarchy_control_options = FALSE;
 
-	/**
-	 * @param $name
-	 * @param null $parent
-	 * @return array|null
-	 */
 	function _getFactoryOptions( $name, $parent = NULL ) {
 
 		$retval = NULL;
@@ -175,11 +170,6 @@ class ImportUser extends Import {
 	}
 
 
-	/**
-	 * @param $row_number
-	 * @param $raw_row
-	 * @return array
-	 */
 	function _preParseRow( $row_number, $raw_row ) {
 		//Only set defaults for columns already specified, or absolutely necessary ones.
 		//That way if the user wants to just update one or two columns for existing employees, the default values aren't all used too.
@@ -198,11 +188,6 @@ class ImportUser extends Import {
 		return $retval;
 	}
 
-	/**
-	 * @param $row_number
-	 * @param $raw_row
-	 * @return mixed
-	 */
 	function _postParseRow( $row_number, $raw_row ) {
 		if ( $this->getImportOptions('update') == TRUE ) {
 			Debug::Text('Updating existing records, try to find record... ', __FILE__, __LINE__, __METHOD__, 10);
@@ -237,7 +222,7 @@ class ImportUser extends Import {
 				$raw_row['employee_number'] = ( $default_data['employee_number'] + $row_number ); //Auto increment manual_id automatically.
 			}
 			if ( !isset($raw_row['password']) ) {
-				$raw_row['password'] = TTPassword::generateRandomPassword( 50 ); //Default to a unique password, make it really long so it always passes the password strength checker.
+				$raw_row['password'] = uniqid( $uf->getPasswordSalt(), TRUE ); //Default to a unique password.
 			}
 
 			if ( !isset($raw_row['user_name']) OR ( isset($raw_row['user_name']) AND $raw_row['user_name'] == '' ) ) {
@@ -277,10 +262,6 @@ class ImportUser extends Import {
 		return $raw_row;
 	}
 
-	/**
-	 * @param int $validate_only EPOCH
-	 * @return mixed
-	 */
 	function _import( $validate_only ) {
 		return $this->getObject()->setUser( $this->getParsedData(), $validate_only );
 	}
@@ -288,12 +269,6 @@ class ImportUser extends Import {
 	//
 	// Generic parser functions.
 	//
-	/**
-	 * @param $input
-	 * @param null $default_value
-	 * @param null $parse_hint
-	 * @return int
-	 */
 	function parse_status( $input, $default_value = NULL, $parse_hint = NULL ) {
 
 		if ( strtolower( $input ) == 'a'
@@ -318,9 +293,6 @@ class ImportUser extends Import {
 		return $retval;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function getPermissionControlOptions() {
 		//Get job titles
 		$pglf = TTNew('PermissionControlListFactory');
@@ -330,16 +302,9 @@ class ImportUser extends Import {
 
 		return TRUE;
 	}
-
-	/**
-	 * @param $input
-	 * @param null $default_value
-	 * @param null $parse_hint
-	 * @return array|bool|int|mixed
-	 */
 	function parse_permission_control( $input, $default_value = NULL, $parse_hint = NULL ) {
 		if ( trim($input) == '' ) {
-			return TTUUID::getZeroID(); //No Permission Group
+			return 0; //No Permission Group
 		}
 
 		if ( !is_array( $this->permission_control_options ) ) {
@@ -354,9 +319,6 @@ class ImportUser extends Import {
 		return $retval;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function getPolicyGroupOptions() {
 		//Get job titles
 		$pglf = TTNew('PolicyGroupListFactory');
@@ -366,16 +328,9 @@ class ImportUser extends Import {
 
 		return TRUE;
 	}
-
-	/**
-	 * @param $input
-	 * @param null $default_value
-	 * @param null $parse_hint
-	 * @return array|bool|int|mixed
-	 */
 	function parse_policy_group( $input, $default_value = NULL, $parse_hint = NULL ) {
 		if ( trim($input) == '' ) {
-			return TTUUID::getZeroID(); //No Permission Group
+			return 0; //No Permission Group
 		}
 
 		if ( !is_array( $this->policy_group_options ) ) {
@@ -390,9 +345,6 @@ class ImportUser extends Import {
 		return $retval;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function getPayPeriodScheduleOptions() {
 		//Get job titles
 		$pglf = TTNew('PayPeriodScheduleListFactory');
@@ -402,16 +354,9 @@ class ImportUser extends Import {
 
 		return TRUE;
 	}
-
-	/**
-	 * @param $input
-	 * @param null $default_value
-	 * @param null $parse_hint
-	 * @return array|bool|int|mixed
-	 */
 	function parse_pay_period_schedule( $input, $default_value = NULL, $parse_hint = NULL ) {
 		if ( trim($input) == '' ) {
-			return TTUUID::getZeroID(); //No Permission Group
+			return 0; //No Permission Group
 		}
 
 		if ( !is_array( $this->pay_period_schedule_options ) ) {
@@ -426,9 +371,6 @@ class ImportUser extends Import {
 		return $retval;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function getUserTitleOptions() {
 		//Get job titles
 		$utlf = TTNew('UserTitleListFactory');
@@ -439,15 +381,9 @@ class ImportUser extends Import {
 		return TRUE;
 	}
 
-	/**
-	 * @param $input
-	 * @param null $default_value
-	 * @param null $parse_hint
-	 * @return array|bool|int|mixed
-	 */
 	function parse_title( $input, $default_value = NULL, $parse_hint = NULL ) {
 		if ( trim($input) == '' ) {
-			return TTUUID::getZeroID(); //No title
+			return 0; //No title
 		}
 
 		if ( !is_array( $this->title_options ) ) {
@@ -477,49 +413,22 @@ class ImportUser extends Import {
 		return $retval;
 	}
 
-	/**
-	 * @param $input
-	 * @param null $default_value
-	 * @param null $parse_hint
-	 * @return array|bool|int|mixed
-	 */
 	function parse_default_branch( $input, $default_value = NULL, $parse_hint = NULL ) {
 		return $this->parse_branch( $input, $default_value, $parse_hint );
 	}
 
-	/**
-	 * @param $input
-	 * @param null $default_value
-	 * @param null $parse_hint
-	 * @return array|bool|int|mixed
-	 */
 	function parse_default_department( $input, $default_value = NULL, $parse_hint = NULL ) {
 		return $this->parse_department( $input, $default_value, $parse_hint );
 	}
 
-	/**
-	 * @param $input
-	 * @param null $default_value
-	 * @param null $parse_hint
-	 * @return array|bool|int|mixed
-	 */
 	function parse_default_job( $input, $default_value = NULL, $parse_hint = NULL ) {
 		return $this->parse_job( $input, $default_value, $parse_hint );
 	}
 
-	/**
-	 * @param $input
-	 * @param null $default_value
-	 * @param null $parse_hint
-	 * @return array|bool|int|mixed
-	 */
 	function parse_default_job_item( $input, $default_value = NULL, $parse_hint = NULL ) {
 		return $this->parse_job_item( $input, $default_value, $parse_hint );
 	}
 
-	/**
-	 * @return bool
-	 */
 	function getUserGroupOptions() {
 		//Get groups
 		$uglf = TTNew('UserGroupListFactory');
@@ -530,25 +439,12 @@ class ImportUser extends Import {
 		return TRUE;
 	}
 
-	/**
-	 * @param $input
-	 * @param null $default_value
-	 * @param null $parse_hint
-	 * @return array|bool|int|mixed
-	 */
 	function parse_group( $input, $default_value = NULL, $parse_hint = NULL ) {
 		return $this->parse_user_group( $input, $default_value, $parse_hint );
 	}
-
-	/**
-	 * @param $input
-	 * @param null $default_value
-	 * @param null $parse_hint
-	 * @return array|bool|int|mixed
-	 */
 	function parse_user_group( $input, $default_value = NULL, $parse_hint = NULL ) {
 		if ( trim($input) == '' ) {
-			return TTUUID::getZeroID(); //No group
+			return 0; //No group
 		}
 
 		if ( !is_array( $this->user_group_options ) ) {
@@ -561,7 +457,7 @@ class ImportUser extends Import {
 			if ( $this->getImportOptions('create_group') == TRUE ) {
 				$ugf = TTnew('UserGroupFactory');
 				$ugf->setCompany( $this->company_id );
-				$ugf->setParent( TTUUID::getZeroID() );
+				$ugf->setParent( 0 );
 				$ugf->setName( $input );
 
 				if ( $ugf->isValid() ) {
@@ -580,9 +476,6 @@ class ImportUser extends Import {
 		return $retval;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function getEthnicGroupOptions() {
 		//Get groups
 		$uglf = TTNew('EthnicGroupListFactory');
@@ -593,15 +486,9 @@ class ImportUser extends Import {
 		return TRUE;
 	}
 
-	/**
-	 * @param $input
-	 * @param null $default_value
-	 * @param null $parse_hint
-	 * @return array|bool|int|mixed
-	 */
 	function parse_ethnic_group( $input, $default_value = NULL, $parse_hint = NULL ) {
 		if ( trim($input) == '' ) {
-			return TTUUID::getZeroID(); //No group
+			return 0; //No group
 		}
 
 		if ( !is_array( $this->user_group_options ) ) {
@@ -632,9 +519,6 @@ class ImportUser extends Import {
 		return $retval;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function getHierarchyControlOptions() {
 		//Get job titles
 		$hclf = TTNew('HierarchyControlListFactory');
@@ -644,16 +528,9 @@ class ImportUser extends Import {
 
 		return TRUE;
 	}
-
-	/**
-	 * @param $input
-	 * @param null $default_value
-	 * @param null $parse_hint
-	 * @return int
-	 */
 	function parse_hierarchy_control_display( $input, $default_value = NULL, $parse_hint = NULL ) {
 		if ( trim($input) == '' ) {
-			return TTUUID::getZeroID(); //No Hierarchy
+			return 0; //No Hierarchy
 		}
 
 		if ( !is_array( $this->hierarchy_control_options ) ) {
@@ -673,12 +550,6 @@ class ImportUser extends Import {
 		return $retarr;
 	}
 
-	/**
-	 * @param $input
-	 * @param null $default_value
-	 * @param null $parse_hint
-	 * @return string
-	 */
 	function parse_phone_id( $input, $default_value = NULL, $parse_hint = NULL ) {
 		if ( strlen( $input ) < 4 ) {
 			$retval = str_pad( $input, 4, 0, STR_PAD_LEFT );
@@ -687,13 +558,6 @@ class ImportUser extends Import {
 		}
 		return $retval;
 	}
-
-	/**
-	 * @param $input
-	 * @param null $default_value
-	 * @param null $parse_hint
-	 * @return string
-	 */
 	function parse_phone_password( $input, $default_value = NULL, $parse_hint = NULL ) {
 		if ( strlen( $input ) < 4 ) {
 			$retval = str_pad( $input, 4, 0, STR_PAD_LEFT );
@@ -703,52 +567,19 @@ class ImportUser extends Import {
 		return $retval;
 	}
 
-	/**
-	 * @param $input
-	 * @param null $default_value
-	 * @param null $parse_hint
-	 * @return false|int
-	 */
 	function parse_birth_date( $input, $default_value = NULL, $parse_hint = NULL ) {
 		return $this->parse_date( $input, $default_value, $parse_hint );
 	}
-
-	/**
-	 * @param $input
-	 * @param null $default_value
-	 * @param null $parse_hint
-	 * @return false|int
-	 */
 	function parse_hire_date( $input, $default_value = NULL, $parse_hint = NULL ) {
 		return $this->parse_date( $input, $default_value, $parse_hint );
 	}
-
-	/**
-	 * @param $input
-	 * @param null $default_value
-	 * @param null $parse_hint
-	 * @return false|int
-	 */
 	function parse_termination_date( $input, $default_value = NULL, $parse_hint = NULL ) {
 		return $this->parse_date( $input, $default_value, $parse_hint );
 	}
-
-	/**
-	 * @param $input
-	 * @param null $default_value
-	 * @param null $parse_hint
-	 * @return false|int
-	 */
 	function parse_wage_effective_date( $input, $default_value = NULL, $parse_hint = NULL ) {
 		return $this->parse_date( $input, $default_value, $parse_hint );
 	}
 
-	/**
-	 * @param $input
-	 * @param null $default_value
-	 * @param null $parse_hint
-	 * @return int
-	 */
 	function parse_wage_type( $input, $default_value = NULL, $parse_hint = NULL ) {
 		if ( strtolower( $input ) == 'salary' OR strtolower( $input ) == 'salaried' OR strtolower( $input ) == 's' OR strtolower( $input ) == 'annual' ) {
 			$retval = 20;
@@ -765,12 +596,6 @@ class ImportUser extends Import {
 		return $retval;
 	}
 
-	/**
-	 * @param $input
-	 * @param null $default_value
-	 * @param null $parse_hint
-	 * @return bool|float|int|number|string
-	 */
 	function parse_wage_weekly_time( $input, $default_value = NULL, $parse_hint = NULL ) {
 		if ( isset($parse_hint) AND $parse_hint != '' ) {
 			TTDate::setTimeUnitFormat( $parse_hint );
@@ -781,12 +606,6 @@ class ImportUser extends Import {
 		return $retval;
 	}
 
-	/**
-	 * @param $input
-	 * @param null $default_value
-	 * @param null $parse_hint
-	 * @return mixed
-	 */
 	function parse_wage( $input, $default_value = NULL, $parse_hint = NULL ) {
 		$val = new Validator();
 		$retval = $val->stripNonFloat($input);

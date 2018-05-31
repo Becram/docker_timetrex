@@ -1,7 +1,7 @@
 <?php
 /*********************************************************************************
  * TimeTrex is a Workforce Management program developed by
- * TimeTrex Software Inc. Copyright (C) 2003 - 2018 TimeTrex Software Inc.
+ * TimeTrex Software Inc. Copyright (C) 2003 - 2017 TimeTrex Software Inc.
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Affero General Public License version 3 as published by
@@ -54,16 +54,9 @@ class PayStubFactory extends Factory {
 	protected $pay_stub_entry_account_link_obj = NULL;
 
 	protected $pay_stub_entry_accounts_obj = NULL;
-	protected $old_currency_id = NULL;
 
 	public $validate_only = FALSE; //Used by the API to ignore certain validation checks if we are doing validation only.
 
-
-	/**
-	 * @param $name
-	 * @param null $param
-	 * @return array|bool|null
-	 */
 	function _getFactoryOptions( $name, $param = NULL ) {
 
 		$retval = NULL;
@@ -76,9 +69,8 @@ class PayStubFactory extends Factory {
 										10 => TTi18n::gettext('NEW'),
 										20 => TTi18n::gettext('LOCKED'),
 										25 => TTi18n::gettext('Open'),
-										//25 => TTi18n::gettext('Pending Payment'), //At least one transaction still pending
-										40 => TTi18n::gettext('Paid'), //Change this to mean Paid (all transactions paid), but not yet visible to employees?
-										//50 => TTi18n::gettext('Complete'), //Paid and visible to employees. Also sends out emails. Closing the pay period changes to this state.
+										30 => TTi18n::gettext('Pending Transaction'),
+										40 => TTi18n::gettext('Paid'),
 										100 => TTi18n::gettext('Opening Balance (YTD)'),
 									);
 				break;
@@ -88,25 +80,50 @@ class PayStubFactory extends Factory {
 										20 => TTi18n::gettext('Bonus/Correction (Out-of-Cycle)'), //Out-of-Cycle
 									);
 				//$param should be the pay_period status_id.
-				if ( is_array($param) AND count( array_unique($param) ) == 1 AND end($param) == 30 ) {
+				if ( is_array($param) AND count( array_unique($param) ) === 1 AND end($param) === 30 ) {
 					$retval[5] = TTi18n::gettext('Post-Adjustment Carry-Forward'); //Just generate PSA's in the next pay period.
 					ksort($retval);
 				}
 				break;
 			case 'export_type':
+				$retval = array();
+				$retval += array( '00' => TTi18n::gettext('-- Direct Deposit --') );
+				$retval += $this->getOptions('export_eft');
+				$retval += array(
+										'01' => '',
+										'02' => TTi18n::gettext('-- Laser Cheques --') );
+				$retval += $this->getOptions('export_cheque');
+				break;
+			case 'export_eft':
 				$retval = array(
-					array(10 => 'Direct Deposits & Checks'),
-					array(20 => 'Only Direct Deposits'),
-					array(30 => 'Only Checks'),
-				);
+										//EFT formats must start with "eft_"
+										'-1010-eft_ACH' => TTi18n::gettext('United States - ACH (94-Byte)'),
+										'-1020-eft_1464' => TTi18n::gettext('Canada - EFT (1464-Byte)'),
+										'-1022-eft_1464_cibc' => TTi18n::gettext('Canada - EFT CIBC (1464-Byte)'),
+										'-1023-eft_1464_rbc' => TTi18n::gettext('Canada - EFT RBC (1464-Byte)'),
+										'-1030-eft_105' => TTi18n::gettext('Canada - EFT (105-Byte)'),
+										'-1040-eft_HSBC' => TTi18n::gettext('Canada - HSBC EFT-PC (CSV)'),
+										'-1050-eft_BEANSTREAM' => TTi18n::gettext('Beanstream (CSV)'),
+									);
+				break;
+			case 'export_cheque':
+				$retval = array(
+										//Cheque formats must start with "cheque_"
+										'-2010-cheque_9085' => TTi18n::gettext('NEBS #9085'),
+										'-2020-cheque_9209p' => TTi18n::gettext('NEBS #9209P'),
+										'-2030-cheque_dlt103' => TTi18n::gettext('NEBS #DLT103'),
+										'-2040-cheque_dlt104' => TTi18n::gettext('NEBS #DLT104'),
+										//Disable Costa Rica formats for now as they don't appear to be correct anymore.
+										//'-2050-cheque_cr_standard_form_1' => TTi18n::gettext('Costa Rica - Std Form 1'),
+										//'-2060-cheque_cr_standard_form_2' => TTi18n::gettext('Costa Rica - Std Form 2'),
+									);
 				break;
 			case 'export_general_ledger':
 				$retval = array(
 										'-2010-export_csv' => TTi18n::gettext('Excel (CSV)'),
-										'-2011-export_csv_flat' => TTi18n::gettext('Excel (CSV) [Flat]'),
-										'-2020-quickbooks' => TTi18n::gettext('Quickbooks GL'),
-										'-2030-simply' => TTi18n::gettext('Sage 50 GL'), //Was Simply Accounting
-										'-2040-sage300' => TTi18n::gettext('Sage 300 GL'),
+										'-2020-simply' => TTi18n::gettext('Simply Accounting GL'),
+										'-2030-quickbooks' => TTi18n::gettext('Quickbooks GL'),
+										'-2040-sage300' => TTi18n::gettext('Sage 300 (Accpac)'),
 									);
 				break;
 			case 'columns':
@@ -167,10 +184,6 @@ class PayStubFactory extends Factory {
 		return $retval;
 	}
 
-	/**
-	 * @param $data
-	 * @return array
-	 */
 	function _getVariableToFunctionMap( $data ) {
 		$variable_function_map = array(
 										'id' => 'ID',
@@ -191,6 +204,7 @@ class PayStubFactory extends Factory {
 										'city' => FALSE,
 										'province' => FALSE,
 										'country' => FALSE,
+										'currency' => FALSE,
 
 										'pay_period_id' => 'PayPeriod',
 										'type_id' => 'Type',
@@ -214,133 +228,165 @@ class PayStubFactory extends Factory {
 		return $variable_function_map;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function getPayPeriodObject() {
 		return $this->getGenericObject( 'PayPeriodListFactory', $this->getPayPeriod(), 'pay_period_obj' );
 	}
 
-	/**
-	 * @return bool
-	 */
 	function getCurrencyObject() {
 		return $this->getGenericObject( 'CurrencyListFactory', $this->getCurrency(), 'currency_obj' );
 	}
 
-	/**
-	 * @return bool
-	 */
 	function getUserObject() {
 		return $this->getGenericObject( 'UserListFactory', $this->getUser(), 'user_obj' );
 	}
 
-	/**
-	 * @return bool|mixed
-	 */
 	function getUser() {
-		return $this->getGenericDataValue( 'user_id' );
-	}
+		if ( isset($this->data['user_id']) ) {
+			return (int)$this->data['user_id'];
+		}
 
-	/**
-	 * @param string $value UUID
-	 * @return bool
-	 */
-	function setUser( $value) {
-		$value = TTUUID::castUUID( $value );
-		return $this->setGenericDataValue( 'user_id', $value );
+		return FALSE;
 	}
+	function setUser($id) {
+		$id = trim($id);
 
-	/**
-	 * @return bool|mixed
-	 */
-	function getDisplayID() {
-		if ( TTUUID::isUUID( $this->getId() ) ) {
-			return strtoupper( TTUUID::truncateUUID( $this->getId(), 12, FALSE ) );
+		$ulf = TTnew( 'UserListFactory' );
+
+		if ( $this->Validator->isResultSetWithRows(	'user',
+															$ulf->getByID($id),
+															TTi18n::gettext('Invalid User')
+															) ) {
+			$this->data['user_id'] = $id;
+
+			return TRUE;
 		}
 
 		return FALSE;
 	}
 
-	/**
-	 * @return bool|mixed
-	 */
+	function getDisplayID() {
+		if ( $this->getId() > 0 ) {
+			return str_pad( $this->getId(), 15, 0, STR_PAD_LEFT );
+		}
+
+		return FALSE;
+	}
+
 	function getPayPeriod() {
-		return $this->getGenericDataValue( 'pay_period_id' );
+		if ( isset($this->data['pay_period_id']) ) {
+			return (int)$this->data['pay_period_id'];
+		}
+
+		return FALSE;
+	}
+	function setPayPeriod($id) {
+		$id = trim($id);
+
+		$pplf = TTnew( 'PayPeriodListFactory' );
+
+		if (  $this->Validator->isResultSetWithRows(	'start_date', //pay_period label isn't used when editing pay stubs.
+														$pplf->getByID($id),
+														TTi18n::gettext('Invalid Pay Period')
+														) ) {
+			$this->data['pay_period_id'] = $id;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @param string $value UUID
-	 * @return bool
-	 */
-	function setPayPeriod( $value) {
-		$value = TTUUID::castUUID( $value );
-		return $this->setGenericDataValue( 'pay_period_id', $value );
-	}
-
-	/**
-	 * @return int
-	 */
 	function getRun() {
-		if ( $this->getGenericDataValue( 'run_id' ) !== FALSE ) {
-			return (int)$this->getGenericDataValue( 'run_id' );
+		if ( isset($this->data['run_id']) ) {
+			return (int)$this->data['run_id'];
 		}
 
 		return 1; //Always default to 1 if its not set otherwise.
 	}
+	function setRun($id) {
+		$id = trim($id);
 
-	/**
-	 * @param string $value UUID
-	 * @return bool
-	 */
-	function setRun( $value) {
-		$value = trim($value);
-		return $this->setGenericDataValue( 'run_id', $value );
+		if (
+			$this->Validator->isGreaterThan(	'run_id', //pay_period label isn't used when editing pay stubs.
+														$id,
+														TTi18n::gettext('Payroll Run must higher than 1'),
+														1
+														)
+			AND
+			$this->Validator->isLessThan(	'run_id', //pay_period label isn't used when editing pay stubs.
+														$id,
+														TTi18n::gettext('Payroll Run must be less than 128'),
+														128
+														)
+			) {
+			$this->data['run_id'] = $id;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @return bool|mixed
-	 */
 	function getCurrency() {
-		return $this->getGenericDataValue( 'currency_id' );
+		if ( isset($this->data['currency_id']) ) {
+			return (int)$this->data['currency_id'];
+		}
+
+		return FALSE;
+	}
+	function setCurrency($id) {
+		$id = trim($id);
+
+		Debug::Text('Currency ID: '. $id, __FILE__, __LINE__, __METHOD__, 10);
+		$culf = TTnew( 'CurrencyListFactory' );
+
+		$old_currency_id = $this->getCurrency();
+
+		if (
+				$this->Validator->isResultSetWithRows(	'currency',
+														$culf->getByID($id),
+														TTi18n::gettext('Invalid Currency')
+													) ) {
+
+			$this->data['currency_id'] = $id;
+
+			if ( $culf->getRecordCount() == 1
+					AND ( $this->isNew() OR $old_currency_id != $id ) ) {
+				$this->setCurrencyRate( $culf->getCurrent()->getReverseConversionRate() );
+			}
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @param string $value UUID
-	 * @return bool
-	 */
-	function setCurrency( $value) {
-		$value = trim($value);
-
-		Debug::Text('Currency ID: '. $value, __FILE__, __LINE__, __METHOD__, 10);
-		$this->old_currency_id = $this->getCurrency();
-		return $this->setGenericDataValue( 'currency_id', $value );
-	}
-
-	/**
-	 * @return bool|mixed
-	 */
 	function getCurrencyRate() {
-		return $this->getGenericDataValue( 'currency_rate' );
-	}
+		if ( isset($this->data['currency_rate']) ) {
+			return $this->data['currency_rate'];
+		}
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
+		return FALSE;
+	}
 	function setCurrencyRate( $value ) {
 		$value = trim($value);
 
 		//Pull out only digits and periods.
 		$value = $this->Validator->stripNonFloat($value);
-		return $this->setGenericDataValue( 'currency_rate', $value );
+
+		if (	$this->Validator->isFloat(	'currency_rate',
+											$value,
+											TTi18n::gettext('Incorrect Currency Rate')) ) {
+
+			$this->data['currency_rate'] = $value;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @param int $epoch EPOCH
-	 * @return bool
-	 */
-	function isValidStartDate( $epoch) {
+	function isValidStartDate($epoch) {
 		if ( is_object( $this->getPayPeriodObject() ) AND
 				( $epoch >= $this->getPayPeriodObject()->getStartDate() AND $epoch < $this->getPayPeriodObject()->getEndDate() ) ) {
 			return TRUE;
@@ -349,46 +395,47 @@ class PayStubFactory extends Factory {
 		return FALSE;
 	}
 
-	/**
-	 * @param bool $raw
-	 * @return bool|int
-	 */
 	function getStartDate( $raw = FALSE ) {
-		$value = $this->getGenericDataValue( 'start_date' );
-		if ( $value !== FALSE ) {
+		if ( isset($this->data['start_date']) ) {
 			if ( $raw === TRUE ) {
-				return $value;
+				return $this->data['start_date'];
 			} else {
 				//return $this->db->UnixTimeStamp( $this->data['start_date'] );
 				//strtotime is MUCH faster than UnixTimeStamp
 				//Must use ADODB for times pre-1970 though.
-				return TTDate::strtotime( $value );
+				return TTDate::strtotime( $this->data['start_date'] );
 			}
 		}
 
 		return FALSE;
 	}
+	function setStartDate($epoch) {
+		$epoch = ( !is_int($epoch) ) ? trim($epoch) : $epoch; //Dont trim integer values, as it changes them to strings.
 
-	/**
-	 * @param int $value EPOCH
-	 * @return bool
-	 */
-	function setStartDate( $value) {
-		$value = ( !is_int($value) ) ? trim($value) : $value; //Dont trim integer values, as it changes them to strings.
-
-		if ( $value != '' ) {
+		if ( $epoch != '' ) {
 			//Make sure all pay periods start at the first second of the day.
-			$value = TTDate::getTimeLockedDate( strtotime('00:00:00', $value), $value);
+			$epoch = TTDate::getTimeLockedDate( strtotime('00:00:00', $epoch), $epoch);
 		}
 
-		return $this->setGenericDataValue( 'start_date', TTDate::getDBTimeStamp($value, FALSE) );
+		if	(	$this->Validator->isDate(		'start_date',
+												$epoch,
+												TTi18n::gettext('Incorrect start date'))
+				AND
+				$this->Validator->isTrue(		'start_date',
+												$this->isValidStartDate($epoch),
+												TTi18n::gettext('Conflicting start date, does not match pay period'))
+
+			) {
+
+			$this->data['start_date'] = TTDate::getDBTimeStamp($epoch, FALSE);
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @param int $epoch EPOCH
-	 * @return bool
-	 */
-	function isValidEndDate( $epoch) {
+	function isValidEndDate($epoch) {
 		//Allow a 59 second grace period around the pay period end date, due to seconds being stripped in some cases.
 		if ( is_object( $this->getPayPeriodObject() ) AND
 				( $epoch <= ($this->getPayPeriodObject()->getEndDate() + 59) AND $epoch >= $this->getPayPeriodObject()->getStartDate() ) ) {
@@ -402,44 +449,45 @@ class PayStubFactory extends Factory {
 		return FALSE;
 	}
 
-	/**
-	 * @param bool $raw
-	 * @return bool|int
-	 */
 	function getEndDate( $raw = FALSE ) {
-		$value = $this->getGenericDataValue( 'end_date' );
-		if ( $value !== FALSE ) {
+		if ( isset($this->data['end_date']) ) {
 			if ( $raw === TRUE ) {
-				return $value;
+				return $this->data['end_date'];
 			} else {
 				//In cases where you set the date, then immediately read it again, it will return -1 unless do this.
-				return TTDate::strtotime( $value );
+				return TTDate::strtotime( $this->data['end_date'] );
 			}
 		}
 
 		return FALSE;
 	}
+	function setEndDate($epoch) {
+		$epoch = ( !is_int($epoch) ) ? trim($epoch) : $epoch; //Dont trim integer values, as it changes them to strings.
 
-	/**
-	 * @param int $value EPOCH
-	 * @return bool
-	 */
-	function setEndDate( $value) {
-		$value = ( !is_int($value) ) ? trim($value) : $value; //Dont trim integer values, as it changes them to strings.
-
-		if ( $value != '' ) {
+		if ( $epoch != '' ) {
 			//Make sure all pay periods end at the last second of the day.
-			$value = TTDate::getTimeLockedDate( strtotime('23:59:59', $value), $value);
+			$epoch = TTDate::getTimeLockedDate( strtotime('23:59:59', $epoch), $epoch);
 		}
 
-		return $this->setGenericDataValue( 'end_date', TTDate::getDBTimeStamp($value, FALSE) );
+		if	(	$this->Validator->isDate(		'end_date',
+												$epoch,
+												TTi18n::gettext('Incorrect end date'))
+				AND
+				$this->Validator->isTrue(		'end_date',
+												$this->isValidEndDate($epoch),
+												TTi18n::gettext('Conflicting end date, does not match pay period'))
+
+			) {
+
+			$this->data['end_date'] = TTDate::getDBTimeStamp($epoch, FALSE);
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @param int $epoch EPOCH
-	 * @return bool
-	 */
-	function isValidTransactionDate( $epoch) {
+	function isValidTransactionDate($epoch) {
 		Debug::Text('Epoch: '. $epoch .' ( '. TTDate::getDate('DATE+TIME', $epoch) .' ) Pay Stub End Date: '. TTDate::getDate('DATE+TIME', $this->getEndDate() ), __FILE__, __LINE__, __METHOD__, 10);
 		if ( $epoch >= $this->getEndDate() ) {
 			return TRUE;
@@ -448,156 +496,180 @@ class PayStubFactory extends Factory {
 		return FALSE;
 	}
 
-	/**
-	 * @param bool $raw
-	 * @return bool|int
-	 */
 	function getTransactionDate( $raw = FALSE ) {
 		//Debug::Text('Transaction Date: '. $this->data['transaction_date'] .' - '. TTDate::getDate('DATE+TIME', $this->data['transaction_date']), __FILE__, __LINE__, __METHOD__, 10);
-		$value = $this->getGenericDataValue( 'transaction_date' );
-		if ( $value !== FALSE ) {
+		if ( isset($this->data['transaction_date']) ) {
 			if ( $raw === TRUE ) {
-				return $value;
+				return $this->data['transaction_date'];
 			} else {
-				return TTDate::strtotime( $value );
+				return TTDate::strtotime( $this->data['transaction_date'] );
 			}
 		}
 
 		return FALSE;
 	}
+	function setTransactionDate($epoch) {
+		$epoch = ( !is_int($epoch) ) ? trim($epoch) : $epoch; //Dont trim integer values, as it changes them to strings.
 
-	/**
-	 * @param int $value EPOCH
-	 * @return bool
-	 */
-	function setTransactionDate( $value) {
-		$value = ( !is_int($value) ) ? trim($value) : $value; //Dont trim integer values, as it changes them to strings.
-
-		if ( $value != '' ) {
+		if ( $epoch != '' ) {
 			//Make sure all pay periods transact at noon.
-			$value = TTDate::getTimeLockedDate( strtotime('12:00:00', $value), $value);
+			$epoch = TTDate::getTimeLockedDate( strtotime('12:00:00', $epoch), $epoch);
 
 			//Unless they are on the same date as the end date, then it should match that.
-			if ( $this->getEndDate() != '' AND $this->getEndDate() > $value ) {
-				$value = $this->getEndDate();
+			if ( $this->getEndDate() != '' AND $this->getEndDate() > $epoch ) {
+				$epoch = $this->getEndDate();
 			}
 		}
 
-		return $this->setGenericDataValue( 'transaction_date', TTDate::getDBTimeStamp($value, FALSE) );
-	}
+		if	(	$this->Validator->isDate(		'transaction_date',
+												$epoch,
+												TTi18n::gettext('Incorrect transaction date'))
+			) {
 
-	/**
-	 * @return bool|int
-	 */
-	function getStatus() {
-		return $this->getGenericDataValue( 'status_id' );
-	}
+			$this->data['transaction_date'] = TTDate::getDBTimeStamp($epoch, FALSE);
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setStatus( $value) {
-		$value = (int)trim($value);
-		$this->setStatusDate();
-		$this->setStatusBy();
-		return $this->setGenericDataValue( 'status_id', $value );
-	}
-
-	/**
-	 * @return bool|mixed
-	 */
-	function getStatusDate() {
-		return $this->getGenericDataValue( 'status_date' );
-	}
-
-	/**
-	 * @param int $value EPOCH
-	 * @return bool
-	 */
-	function setStatusDate( $value = NULL) {
-		$value = ( !is_int($value) ) ? trim($value) : $value; //Dont trim integer values, as it changes them to strings.
-
-		if ($value == NULL) {
-			$value = TTDate::getTime();
+			return TRUE;
 		}
-		return $this->setGenericDataValue( 'status_date', $value );
+
+		return FALSE;
+	}
+
+	function getStatus() {
+		if ( isset($this->data['status_id']) ) {
+			return (int)$this->data['status_id'];
+		}
+
+		return FALSE;
+	}
+	function setStatus($status) {
+		$status = trim($status);
+
+		if ( $this->Validator->inArrayKey(	'status_id',
+											$status,
+											TTi18n::gettext('Incorrect Status'),
+											$this->getOptions('status')) ) {
+
+			$this->setStatusDate();
+			$this->setStatusBy();
+
+			$this->data['status_id'] = $status;
+
+			return TRUE;
+		}
+
+		return FALSE;
+	}
+
+	function getStatusDate() {
+		if ( isset($this->data['status_date']) ) {
+			return $this->data['status_date'];
+		}
+
+		return FALSE;
+	}
+	function setStatusDate($epoch = NULL) {
+		$epoch = ( !is_int($epoch) ) ? trim($epoch) : $epoch; //Dont trim integer values, as it changes them to strings.
+
+		if ($epoch == NULL) {
+			$epoch = TTDate::getTime();
+		}
+
+		if	(	$this->Validator->isDate(		'status_date',
+												$epoch,
+												TTi18n::gettext('Incorrect Date')) ) {
+
+			$this->data['status_date'] = $epoch;
+
+			return TRUE;
+		}
+
+		return FALSE;
 
 	}
 
-	/**
-	 * @return bool|mixed
-	 */
 	function getStatusBy() {
-		return $this->getGenericDataValue( 'status_by' );
-	}
+		if ( isset($this->data['status_by']) ) {
+			return $this->data['status_by'];
+		}
 
-	/**
-	 * @param string $value UUID
-	 * @return bool
-	 */
-	function setStatusBy( $value = NULL) {
-		$value = trim($value);
-		if ( empty($value) ) {
+		return FALSE;
+	}
+	function setStatusBy($id = NULL) {
+		$id = trim($id);
+
+		if ( empty($id) ) {
 			global $current_user;
-			if ( is_object( $current_user ) ) {
-				$value = $current_user->getID();
+
+			if ( is_object($current_user) ) {
+				$id = $current_user->getID();
 			} else {
 				return FALSE;
 			}
 		}
-		return $this->setGenericDataValue( 'status_by', $value );
+
+		$ulf = TTnew( 'UserListFactory' );
+
+		if ( $this->Validator->isResultSetWithRows(	'created_by',
+													$ulf->getByID($id),
+													TTi18n::gettext('Incorrect User')
+													) ) {
+			$this->data['status_by'] = $id;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @return bool|int
-	 */
 	function getType() {
-		return $this->getGenericDataValue( 'type_id' );
+		if ( isset($this->data['type_id']) ) {
+			return (int)$this->data['type_id'];
+		}
+
+		return FALSE;
+	}
+	function setType($type) {
+		$type = trim($type);
+
+		if ( $this->Validator->inArrayKey(	'type_id',
+											$type,
+											TTi18n::gettext('Incorrect Type'),
+											$this->getOptions('type')) ) {
+
+			$this->data['type_id'] = $type;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setType( $value) {
-		$value = (int)trim($value);
-		return $this->setGenericDataValue( 'type_id', $value );
-	}
-
-	/**
-	 * @return bool
-	 */
 	function getTainted() {
-		return $this->fromBool( $this->getGenericDataValue( 'tainted' ) );
+		if ( isset($this->data['tainted']) ) {
+			return $this->fromBool( $this->data['tainted'] );
+		}
+
+		return FALSE;
+	}
+	function setTainted($bool) {
+		$this->data['tainted'] = $this->toBool($bool);
+
+		return TRUE;
 	}
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setTainted( $value) {
-		return $this->setGenericDataValue( 'tainted', $this->toBool($value) );
-	}
-
-	/**
-	 * @return bool
-	 */
 	function getTemp() {
-		return $this->fromBool( $this->getGenericDataValue( 'temp' ) );
+		if ( isset($this->data['temp']) ) {
+			return $this->fromBool( $this->data['temp'] );
+		}
+
+		return FALSE;
+	}
+	function setTemp($bool) {
+		$this->data['temp'] = $this->toBool($bool);
+
+		return TRUE;
 	}
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setTemp( $value) {
-		return $this->setGenericDataValue( 'temp', $this->toBool($value) );
-	}
-
-	/**
-	 * @return bool|null
-	 */
 	function isUniquePayStub() {
 		if ( $this->getTemp() == TRUE ) {
 			return TRUE;
@@ -605,9 +677,9 @@ class PayStubFactory extends Factory {
 
 		if ( $this->is_unique_pay_stub === NULL ) {
 			$ph = array(
-						'pay_period_id' => TTUUID::castUUID($this->getPayPeriod()),
-						'user_id' => TTUUID::castUUID($this->getUser()),
-						'run_id' => (int)$this->castInteger( (int)$this->getRun(), 'smallint' ),
+						'pay_period_id' => (int)$this->getPayPeriod(),
+						'user_id' => (int)$this->getUser(),
+						'run_id' => (int)$this->getRun(),
 						);
 
 			$query = 'select id from '. $this->getTable() .' where pay_period_id = ? AND user_id = ? AND run_id = ? AND deleted = 0';
@@ -627,9 +699,6 @@ class PayStubFactory extends Factory {
 		return $this->is_unique_pay_stub;
 	}
 
-	/**
-	 * @return bool|null
-	 */
 	function isUniquePayStubType() {
 		//Only 10=Regular (In-Cycle) types are unique.
 		if ( $this->getType() == 20 OR $this->getTemp() == TRUE ) {
@@ -638,8 +707,8 @@ class PayStubFactory extends Factory {
 
 		if ( $this->is_unique_pay_stub_type === NULL ) {
 			$ph = array(
-						'pay_period_id' => TTUUID::castUUID($this->getPayPeriod()),
-						'user_id' => TTUUID::castUUID($this->getUser()),
+						'pay_period_id' => (int)$this->getPayPeriod(),
+						'user_id' => (int)$this->getUser(),
 						'type_id' => (int)$this->getType(),
 						);
 
@@ -660,9 +729,6 @@ class PayStubFactory extends Factory {
 		return $this->is_unique_pay_stub_type;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function setDefaultDates() {
 		$start_date = $this->getPayPeriodObject()->getStartDate();
 		$end_date = $this->getPayPeriodObject()->getEndDate();
@@ -679,9 +745,6 @@ class PayStubFactory extends Factory {
 		return TRUE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function getEnableProcessEntries() {
 		if ( isset($this->process_entries) ) {
 			return $this->process_entries;
@@ -689,41 +752,12 @@ class PayStubFactory extends Factory {
 
 		return FALSE;
 	}
-
-	/**
-	 * @param $bool
-	 * @return bool
-	 */
-	function setEnableProcessEntries( $bool) {
+	function setEnableProcessEntries($bool) {
 		$this->process_entries = (bool)$bool;
 
 		return TRUE;
 	}
 
-	/**
-	 * @return bool
-	 */
-	function getEnableProcessTransactions() {
-		if ( isset($this->process_transactions) ) {
-			return $this->process_transactions;
-		}
-
-		return FALSE;
-	}
-
-	/**
-	 * @param $bool
-	 * @return bool
-	 */
-	function setEnableProcessTransactions( $bool) {
-		$this->process_transactions = (bool)$bool;
-
-		return TRUE;
-	}
-
-	/**
-	 * @return bool
-	 */
 	function getEnableCalcYTD() {
 		if ( isset($this->calc_ytd) ) {
 			return $this->calc_ytd;
@@ -731,20 +765,12 @@ class PayStubFactory extends Factory {
 
 		return FALSE;
 	}
-
-	/**
-	 * @param $bool
-	 * @return bool
-	 */
-	function setEnableCalcYTD( $bool) {
+	function setEnableCalcYTD($bool) {
 		$this->calc_ytd = (bool)$bool;
 
 		return TRUE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function getEnableCalcCurrentYTD() {
 		if ( isset($this->calc_current_ytd) ) {
 			return $this->calc_current_ytd;
@@ -752,41 +778,12 @@ class PayStubFactory extends Factory {
 
 		return FALSE;
 	}
-
-	/**
-	 * @param $bool
-	 * @return bool
-	 */
-	function setEnableCalcCurrentYTD( $bool) {
+	function setEnableCalcCurrentYTD($bool) {
 		$this->calc_current_ytd = (bool)$bool;
 
 		return TRUE;
 	}
 
-	/**
-	 * @return bool
-	 */
-	function getIsReCalculatingYTD() {
-		if ( isset($this->is_recalc_ytd) ) {
-			return $this->is_recalc_ytd;
-		}
-
-		return FALSE;
-	}
-
-	/**
-	 * @param $bool
-	 * @return bool
-	 */
-	function setIsReCalculatingYTD( $bool) {
-		$this->is_recalc_ytd = (bool)$bool;
-
-		return TRUE;
-	}
-
-	/**
-	 * @return bool
-	 */
 	function getEnableEmail() {
 		if ( isset($this->email) ) {
 			return $this->email;
@@ -794,20 +791,12 @@ class PayStubFactory extends Factory {
 
 		return TRUE;
 	}
-
-	/**
-	 * @param $bool
-	 * @return bool
-	 */
-	function setEnableEmail( $bool) {
+	function setEnableEmail($bool) {
 		$this->email = (bool)$bool;
 
 		return TRUE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function getEnableLinkedAccruals() {
 		if ( isset($this->linked_accruals) ) {
 			return $this->linked_accruals;
@@ -815,33 +804,21 @@ class PayStubFactory extends Factory {
 
 		return TRUE;
 	}
-
-	/**
-	 * @param $bool
-	 * @return bool
-	 */
-	function setEnableLinkedAccruals( $bool) {
+	function setEnableLinkedAccruals($bool) {
 		$this->linked_accruals = (bool)$bool;
 
 		return TRUE;
 	}
 
-	/**
-	 * @param string $pay_stub_id1 UUID
-	 * @param string $pay_stub_id2 UUID
-	 * @param int $pay_stub_2_end_date EPOCH
-	 * @param int $ps_amendment_date EPOCH
-	 * @return bool
-	 */
 	static function CalcDifferences( $pay_stub_id1, $pay_stub_id2, $pay_stub_2_end_date, $ps_amendment_date = NULL ) {
-		$pay_stub_id1 = TTUUID::castUUID($pay_stub_id1);
-		$pay_stub_id2 = TTUUID::castUUID($pay_stub_id2);
+		$pay_stub_id1 = (int)$pay_stub_id1;
+		$pay_stub_id2 = (int)$pay_stub_id2;
 
 		//Allow passing blank/null old pay stub, so we can handle cases where an employee wasn't paid at all, but we need to carry-forward the transaction still.
 
 		//PayStub 1 is new.
 		//PayStub 2 is old.
-		if ( $pay_stub_id1 == TTUUID::getZeroID() ) {
+		if ( $pay_stub_id1 == 0 ) {
 			return FALSE;
 		}
 
@@ -1002,26 +979,19 @@ class PayStubFactory extends Factory {
 		return TRUE;
 	}
 
-	/**
-	 * @param string $pay_stub_id UUID
-	 * @param bool $enable_email
-	 * @return bool
-	 */
 	function reCalculatePayStubYTD( $pay_stub_id, $enable_email = FALSE ) {
 		//Make sure the entire pay stub object is loaded before calling this.
 		if ( $pay_stub_id != '' ) {
 			Debug::text('Attempting to recalculate pay stub YTD for pay stub id: '. $pay_stub_id, __FILE__, __LINE__, __METHOD__, 10);
 			$pslf = TTnew( 'PayStubListFactory' );
-			$pslf->StartTransaction();
-
 			$pslf->getById( $pay_stub_id );
+
 			if ( $pslf->getRecordCount() == 1 ) {
 				$pay_stub = $pslf->getCurrent();
 
 				$pay_stub->loadPreviousPayStub();
 				if ( $pay_stub->loadCurrentPayStubEntries() == TRUE ) {
 					$pay_stub->setEnableProcessEntries(TRUE);
-					$pay_stub->setIsReCalculatingYTD(TRUE);
 					$pay_stub->processEntries();
 
 					$pay_stub->setEnableEmail( $enable_email );
@@ -1029,26 +999,17 @@ class PayStubFactory extends Factory {
 						Debug::text('Pay Stub is valid, final save.', __FILE__, __LINE__, __METHOD__, 10);
 						$pay_stub->Save();
 
-						$pslf->CommitTransaction();
 						return TRUE;
-					} else {
-						$pslf->FailTransaction();
-						Debug::text('ERROR: Failed validation calculating YTD amounts!', __FILE__, __LINE__, __METHOD__, 10);
 					}
 				} else {
 					Debug::text('Failed loading current pay stub entries.', __FILE__, __LINE__, __METHOD__, 10);
 				}
 			}
-
-			$pslf->CommitTransaction();
 		}
 
 		return FALSE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function reCalculateCurrentYTD() {
 		Debug::Text('ReCalculating Current Pay Stub YTD...', __FILE__, __LINE__, __METHOD__, 10);
 
@@ -1058,9 +1019,6 @@ class PayStubFactory extends Factory {
 		return TRUE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function reCalculateYTD() {
 		Debug::Text('ReCalculating YTD on all newer pay stubs...', __FILE__, __LINE__, __METHOD__, 10);
 		//Get all pay stubs NEWER then this one.
@@ -1088,168 +1046,23 @@ class PayStubFactory extends Factory {
 	}
 
 
-	/**
-	 * @return bool
-	 */
 	function preSave() {
-		if ( $this->getType() == '' ) {
-			$this->setType( 10 ); //Normal In-Cycle
-		}
+		/*
+		if ( $this->getEnableProcessEntries() == TRUE ) {
+			Debug::Text('Processing PayStub Entries...', __FILE__, __LINE__, __METHOD__, 10);
 
-		if ( $this->getStatusBy() == '' ) {
-			$this->setStatusBy();
+			$this->processEntries();
+			//$this->savePayStubEntries();
+		} else {
+			Debug::Text('NOT Processing PayStub Entries...', __FILE__, __LINE__, __METHOD__, 10);
 		}
+		*/
 
 		return TRUE;
 	}
 
-	/**
-	 * @param bool $ignore_warning
-	 * @return bool
-	 */
 	function Validate( $ignore_warning = TRUE ) {
 		Debug::Text('Validating PayStub...', __FILE__, __LINE__, __METHOD__, 10);
-
-		//
-		// BELOW: Validation code moved from set*() functions.
-		//
-		// User
-		if ( $this->getDeleted() == FALSE ) {
-			if ( $this->getUser() !== FALSE ) {
-				$ulf = TTnew( 'UserListFactory' );
-				$this->Validator->isResultSetWithRows( 'user',
-																$ulf->getByID( $this->getUser() ),
-																TTi18n::gettext( 'Invalid Employee' )
-															);
-			}
-			// Pay Period
-			if ( $this->getPayPeriod() !== FALSE ) {
-				$pplf = TTnew( 'PayPeriodListFactory' );
-				$this->Validator->isResultSetWithRows( 'start_date', //pay_period label isn't used when editing pay stubs.
-																$pplf->getByID( $this->getPayPeriod() ),
-																TTi18n::gettext( 'Invalid Pay Period' )
-															);
-			}
-			// Payroll Run
-			$this->Validator->isGreaterThan( 'run_id', //pay_period label isn't used when editing pay stubs.
-											 $this->getRun(),
-											 TTi18n::gettext( 'Payroll Run must be 1 or higher' ),
-											 1
-			);
-			if ( $this->Validator->isError( 'run_id' ) == FALSE ) {
-				$this->Validator->isLessThan( 'run_id', //pay_period label isn't used when editing pay stubs.
-											  $this->getRun(),
-											  TTi18n::gettext( 'Payroll Run must be less than 128' ),
-											  128
-				);
-			}
-			// Currency
-			if ( $this->getCurrency() !== FALSE ) {
-				$culf = TTnew( 'CurrencyListFactory' );
-				$this->Validator->isResultSetWithRows( 'currency',
-																$culf->getByID( $this->getCurrency() ),
-																TTi18n::gettext( 'Invalid Currency' )
-															);
-				if ( $this->Validator->isError( 'currency' ) == FALSE ) {
-					if ( $culf->getRecordCount() == 1 AND ( $this->isNew() OR $this->old_currency_id != $this->getCurrency() ) ) {
-						$this->setCurrencyRate( $culf->getCurrent()->getReverseConversionRate() );
-					}
-				}
-			}
-			// Type
-			if ( $this->getType() !== FALSE ) {
-				$this->Validator->inArrayKey( 'type_id',
-														$this->getType(),
-														TTi18n::gettext( 'Incorrect Type' ),
-														$this->getOptions( 'type' )
-													);
-			}
-
-			//Don't check these validations if we are deleting pay stubs or marking them as paid.
-			if ( $this->getStatus() != 40 ) {
-				// Currency Rate
-				if ( $this->getCurrencyRate() !== FALSE ) {
-					$this->Validator->isFloat( 'currency_rate',
-														$this->getCurrencyRate(),
-														TTi18n::gettext( 'Incorrect Currency Rate' )
-													);
-				}
-				// Start date
-				if ( $this->getStartDate() !== FALSE ) {
-					$this->Validator->isDate( 'start_date',
-													$this->getStartDate(),
-													TTi18n::gettext( 'Incorrect start date' )
-												);
-					if ( $this->Validator->isError( 'start_date' ) == FALSE ) {
-						$this->Validator->isTrue( 'start_date',
-														$this->isValidStartDate( $this->getStartDate() ),
-														TTi18n::gettext( 'Conflicting start date, does not match pay period' )
-													);
-					}
-				}
-				// End date
-				if ( $this->getEndDate() !== FALSE ) {
-					$this->Validator->isDate( 'end_date',
-														$this->getEndDate(),
-														TTi18n::gettext( 'Incorrect end date' )
-													);
-					if ( $this->Validator->isError( 'end_date' ) == FALSE ) {
-						$this->Validator->isTrue( 'end_date',
-															$this->isValidEndDate( $this->getEndDate() ),
-															TTi18n::gettext( 'Conflicting end date, does not match pay period' )
-														);
-					}
-				}
-				// Transaction date
-				if ( $this->getTransactionDate() !== FALSE ) {
-					$this->Validator->isDate( 'transaction_date',
-													$this->getTransactionDate(),
-													TTi18n::gettext( 'Incorrect transaction date' )
-												);
-				}
-				// Status
-				if ( $this->getStatus() !== FALSE ) {
-					$this->Validator->inArrayKey( 'status_id',
-														$this->getStatus(),
-														TTi18n::gettext( 'Incorrect Status' ),
-														$this->getOptions( 'status' )
-													);
-				}
-				// Date
-				if ( $this->getStatusDate() !== FALSE ) {
-					$this->Validator->isDate( 'status_date',
-													$this->getStatusDate(),
-													TTi18n::gettext( 'Incorrect Date' )
-												);
-				}
-				// Status By Employee
-				if ( $this->getStatusBy() !== FALSE ) {
-					$ulf = TTnew( 'UserListFactory' );
-					$this->Validator->isResultSetWithRows( 'status_by',
-														   $ulf->getByID( $this->getStatusBy() ),
-														   TTi18n::gettext( 'Incorrect Status By Employee' )
-					);
-				}
-			}
-		}
-
-		//
-		// ABOVE: Validation code moved from set*() functions.
-		//
-
-		//Don't allow deleting pay stubs with paid transactions.
-		if ( $this->getDeleted() == TRUE ) {
-			/** @var PayStubTransactionListFactory $pstlf */
-			$pstlf = TTnew('PayStubTransactionListFactory');
-			$pstlf->getByPayStubIdAndTypeIdAndStatusId($this->getId(), 10, array(20) ); //Type: 10=Valid, Statuses: 20=Paid.
-
-			Debug::Text($pstlf->getRecordCount().' Paid transactions found...', __FILE__, __LINE__, __METHOD__, 10);
-			if ( $pstlf->getRecordCount() > 0 ) {
-				$this->Validator->isTrue( 'status_id',
-										  FALSE,
-										  TTi18n::gettext( 'This pay stub cannot be deleted as it has paid transactions' ) );
-			}
-		}
 
 		if ( $this->getType() == 5 AND $this->getTemp() == FALSE ) {
 			$this->Validator->isTrue(		'type_id',
@@ -1275,7 +1088,7 @@ class PayStubFactory extends Factory {
 
 		//When mass editing, don't require all dates to be set.
 		if ( $this->Validator->getValidateOnly() == FALSE ) {
-			if ( TTUUID::isUUID($this->getUser() ) == FALSE OR $this->getUser() == TTUUID::getZeroID() OR $this->getUser() == TTUUID::getNotExistID() OR is_object( $this->getUserObject() ) == FALSE ) {
+			if ( !( $this->getUser() > 0 AND is_object( $this->getUserObject() ) ) ) {
 				$this->Validator->isTrue(		'user_id',
 												FALSE,
 												TTi18n::gettext('Employee is not specified') );
@@ -1339,11 +1152,10 @@ class PayStubFactory extends Factory {
 			}
 		}
 
-		//Make sure transaction date is not earlier than a pay stub in the same pay period but having an higher payroll run.
+		//Make sure transaction date is not earlier than a pay stub in the same pay period but having an high payroll run.
 		// However ignore these checks if its a temporary pay stub and we're just doing a post-adjustment carry-forward, otherwise it will fail everytime if the transaction date of the original pay stub was moved ahead by 1+ days.
 		$pslf = TTNew('PayStubListFactory');
-		if ( TTUUID::isUUID( $this->getUser() ) AND $this->getUser() != TTUUID::getZeroID() AND $this->getUser() != TTUUID::getNotExistID()
-				AND is_object( $this->getUserObject() ) AND $this->getTemp() == FALSE ) {
+		if ( $this->getUser() > 0 AND is_object( $this->getUserObject() ) AND $this->getTemp() == FALSE ) {
 			$pslf->getByUserIdAndCompanyIdAndPayPeriodId( $this->getUser(), $this->getUserObject()->getCompany(), array( $this->getPayPeriod() ) );
 			if ( $pslf->getRecordCount() > 0 ) {
 				foreach( $pslf as $ps_obj ) {
@@ -1381,18 +1193,9 @@ class PayStubFactory extends Factory {
 			$this->ValidateEntries();
 		}
 
-		//40=Paid  -- Only check if we aren't mass editing, as we don't load transactions in that case anyways.
-		// Also don't validate transactions when recalculating YTD amounts on newer pay stubs, as pre v11 they won't have transactions, so validation will always fail.
-		if ( $this->Validator->getValidateOnly() == FALSE AND $this->getIsReCalculatingYTD() == FALSE AND ( $this->getStatus() == 40 OR $this->getEnableProcessTransactions() == TRUE ) ) {
-			$this->ValidateTransactions();
-		}
-
 		return TRUE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function ValidateEntries() {
 		Debug::Text('Validating PayStub Entries...', __FILE__, __LINE__, __METHOD__, 10);
 
@@ -1414,71 +1217,15 @@ class PayStubFactory extends Factory {
 											$this->checkDeductions(),
 											TTi18n::gettext('Deductions don\'t match total deductions') );
 
-			Debug::Text('Validate: checkNegativeNetPay...', __FILE__, __LINE__, __METHOD__, 10);
-			if ( $this->Validator->isError('earnings') == FALSE AND $this->Validator->isError('deductions') == FALSE AND $this->Validator->isError('net_pay') == FALSE ) {
-				$this->Validator->isTrue( 'net_pay',
-										  $this->checkNegativeNetPay(),
-										  TTi18n::gettext( 'Net Pay is a negative amount, deductions exceed earnings' ) );
-			}
-
 			Debug::Text('Validate: checkNetPay...', __FILE__, __LINE__, __METHOD__, 10);
-			if ( $this->Validator->isError('earnings') == FALSE AND $this->Validator->isError('deductions') == FALSE AND $this->Validator->isError('net_pay') == FALSE ) {
-				$this->Validator->isTrue( 'net_pay',
-										  $this->checkNetPay(),
-										  TTi18n::gettext( 'Net Pay doesn\'t match earnings or deductions' ) );
-			}
+			$this->Validator->isTrue(		'net_pay',
+											$this->checkNetPay(),
+											TTi18n::gettext('Net Pay doesn\'t match earnings or deductions') );
 		}
 
 		return $this->Validator->isValid();
 	}
 
-	/**
-	 * @return bool
-	 */
-	function ValidateTransactions() {
-		Debug::Text('Validating PayStub Transactions...', __FILE__, __LINE__, __METHOD__, 10);
-
-		if ( $this->isNew() == FALSE ) {
-			$this->loadCurrentPayStubEntries(); //Entries is needed to determine net pay to compare with transactions.
-			$this->loadCurrentPayStubTransactions();
-		}
-
-		//Make sure the pay stub math adds up.
-		Debug::Text( 'Validate: checkTransactions...', __FILE__, __LINE__, __METHOD__, 10 );
-
-		//Allow Opening Balance pay stubs to have no transactions.
-		// Only show transaction errors if their are actually earnings
-		if ( $this->Validator->isError('earnings') == FALSE ) {
-			//Make sure if net pay is greater than zero, at least one transaction must exist.
-			//  Need to allow $0 net pay, pay stubs with no transactions though.
-			$net_pay_arr = $this->getNetPaySum();
-			if ( isset($net_pay_arr['amount']) AND $net_pay_arr['amount'] > 0 ) {
-				$this->Validator->isTrue( 'transactions',
-						( ( $this->getTotalTransactions() > 0 ) ? TRUE : FALSE ),
-										  TTi18n::gettext( 'No transactions exists, or employee does not have any payment methods' ) );
-
-			}
-
-			//Check if any transactions are PENDING state and that total of paid transactions matches net pay
-			if ( $this->getStatus() == 40 AND $this->Validator->isError( 'transactions' ) == FALSE ) { //40=Paid
-				$this->Validator->isTrue( 'status_id',
-											( ( $this->getTotalPendingTransactions() > 0 ) ? FALSE : TRUE ),
-										  	TTi18n::gettext( 'This pay stub can\'t be marked paid as it has pending transactions' ) );
-			}
-
-			if ( $this->Validator->isError( 'transactions' ) == FALSE AND $this->Validator->isError( 'status_id' ) == FALSE AND $this->Validator->isError('earnings') == FALSE AND $this->Validator->isError('deductions') == FALSE AND $this->Validator->isError('net_pay') == FALSE ) {
-				$this->Validator->isTrue( 'status_id',
-										  $this->checkTransactions(),
-										  TTi18n::gettext( 'Net pay doesn\'t match total of all pending or paid transactions' ) );
-			}
-		}
-
-		return $this->Validator->isValid();
-	}
-
-	/**
-	 * @return bool
-	 */
 	function postSave() {
 		$this->removeCache( $this->getId() );
 
@@ -1488,36 +1235,27 @@ class PayStubFactory extends Factory {
 			}
 		}
 
-		if ( $this->getEnableProcessTransactions() == TRUE ) {
-			if ( $this->savePayStubTransactions() == FALSE ) {
-				Debug::Text('ERROR: Unable to save pay stub transactions, rolling back transaction...', __FILE__, __LINE__, __METHOD__, 10);
-				$this->FailTransaction(); //Fail transaction as one of the PS entries was not saved.
-			}
+		//This needs to be run even if entries aren't being processed,
+		//for things like marking the pay stub paid or not.
+		$this->handlePayStubAmendmentStatuses();
+		$this->handleUserExpenseStatuses();
+
+		if ( $this->getDeleted() == TRUE ) {
+			Debug::Text('Deleting Pay Stub, re-calculating YTD ', __FILE__, __LINE__, __METHOD__, 10);
+			$this->setEnableCalcYTD( TRUE );
 		}
 
-		if ( $this->getTemp() == FALSE ) { //Disable YTD calculations with temporary pay stubs.
-			//This needs to be run even if entries aren't being processed,
-			//for things like marking the pay stub paid or not.
-			$this->handlePayStubAmendmentStatuses();
-			$this->handleUserExpenseStatuses();
+		if ( $this->getEnableCalcCurrentYTD() == TRUE ) {
+			$this->reCalculateCurrentYTD(); //Recalculate the current pay stub as well, in case they changed the transaction date into the next year without modifying entries.
+		}
 
-			if ( $this->getDeleted() == TRUE ) {
-				Debug::Text( 'Deleting Pay Stub, re-calculating YTD ', __FILE__, __LINE__, __METHOD__, 10 );
-				$this->setEnableCalcYTD( TRUE );
-			}
-
-			if ( $this->getEnableCalcCurrentYTD() == TRUE ) {
-				$this->reCalculateCurrentYTD(); //Recalculate the current pay stub as well, in case they changed the transaction date into the next year without modifying entries.
-			}
-
-			if ( $this->getEnableCalcYTD() == TRUE ) { //Don't recalculate YTD amounts on a temporary pay stub that is likely just used for creating carry-forward pay stub amendment records.
-				$this->reCalculateYTD();
-			}
+		if ( $this->getEnableCalcYTD() == TRUE ) {
+			$this->reCalculateYTD();
 		}
 
 		//Make sure we only email pay stubs that are marked PAID.
 		//Do we want to avoid email pay stubs if they are making adjustments after the transaction date? Or maybe just in closed pay periods?
-		if ( $this->getStatus() == 40 AND $this->getEnableEmail() ) { //Paid
+		if ( $this->getStatus() == 40 AND $this->getEnableEmail(TRUE) ) { //Paid
 			$this->emailPayStub();
 		} else {
 			Debug::Text('Pay Stub is not marked paid or email is disabled, not emailing...', __FILE__, __LINE__, __METHOD__, 10);
@@ -1526,14 +1264,7 @@ class PayStubFactory extends Factory {
 		return TRUE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function handlePayStubAmendmentStatuses() {
-		if ( $this->getTemp() == TRUE ) { //Don't change pay stub amendment statuses for temporary pay stubs (just calculating correcitons)
-			return TRUE;
-		}
-
 		//Mark all PS amendments as 'PAID' if this status is paid.
 		//Mark as NEW if the PS is deleted?
 		if ( $this->getStatus() == 40 ) {
@@ -1546,8 +1277,8 @@ class PayStubFactory extends Factory {
 
 		//Loop through each entry in current pay stub, if they have
 		//a PS amendment ID assigned to them, change the status.
-		if ( is_array( $this->tmp_data['current_pay_stub']['entries'] ) ) {
-			foreach( $this->tmp_data['current_pay_stub']['entries'] as $entry_arr ) {
+		if ( is_array( $this->tmp_data['current_pay_stub'] ) ) {
+			foreach( $this->tmp_data['current_pay_stub'] as $entry_arr ) {
 				if ( isset($entry_arr['pay_stub_amendment_id']) AND $entry_arr['pay_stub_amendment_id'] != '' ) {
 					Debug::Text('aFound PS Amendments to change status on...', __FILE__, __LINE__, __METHOD__, 10);
 
@@ -1599,15 +1330,8 @@ class PayStubFactory extends Factory {
 		return TRUE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function handleUserExpenseStatuses() {
 		if ( getTTProductEdition() < TT_PRODUCT_ENTERPRISE ) {
-			return TRUE;
-		}
-
-		if ( $this->getTemp() == TRUE ) { //Don't change pay stub amendment statuses for temporary pay stubs (just calculating corrections)
 			return TRUE;
 		}
 
@@ -1624,11 +1348,11 @@ class PayStubFactory extends Factory {
 		}
 
 		//Loop through each entry in current pay stub, if they have
-		//a User Expense ID assigned to them, change the status.
-		if ( is_array( $this->tmp_data['current_pay_stub']['entries'] ) ) {
-			foreach( $this->tmp_data['current_pay_stub']['entries'] as $entry_arr ) {
-				if ( isset($entry_arr['user_expense_id']) AND TTUUID::isUUID( $entry_arr['user_expense_id'] ) AND $entry_arr['user_expense_id'] != TTUUID::getZeroID() ) {
-					Debug::Text('aFound User Expenses to change status on... ID: '. $entry_arr['user_expense_id'], __FILE__, __LINE__, __METHOD__, 10);
+		//a PS amendment ID assigned to them, change the status.
+		if ( is_array( $this->tmp_data['current_pay_stub'] ) ) {
+			foreach( $this->tmp_data['current_pay_stub'] as $entry_arr ) {
+				if ( isset($entry_arr['user_expense_id']) AND $entry_arr['user_expense_id'] != '' ) {
+					Debug::Text('aFound User Expenses to change status on...', __FILE__, __LINE__, __METHOD__, 10);
 					$user_expense_ids[] = $entry_arr['user_expense_id'];
 				}
 			}
@@ -1639,35 +1363,33 @@ class PayStubFactory extends Factory {
 			$pself = TTnew( 'PayStubEntryListFactory' );
 			$pself->getByPayStubId( $this->getId() );
 			foreach($pself as $pay_stub_entry_obj) {
-				if ( TTUUID::isUUID( $pay_stub_entry_obj->getUserExpense() ) AND $pay_stub_entry_obj->getUserExpense() != TTUUID::getZeroID() ) {
-					Debug::Text('bFound User Expense to change status on... ID: '. $pay_stub_entry_obj->getUserExpense(), __FILE__, __LINE__, __METHOD__, 10);
+				if ( $pay_stub_entry_obj->getUserExpense() != FALSE ) {
+					Debug::Text('bFound User Expense to change status on...', __FILE__, __LINE__, __METHOD__, 10);
 					$user_expense_ids[] = $pay_stub_entry_obj->getUserExpense();
 				}
 			}
 		}
 
 		if ( isset($user_expense_ids) AND is_array($user_expense_ids) ) {
-			Debug::Text('Found User Expenses to change status on...', __FILE__, __LINE__, __METHOD__, 10);
+			Debug::Text('cFound User Expenses to change status on...', __FILE__, __LINE__, __METHOD__, 10);
 
 			foreach( $user_expense_ids as $user_expense_id ) {
-				Debug::Text('  Changing status on ID: '. $user_expense_status_id, __FILE__, __LINE__, __METHOD__, 10);
 				//Set User Expense status to match Pay stub.
 				$uelf = TTnew( 'UserExpenseListFactory' );
 				$uelf->getById( $user_expense_id );
 				if ( $uelf->getRecordCount() == 1 ) {
 					$user_expense_obj = $uelf->getCurrent();
 					if ( $user_expense_obj->getStatus() != $user_expense_status_id ) {
-						Debug::Text('  Changing Status of User Expense: '. $user_expense_id, __FILE__, __LINE__, __METHOD__, 10);
+						Debug::Text('Changing Status of User Expense: '. $user_expense_id, __FILE__, __LINE__, __METHOD__, 10);
 						$user_expense_obj->setEnablePayStubStatusChange( TRUE ); //Tell Expense that its the pay stub changing the status, so we can ignore some validation checks.
 						$user_expense_obj->setStatus( $user_expense_status_id );
 						if ( $user_expense_obj->isValid() ) {
 							$user_expense_obj->Save();
 						} else {
-							Debug::Text('  ERROR: Changing Status of User Expense FAILED!: '. $user_expense_id, __FILE__, __LINE__, __METHOD__, 10);
-							$this->FailTransaction(); //Prevent the transaction from completed as expenses will be out of sync now.
+							Debug::Text('Changing Status of User Expense FAILED!: '. $user_expense_id, __FILE__, __LINE__, __METHOD__, 10);
 						}
 					} else {
-						Debug::Text('  Not Changing Status of User Expense as its already the same: '. $user_expense_id, __FILE__, __LINE__, __METHOD__, 10);
+						Debug::Text('Not Changing Status of User Expense as its already the same: '. $user_expense_id, __FILE__, __LINE__, __METHOD__, 10);
 					}
 					unset($user_expense_obj);
 				}
@@ -1679,9 +1401,6 @@ class PayStubFactory extends Factory {
 		return TRUE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function isAccrualBalanceOutstanding() {
 		$psea_arr = $this->getPayStubEntryAccountsArray();
 		if ( is_array($psea_arr) ) {
@@ -1710,9 +1429,6 @@ class PayStubFactory extends Factory {
 
 
 	*/
-	/**
-	 * @return bool|null
-	 */
 	function getPayStubEntryAccountLinkObject() {
 		if ( is_object($this->pay_stub_entry_account_link_obj) ) {
 			return $this->pay_stub_entry_account_link_obj;
@@ -1730,9 +1446,6 @@ class PayStubFactory extends Factory {
 		}
 	}
 
-	/**
-	 * @return array|bool|null
-	 */
 	function getPayStubEntryAccountsArray() {
 		if ( is_array($this->pay_stub_entry_accounts_obj) ) {
 			//Debug::text('Returning Cached data...', __FILE__, __LINE__, __METHOD__, 10);
@@ -1758,10 +1471,6 @@ class PayStubFactory extends Factory {
 		}
 	}
 
-	/**
-	 * @param string $id UUID
-	 * @return bool|mixed
-	 */
 	function getPayStubEntryAccountArray( $id ) {
 		if ( $id == '' ) {
 			return FALSE;
@@ -1778,25 +1487,19 @@ class PayStubFactory extends Factory {
 		return FALSE;
 	}
 
-	/**
-	 * @param $ps_entries
-	 * @param int $type_ids ID
-	 * @param string $ps_account_ids UUID
-	 * @return array|bool
-	 */
 	function getSumByEntriesArrayAndTypeIDAndPayStubAccountID( $ps_entries, $type_ids = NULL, $ps_account_ids = NULL) {
 		//Debug::text('PS Entries: '. $ps_entries .' Type ID: '. count($type_ids) .' PS Account ID: '. count($ps_account_ids), __FILE__, __LINE__, __METHOD__, 10);
 
 		if ( strtolower($ps_entries) == 'current' ) {
-			$entries = $this->tmp_data['current_pay_stub']['entries'];
+			$entries = $this->tmp_data['current_pay_stub'];
 		} elseif ( strtolower($ps_entries) == 'previous' ) {
 			$entries = $this->tmp_data['previous_pay_stub']['entries'];
 		} elseif ( strtolower($ps_entries) == 'previous+ytd_adjustment' ) {
 			$entries = $this->tmp_data['previous_pay_stub']['entries'];
 			//Include any YTD adjustment PS amendments in the current entries as if they occurred in the previous pay stub.
 			//This so we can account for the first pay stub having a YTD adjustment that exceeds a wage base amount, so no amount is calculated.
-			if ( is_array($this->tmp_data['current_pay_stub']['entries']) ) {
-				foreach( $this->tmp_data['current_pay_stub']['entries'] as $current_entry_arr ) {
+			if ( is_array($this->tmp_data['current_pay_stub']) ) {
+				foreach( $this->tmp_data['current_pay_stub'] as $current_entry_arr ) {
 					if ( isset($current_entry_arr['ytd_adjustment']) AND $current_entry_arr['ytd_adjustment'] === TRUE ) {
 						Debug::Text('Found YTD Adjustment in current pay stub when calculating previous pay stub amounts... Amount: '. $current_entry_arr['amount'], __FILE__, __LINE__, __METHOD__, 10);
 						//Debug::Arr($current_entry_arr, 'Found YTD Adjustment in current pay stub when calculating previous pay stub amounts...', __FILE__, __LINE__, __METHOD__, 10);
@@ -1875,47 +1578,16 @@ class PayStubFactory extends Factory {
 		return $retarr;
 	}
 
-	function loadCurrentPayStubTransactions() {
-		Debug::Text('aLoading current pay stub transactions, Pay Stub ID: '. $this->getId(), __FILE__, __LINE__, __METHOD__, 10);
-		if ( $this->getId() != '' AND ( !isset($this->tmp_data['current_pay_stub']['transactions']) OR count( $this->tmp_data['current_pay_stub']['transactions'] ) == 0 ) ) { //Don't load transactions if they are already set.
-			$pstlf = TTnew( 'PayStubTransactionListFactory' );
-			$pstlf->getByPayStubId( $this->getID() );
-			Debug::Text('bLoading current pay stub transactions, Pay Stub ID: '. $this->getId() .' Record Count: '. $pstlf->getRecordCount(), __FILE__, __LINE__, __METHOD__, 10);
-
-			if ( $pstlf->getRecordCount() > 0 ) {
-				$this->tmp_data['current_pay_stub']['transactions'] = NULL;
-
-				foreach( $pstlf as $pst_obj ) {
-					$pst_arr[] = $pst_obj;
-				}
-
-				//Debug::Arr($pse_arr, 'RetArr: ', __FILE__, __LINE__, __METHOD__, 10);
-				if ( isset( $pst_arr ) ) {
-					$this->tmp_data['current_pay_stub']['transactions'] = $pst_arr;
-
-					Debug::Text('Loading current pay stub transactions success!', __FILE__, __LINE__, __METHOD__, 10);
-					return TRUE;
-				}
-			}
-		}
-
-		Debug::Text('No current pay stub transactions to load...', __FILE__, __LINE__, __METHOD__, 10);
-		return FALSE;
-	}
-
-	/**
-	 * @return bool
-	 */
 	function loadCurrentPayStubEntries() {
 		Debug::Text('aLoading current pay stub entries, Pay Stub ID: '. $this->getId(), __FILE__, __LINE__, __METHOD__, 10);
-		if ( $this->getId() != '' AND ( !isset($this->tmp_data['current_pay_stub']['entries']) OR count( $this->tmp_data['current_pay_stub']['entries'] ) == 0 ) ) { //Don't load entries if they are already set.
+		if ( $this->getId() != '' ) {
 			//Get pay stub entries
 			$pself = TTnew( 'PayStubEntryListFactory' );
 			$pself->getByPayStubId( $this->getID() );
 			Debug::Text('bLoading current pay stub entries, Pay Stub ID: '. $this->getId() .' Record Count: '. $pself->getRecordCount(), __FILE__, __LINE__, __METHOD__, 10);
 
 			if ( $pself->getRecordCount() > 0 ) {
-				$this->tmp_data['current_pay_stub']['entries'] = NULL;
+				$this->tmp_data['current_pay_stub'] = NULL;
 
 				foreach( $pself as $pse_obj ) {
 					//Get PSE account type, group by that.
@@ -1933,7 +1605,6 @@ class PayStubFactory extends Factory {
 							'pay_stub_entry_type_id' => $type_id,
 							'pay_stub_entry_account_id' => $pse_obj->getPayStubEntryNameId(),
 							'pay_stub_amendment_id' => $pse_obj->getPayStubAmendment(),
-							'user_expense_id' => $pse_obj->getUserExpense(),
 							'rate' => $pse_obj->getRate(),
 							'units' => $pse_obj->getUnits(),
 							'amount' => $pse_obj->getAmount(),
@@ -1954,21 +1625,20 @@ class PayStubFactory extends Factory {
 
 				//Debug::Arr($pse_arr, 'RetArr: ', __FILE__, __LINE__, __METHOD__, 10);
 				if ( isset( $pse_arr ) ) {
-					$this->tmp_data['current_pay_stub']['entries'] = $pse_arr;
+					$retarr['entries'] = $pse_arr;
+
+					$this->tmp_data['current_pay_stub'] = $retarr['entries'];
 
 					Debug::Text('Loading current pay stub entries success!', __FILE__, __LINE__, __METHOD__, 10);
 					return TRUE;
 				}
 			}
-		}
 
+		}
 		Debug::Text('Loading current pay stub entries failed!', __FILE__, __LINE__, __METHOD__, 10);
 		return FALSE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function loadPreviousPayStub() {
 		if ( $this->getUser() == FALSE OR $this->getStartDate() == FALSE OR $this->getRun() == FALSE ) {
 			return FALSE;
@@ -2021,7 +1691,6 @@ class PayStubFactory extends Factory {
 							'pay_stub_entry_type_id' => $type_id,
 							'pay_stub_entry_account_id' => $pse_obj->getPayStubEntryNameId(),
 							'pay_stub_amendment_id' => $pse_obj->getPayStubAmendment(),
-							'user_expense_id' => $pse_obj->getUserExpense(),
 							'rate' => $pse_obj->getRate(),
 							'units' => $pse_obj->getUnits(),
 							'amount' => $pse_obj->getAmount(),
@@ -2046,22 +1715,9 @@ class PayStubFactory extends Factory {
 		return FALSE;
 	}
 
-	/**
-	 * @param string $pay_stub_entry_account_id UUID
-	 * @param $amount
-	 * @param null $units
-	 * @param null $rate
-	 * @param null $description
-	 * @param string $ps_amendment_id UUID
-	 * @param null $ytd_amount
-	 * @param null $ytd_units
-	 * @param bool $ytd_adjustment
-	 * @param string $user_expense_id UUID
-	 * @return bool
-	 */
 	function addEntry( $pay_stub_entry_account_id, $amount, $units = NULL, $rate = NULL, $description = NULL, $ps_amendment_id = NULL, $ytd_amount = NULL, $ytd_units = NULL, $ytd_adjustment = FALSE, $user_expense_id = NULL ) {
 		Debug::text('Add Entry: PSE Account ID: '. $pay_stub_entry_account_id .' Amount: '. $amount .' YTD Amount: '. $ytd_amount .' Pay Stub Amendment Id: '. $ps_amendment_id .' User Expense: '. $user_expense_id, __FILE__, __LINE__, __METHOD__, 10);
-		if ( $pay_stub_entry_account_id == '' OR TTUUID::isUUID( $pay_stub_entry_account_id ) == FALSE OR $pay_stub_entry_account_id == TTUUID::getZeroID() OR $pay_stub_entry_account_id == TTUUID::getNotExistID() ) {
+		if ( $pay_stub_entry_account_id == '' ) {
 			return FALSE;
 		}
 
@@ -2072,7 +1728,7 @@ class PayStubFactory extends Factory {
 		$ytd_amount = ( is_object($this->getCurrencyObject()) ) ? $this->getCurrencyObject()->round( $ytd_amount ) : Misc::MoneyFormat( $ytd_amount, FALSE );
 		if ( is_numeric( $amount ) ) {
 			$psea_arr = $this->getPayStubEntryAccountArray( $pay_stub_entry_account_id );
-			if ( is_array( $psea_arr ) ) {
+			if ( is_array( $psea_arr) ) {
 				$type_id = $psea_arr['type_id'];
 			} else {
 				$type_id = NULL;
@@ -2092,7 +1748,7 @@ class PayStubFactory extends Factory {
 				'ytd_adjustment' => $ytd_adjustment,
 				);
 
-			$this->tmp_data['current_pay_stub']['entries'][] = $retarr;
+			$this->tmp_data['current_pay_stub'][] = $retarr;
 
 			//Check if this pay stub account is linked to an accrual account.
 			//Make sure the PSE account does not match the PSE Accrual account,
@@ -2102,7 +1758,7 @@ class PayStubFactory extends Factory {
 			if ( $this->getEnableLinkedAccruals() == TRUE
 					AND $amount != 0
 					AND $psea_arr['accrual_pay_stub_entry_account_id'] != ''
-					AND $psea_arr['accrual_pay_stub_entry_account_id'] != TTUUID::getZeroID()
+					AND $psea_arr['accrual_pay_stub_entry_account_id'] != 0
 					AND $psea_arr['accrual_pay_stub_entry_account_id'] != $pay_stub_entry_account_id
 					AND $psea_arr['accrual_type_id'] != ''
 					AND $ytd_adjustment == FALSE ) {
@@ -2139,11 +1795,8 @@ class PayStubFactory extends Factory {
 		return FALSE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function processEntries() {
-		Debug::Text('Processing PayStub ('. count( (array)$this->tmp_data['current_pay_stub']['entries'] ) .') Entries...', __FILE__, __LINE__, __METHOD__, 10);
+		Debug::Text('Processing PayStub ('. count($this->tmp_data['current_pay_stub']) .') Entries...', __FILE__, __LINE__, __METHOD__, 10);
 		///Debug::Arr($this->tmp_data['current_pay_stub'], 'Current Entries...', __FILE__, __LINE__, __METHOD__, 10);
 
 		$this->deleteEntries( FALSE ); //Delete only total entries
@@ -2158,11 +1811,6 @@ class PayStubFactory extends Factory {
 		return TRUE;
 	}
 
-	/**
-	 * @param $pay_stub_arr
-	 * @param bool $clear_out_ytd
-	 * @return bool
-	 */
 	function markPayStubEntriesForYTDCalculation( &$pay_stub_arr, $clear_out_ytd = TRUE ) {
 		if ( !is_array($pay_stub_arr) ) {
 			return FALSE;
@@ -2205,27 +1853,24 @@ class PayStubFactory extends Factory {
 		return TRUE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function calcPayStubEntriesYTD() {
-		if ( !is_array($this->tmp_data['current_pay_stub']['entries']) ) {
+		if ( !is_array($this->tmp_data['current_pay_stub']) ) {
 			return FALSE;
 		}
 
 		Debug::Text('Calculating Pay Stub Entry YTD values!', __FILE__, __LINE__, __METHOD__, 10);
 
 		$this->markPayStubEntriesForYTDCalculation( $this->tmp_data['previous_pay_stub']['entries'] );
-		$this->markPayStubEntriesForYTDCalculation( $this->tmp_data['current_pay_stub']['entries'], FALSE ); //Dont clear out YTD values.
+		$this->markPayStubEntriesForYTDCalculation( $this->tmp_data['current_pay_stub'], FALSE ); //Dont clear out YTD values.
 
-		//Debug::Arr($this->tmp_data['current_pay_stub']['entries'], 'Before YTD calculation', __FILE__, __LINE__, __METHOD__, 10);
+		//Debug::Arr($this->tmp_data['current_pay_stub'], 'Before YTD calculation', __FILE__, __LINE__, __METHOD__, 10);
 
 		//addUnUsedYTDEntries() should be called before this
 
 		//Go through each pay stub entry, and if there is no entry of the same
 		//PSE account id, calc YTD. If there is a duplicate PSE account id,
 		//only calculate the YTD on the LAST one.
-		foreach( $this->tmp_data['current_pay_stub']['entries'] as $key => $entry_arr ) {
+		foreach( $this->tmp_data['current_pay_stub'] as $key => $entry_arr ) {
 			//If YTD is already set, don't recalculate it, because it could be a PS amendment YTD adjustment.
 			//Keep in mind this makes it so if a YTD adjustment is set it will show up in the YTD column, and if there
 			//is a second PSE account of the same, its YTD will show up too.
@@ -2236,25 +1881,22 @@ class PayStubFactory extends Factory {
 				$previous_pay_stub_sum = $this->getSumByEntriesArrayAndTypeIDAndPayStubAccountID( 'previous', NULL, $entry_arr['pay_stub_entry_account_id'] );
 
 				Debug::Text('Key: '. $key .' Previous YTD Amount: '. $previous_pay_stub_sum['ytd_amount'] .' Current Amount: '. $current_pay_stub_sum['amount'] .' Current YTD Amount: '. $current_pay_stub_sum['ytd_amount'], __FILE__, __LINE__, __METHOD__, 10);
-				$this->tmp_data['current_pay_stub']['entries'][$key]['ytd_amount'] = bcadd( $previous_pay_stub_sum['ytd_amount'], bcadd( $current_pay_stub_sum['amount'], $current_pay_stub_sum['ytd_amount'] ), ( is_object($this->getCurrencyObject()) ) ? $this->getCurrencyObject()->getRoundDecimalPlaces() : 2 );
-				$this->tmp_data['current_pay_stub']['entries'][$key]['ytd_units'] = bcadd( $previous_pay_stub_sum['ytd_units'], bcadd( $current_pay_stub_sum['units'], $current_pay_stub_sum['ytd_units'] ), 4 );
-			} elseif ( $this->tmp_data['current_pay_stub']['entries'][$key]['ytd_amount'] == '' ) {
+				$this->tmp_data['current_pay_stub'][$key]['ytd_amount'] = bcadd( $previous_pay_stub_sum['ytd_amount'], bcadd( $current_pay_stub_sum['amount'], $current_pay_stub_sum['ytd_amount'] ), ( is_object($this->getCurrencyObject()) ) ? $this->getCurrencyObject()->getRoundDecimalPlaces() : 2 );
+				$this->tmp_data['current_pay_stub'][$key]['ytd_units'] = bcadd( $previous_pay_stub_sum['ytd_units'], bcadd( $current_pay_stub_sum['units'], $current_pay_stub_sum['ytd_units'] ), 4 );
+			} elseif ( $this->tmp_data['current_pay_stub'][$key]['ytd_amount'] == '' ) {
 				//Debug::Text('Setting YTD on PSE account: '. $entry_arr['pay_stub_entry_account_id'], __FILE__, __LINE__, __METHOD__, 10);
-				$this->tmp_data['current_pay_stub']['entries'][$key]['ytd_amount'] = 0;
-				$this->tmp_data['current_pay_stub']['entries'][$key]['ytd_units'] = 0;
+				$this->tmp_data['current_pay_stub'][$key]['ytd_amount'] = 0;
+				$this->tmp_data['current_pay_stub'][$key]['ytd_units'] = 0;
 			}
 		}
 
-		//Debug::Arr($this->tmp_data['current_pay_stub']['entries'], 'After YTD calculation', __FILE__, __LINE__, __METHOD__, 10);
+		//Debug::Arr($this->tmp_data['current_pay_stub'], 'After YTD calculation', __FILE__, __LINE__, __METHOD__, 10);
 
 		return TRUE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function savePayStubEntries() {
-		if ( !is_array($this->tmp_data['current_pay_stub']['entries']) ) {
+		if ( !is_array($this->tmp_data['current_pay_stub']) ) {
 			return FALSE;
 		}
 
@@ -2265,9 +1907,9 @@ class PayStubFactory extends Factory {
 
 		$this->calcPayStubEntriesYTD();
 
-		//Debug::Arr($this->tmp_data['current_pay_stub']['entries'], 'Current Pay Stub Entries: ', __FILE__, __LINE__, __METHOD__, 10);
+		//Debug::Arr($this->tmp_data['current_pay_stub'], 'Current Pay Stub Entries: ', __FILE__, __LINE__, __METHOD__, 10);
 
-		foreach( $this->tmp_data['current_pay_stub']['entries'] as $pse_arr ) {
+		foreach( $this->tmp_data['current_pay_stub'] as $pse_arr ) {
 			if ( isset($pse_arr['pay_stub_entry_account_id']) AND isset($pse_arr['amount']) ) {
 				Debug::Text('Current Pay Stub ID: '. $this->getId() .' Adding Pay Stub Entry for: '. $pse_arr['pay_stub_entry_account_id'] .' Amount: '. $pse_arr['amount'] .' YTD Amount: '. $pse_arr['ytd_amount'] .' YTD Units: '. $pse_arr['ytd_units'], __FILE__, __LINE__, __METHOD__, 10);
 				$psef = TTnew( 'PayStubEntryFactory' );
@@ -2280,11 +1922,10 @@ class PayStubFactory extends Factory {
 				$psef->setYTDUnits( $pse_arr['ytd_units'] );
 
 				$psef->setDescription( $pse_arr['description'] );
-				if ( TTUUID::isUUID( $pse_arr['pay_stub_amendment_id'] ) AND $pse_arr['pay_stub_amendment_id'] != TTUUID::getZeroID() AND $pse_arr['pay_stub_amendment_id'] != TTUUID::getNotExistID() ) {
+				if ( is_numeric( $pse_arr['pay_stub_amendment_id'] ) AND $pse_arr['pay_stub_amendment_id'] > 0 ) {
 					$psef->setPayStubAmendment( $pse_arr['pay_stub_amendment_id'] );
 				}
-				if ( isset($pse_arr['user_expense_id'])
-						AND TTUUID::isUUID( $pse_arr['user_expense_id'] ) AND $pse_arr['user_expense_id'] != TTUUID::getZeroID() AND $pse_arr['user_expense_id'] != TTUUID::getNotExistID() ) {
+				if ( isset($pse_arr['user_expense_id']) AND is_numeric( $pse_arr['user_expense_id'] ) AND $pse_arr['user_expense_id'] > 0 ) {
 					$psef->setUserExpense( $pse_arr['user_expense_id'] );
 				}
 
@@ -2306,10 +1947,6 @@ class PayStubFactory extends Factory {
 		return TRUE;
 	}
 
-	/**
-	 * @param bool $all_entries
-	 * @return bool
-	 */
 	function deleteEntries( $all_entries = FALSE ) {
 		//Delete any entries from the pay stub, so they can be re-created.
 		$pself = TTnew( 'PayStubEntryListFactory' );
@@ -2332,9 +1969,6 @@ class PayStubFactory extends Factory {
 		return TRUE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function addUnUsedYTDEntries() {
 		Debug::Text('Adding Unused Entries ', __FILE__, __LINE__, __METHOD__, 10);
 		//This has to happen ABOVE the total entries... So Gross pay and stuff
@@ -2348,7 +1982,7 @@ class PayStubFactory extends Factory {
 				//See if current pay stub entries have previous pay stub entries.
 				//Skip total entries, as they will be greated after anyways.
 				if ( $entry_arr['pay_stub_entry_type_id'] != 40
-						AND Misc::inArrayByKeyAndValue( $this->tmp_data['current_pay_stub']['entries'], 'pay_stub_entry_account_id', $entry_arr['pay_stub_entry_account_id'] ) == FALSE ) {
+						AND Misc::inArrayByKeyAndValue( $this->tmp_data['current_pay_stub'], 'pay_stub_entry_account_id', $entry_arr['pay_stub_entry_account_id'] ) == FALSE ) {
 					Debug::Text('Adding UnUsed Entry: '. $entry_arr['pay_stub_entry_account_id'], __FILE__, __LINE__, __METHOD__, 10);
 					$this->addEntry( $entry_arr['pay_stub_entry_account_id'], 0, 0 );
 				} else {
@@ -2360,9 +1994,6 @@ class PayStubFactory extends Factory {
 		return TRUE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function addEarningSum() {
 		$sum_arr = $this->getEarningSum();
 		Debug::Text('Sum: '. $sum_arr['amount'], __FILE__, __LINE__, __METHOD__, 10);
@@ -2374,9 +2005,6 @@ class PayStubFactory extends Factory {
 		return TRUE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function addDeductionSum() {
 		$sum_arr = $this->getDeductionSum();
 		if ( isset($sum_arr['amount']) ) { //Allow negative amounts for adjustment purposes
@@ -2387,9 +2015,6 @@ class PayStubFactory extends Factory {
 		return TRUE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function addEmployerDeductionSum() {
 		$sum_arr = $this->getEmployerDeductionSum();
 		if ( isset($sum_arr['amount']) ) { //Allow negative amounts for adjustment purposes
@@ -2400,46 +2025,25 @@ class PayStubFactory extends Factory {
 		return TRUE;
 	}
 
-	function getNetPaySum() {
+	function addNetPay() {
 		$earning_sum_arr = $this->getEarningSum();
 		$deduction_sum_arr = $this->getDeductionSum();
 
 		if ( $earning_sum_arr['amount'] > 0 ) {
-			$retarr = array(
-					'units' => 0,
-					'amount' => 0,
-					'ytd_units' => 0,
-					'ytd_amount' => 0,
-			);
+			Debug::Text('Earning Sum is greater than 0.', __FILE__, __LINE__, __METHOD__, 10);
 
-			$retarr['amount'] = bcsub( $earning_sum_arr['amount'], $deduction_sum_arr['amount'] );
-			$retarr['ytd_amount'] = bcsub( $earning_sum_arr['ytd_amount'], $deduction_sum_arr['ytd_amount'] );
+			$net_pay_amount = bcsub( $earning_sum_arr['amount'], $deduction_sum_arr['amount'] );
+			$net_pay_ytd_amount = bcsub( $earning_sum_arr['ytd_amount'], $deduction_sum_arr['ytd_amount'] );
 
-			Debug::Text('Net Pay: '. $retarr['amount'], __FILE__, __LINE__, __METHOD__, 10);
-			return $retarr;
+			$this->addEntry( $this->getPayStubEntryAccountLinkObject()->getTotalNetPay(), $net_pay_amount, NULL, NULL, NULL, NULL, $net_pay_ytd_amount );
 		}
-		unset( $net_pay_amount, $net_pay_ytd_amount, $earning_sum_arr, $deduction_sum_arr );
+		unset($net_pay_amount, $net_pay_ytd_amount, $earning_sum_arr, $deduction_sum_arr );
 
 		Debug::Text('Earning Sum is 0 or less. ', __FILE__, __LINE__, __METHOD__, 10);
-		return FALSE;
-	}
 
-	/**
-	 * @return bool
-	 */
-	function addNetPay() {
-		$net_pay_arr = $this->getNetPaySum();
-		if ( isset($net_pay_arr['amount']) ) {
-			$this->addEntry( $this->getPayStubEntryAccountLinkObject()->getTotalNetPay(), $net_pay_arr['amount'], NULL, NULL, NULL, NULL, $net_pay_arr['ytd_amount'] );
-		}
-
-		Debug::Text('Earning Sum is 0 or less. ', __FILE__, __LINE__, __METHOD__, 10);
 		return TRUE;
 	}
 
-	/**
-	 * @return array
-	 */
 	function getEarningSum() {
 		$retarr = $this->getSumByEntriesArrayAndTypeIDAndPayStubAccountID( 'current', 10);
 		Debug::Text('Earnings Sum ('. $this->getId() .'): '. $retarr['amount'], __FILE__, __LINE__, __METHOD__, 10);
@@ -2447,63 +2051,6 @@ class PayStubFactory extends Factory {
 		return $retarr;
 	}
 
-	/**
-	 * @return int
-	 */
-	function getTotalTransactions() {
-		//getTransactionSum() has the same code.
-		$total = 0;
-		/** @var PayStubTransactionFactory $pst_obj */
-		if ( isset( $this->tmp_data['current_pay_stub']['transactions'] ) AND is_array( $this->tmp_data['current_pay_stub']['transactions'] ) ) {
-			foreach ( $this->tmp_data['current_pay_stub']['transactions'] as $pst_obj ) {
-				if ( !isset($pst_obj->data['deleted']) OR $pst_obj->data['deleted'] == 0 ) {
-					$total++;
-				}
-			}
-		}
-
-		return $total;
-	}
-
-	/**
-	 * @return int
-	 */
-	function getTotalPendingTransactions() {
-		//getTransactionSum() has the same code.
-		$total = 0;
-		/** @var PayStubTransactionFactory $pst_obj */
-		if ( isset( $this->tmp_data['current_pay_stub']['transactions'] ) AND is_array( $this->tmp_data['current_pay_stub']['transactions'] ) ) {
-			foreach ( $this->tmp_data['current_pay_stub']['transactions'] as $pst_obj ) {
-				if ( ( !isset($pst_obj->data['deleted']) OR $pst_obj->data['deleted'] == 0 ) AND ( !isset($pst_obj->data['status_id']) OR $pst_obj->data['status_id'] == 10 ) ) {
-					$total++;
-				}
-			}
-		}
-
-		return $total;
-	}
-
-	/**
-	 * @return int|string
-	 */
-	function getTransactionsSum() {
-		$total = 0;
-		/** @var PayStubTransactionFactory $pst_obj */
-		if ( isset( $this->tmp_data['current_pay_stub']['transactions'] ) AND is_array( $this->tmp_data['current_pay_stub']['transactions'] ) ) {
-			foreach ( $this->tmp_data['current_pay_stub']['transactions'] as $pst_obj ) {
-				//Include amounts from both pending and paid transactions, as combined they should never exceed net pay.
-				if ( in_array( $pst_obj->getStatus(), array(10, 20) ) AND ( !isset($pst_obj->data['deleted']) OR $pst_obj->data['deleted'] == 0 ) ) {
-					$total = bcadd( $pst_obj->getAmount(), $total );
-				}
-			}
-		}
-
-		return $total;
-	}
-
-	/**
-	 * @return array
-	 */
 	function getDeductionSum() {
 		$retarr = $this->getSumByEntriesArrayAndTypeIDAndPayStubAccountID( 'current', 20);
 		Debug::Text('Deduction Sum: '. $retarr['amount'], __FILE__, __LINE__, __METHOD__, 10);
@@ -2511,9 +2058,6 @@ class PayStubFactory extends Factory {
 		return $retarr;
 	}
 
-	/**
-	 * @return array
-	 */
 	function getEmployerDeductionSum() {
 		$retarr = $this->getSumByEntriesArrayAndTypeIDAndPayStubAccountID( 'current', 30);
 		Debug::Text('Employer Deduction Sum: '. $retarr['amount'], __FILE__, __LINE__, __METHOD__, 10);
@@ -2521,11 +2065,8 @@ class PayStubFactory extends Factory {
 		return $retarr;
 	}
 
-	/**
-	 * @return bool|int|mixed
-	 */
 	function getGrossPay() {
-		if ( $this->getPayStubEntryAccountLinkObject()->getTotalGross() == TTUUID::getZeroID() ) {
+		if ( (int)$this->getPayStubEntryAccountLinkObject()->getTotalGross() == 0 ) {
 			return FALSE;
 		}
 
@@ -2539,11 +2080,8 @@ class PayStubFactory extends Factory {
 		return $retarr['amount'];
 	}
 
-	/**
-	 * @return bool|int|mixed
-	 */
 	function getDeductions() {
-		if ( $this->getPayStubEntryAccountLinkObject()->getTotalEmployeeDeduction() == TTUUID::getZeroID() ) {
+		if ( (int)$this->getPayStubEntryAccountLinkObject()->getTotalEmployeeDeduction() == 0 ) {
 			return FALSE;
 		}
 
@@ -2557,11 +2095,8 @@ class PayStubFactory extends Factory {
 		return $retarr['amount'];
 	}
 
-	/**
-	 * @return bool|int|mixed
-	 */
 	function getNetPay() {
-		if ( $this->getPayStubEntryAccountLinkObject()->getTotalNetPay() == TTUUID::getZeroID() ) {
+		if ( (int)$this->getPayStubEntryAccountLinkObject()->getTotalNetPay() == 0 ) {
 			return FALSE;
 		}
 
@@ -2575,9 +2110,6 @@ class PayStubFactory extends Factory {
 		return $retarr['amount'];
 	}
 
-	/**
-	 * @return bool
-	 */
 	function checkNoEarnings() {
 		$earnings = $this->getEarningSum();
 		if ($earnings == FALSE OR $earnings['amount'] <= 0 ) {
@@ -2587,11 +2119,8 @@ class PayStubFactory extends Factory {
 		return TRUE;
 	}
 
-	/**
-	 * Returns TRUE unless Amount explicitly does not match Gross Pay
-	 * use checkNoEarnings to see if any earnings exist or not.
-	 * @return bool
-	 */
+	//Returns TRUE unless Amount explicitly does not match Gross Pay
+	//use checkNoEarnings to see if any earnings exist or not.
 	function checkEarnings() {
 		$earnings = $this->getEarningSum();
 		if ( isset($earnings['amount']) AND $earnings['amount'] != $this->getGrossPay() ) {
@@ -2601,27 +2130,6 @@ class PayStubFactory extends Factory {
 		return TRUE;
 	}
 
-	/**
-	 * @return bool
-	 */
-	function checkTransactions() {
-		$pst_total = $this->getTransactionsSum();
-		$net_pay_arr = $this->getNetPaySum();
-		if ( isset($net_pay_arr['amount']) ) {
-			$net_pay = $net_pay_arr['amount'];
-		}
-
-		if ( isset($pst_total) AND isset($net_pay) AND $pst_total != $net_pay ) {
-			Debug::Text('Mismatched Net Pay / Transaction total: '. $pst_total .' Net Pay: '. $net_pay, __FILE__, __LINE__, __METHOD__, 10);
-			return FALSE;
-		}
-
-		return TRUE;
-	}
-
-	/**
-	 * @return bool
-	 */
 	function checkDeductions() {
 		$deductions = $this->getDeductionSum();
 		if ( $deductions['amount'] != $this->getDeductions() ) {
@@ -2631,9 +2139,6 @@ class PayStubFactory extends Factory {
 		return TRUE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function checkNetPay() {
 		$net_pay = $this->getNetPay();
 		$tmp_net_pay = bcsub($this->getGrossPay(), $this->getDeductions() );
@@ -2647,141 +2152,6 @@ class PayStubFactory extends Factory {
 		return FALSE;
 	}
 
-	/**
-	 * @return bool
-	 */
-	function checkNegativeNetPay() {
-		$net_pay = $this->getNetPay();
-		Debug::Text('Check Negative Net Pay: Net Pay: '. $net_pay, __FILE__, __LINE__, __METHOD__, 10);
-
-		if ( $net_pay >= 0 ) {
-			return TRUE;
-		}
-
-		Debug::Text('Check Negative Net Pay: Returning false', __FILE__, __LINE__, __METHOD__, 10);
-		return FALSE;
-	}
-
-	/**
-	 * For the api to edit transactions ensure that you validate at the API before calling this method.
-	 * @param object $pst_obj
-	 * @return bool
-	 */
-	function addTransaction( $pst_obj ) {
-		if ( is_object( $pst_obj ) ) {
-			$this->tmp_data['current_pay_stub']['transactions'][] = $pst_obj;
-		}
-
-		return TRUE;
-	}
-
-	/**
-	 * @return bool
-	 */
-	function savePayStubTransactions() {
-		Debug::Text('Saving Pay Stub transactions', __FILE__, __LINE__, __METHOD__, 10);
-		if ( isset($this->tmp_data['current_pay_stub']['transactions']) AND count($this->tmp_data['current_pay_stub']['transactions']) > 0 ) {
-			/** @var PayStubTransactionFactory $pst_obj */
-			foreach ( $this->tmp_data['current_pay_stub']['transactions'] as $pst_obj ) {
-				$pst_obj->setPayStub( $this->getId() );
-				if ( $pst_obj->isNew() ) {
-					$pst_obj->setStatus( 10 );
-				}
-				if ( $pst_obj->isValid() ) {
-					$pst_obj->Save( FALSE ); //To prevent clearing the object before validation is called.
-				}
-			}
-
-		}
-
-		return TRUE;
-	}
-
-	/**
-	 * @return bool
-	 */
-	function calculateDefaultTransactions() {
-		$remaining_amount = $net_pay = $this->getNetPay();
-
-		if ( $net_pay == 0 ) {
-			return FALSE; //Nothing to calculate
-		}
-
-		$primary_currency_obj = $this->getCurrencyObject();
-
-		$rdalf = TTnew('RemittanceDestinationAccountListFactory');
-		$rdalf->getByUserIdAndStatusId( $this->getUser(), 10 );
-		if ( $rdalf->getRecordCount() > 0 ) {
-			$rdalf->StartTransaction();
-
-			//Delete any existing transactions, so they can be re-created.
-			$pstlf = TTnew( 'PayStubTransactionListFactory' );
-			$pstlf->getByPayStubId( $this->getId() );
-			$pstlf->bulkDelete( $pstlf->getIDSByListFactory( $pstlf ) );
-
-			$max = $rdalf->getRecordCount();
-			$i = 1;
-			foreach( $rdalf as $rda_obj ) {
-				Debug::Text('Destination Account ID: '. $rda_obj->getId() .' Amount Type: '. $rda_obj->getAmountType() .' Amount: '. $rda_obj->getAmount() .' Net Pay: '. $net_pay, __FILE__, __LINE__, __METHOD__, 10);
-
-				if ( $remaining_amount != 0 ) {
-					if ( is_object( $rda_obj->getRemittanceSourceAccountObject() ) ) {
-						/** @var PayStubTransactionFactory $pstf */
-						$pstf = TTnew( 'PayStubTransactionFactory' );
-						$pstf->setPayStub( $this->getId() );
-						$pstf->setStatus(10); //pending
-						$pstf->setType(10);   //enabled
-						$pstf->setRemittanceSourceAccount( $rda_obj->getRemittanceSourceAccount() );
-						$pstf->setRemittanceDestinationAccount( $rda_obj->getId() );
-						$pstf->setCurrency( $rda_obj->getRemittanceSourceAccountObject()->getCurrency() );
-						$pstf->setTransactionDate( $this->getTransactionDate() );
-
-						if ( $i == $max ) {
-							$amount = $remaining_amount;
-							Debug::Text( ' Final account, using remaining amount...', __FILE__, __LINE__, __METHOD__, 10 );
-						} else {
-							if ( $rda_obj->getAmountType() == 10 ) { //Percent
-								$amount = bcmul( $net_pay, bcdiv( $rda_obj->getPercentAmount(), 100 ) );
-								Debug::Text( ' Percent Amount: ' . $rda_obj->getPercentAmount() . ' of: ' . $net_pay, __FILE__, __LINE__, __METHOD__, 10 );
-							} else { //Fixed Amount
-								$amount = $rda_obj->getAmount();
-								Debug::Text( ' Fixed Amount: ' . $rda_obj->getAmount() . ' of: ' . $net_pay, __FILE__, __LINE__, __METHOD__, 10 );
-							}
-						}
-
-						if ( $amount > $remaining_amount ) {
-							$amount = $remaining_amount;
-							Debug::Text( ' Exceeds remaining amount: ' . $amount . ' Remaining: ' . $remaining_amount, __FILE__, __LINE__, __METHOD__, 10 );
-						} else {
-							$amount = $primary_currency_obj->round( $amount );
-						}
-
-						$pstf->setAmount( $amount );
-
-						if ( $pstf->isValid() ) {
-							$this->addTransaction($pstf);
-							$remaining_amount = bcsub( $remaining_amount, $amount );
-							Debug::Text( ' Amount: ' . $amount . ' Remaining Amount: ' . $remaining_amount, __FILE__, __LINE__, __METHOD__, 10 );
-						}
-					} else {
-						Debug::Text( 'ERROR: No remittance source account!', __FILE__, __LINE__, __METHOD__, 10 );
-					}
-				} else {
-					Debug::Text( 'Remaining Amount is 0... Skipping..', __FILE__, __LINE__, __METHOD__, 10 );
-				}
-
-				$i++;
-			}
-
-			$rdalf->CommitTransaction();
-		}
-
-		return TRUE;
-	}
-
-	/**
-	 * @return array|bool
-	 */
 	function getEmailPayStubAddresses() {
 		$uplf = TTnew( 'UserPreferenceListFactory' );
 		//$uplf->getByUserId( $this->getUser() );
@@ -2810,9 +2180,6 @@ class PayStubFactory extends Factory {
 		return FALSE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function emailPayStub() {
 		Debug::Text('emailPayStub: ', __FILE__, __LINE__, __METHOD__, 10);
 
@@ -2922,10 +2289,6 @@ class PayStubFactory extends Factory {
 		return TRUE; //Always return true
 	}
 
-	/**
-	 * @param $data
-	 * @return bool
-	 */
 	function setObjectFromArray( $data ) {
 		if ( is_array( $data ) ) {
 			$variable_function_map = $this->getVariableToFunctionMap();
@@ -2934,10 +2297,6 @@ class PayStubFactory extends Factory {
 
 					$function = 'set'.$function;
 					switch( $key ) {
-						case 'tainted': //Don't allow this to be set from the API.
-						case 'status_by':
-						case 'status_date':
-							break;
 						case 'start_date':
 						case 'end_date':
 						case 'transaction_date':
@@ -2962,11 +2321,6 @@ class PayStubFactory extends Factory {
 		return FALSE;
 	}
 
-	/**
-	 * @param null $include_columns
-	 * @param bool $permission_children_ids
-	 * @return mixed
-	 */
 	function getObjectAsArray( $include_columns = NULL, $permission_children_ids = FALSE ) {
 		$uf = TTnew( 'UserFactory' );
 
@@ -3028,9 +2382,7 @@ class PayStubFactory extends Factory {
 	}
 
 
-	/**
-	 * @return mixed
-	 */
+
 	function getFormObject() {
 		if ( !isset($this->form_obj['cf']) OR !is_object($this->form_obj['cf']) ) {
 			//
@@ -3049,10 +2401,6 @@ class PayStubFactory extends Factory {
 	}
 
 
-	/**
-	 * @param $format
-	 * @return mixed
-	 */
 	function getChequeFormsObject( $format ) {
 		if ( !isset($this->form_obj[$format]) OR !is_object($this->form_obj[$format]) ) {
 			$this->form_obj[$format] = $this->getFormObject()->getFormObject( strtoupper( $format ) );
@@ -3069,11 +2417,481 @@ class PayStubFactory extends Factory {
 
 	*/
 
-	/**
-	 * @param null $pslf
-	 * @param bool $hide_employer_rows
-	 * @return bool|string
-	 */
+	function exportPayStub( $pslf = NULL, $export_type = NULL, $company_obj = NULL ) {
+		if ( is_object( $company_obj ) ) {
+			$current_company = $company_obj;
+		} else {
+			global $current_company;
+		}
+
+		if ( !is_object($pslf) AND $this->getId() != '' ) {
+			$pslf = TTnew( 'PayStubListFactory' );
+			$pslf->getById( $this->getId() );
+		}
+
+		if ( strpos( get_class( $pslf ), 'PayStubListFactory' ) !== 0 ) { //Allow for PayStubListFactoryPlugin to match as well.
+			return FALSE;
+		}
+
+		if ( $export_type == '' ) {
+			return FALSE;
+		}
+
+		if ( $pslf->getRecordCount() > 0 ) {
+
+			Debug::Text('aExporting...', __FILE__, __LINE__, __METHOD__, 10);
+			switch ( strtolower($export_type) ) {
+				case 'eft_hsbc':
+				case 'eft_1464':
+				case 'eft_1464_cibc':
+				case 'eft_1464_rbc':
+				case 'eft_105':
+				case 'eft_ach':
+				case 'eft_beanstream':
+					//Get file creation number
+					$ugdlf = TTnew( 'UserGenericDataListFactory' );
+					$ugdlf->getByCompanyIdAndScriptAndDefault( $current_company->getId(), 'PayStubFactory', TRUE );
+					if ( $ugdlf->getRecordCount() > 0 ) {
+						$ugd_obj = $ugdlf->getCurrent();
+						$setup_data = $ugd_obj->getData();
+					} else {
+						$ugd_obj = TTnew( 'UserGenericDataFactory' );
+					}
+
+					Debug::Text('bExporting...', __FILE__, __LINE__, __METHOD__, 10);
+					//get User Bank account info
+					$balf = TTnew( 'BankAccountListFactory' );
+					$balf->getCompanyAccountByCompanyId( $current_company->getID() );
+					if ( $balf->getRecordCount() > 0 ) {
+						$company_bank_obj = $balf->getCurrent();
+						//Debug::Arr($company_bank_obj, 'Company Bank Object', __FILE__, __LINE__, __METHOD__, 10);
+					}
+
+					if ( isset( $setup_data['file_creation_number'] ) ) {
+						$setup_data['file_creation_number']++;
+					} else {
+						//Start at a high number, in attempt to eliminate conflicts.
+						$setup_data['file_creation_number'] = 500;
+					}
+					Debug::Text('bFile Creation Number: '. $setup_data['file_creation_number'], __FILE__, __LINE__, __METHOD__, 10);
+
+					//Increment file creation number in DB
+					if ( $ugd_obj->getId() == '' ) {
+							$ugd_obj->setID( $ugd_obj->getId() );
+					}
+					$ugd_obj->setCompany( $current_company->getId() );
+					$ugd_obj->setScript( 'PayStubFactory' );
+					$ugd_obj->setName( 'PayStubFactory' );
+					$ugd_obj->setData( $setup_data );
+					$ugd_obj->setDefault( TRUE );
+					if ( $ugd_obj->isValid() ) {
+							$ugd_obj->Save();
+					}
+
+					$eft = new EFT();
+					$eft->setFileFormat( str_replace('eft_', '', $export_type ) );
+
+					$eft->setBusinessNumber( $current_company->getBusinessNumber() ); //ACH
+					$eft->setOriginatorID( $current_company->getOriginatorID() );
+					$eft->setFileCreationNumber( $setup_data['file_creation_number'] );
+					$eft->setInitialEntryNumber( ( ( $current_company->getOtherID5() != '' ) ? $current_company->getOtherID5() : substr( $current_company->getOriginatorID(), 0, 8) ) ); //ACH
+					$eft->setDataCenter( $current_company->getDataCenterID() );
+					$eft->setDataCenterName( $current_company->getOtherID4() ); //ACH
+					$eft->setOriginatorShortName( $current_company->getShortName() );
+
+					if ( strtolower($export_type) == 'eft_1464_cibc' AND isset($company_bank_obj) AND is_object($company_bank_obj) ) {
+						$eft->setOtherData('cibc_settlement_institution', $company_bank_obj->getInstitution() );
+						$eft->setOtherData('cibc_settlement_transit', $company_bank_obj->getTransit() );
+						$eft->setOtherData('cibc_settlement_account', $company_bank_obj->getAccount() );
+					}
+
+					if ( strtolower($export_type) == 'eft_1464_rbc' ) {
+						$eft->setFilePrefixData( '$$AA01CPA1464[PROD[NL$$'."\r\n" ); //Some RBC services require a "routing" line at the top of the file.
+					}
+
+					$total_credit_amount = 0;
+
+					$psealf = TTnew( 'PayStubEntryAccountListFactory' );
+					foreach ($pslf as $key => $pay_stub_obj) {
+						Debug::Text('Looping over Pay Stub... ID: '. $pay_stub_obj->getId(), __FILE__, __LINE__, __METHOD__, 10);
+
+						if ( $pay_stub_obj->getStatus() == 100 ) {
+							Debug::Text('  Opening Balance pay stub, not exporting... ID: '. $pay_stub_obj->getId(), __FILE__, __LINE__, __METHOD__, 10);
+							continue;
+						}
+
+						//Get pay stub entries.
+						$pself = TTnew( 'PayStubEntryListFactory' );
+						$pself->getByPayStubId( $pay_stub_obj->getId() );
+
+						$prev_type = NULL;
+						$description_subscript_counter = 1;
+						foreach ($pself as $pay_stub_entry) {
+							$description_subscript = NULL;
+
+							//$pay_stub_entry_name_obj = $psenlf->getById( $pay_stub_entry->getPayStubEntryNameId() ) ->getCurrent();
+							$pay_stub_entry_name_obj = $psealf->getById( $pay_stub_entry->getPayStubEntryNameId() )->getCurrent();
+
+							if ( $prev_type == 40 OR $pay_stub_entry_name_obj->getType() != 40 ) {
+								$type = $pay_stub_entry_name_obj->getType();
+							}
+
+							//var_dump( $pay_stub_entry->getDescription() );
+							if ( $pay_stub_entry->getDescription() !== NULL
+									AND $pay_stub_entry->getDescription() !== FALSE
+									AND strlen($pay_stub_entry->getDescription()) > 0) {
+								$pay_stub_entry_descriptions[] = array( 'subscript' => $description_subscript_counter,
+																		'description' => $pay_stub_entry->getDescription() );
+
+								$description_subscript = $description_subscript_counter;
+
+								$description_subscript_counter++;
+							}
+
+							if ( $type != 40 OR ( $type == 40 AND $pay_stub_entry->getAmount() != 0 ) ) {
+								$pay_stub_entries[$type][] = array(
+															'id' => $pay_stub_entry->getId(),
+															'pay_stub_entry_name_id' => $pay_stub_entry->getPayStubEntryNameId(),
+															'type' => $pay_stub_entry_name_obj->getType(),
+															'name' => $pay_stub_entry_name_obj->getName(),
+															'display_name' => $pay_stub_entry_name_obj->getName(),
+															'rate' => $pay_stub_entry->getRate(),
+															'units' => $pay_stub_entry->getUnits(),
+															'ytd_units' => $pay_stub_entry->getYTDUnits(),
+															'amount' => $pay_stub_entry->getAmount(),
+															'ytd_amount' => $pay_stub_entry->getYTDAmount(),
+
+															'description' => $pay_stub_entry->getDescription(),
+															'description_subscript' => $description_subscript,
+
+															'created_date' => $pay_stub_entry->getCreatedDate(),
+															'created_by' => $pay_stub_entry->getCreatedBy(),
+															'updated_date' => $pay_stub_entry->getUpdatedDate(),
+															'updated_by' => $pay_stub_entry->getUpdatedBy(),
+															'deleted_date' => $pay_stub_entry->getDeletedDate(),
+															'deleted_by' => $pay_stub_entry->getDeletedBy()
+															);
+							}
+
+							$prev_type = $pay_stub_entry_name_obj->getType();
+						}
+
+						if ( isset($pay_stub_entries) ) {
+							$pay_stub = array(
+												'id' => $pay_stub_obj->getId(),
+												'display_id' => $pay_stub_obj->getDisplayID(),
+												'user_id' => $pay_stub_obj->getUser(),
+												'pay_period_id' => $pay_stub_obj->getPayPeriod(),
+												'start_date' => $pay_stub_obj->getStartDate(),
+												'end_date' => $pay_stub_obj->getEndDate(),
+												'transaction_date' => $pay_stub_obj->getTransactionDate(),
+												'status' => $pay_stub_obj->getStatus(),
+												'entries' => $pay_stub_entries,
+
+												'created_date' => $pay_stub_obj->getCreatedDate(),
+												'created_by' => $pay_stub_obj->getCreatedBy(),
+												'updated_date' => $pay_stub_obj->getUpdatedDate(),
+												'updated_by' => $pay_stub_obj->getUpdatedBy(),
+												'deleted_date' => $pay_stub_obj->getDeletedDate(),
+												'deleted_by' => $pay_stub_obj->getDeletedBy()
+											);
+							unset($pay_stub_entries);
+
+							//Get User information
+							$ulf = TTnew( 'UserListFactory' );
+							$user_obj = $ulf->getById( $pay_stub_obj->getUser() )->getCurrent();
+
+							//Get company information
+							$clf = TTnew( 'CompanyListFactory' );
+							$company_obj = $clf->getById( $user_obj->getCompany() )->getCurrent();
+
+							//get User Bank account info
+							$balf = TTnew( 'BankAccountListFactory' );
+							$user_bank_obj = $balf->getUserAccountByCompanyIdAndUserId( $user_obj->getCompany(), $user_obj->getId() );
+							if ( $user_bank_obj->getRecordCount() > 0 ) {
+								$user_bank_obj = $user_bank_obj->getCurrent();
+							} else {
+								Debug::Text('No bank account defined for User ID: '. $user_obj->getId() .' skipping...', __FILE__, __LINE__, __METHOD__, 10);
+								continue;
+							}
+
+							if ( isset($pay_stub['entries'][40][0]['amount']) ) {
+								$amount = $pay_stub['entries'][40][0]['amount'];
+							} else {
+								$amount = 0;
+							}
+
+							if ( $amount > 0 ) {
+								$record = new EFT_Record();
+								$record->setType('C');
+								$record->setCPACode(200);
+								$record->setAmount( $amount );
+
+								$record->setDueDate( TTDate::getBeginDayEpoch($pay_stub_obj->getTransactionDate()) );
+								$record->setInstitution( $user_bank_obj->getInstitution() );
+								$record->setTransit( $user_bank_obj->getTransit() );
+								$record->setAccount( $user_bank_obj->getAccount() );
+								$record->setName( $user_obj->getFullName() );
+
+								$record->setOriginatorShortName( $company_obj->getShortName() );
+								$record->setOriginatorLongName( substr($company_obj->getName(), 0, 30) );
+								$record->setOriginatorReferenceNumber( 'TT'.$pay_stub_obj->getId() );
+
+								if ( isset($company_bank_obj) AND is_object($company_bank_obj) ) {
+									$record->setReturnInstitution( $company_bank_obj->getInstitution() );
+									$record->setReturnTransit( $company_bank_obj->getTransit() );
+									$record->setReturnAccount( $company_bank_obj->getAccount() );
+								}
+
+								$eft->setRecord( $record );
+							}
+
+							$total_credit_amount += $amount;
+							unset($amount);
+
+							$this->getProgressBarObject()->set( NULL, $key );
+						}
+					}
+
+					$is_balanced = CompanySettingFactory::getCompanySettingValueByName( $current_company->getId(), 'pay_stub.eft.balance_ach');
+					if ( $total_credit_amount > 0
+							AND (bool)$is_balanced == TRUE
+							AND isset($company_obj) AND is_object($company_obj)
+							AND isset($company_bank_obj) AND is_object($company_bank_obj)
+							AND isset($pay_stub_obj) AND is_object($pay_stub_obj)
+							) {
+						Debug::Text('  Balancing ACH... ', __FILE__, __LINE__, __METHOD__, 10);
+						$record = new EFT_Record();
+						$record->setType('D');
+						$record->setCPACode(200);
+						$record->setAmount( $total_credit_amount );
+
+						$record->setDueDate( TTDate::getBeginDayEpoch($pay_stub_obj->getTransactionDate()) );
+						$record->setInstitution( $company_bank_obj->getInstitution() );
+						$record->setTransit( $company_bank_obj->getTransit() );
+						$record->setAccount( $company_bank_obj->getAccount() );
+						$record->setName( substr($company_obj->getName(), 0, 30) );
+
+						$record->setOriginatorShortName( $company_obj->getShortName() );
+						$record->setOriginatorLongName( substr($company_obj->getName(), 0, 30) );
+						$record->setOriginatorReferenceNumber( 'OFFSET' );
+
+						if ( isset($company_bank_obj) AND is_object($company_bank_obj) ) {
+							$record->setReturnInstitution( $company_bank_obj->getInstitution() );
+							$record->setReturnTransit( $company_bank_obj->getTransit() );
+							$record->setReturnAccount( $company_bank_obj->getAccount() );
+						}
+
+						$eft->setRecord( $record );
+					} else {
+						Debug::Text('  NOT Balancing ACH... ', __FILE__, __LINE__, __METHOD__, 10);
+					}
+					unset($is_balanced, $total_credit_amount);
+
+					$eft->compile();
+					$output = $eft->getCompiledData();
+
+					unset($eft);
+					break;
+				case 'cheque_9085':
+				case 'cheque_9209p':
+				case 'cheque_dlt103':
+				case 'cheque_dlt104':
+				case 'cheque_cr_standard_form_1':
+				case 'cheque_cr_standard_form_2':
+					$cheque_form_obj = $this->getChequeFormsObject( str_replace('cheque_', '', $export_type) );
+					$psealf = TTnew( 'PayStubEntryAccountListFactory' );
+					$numbers_words = new Numbers_Words();
+					$i = 0;
+					foreach ($pslf as $pay_stub_obj) {
+						if ( $pay_stub_obj->getStatus() == 100 ) {
+							Debug::Text('  Opening Balance pay stub, not exporting... ID: '. $pay_stub_obj->getId(), __FILE__, __LINE__, __METHOD__, 10);
+							continue;
+						}
+
+						//Get pay stub entries.
+						$pself = TTnew( 'PayStubEntryListFactory' );
+						$pself->getByPayStubId( $pay_stub_obj->getId() );
+
+						$pay_stub_entries = NULL;
+						$prev_type = NULL;
+						$description_subscript_counter = 1;
+						foreach ($pself as $pay_stub_entry) {
+							$description_subscript = NULL;
+
+							//$pay_stub_entry_name_obj = $psenlf->getById( $pay_stub_entry->getPayStubEntryNameId() ) ->getCurrent();
+							$pay_stub_entry_name_obj = $psealf->getById( $pay_stub_entry->getPayStubEntryNameId() )->getCurrent();
+
+							//Use this to put the total for each type at the end of the array.
+							if ( $prev_type == 40 OR $pay_stub_entry_name_obj->getType() != 40 ) {
+								$type = $pay_stub_entry_name_obj->getType();
+							}
+							//Debug::text('Pay Stub Entry Name ID: '. $pay_stub_entry_name_obj->getId() .' Type ID: '. $pay_stub_entry_name_obj->getType() .' Type: '. $type, __FILE__, __LINE__, __METHOD__, 10);
+
+							//var_dump( $pay_stub_entry->getDescription() );
+							if ( $pay_stub_entry->getDescription() !== NULL
+									AND $pay_stub_entry->getDescription() !== FALSE
+									AND strlen($pay_stub_entry->getDescription()) > 0) {
+								$pay_stub_entry_descriptions[] = array( 'subscript' => $description_subscript_counter,
+																		'description' => $pay_stub_entry->getDescription() );
+
+								$description_subscript = $description_subscript_counter;
+
+								$description_subscript_counter++;
+							}
+
+							$amount_words = str_pad( ucwords( $numbers_words->toWords( floor($pay_stub_entry->getAmount()), "en_US") ).' ', 65, "-", STR_PAD_RIGHT );
+							//echo "Amount: ". floor($pay_stub_entry->getAmount()) ." - Words: ". $amount_words ."<br>\n";
+							//var_dump($amount_words);
+							if ( $type != 40 OR ( $type == 40 AND $pay_stub_entry->getAmount() != 0 ) ) {
+								$pay_stub_entries[$type][] = array(
+															'id' => $pay_stub_entry->getId(),
+															'pay_stub_entry_name_id' => $pay_stub_entry->getPayStubEntryNameId(),
+															'type' => $pay_stub_entry_name_obj->getType(),
+															'name' => $pay_stub_entry_name_obj->getName(),
+															'display_name' => $pay_stub_entry_name_obj->getName(),
+															'rate' => $pay_stub_entry->getRate(),
+															'units' => $pay_stub_entry->getUnits(),
+															'ytd_units' => $pay_stub_entry->getYTDUnits(),
+															'amount' => $pay_stub_entry->getAmount(),
+															'amount_padded' => str_pad( TTi18n::formatNumber( $pay_stub_entry->getAmount(), TRUE, $pay_stub_obj->getCurrencyObject()->getRoundDecimalPlaces() ), 12, '*', STR_PAD_LEFT),
+															'amount_words' => $amount_words,
+															'amount_cents' => Misc::getAfterDecimal($pay_stub_entry->getAmount()),
+															'ytd_amount' => $pay_stub_entry->getYTDAmount(),
+
+															'description' => $pay_stub_entry->getDescription(),
+															'description_subscript' => $description_subscript,
+
+															'created_date' => $pay_stub_entry->getCreatedDate(),
+															'created_by' => $pay_stub_entry->getCreatedBy(),
+															'updated_date' => $pay_stub_entry->getUpdatedDate(),
+															'updated_by' => $pay_stub_entry->getUpdatedBy(),
+															'deleted_date' => $pay_stub_entry->getDeletedDate(),
+															'deleted_by' => $pay_stub_entry->getDeletedBy()
+															);
+							}
+							unset($amount_words);
+
+							$prev_type = $pay_stub_entry_name_obj->getType();
+						}
+
+						//Get User information
+						$ulf = TTnew( 'UserListFactory' );
+						$user_obj = $ulf->getById( $pay_stub_obj->getUser() )->getCurrent();
+
+						//Get company information
+						$clf = TTnew( 'CompanyListFactory' );
+						$company_obj = $clf->getById( $user_obj->getCompany() )->getCurrent();
+
+						if ( $user_obj->getCountry() == 'CA' ) {
+							$date_format = 'd/m/Y';
+						} else {
+							$date_format = 'm/d/Y';
+						}
+						$pay_stub = array(
+											'id' => $pay_stub_obj->getId(),
+											'display_id' => $pay_stub_obj->getDisplayID(),
+											'user_id' => $pay_stub_obj->getUser(),
+											'pay_period_id' => $pay_stub_obj->getPayPeriod(),
+											'start_date' => $pay_stub_obj->getStartDate(),
+											'end_date' => $pay_stub_obj->getEndDate(),
+											'transaction_date' => $pay_stub_obj->getTransactionDate(),
+											'transaction_date_display' => date( $date_format, $pay_stub_obj->getTransactionDate() ),
+											'status' => $pay_stub_obj->getStatus(),
+											'entries' => $pay_stub_entries,
+											'tainted' => $pay_stub_obj->getTainted(),
+
+											'created_date' => $pay_stub_obj->getCreatedDate(),
+											'created_by' => $pay_stub_obj->getCreatedBy(),
+											'updated_date' => $pay_stub_obj->getUpdatedDate(),
+											'updated_by' => $pay_stub_obj->getUpdatedBy(),
+											'deleted_date' => $pay_stub_obj->getDeletedDate(),
+											'deleted_by' => $pay_stub_obj->getDeletedBy()
+										);
+						unset($pay_stub_entries);
+
+						if ( isset($pay_stub['entries'][40][0]['amount']) AND $pay_stub['entries'][40][0]['amount'] > 0 ) {
+							//Debug::text($i .'. Pay Stub Transaction Date: '. $pay_stub_obj->getTransactionDate(), __FILE__, __LINE__, __METHOD__, 10);
+
+							//Get Pay Period information
+							$pplf = TTnew( 'PayPeriodListFactory' );
+							$pplf->getById( $pay_stub_obj->getPayPeriod() );
+							if ( $pplf->getRecordCount() > 0 ) {
+								$pay_period_obj = $pplf->getCurrent();
+
+								$pp_start_date = $pay_period_obj->getStartDate();
+								$pp_end_date = $pay_period_obj->getEndDate();
+								$pp_transaction_date = $pay_period_obj->getTransactionDate();
+
+								//Get pay period numbers
+								$ppslf = TTnew( 'PayPeriodScheduleListFactory' );
+								$ppslf->getById( $pay_period_obj->getPayPeriodSchedule() );
+								if ( $ppslf->getRecordCount() > 0 ) {
+									$pay_period_schedule_obj = $ppslf->getCurrent();
+
+									$pay_period_data = array(
+															'start_date' => TTDate::getDate('DATE', $pp_start_date ),
+															'end_date' => TTDate::getDate('DATE', $pp_end_date ),
+															'transaction_date' => TTDate::getDate('DATE', $pp_transaction_date ),
+															//'pay_period_number' => $pay_period_schedule_obj->getCurrentPayPeriodNumber( $pay_period_obj->getTransactionDate(), $pay_period_obj->getEndDate() ),
+															'annual_pay_periods' => $pay_period_schedule_obj->getAnnualPayPeriods()
+															);
+
+									$ps_data = array(
+											'date' => $pay_stub_obj->getTransactionDate(),
+											'amount' => $pay_stub['entries'][40][0]['amount'],
+											'stub_left_column' => $user_obj->getFullName() . "\n".
+															TTi18n::gettext('Identification #') .': '. $pay_stub['display_id'] . "\n".
+															TTi18n::gettext('Net Pay') .': '. $pay_stub_obj->getCurrencyObject()->getSymbol() . TTi18n::formatNumber( $pay_stub['entries'][40][0]['amount'], TRUE, $pay_stub_obj->getCurrencyObject()->getRoundDecimalPlaces() ),
+
+											'stub_right_column' => TTi18n::gettext('Pay Start Date') .': '. TTDate::getDate('DATE', $pay_stub['start_date'] ) . "\n".
+															TTi18n::gettext('Pay End Date') .': '. TTDate::getDate('DATE', $pay_stub['end_date'] ) . "\n".
+															TTi18n::gettext('Payment Date') .': '. TTDate::getDate('DATE', $pay_stub['transaction_date'] ),
+											'start_date' => $pay_stub['start_date'],
+											'end_date' => $pay_stub['end_date'],
+											'full_name' => $user_obj->getFullName(),
+											'address1' => $user_obj->getAddress1(),
+											'address2' => $user_obj->getAddress2(),
+											'city' => $user_obj->getCity(),
+											'province' => $user_obj->getProvince(),
+											'postal_code' => $user_obj->getPostalCode(),
+											'country' => $user_obj->getCountry(),
+
+											'company_name' => $company_obj->getName(),
+
+											'symbol' => $pay_stub_obj->getCurrencyObject()->getSymbol(),
+									);
+
+									$cheque_form_obj->addRecord( $ps_data );
+									$this->getFormObject()->addForm( $cheque_form_obj );
+								}
+							}
+						}
+
+						$this->getProgressBarObject()->set( NULL, $i );
+
+						$i++;
+					}
+
+					if ( stristr( $export_type, 'cheque') ) {
+						$output_format = 'PDF';
+					}
+
+					if ( $i > 0 ) {
+						$output = $this->getFormObject()->output( $output_format );
+					}
+
+					break;
+			}
+		}
+
+		if ( isset($output) ) {
+			return $output;
+		}
+
+		return FALSE;
+	}
+
 	function getPayStub( $pslf = NULL, $hide_employer_rows = TRUE ) {
 		if ( !is_object($pslf) AND $this->getId() != '' ) {
 			$pslf = TTnew( 'PayStubListFactory' );
@@ -3086,9 +2904,10 @@ class PayStubFactory extends Factory {
 
 		$border = 0;
 
+		$default_line_item_font_size = 10;
+
 		if ( $pslf->getRecordCount() > 0 ) {
 
-			$legal_entity_obj_cache = array();
 			$i = 0;
 			foreach ($pslf as $pay_stub_obj) {
 				if ( $i == 0 ) {
@@ -3098,9 +2917,16 @@ class PayStubFactory extends Factory {
 					$pdf->SetAutoPageBreak(FALSE);
 
 					$pdf->SetFont( TTi18n::getPDFDefaultFont( $pay_stub_obj->getUserObject()->getUserPreferenceObject()->getLanguage(), $pay_stub_obj->getUserObject()->getCompanyObject()->getEncoding() ), '', 10);
+
+					$company_obj = $pay_stub_obj->getUserObject()->getCompanyObject();
 				}
 
 				$psealf = TTnew( 'PayStubEntryAccountListFactory' );
+
+				//Debug::text($i .'. Pay Stub Transaction Date: '. $pay_stub_obj->getTransactionDate(), __FILE__, __LINE__, __METHOD__, 10);
+
+				//Get Pay Period information
+				$pay_period_obj = $this->getPayPeriodObject();
 
 				//Use Pay Stub dates, not Pay Period dates.
 				$pp_start_date = $pay_stub_obj->getStartDate();
@@ -3108,14 +2934,8 @@ class PayStubFactory extends Factory {
 				$pp_transaction_date = $pay_stub_obj->getTransactionDate();
 
 				//Get User information
+				$ulf = TTnew( 'UserListFactory' );
 				$user_obj = $pay_stub_obj->getUserObject();
-
-				//Cache legal entity object to reduce one SQL query per pay stub at least.
-				if ( !isset($legal_entity_obj_cache[$user_obj->getLegalEntity()]) ) {
-					$legal_entity_obj = $legal_entity_obj_cache[$user_obj->getLegalEntity()] = $user_obj->getLegalEntityObject();
-				} else {
-					$legal_entity_obj = $legal_entity_obj_cache[$user_obj->getLegalEntity()];
-				}
 
 				//Change locale to users own locale.
 				TTi18n::setLanguage( $user_obj->getUserPreferenceObject()->getLanguage() );
@@ -3157,24 +2977,19 @@ class PayStubFactory extends Factory {
 				//Reset pointer to the beginning of the page after watermark is drawn
 
 				//Logo
-				$pdf->Image( $legal_entity_obj->getLogoFileName( NULL, TRUE, FALSE, 'large' ), Misc::AdjustXY(0, $adjust_x ), Misc::AdjustXY(1, $adjust_y ), $pdf->pixelsToUnits( 167 ), $pdf->pixelsToUnits( 42 ), '', '', '', FALSE, 300, '', FALSE, FALSE, 0, TRUE);
+				$pdf->Image( $company_obj->getLogoFileName( NULL, TRUE, FALSE, 'large' ), Misc::AdjustXY(0, $adjust_x ), Misc::AdjustXY(1, $adjust_y ), $pdf->pixelsToUnits( 167 ), $pdf->pixelsToUnits( 42 ), '', '', '', FALSE, 300, '', FALSE, FALSE, 0, TRUE);
 
 				//Company name/address
 				$pdf->SetFont('', 'B', 14);
 				$pdf->setXY( Misc::AdjustXY(50, $adjust_x), Misc::AdjustXY(0, $adjust_y) );
-				$pdf->Cell(75, 5, $legal_entity_obj->getTradeName(), $border, 0, 'C', FALSE, '', 1);
+				$pdf->Cell(75, 5, $company_obj->getName(), $border, 0, 'C', FALSE, '', 1);
 
 				$pdf->SetFont('', '', 10);
-				$pdf->setXY( Misc::AdjustXY(50, $adjust_x), Misc::AdjustXY(5, $adjust_y) );
-				$pdf->Cell(75, 3, $legal_entity_obj->getAddress1() .' '. $legal_entity_obj->getAddress2(), $border, 0, 'C', FALSE, '', 1);
+				$pdf->setXY( Misc::AdjustXY(50, $adjust_x), Misc::AdjustXY(6, $adjust_y) );
+				$pdf->Cell(75, 5, $company_obj->getAddress1().' '.$company_obj->getAddress2(), $border, 0, 'C', FALSE, '', 1);
 
-				$pdf->setXY( Misc::AdjustXY(50, $adjust_x), Misc::AdjustXY(8.5, $adjust_y) );
-				$pdf->Cell(75, 3, Misc::getCityAndProvinceAndPostalCode( $legal_entity_obj->getCity(), $legal_entity_obj->getProvince(), $legal_entity_obj->getPostalCode() ), $border, 0, 'C', FALSE, '', 1); //Oregon State requires employer phone number on the pay stubs.
-
-				if ( $legal_entity_obj->getWorkPhone() != '' ) {
-					$pdf->setXY( Misc::AdjustXY( 50, $adjust_x ), Misc::AdjustXY( 12, $adjust_y ) );
-					$pdf->Cell( 75, 3, TTi18n::gettext( 'Tel' ) . ': ' . $legal_entity_obj->getWorkPhone(), $border, 0, 'C', FALSE, '', 1 ); //Oregon State requires employer phone number on the pay stubs.
-				}
+				$pdf->setXY( Misc::AdjustXY(50, $adjust_x), Misc::AdjustXY(10, $adjust_y) );
+				$pdf->Cell(75, 5, Misc::getCityAndProvinceAndPostalCode( $company_obj->getCity(), $company_obj->getProvince(), $company_obj->getPostalCode() ), $border, 0, 'C', FALSE, '', 1);
 
 
 				//Pay Period info
@@ -3275,7 +3090,7 @@ class PayStubFactory extends Factory {
 													'updated_date' => $pay_stub_entry->getUpdatedDate(),
 													'updated_by' => $pay_stub_entry->getUpdatedBy(),
 													'deleted_date' => $pay_stub_entry->getDeletedDate(),
-													'deleted_by' => $pay_stub_entry->getDeletedBy(),
+													'deleted_by' => $pay_stub_entry->getDeletedBy()
 													);
 
 						//Calculate maximum widths of numeric values.
@@ -3316,24 +3131,15 @@ class PayStubFactory extends Factory {
 				$ablf = TTnew( 'AccrualBalanceListFactory' );
 				$ablf->getByUserIdAndCompanyIdAndEnablePayStubBalanceDisplay($user_obj->getId(), $user_obj->getCompany(), TRUE );
 
-				//Get Transaction records here so we can use it for sizing the font.
-				$pstlf = TTnew( 'PayStubTransactionListFactory' );
-				if ( $hide_employer_rows != TRUE ) {
-					$pstlf->getByPayStubIdAndStatusId( $pay_stub_obj->getId(), array( 10, 20 ) ); //10=Pending, 20=Paid
-				} else {
-					$pstlf->getByPayStubIdAndStatusId( $pay_stub_obj->getId(), 20 ); //20=Paid
-				}
-
 				//Calculate font size based on number of records to display
 				$total_pay_stub_rows = 0;
 				$total_pay_stub_rows += ( $ablf->getRecordCount() > 0 ) ? ( $ablf->getRecordCount() + 1 ) : 0;
-				$total_pay_stub_rows += ( $pstlf->getRecordCount() > 0 ) ? ( $pstlf->getRecordCount() + 2 ) : 0;
 				$total_pay_stub_rows += ( isset($pay_stub_entries[10]) ) ? ( count($pay_stub_entries[10]) + 2 ) : 0;
 				$total_pay_stub_rows += ( isset($pay_stub_entries[20]) ) ? ( ceil( count($pay_stub_entries[20]) / 2 ) + 2 ) : 0;
 				$total_pay_stub_rows += ( isset($pay_stub_entries[50]) ) ? ( count($pay_stub_entries[50]) + 1 ) : 0;
 				$total_pay_stub_rows += ( isset($pay_stub_entries[80]) ) ? ( ceil( count($pay_stub_entries[80]) / 2 ) + 1 ) : 0;
 				$total_pay_stub_rows += ( isset($pay_stub_entry_descriptions) ) ? ( ceil( count($pay_stub_entry_descriptions) / 2 ) + 1 ) : 0;
-				if ( $hide_employer_rows != TRUE ) {
+				if( $hide_employer_rows != TRUE ) {
 					$total_pay_stub_rows += ( isset($pay_stub_entries[30]) ) ? ( ceil( count($pay_stub_entries[30]) / 2 ) + 2 ) : 0;
 				}
 
@@ -3742,109 +3548,6 @@ class PayStubFactory extends Factory {
 					}
 				}
 
-
-				/*
-				Name        Amount (USD)     Amount
-				Check       $100.00 		 $70.00 USD
-				Check       $100.00 @ 0.7232 $70.00 CAD
-
-				Name      				       Amount
-				Check        		 		  $100.00 USD
-				Check ($100.00CAD @ 0.7232)    $70.00 USD
-
-
-				1 USD = 0.88586 EUR (Inverse: 1.12884)
-				1 USD = 1.30736 CAD (Inverse: 0.76490)
-
-				1 EUR = 1.47553 CAD
-				1 EUR = 1.47553 CAD	1 CAD = 0.677725 EUR
-
-				1 CAD =	0.677733 EUR
-				1 CAD = 0.677733 EUR 1 EUR = 1.47551 CAD
-
-				Do Pay stub transactions need to currency_rates? currency_rate to go back to the base currency, and pay_stub_currency_rate to go back to the pay stub currency amount?
-				*/
-
-				//
-				//Transactions
-				//
-				if ( $pstlf->getRecordCount() > 0 ) {
-					//Transaction Header
-					$block_adjust_y = ($block_adjust_y + $cell_height);
-
-					$pdf->SetFont('', 'B', $default_line_item_font_size);
-					$cell_height = $pdf->getStringHeight(10, 'Z');
-
-					$pdf->setXY( Misc::AdjustXY(1, $adjust_x), Misc::AdjustXY($block_adjust_y, $adjust_y) );
-
-					$transaction_header_start_x = $pdf->getX();
-					$transaction_header_start_y = $pdf->getY();
-
-					$multiple_transaction_currency = FALSE;
-					foreach( $pstlf as $pst_obj ) {
-						if ( $pay_stub_obj->getCurrency() != $pst_obj->getCurrency() ) {
-							$multiple_transaction_currency = TRUE;
-							break;
-						}
-					}
-
-					if ( $multiple_transaction_currency == TRUE ) {
-						$pdf->Cell(45, $cell_height, TTi18n::gettext('Payments'), $border, 0, 'L', FALSE, '', 1);
-						$pdf->Cell(20, $cell_height, TTi18n::gettext('Type'), $border, 0, 'R', FALSE, '', 1);
-						$pdf->Cell(23, $cell_height, TTi18n::gettext('Confirm #'), $border, 0, 'R', FALSE, '', 1);
-						$pdf->Cell(50, $cell_height, TTi18n::gettext( 'Currency Conversion' ), $border, 0, 'C', FALSE, '', 1 );
-						$pdf->Cell(35, $cell_height, TTi18n::gettext('Amount'), $border, 0, 'R', FALSE, '', 1);
-					} else {
-						$pdf->Cell(55, $cell_height, TTi18n::gettext('Payments'), $border, 0, 'L', FALSE, '', 1);
-						$pdf->Cell(30, $cell_height, TTi18n::gettext('Type'), $border, 0, 'R', FALSE, '', 1);
-						$pdf->Cell(44, $cell_height, TTi18n::gettext('Confirm #'), $border, 0, 'R', FALSE, '', 1);
-						$pdf->Cell(44, $cell_height, TTi18n::gettext('Amount'), $border, 0, 'R', FALSE, '', 1);
-					}
-
-					$block_adjust_y = ($block_adjust_y + $cell_height);
-					$box_height = $cell_height;
-
-					$pdf->SetFont('', '', $default_line_item_font_size);
-					$cell_height = $pdf->getStringHeight(10, 'Z');
-					foreach( $pstlf as $pst_obj ) {
-						$rda_obj = $pst_obj->getRemittanceDestinationAccountObject();
-						$rsa_obj = $pst_obj->getRemittanceSourceAccountObject();
-						if ( is_object( $rda_obj ) ) {
-
-							$cross_conversion_rate = $pay_stub_obj->getCurrencyObject()->getCrossConversionRate( $pst_obj->getCurrencyObject()->getConversionRate(), $pay_stub_obj->getCurrencyObject()->getConversionRate() );
-							Debug::Text('Transaction Currency: '. $pst_obj->getCurrencyObject()->getISOCode() .'('. $pst_obj->getCurrencyObject()->getConversionRate() .') Pay Stub Currency: '. $pay_stub_obj->getCurrencyObject()->getISOCode() .'('. $pay_stub_obj->getCurrencyObject()->getConversionRate()  .') Cross Rate: '. $cross_conversion_rate, __FILE__, __LINE__, __METHOD__, 10);
-							$pdf->setXY( Misc::AdjustXY( 1, $adjust_x ), Misc::AdjustXY( $block_adjust_y, $adjust_y ) );
-
-							if ( $multiple_transaction_currency == TRUE ) {
-								$pdf->Cell( 45, $cell_height, $rda_obj->getName(), $border, 0, 'L', FALSE, '', 1 );
-								$pdf->Cell( 20, $cell_height, Option::getByKey( $rsa_obj->getType(), $rsa_obj->getOptions( 'type' )), $border, 0, 'R', FALSE, '', 1 );
-								$pdf->Cell( 23, $cell_height, $pst_obj->getConfirmationNumber(), $border, 0, 'R', FALSE, '', 1 );
-								$pdf->Cell( 25, $cell_height, $pay_stub_obj->getCurrencyObject()->getSymbol() . TTi18n::formatNumber( $pst_obj->getAmount(), TRUE, $pay_stub_obj->getCurrencyObject()->getRoundDecimalPlaces() ) . ' ' . $pay_stub_obj->getCurrencyObject()->getISOCode(), $border, 0, 'R', FALSE, '', 1 );
-								$pdf->Cell( 25, $cell_height, '@ ' . Misc::RemoveTrailingZeros(TTi18n::formatNumber( $cross_conversion_rate, TRUE, 6, 6 ), 4), $border, 0, 'L', FALSE, '', 1 );
-								$pdf->Cell( 35, $cell_height, $pst_obj->getCurrencyObject()->getSymbol() . TTi18n::formatNumber( $pay_stub_obj->getCurrencyObject()->convert( $pst_obj->getCurrencyObject()->getConversionRate(), $pay_stub_obj->getCurrencyObject()->getConversionRate(), $pst_obj->getAmount() ), TRUE, $pst_obj->getCurrencyObject()->getRoundDecimalPlaces() ) . ' '. $pst_obj->getCurrencyObject()->getISOCode(), $border, 0, 'R', FALSE, '', 1 );
-
-							} else {
-								$pdf->Cell( 55, $cell_height, $rda_obj->getName(), $border, 0, 'L', FALSE, '', 1 );
-								$pdf->Cell( 30, $cell_height, Option::getByKey( $rsa_obj->getType(), $rsa_obj->getOptions( 'type' )), $border, 0, 'R', FALSE, '', 1 );
-								$pdf->Cell( 44, $cell_height, ( ( $pst_obj->getStatus() == 20 ) ? $pst_obj->getConfirmationNumber() : Option::getByKey( $pst_obj->getStatus(), $pst_obj->getOptions('status') ) ) , $border, 0, 'R', FALSE, '', 1 );
-
-								$stop_payment = ( ( in_array( $pst_obj->getStatus(), array(100, 200) ) ) ? TTi18n::getTExt('SP') . ' ' : '' );
-								$pdf->Cell( 44, $cell_height, $stop_payment . $pst_obj->getCurrencyObject()->getSymbol() . TTi18n::formatNumber( $pay_stub_obj->getCurrencyObject()->convert( $pst_obj->getCurrencyObject()->getConversionRate(), $pay_stub_obj->getCurrencyObject()->getConversionRate(), $pst_obj->getAmount() ), TRUE, $pst_obj->getCurrencyObject()->getRoundDecimalPlaces() ) . ' '. $pst_obj->getCurrencyObject()->getISOCode(), $border, 0, 'R', FALSE, '', 1 );
-							}
-
-							$block_adjust_y = ( $block_adjust_y + $cell_height );
-							$box_height = ( $box_height + $cell_height );
-						}
-					}
-//					$pdf->Rect( $transaction_header_start_x, $transaction_header_start_y, 173, $box_height, NULL, array('all' => array('width' => 0.5, 'cap' => 'butt', 'join' => 'miter', 'dash' => '20,5', 'phase' => 10 ) ) );
-					$pdf->Rect( $transaction_header_start_x, $transaction_header_start_y, 173, $box_height, NULL, array('all' => array('width' => 0.25 ) ) );
-					$pdf->Rect( ($transaction_header_start_x - 1), ( $transaction_header_start_y - 1), 175, ( $box_height + 2 ), NULL, array('all' => array('width' => 0.25 ) ) );
-					$pdf->setLineStyle( array('width' => 0.5 ) ); //Reset LineStyle back to default.
-
-					unset($transaction_header_start_x, $transaction_header_start_y, $box_height, $rda_obj, $rsa_obj, $pst_obj, $cross_conversion_rate);
-				}
-
-
 				//
 				//Accrual Account Balances
 				//
@@ -3937,7 +3640,7 @@ class PayStubFactory extends Factory {
 				if ( $udlf->getRecordCount() > 0 ) {
 					$pdf->setLineWidth( 0.10 );
 
-					//$max_tax_info_rows = ($udlf->getRecordCount() / 2);
+					$max_tax_info_rows = ($udlf->getRecordCount() / 2);
 
 					$left_total_rows = 0;
 					$right_total_rows = 0;
@@ -3986,15 +3689,15 @@ class PayStubFactory extends Factory {
 
 					$pdf->SetFont('', 'B', 6);
 					$pdf->setXY( Misc::AdjustXY(0, $adjust_x), Misc::AdjustXY($block_adjust_y, $adjust_y) );
-					$pdf->Cell(87.5, 3, TTi18n::gettext('Federal'), 'LB', 0, 'C', FALSE, '', 1);
+					$pdf->Cell(87.5, 3, TTi18n::gettext('Federal'), 1, 0, 'C', FALSE, '', 1);
 
 					$pdf->SetFont('', 'B', 6);
 					$pdf->setXY( Misc::AdjustXY(87.5, $adjust_x), Misc::AdjustXY($block_adjust_y, $adjust_y) );
-					$pdf->Cell(87.5, 3, TTi18n::gettext('Province/State'), 'BR', 0, 'C', FALSE, '', 1);
+					$pdf->Cell(87.5, 3, TTi18n::gettext('Province/State'), 1, 0, 'C', FALSE, '', 1);
 
 					$pdf->SetFont('', 'B', 6);
-					$pdf->setXY( Misc::AdjustXY(0, $adjust_x), Misc::AdjustXY(($block_adjust_y - 1.5), $adjust_y) );
-					$pdf->Cell(175, 3, TTi18n::gettext('Tax Information as of') .' '. TTDate::getDate('DATE', time() ), 'LTR', 0, 'C', FALSE, '', 1);
+					$pdf->setXY( Misc::AdjustXY(0, $adjust_x), Misc::AdjustXY(($block_adjust_y - 3), $adjust_y) );
+					$pdf->Cell(175, 3, TTi18n::gettext('Tax Information as of') .' '. TTDate::getDate('DATE', time() ), 1, 0, 'C', FALSE, '', 1);
 				}
 				unset( $udlf, $ud_obj, $left_block_adjust_y, $right_block_adjust_y, $left_total_rows, $right_total_rows );
 
@@ -4046,16 +3749,21 @@ class PayStubFactory extends Factory {
 					$net_pay_amount = TTi18n::formatNumber( $pay_stub_entries[40][0]['amount'], TRUE, $pay_stub_obj->getCurrencyObject()->getRoundDecimalPlaces() );
 				}
 
+				if ( isset($pay_stub_entries[65]) AND count($pay_stub_entries[65]) > 0 ) {
+					$net_pay_label = TTi18n::gettext('Balance');
+				} else {
+					$net_pay_label = TTi18n::gettext('Net Pay');
+				}
+
 				$pdf->SetFont('', 'B', 12);
 				$pdf->setXY( Misc::AdjustXY(75, $adjust_x), Misc::AdjustXY( ($block_adjust_y + 9), $adjust_y) );
-				$pdf->Cell(100, 5, TTi18n::gettext('Net Pay') .': '. $pay_stub_obj->getCurrencyObject()->getSymbol() . $net_pay_amount . ' ' . $pay_stub_obj->getCurrencyObject()->getISOCode(), $border, 1, 'R', FALSE, '', 1);
+				$pdf->Cell(100, 5, $net_pay_label.': '. $pay_stub_obj->getCurrencyObject()->getSymbol() . $net_pay_amount . ' ' . $pay_stub_obj->getCurrencyObject()->getISOCode(), $border, 1, 'R', FALSE, '', 1);
 
 				//Display additional employee information on the pay stub such as job title, SIN, hire date.
 				$block_adjust_y = ($block_adjust_y + 12);
 
 				$pdf->SetFont('', '', 8);
-				if ( TTUUID::isUUID( $user_obj->getTitle() ) AND $user_obj->getTitle() != TTUUID::getZeroID() AND $user_obj->getTitle() != TTUUID::getNotExistID()
-						AND is_object( $user_obj->getTitleObject() ) ) {
+				if ( $user_obj->getTitle() > 0 AND is_object( $user_obj->getTitleObject() ) ) {
 					$block_adjust_y = ($block_adjust_y + 3);
 					$pdf->setXY( Misc::AdjustXY(75, $adjust_x), Misc::AdjustXY($block_adjust_y, $adjust_y) );
 					$pdf->Cell(100, 4, TTi18n::gettext('Title').': '. $user_obj->getTitleObject()->getName(), $border, 1, 'R', FALSE, '', 1);
@@ -4078,7 +3786,7 @@ class PayStubFactory extends Factory {
 
 
 				if ( $pay_stub_obj->getTainted() == TRUE ) {
-					$tainted_flag = '[T]';
+					$tainted_flag = 'T';
 				} else {
 					$tainted_flag = '';
 				}
@@ -4121,10 +3829,6 @@ class PayStubFactory extends Factory {
 		return FALSE;
 	}
 
-	/**
-	 * @param $log_action
-	 * @return bool
-	 */
 	function addLog( $log_action ) {
 		return TTLog::addEntry( $this->getId(), $log_action, TTi18n::getText('Pay Stub') .' - '. TTi18n::getText('Employee') .': '. $this->getUserObject()->getFullName() .' '. TTi18n::getText('Status').': '. Option::getByKey($this->getStatus(), $this->getOptions('status') ) .' '. TTi18n::getText('Start').': '. TTDate::getDate('DATE', $this->getStartDate() ) .' '. TTi18n::getText('End').': '. TTDate::getDate('DATE', $this->getEndDate() ) .' '. TTi18n::getText('Transaction').': '. TTDate::getDate('DATE', $this->getTransactionDate() ), NULL, $this->getTable(), $this );
 	}

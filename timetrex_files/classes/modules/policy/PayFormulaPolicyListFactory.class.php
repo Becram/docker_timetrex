@@ -1,7 +1,7 @@
 <?php
 /*********************************************************************************
  * TimeTrex is a Workforce Management program developed by
- * TimeTrex Software Inc. Copyright (C) 2003 - 2018 TimeTrex Software Inc.
+ * TimeTrex Software Inc. Copyright (C) 2003 - 2017 TimeTrex Software Inc.
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Affero General Public License version 3 as published by
@@ -40,14 +40,7 @@
  */
 class PayFormulaPolicyListFactory extends PayFormulaPolicyFactory implements IteratorAggregate {
 
-	/**
-	 * @param int $limit Limit the number of records returned
-	 * @param int $page Page number of records to return for pagination
-	 * @param array $where Additional SQL WHERE clause in format of array( $column => $filter, ... ). ie: array( 'id' => 1, ... )
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return $this
-	 */
-	function getAll( $limit = NULL, $page = NULL, $where = NULL, $order = NULL) {
+	function getAll($limit = NULL, $page = NULL, $where = NULL, $order = NULL) {
 		$query = '
 					select	*
 					from	'. $this->getTable() .'
@@ -60,13 +53,7 @@ class PayFormulaPolicyListFactory extends PayFormulaPolicyFactory implements Ite
 		return $this;
 	}
 
-	/**
-	 * @param string $id UUID
-	 * @param array $where Additional SQL WHERE clause in format of array( $column => $filter, ... ). ie: array( 'id' => 1, ... )
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return bool|PayFormulaPolicyListFactory
-	 */
-	function getById( $id, $where = NULL, $order = NULL) {
+	function getById($id, $where = NULL, $order = NULL) {
 		if ( $id == '') {
 			return FALSE;
 		}
@@ -74,7 +61,7 @@ class PayFormulaPolicyListFactory extends PayFormulaPolicyFactory implements Ite
 		$this->rs = $this->getCache($id);
 		if ( $this->rs === FALSE ) {
 			$ph = array(
-						'id' => TTUUID::castUUID($id),
+						'id' => (int)$id,
 						);
 
 			$query = '
@@ -93,14 +80,7 @@ class PayFormulaPolicyListFactory extends PayFormulaPolicyFactory implements Ite
 		return $this;
 	}
 
-	/**
-	 * @param string $id UUID
-	 * @param string $company_id UUID
-	 * @param array $where Additional SQL WHERE clause in format of array( $column => $filter, ... ). ie: array( 'id' => 1, ... )
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return bool|PayFormulaPolicyListFactory
-	 */
-	function getByIdAndCompanyId( $id, $company_id, $where = NULL, $order = NULL) {
+	function getByIdAndCompanyId($id, $company_id, $where = NULL, $order = NULL) {
 		if ( $id == '') {
 			return FALSE;
 		}
@@ -117,7 +97,7 @@ class PayFormulaPolicyListFactory extends PayFormulaPolicyFactory implements Ite
 		}
 
 		$ph = array(
-					'company_id' => TTUUID::castUUID($company_id),
+					'company_id' => (int)$company_id,
 					);
 
 		$query = '
@@ -125,7 +105,7 @@ class PayFormulaPolicyListFactory extends PayFormulaPolicyFactory implements Ite
 					from	'. $this->getTable() .'
 					where
 						company_id = ?
-						AND id in ('. $this->getListSQL( $id, $ph, 'uuid' ) .')
+						AND id in ('. $this->getListSQL( $id, $ph, 'int' ) .')
 						AND deleted = 0';
 		$query .= $this->getWhereSQL( $where );
 		$query .= $this->getSortSQL( $order, $strict );
@@ -135,13 +115,7 @@ class PayFormulaPolicyListFactory extends PayFormulaPolicyFactory implements Ite
 		return $this;
 	}
 
-	/**
-	 * @param string $id UUID
-	 * @param array $where Additional SQL WHERE clause in format of array( $column => $filter, ... ). ie: array( 'id' => 1, ... )
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return bool|PayFormulaPolicyListFactory
-	 */
-	function getByCompanyId( $id, $where = NULL, $order = NULL) {
+	function getByCompanyId($id, $where = NULL, $order = NULL) {
 		if ( $id == '') {
 			return FALSE;
 		}
@@ -154,7 +128,7 @@ class PayFormulaPolicyListFactory extends PayFormulaPolicyFactory implements Ite
 		}
 
 		$ph = array(
-					'id' => TTUUID::castUUID($id),
+					'id' => (int)$id,
 					);
 
 
@@ -171,14 +145,7 @@ class PayFormulaPolicyListFactory extends PayFormulaPolicyFactory implements Ite
 		return $this;
 	}
 
-	/**
-	 * @param string $id UUID
-	 * @param string $contributing_shift_policy_id UUID
-	 * @param array $where Additional SQL WHERE clause in format of array( $column => $filter, ... ). ie: array( 'id' => 1, ... )
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return bool|PayFormulaPolicyListFactory
-	 */
-	function getByCompanyIdAndContributingShiftPolicyId( $id, $contributing_shift_policy_id, $where = NULL, $order = NULL) {
+	function getByCompanyIdAndContributingShiftPolicyId($id, $contributing_shift_policy_id, $where = NULL, $order = NULL) {
 		if ( $id == '') {
 			return FALSE;
 		}
@@ -195,7 +162,7 @@ class PayFormulaPolicyListFactory extends PayFormulaPolicyFactory implements Ite
 		}
 
 		$ph = array(
-				'id' => TTUUID::castUUID($id),
+				'id' => (int)$id,
 		);
 
 
@@ -203,8 +170,8 @@ class PayFormulaPolicyListFactory extends PayFormulaPolicyFactory implements Ite
 					select	*
 					from	'. $this->getTable() .' as a
 					where	company_id = ?
-						AND ( wage_source_contributing_shift_policy_id in ('. $this->getListSQL( $contributing_shift_policy_id, $ph, 'uuid' ) .') 
-								OR time_source_contributing_shift_policy_id in ('. $this->getListSQL( $contributing_shift_policy_id, $ph, 'uuid' ) .') )
+						AND ( wage_source_contributing_shift_policy_id in ('. $this->getListSQL( $contributing_shift_policy_id, $ph, 'int' ) .') 
+								OR time_source_contributing_shift_policy_id in ('. $this->getListSQL( $contributing_shift_policy_id, $ph, 'int' ) .') )
 						AND deleted = 0';
 		$query .= $this->getWhereSQL( $where );
 		$query .= $this->getSortSQL( $order, $strict );
@@ -214,14 +181,7 @@ class PayFormulaPolicyListFactory extends PayFormulaPolicyFactory implements Ite
 		return $this;
 	}
 
-	/**
-	 * @param string $id UUID
-	 * @param int $pay_type_id
-	 * @param array $where Additional SQL WHERE clause in format of array( $column => $filter, ... ). ie: array( 'id' => 1, ... )
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return bool|PayFormulaPolicyListFactory
-	 */
-	function getByCompanyIdAndPayTypeId( $id, $pay_type_id, $where = NULL, $order = NULL) {
+	function getByCompanyIdAndPayTypeId($id, $pay_type_id, $where = NULL, $order = NULL) {
 		if ( $id == '') {
 			return FALSE;
 		}
@@ -238,7 +198,7 @@ class PayFormulaPolicyListFactory extends PayFormulaPolicyFactory implements Ite
 		}
 
 		$ph = array(
-					'id' => TTUUID::castUUID($id),
+					'id' => (int)$id,
 					'pay_type_id' => (int)$pay_type_id,
 					);
 
@@ -256,15 +216,6 @@ class PayFormulaPolicyListFactory extends PayFormulaPolicyFactory implements Ite
 		return $this;
 	}
 
-	/**
-	 * @param string $company_id UUID
-	 * @param $filter_data
-	 * @param int $limit Limit the number of records returned
-	 * @param int $page Page number of records to return for pagination
-	 * @param array $where Additional SQL WHERE clause in format of array( $column => $filter, ... ). ie: array( 'id' => 1, ... )
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return bool|PayFormulaPolicyListFactory
-	 */
 	function getAPISearchByCompanyIdAndArrayCriteria( $company_id, $filter_data, $limit = NULL, $page = NULL, $where = NULL, $order = NULL ) {
 		if ( $company_id == '') {
 			return FALSE;
@@ -307,13 +258,12 @@ class PayFormulaPolicyListFactory extends PayFormulaPolicyFactory implements Ite
 		$bpf = new BreakPolicyFactory();
 
 		$ph = array(
-					'company_id' => TTUUID::castUUID($company_id),
+					'company_id' => (int)$company_id,
 					);
 
 		$query = '
-					select	
+					select	a.*,
 							_ADODB_COUNT
-							a.*,
 							(
 								CASE WHEN EXISTS
 									( select 1 from '. $pcf->getTable() .' as x where x.pay_formula_policy_id = a.id and x.deleted = 0)
@@ -364,9 +314,9 @@ class PayFormulaPolicyListFactory extends PayFormulaPolicyFactory implements Ite
 					where	a.company_id = ?
 					';
 
-		$query .= ( isset($filter_data['permission_children_ids']) ) ? $this->getWhereClauseSQL( 'a.created_by', $filter_data['permission_children_ids'], 'uuid_list', $ph ) : NULL;
-		$query .= ( isset($filter_data['id']) ) ? $this->getWhereClauseSQL( 'a.id', $filter_data['id'], 'uuid_list', $ph ) : NULL;
-		$query .= ( isset($filter_data['exclude_id']) ) ? $this->getWhereClauseSQL( 'a.id', $filter_data['exclude_id'], 'not_uuid_list', $ph ) : NULL;
+		$query .= ( isset($filter_data['permission_children_ids']) ) ? $this->getWhereClauseSQL( 'a.created_by', $filter_data['permission_children_ids'], 'numeric_list', $ph ) : NULL;
+		$query .= ( isset($filter_data['id']) ) ? $this->getWhereClauseSQL( 'a.id', $filter_data['id'], 'numeric_list', $ph ) : NULL;
+		$query .= ( isset($filter_data['exclude_id']) ) ? $this->getWhereClauseSQL( 'a.id', $filter_data['exclude_id'], 'not_numeric_list', $ph ) : NULL;
 
 		$query .= ( isset($filter_data['name']) ) ? $this->getWhereClauseSQL( 'a.name', $filter_data['name'], 'text', $ph ) : NULL;
 		$query .= ( isset($filter_data['description']) ) ? $this->getWhereClauseSQL( 'a.description', $filter_data['description'], 'text', $ph ) : NULL;
@@ -374,8 +324,8 @@ class PayFormulaPolicyListFactory extends PayFormulaPolicyFactory implements Ite
 		$query .= ( isset($filter_data['pay_type_id']) ) ? $this->getWhereClauseSQL( 'a.pay_type_id', $filter_data['pay_type_id'], 'numeric_list', $ph ) : NULL;
 		$query .= ( isset($filter_data['wage_source_type_id']) ) ? $this->getWhereClauseSQL( 'a.wage_source_type_id', $filter_data['wage_source_type_id'], 'numeric_list', $ph ) : NULL;
 
-		$query .= ( isset($filter_data['wage_group_id']) ) ? $this->getWhereClauseSQL( 'a.wage_group_id', $filter_data['wage_group_id'], 'uuid_list', $ph ) : NULL;
-		$query .= ( isset($filter_data['accrual_policy_account_id']) ) ? $this->getWhereClauseSQL( 'a.accrual_policy_account_id', $filter_data['accrual_policy_account_id'], 'uuid_list', $ph ) : NULL;
+		$query .= ( isset($filter_data['wage_group_id']) ) ? $this->getWhereClauseSQL( 'a.wage_group_id', $filter_data['wage_group_id'], 'numeric_list', $ph ) : NULL;
+		$query .= ( isset($filter_data['accrual_policy_account_id']) ) ? $this->getWhereClauseSQL( 'a.accrual_policy_account_id', $filter_data['accrual_policy_account_id'], 'numeric_list', $ph ) : NULL;
 
 		$query .= ( isset($filter_data['created_by']) ) ? $this->getWhereClauseSQL( array('a.created_by', 'y.first_name', 'y.last_name'), $filter_data['created_by'], 'user_id_or_name', $ph ) : NULL;
 		$query .= ( isset($filter_data['updated_by']) ) ? $this->getWhereClauseSQL( array('a.updated_by', 'z.first_name', 'z.last_name'), $filter_data['updated_by'], 'user_id_or_name', $ph ) : NULL;

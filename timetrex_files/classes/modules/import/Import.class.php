@@ -1,7 +1,7 @@
 <?php
 /*********************************************************************************
  * TimeTrex is a Workforce Management program developed by
- * TimeTrex Software Inc. Copyright (C) 2003 - 2018 TimeTrex Software Inc.
+ * TimeTrex Software Inc. Copyright (C) 2003 - 2017 TimeTrex Software Inc.
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Affero General Public License version 3 as published by
@@ -64,11 +64,6 @@ class Import {
 	public $job_item_options = FALSE;
 	public $job_item_manual_id_options = FALSE;
 
-	protected $search_column_priority = NULL;
-
-	/**
-	 * @return null|object
-	 */
 	function getObject() {
 		if ( !is_object($this->obj) ) {
 			$this->obj = TTnew( $this->class_name );
@@ -78,17 +73,11 @@ class Import {
 		return $this->obj;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function getCompanyObject() {
 		$cf = new CompanyFactory();
 		return $cf->getGenericObject( 'CompanyListFactory', $this->company_id, 'company_obj' );
 	}
 
-	/**
-	 * @return null|ProgressBar
-	 */
 	function getProgressBarObject() {
 		if	( !is_object( $this->progress_bar_obj ) ) {
 			$this->progress_bar_obj = new ProgressBar();
@@ -97,21 +86,12 @@ class Import {
 		return $this->progress_bar_obj;
 	}
 	//Returns the AMF messageID for each individual call.
-
-	/**
-	 * @return bool|null
-	 */
 	function getAMFMessageID() {
 		if ( $this->AMF_message_id != NULL ) {
 			return $this->AMF_message_id;
 		}
 		return FALSE;
 	}
-
-	/**
-	 * @param string $id UUID
-	 * @return bool
-	 */
 	function setAMFMessageID( $id ) {
 		if ( $id != '' ) {
 			$this->AMF_message_id = $id;
@@ -121,12 +101,7 @@ class Import {
 		return FALSE;
 	}
 
-	/**
-	 * @param $name
-	 * @param null $parent
-	 * @return array|bool|mixed
-	 */
-	function getOptions( $name, $parent = NULL) {
+	function getOptions($name, $parent = NULL) {
 		if ( $parent == NULL OR $parent == '') {
 			$retarr = $this->_getFactoryOptions( $name );
 		} else {
@@ -149,20 +124,10 @@ class Import {
 
 		return FALSE;
 	}
-
-	/**
-	 * @param $name
-	 * @param null $parent
-	 * @return bool
-	 */
 	protected function _getFactoryOptions( $name, $parent = NULL ) {
 		return FALSE;
 	}
 
-	/**
-	 * @param int $limit Limit the number of records returned
-	 * @return array|bool|mixed
-	 */
 	function getRawData( $limit = NULL ) {
 		if ( isset($this->data['raw_data']) ) {
 			Debug::Text('zRaw Data Size: '. count($this->data['raw_data']), __FILE__, __LINE__, __METHOD__, 10);
@@ -180,12 +145,7 @@ class Import {
 
 		return FALSE;
 	}
-
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setRawData( $value) {
+	function setRawData($value) {
 		if ( $value != '' ) {
 			Debug::Text('Raw Data Size: '. count($value), __FILE__, __LINE__, __METHOD__, 10);
 			$this->data['raw_data'] = $value;
@@ -195,10 +155,6 @@ class Import {
 
 		return FALSE;
 	}
-
-	/**
-	 * @return bool
-	 */
 	function getRawDataFromFile() {
 		$file_name = $this->getStoragePath().$this->getLocalFileName();
 		if ( file_exists( $file_name ) ) {
@@ -209,11 +165,6 @@ class Import {
 		Debug::Text('Loading data from file: '. $file_name .' Failed!', __FILE__, __LINE__, __METHOD__, 10);
 		return FALSE;
 	}
-
-	/**
-	 * @param $data
-	 * @return bool|int
-	 */
 	function saveRawDataToFile( $data ) {
 		Debug::Text('Company ID: '. $this->company_id, __FILE__, __LINE__, __METHOD__, 10);
 		$dir = $this->getStoragePath();
@@ -226,10 +177,6 @@ class Import {
 
 		return FALSE;
 	}
-
-	/**
-	 * @return array|bool
-	 */
 	function getRawDataColumns() {
 		$raw_data = $this->getRawData();
 		if ( is_array( $raw_data ) ) {
@@ -250,20 +197,12 @@ class Import {
 		return FALSE;
 	}
 
-	/**
-	 * @return mixed
-	 */
 	function getParsedData() {
 		if ( isset($this->data['parsed_data']) ) {
 			return $this->data['parsed_data'];
 		}
 	}
-
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setParsedData( $value) {
+	function setParsedData($value) {
 		if ( $value != '' ) {
 			$this->data['parsed_data'] = $value;
 
@@ -274,16 +213,12 @@ class Import {
 	}
 
 	//Generates a "best fit" column map array.
-
-	/**
-	 * @return array|bool
-	 */
 	function generateColumnMap() {
 		$raw_data_columns = $this->getRawDataColumns();
-		Debug::Arr($raw_data_columns, 'Raw Data Columns:', __FILE__, __LINE__, __METHOD__, 10);
+		//Debug::Arr($raw_data_columns, 'Raw Data Columns:', __FILE__, __LINE__, __METHOD__, 10);
 
 		$columns = Misc::trimSortPrefix( $this->getOptions('columns') );
-		Debug::Arr($columns, 'Object Columns:', __FILE__, __LINE__, __METHOD__, 10);
+		//Debug::Arr($columns, 'Object Columns:', __FILE__, __LINE__, __METHOD__, 10);
 
 		//unset($columns['middle_name']); //This often conflicts with Last Name, so ignore mapping it by default. But then it won't work even for an exact match.
 
@@ -292,15 +227,11 @@ class Import {
 			$matched_columns = array();
 			foreach( $raw_data_columns as $raw_data_key => $raw_data_column ) {
 				$matched_column_key = Misc::findClosestMatch( $raw_data_column, $columns, 60 );
-				if ( $matched_column_key !== FALSE AND isset( $columns[ $matched_column_key ] ) ) {
-					if ( in_array( $matched_column_key, $matched_columns) !== FALSE ) { //Once a file column is matched to a TimeTrex field, don't match it again.
-						Debug::Text( 'Column already matched: ' . $raw_data_column, __FILE__, __LINE__, __METHOD__, 10 );
-					} else {
-						Debug::Text( 'Close match for: ' . $raw_data_column . ' Match: ' . $matched_column_key, __FILE__, __LINE__, __METHOD__, 10 );
-						$matched_columns[ $raw_data_column ] = $matched_column_key;
-					}
+				if ( $matched_column_key !== FALSE AND isset($columns[$matched_column_key]) ) {
+					Debug::Text('Close match for: '. $raw_data_column .' Match: '. $matched_column_key, __FILE__, __LINE__, __METHOD__, 10);
+					$matched_columns[$raw_data_column] = $matched_column_key;
 				} else {
-					Debug::Text( 'No close match for: ' . $raw_data_column, __FILE__, __LINE__, __METHOD__, 10 );
+					Debug::Text('No close match for: '. $raw_data_column, __FILE__, __LINE__, __METHOD__, 10);
 				}
 			}
 			unset($raw_data_column, $raw_data_key, $matched_column_key);
@@ -330,28 +261,16 @@ class Import {
 	//Takes a saved column map and tries to merge it with existing column data from the file.
 	//Needs to account for manually added columns that don't exist in the file already.
 	//Needs to account for less/more columns added to the file itself.
-	/**
-	 * @param $saved_column_map
-	 * @return mixed
-	 */
 	function mergeColumnMap( $saved_column_map ) {
 		return $saved_column_map;
 	}
 
-	/**
-	 * @return mixed
-	 */
 	function getColumnMap() {
 		if ( isset($this->data['column_map']) ) {
 			return $this->data['column_map'];
 		}
 	}
-
-	/**
-	 * @param $import_map_arr
-	 * @return bool
-	 */
-	function setColumnMap( $import_map_arr ) {
+	function setColumnMap($import_map_arr) {
 		//
 		// Array(
 		//			$column_name => array( 'map_column_name' => 'user_name', 'default_value' => 'blah', 'parse_hint' => 'm/d/y' ),
@@ -360,22 +279,20 @@ class Import {
 		//
 		// This must support columns that may not exist in the actual system, so they can be converted to ones that do.
 		$filtered_import_map = array();
-		if ( is_array( $import_map_arr ) ) {
-			foreach ( $import_map_arr as $import_column => $map_cols ) {
-				if ( ( isset( $map_cols['map_column_name'] ) AND isset( $map_cols['default_value'] ) )
-						AND ( $map_cols['map_column_name'] != '' OR $map_cols['default_value'] != '' ) ) {
-					Debug::Text( 'Import Column: ' . $import_column . ' => ' . $map_cols['map_column_name'] . ' Default: ' . $map_cols['default_value'], __FILE__, __LINE__, __METHOD__, 10 );
+		foreach( $import_map_arr as $import_column => $map_cols ) {
+			if ( ( isset( $map_cols['map_column_name'] ) AND isset( $map_cols['default_value'] ) )
+					AND ( $map_cols['map_column_name'] != '' OR $map_cols['default_value'] != '' ) ) {
+				Debug::Text('Import Column: '. $import_column .' => '. $map_cols['map_column_name'] .' Default: '. $map_cols['default_value'], __FILE__, __LINE__, __METHOD__, 10);
 
-					$filtered_import_map[ $import_column ] = array(
-							'import_column'   => $import_column,
-							'map_column_name' => $map_cols['map_column_name'],
-							'default_value'   => $map_cols['default_value'],
-							'parse_hint'      => $map_cols['parse_hint'],
-					);
+				$filtered_import_map[$import_column] = array(
+												'import_column' => $import_column,
+												'map_column_name' => $map_cols['map_column_name'],
+												'default_value' => $map_cols['default_value'],
+												'parse_hint' => $map_cols['parse_hint'],
+												);
 
-				} else {
-					Debug::Text( 'Import Column: ' . $import_column . ' Skipping...', __FILE__, __LINE__, __METHOD__, 10 );
-				}
+			} else {
+				Debug::Text('Import Column: '. $import_column .' Skipping...', __FILE__, __LINE__, __METHOD__, 10);
 			}
 		}
 
@@ -388,10 +305,6 @@ class Import {
 		return FALSE;
 	}
 
-	/**
-	 * @param null $key
-	 * @return bool|mixed|null
-	 */
 	function getImportOptions( $key = NULL ) {
 		if ( isset($this->data['import_options']) ) {
 			if ( $key == '' ) {
@@ -408,11 +321,6 @@ class Import {
 
 		return FALSE;
 	}
-
-	/**
-	 * @param $value
-	 * @return bool
-	 */
 	function setImportOptions( $value ) {
 		if ( is_array($value) ) {
 			$this->data['import_options'] = Misc::trimSortPrefix( $value );
@@ -424,12 +332,6 @@ class Import {
 		return FALSE;
 	}
 
-	/**
-	 * @param $function_name
-	 * @param $map_data
-	 * @param null $raw_row
-	 * @return mixed|string
-	 */
 	function callInputParseFunction( $function_name, $map_data, $raw_row = NULL ) {
 		$full_function_name = 'parse_'.$function_name;
 
@@ -479,9 +381,6 @@ class Import {
 	}
 
 
-	/**
-	 * @return bool
-	 */
 	function preProcess() {
 		if ( method_exists( $this, '_preProcess' ) ) {
 			return $this->_preProcess();
@@ -490,33 +389,22 @@ class Import {
 		return TRUE;
 	}
 
-	/**
-	 * @param $column_map
-	 * @param $raw_row
-	 * @return bool
-	 */
 	function mapRowData( $column_map, $raw_row ) {
 		foreach( $column_map as $import_column => $import_data ) {
 			//Debug::Arr($import_data, 'Import Data: Column: '. $import_column .' File Column Name: '. $import_data['map_column_name'], __FILE__, __LINE__, __METHOD__, 10);
 			//Don't allow importing "id" columns.
 			if ( strtolower($import_column) != 'id' AND $import_column !== 0 ) {
-				if ( isset($column_map[$import_column]['map_column_name']) ) {
-					if ( isset( $raw_row[ $column_map[$import_column]['map_column_name'] ] ) ) { //Don't check for != '' here, as that will prevent blank fields from being imported, like blank termination dates that need to be blanked out: AND $raw_row[$column_map[$import_column]['map_column_name']] != ''
-						$input = '';
-						//Make sure we check for proper UTF8 encoding and if its not remove the data so we don't cause a PGSQL invalid byte sequence error.
-						if ( function_exists( 'mb_check_encoding' ) AND mb_check_encoding( $raw_row[ $column_map[ $import_column ]['map_column_name'] ], 'UTF-8' ) === TRUE ) {
-							$input = $raw_row[ $column_map[ $import_column ]['map_column_name'] ];
-						} else {
-							Debug::Text( 'Bad UTF8 encoding!: ' . $input, __FILE__, __LINE__, __METHOD__, 10 );
-						}
-
-						$input = trim( $input ); //This can affect things like Country/Province matching.
-						$retarr[ $import_column ] = $input;
-					} elseif( isset( $column_map[$import_column]['default_value'] ) AND $column_map[$import_column]['default_value'] != '' )  { //If a simulated/non-existent column is added just to the mapping, and doesn't exist in the file, make sure we still pass that through so default values can be used and such.
-						$retarr[ $import_column ] = '';
+				if ( isset($column_map[$import_column]['map_column_name']) AND isset($raw_row[$column_map[$import_column]['map_column_name']]) ) { //Don't check for != '' here, as that will prevent blank fields from being imported, like blank termination dates that need to be blanked out: AND $raw_row[$column_map[$import_column]['map_column_name']] != ''
+					$input = '';
+					//Make sure we check for proper UTF8 encoding and if its not remove the data so we don't cause a PGSQL invalid byte sequence error.
+					if ( function_exists( 'mb_check_encoding' ) AND mb_check_encoding( $raw_row[$column_map[$import_column]['map_column_name']], 'UTF-8' ) === TRUE ) {
+						$input = $raw_row[$column_map[$import_column]['map_column_name']];
+					} else {
+						Debug::Text( 'Bad UTF8 encoding!: ' . $input, __FILE__, __LINE__, __METHOD__, 10 );
 					}
-				} else {
-					Debug::Text('  Column not mapped: '. $import_column, __FILE__, __LINE__, __METHOD__, 10);
+
+					$input = trim($input); //This can affect things like Country/Province matching.
+					$retarr[$import_column] = $input;
 				}
 			}
 		}
@@ -530,11 +418,6 @@ class Import {
 		return FALSE;
 	}
 
-	/**
-	 * @param $row_number
-	 * @param $raw_row
-	 * @return mixed
-	 */
 	function preParseRow( $row_number, $raw_row ) {
 		if ( method_exists( $this, '_preParseRow' ) ) {
 			return $this->_preParseRow( $row_number, $raw_row );
@@ -542,12 +425,6 @@ class Import {
 
 		return $raw_row;
 	}
-
-	/**
-	 * @param $row_number
-	 * @param $raw_row
-	 * @return mixed
-	 */
 	function postParseRow( $row_number, $raw_row ) {
 
 		if ( method_exists( $this, '_postParseRow' ) ) {
@@ -573,9 +450,6 @@ class Import {
 	//Parse data while applying any parse hints.
 	//This converts the raw data into something that can be passed directly to the setObjectAsArray functions for this object.
 	//Which may include converting one column into multiples and vice versa.
-	/**
-	 * @return bool
-	 */
 	function parseData() {
 		$raw_data = $this->getRawData();
 		$column_map = $this->getColumnMap();
@@ -620,11 +494,6 @@ class Import {
 //				}
 //			}
 
-			//each row needs to carry the overwrite flag
-			if ( $this->getImportOptions('overwrite') ) {
-				$parsed_data[$x]['overwrite'] = TRUE;
-			}
-
 			if ( is_array($raw_row) ) {
 				foreach( $raw_row as $import_column => $import_data ) {
 					//Debug::Arr($import_data, 'Import Data X: '. $x .' Column: '. $import_column .' File Column Name: '. $import_data['map_column_name'], __FILE__, __LINE__, __METHOD__, 10);
@@ -632,13 +501,7 @@ class Import {
 					//Debug::Arr($parsed_data[$x][$import_column], 'Import Column: '. $import_column .' Value: ', __FILE__, __LINE__, __METHOD__, 10);
 				}
 
-				$post_parsed_row = $this->postParseRow( $x, $parsed_data[$x] );
-				if ( is_array( $post_parsed_row ) ) {
-					$parsed_data[$x] = $post_parsed_row; //This needs to run for each row so things like manual_ids can get updated automatically.
-				} else {
-					Debug::Text('  Skipping blank or row that failed postParseRow(): '. $x, __FILE__, __LINE__, __METHOD__, 10);
-					unset($parsed_data[$x]);
-				}
+				$parsed_data[$x] = $this->postParseRow( $x, $parsed_data[$x] ); //This needs to run for each row so things like manual_ids can get updated automatically.
 			}
 
 			$this->getProgressBarObject()->set( $this->getAMFMessageID(), $x );
@@ -654,11 +517,6 @@ class Import {
 	}
 
 	//This function can't be named "import" as it will be called during __construct() then.
-
-	/**
-	 * @param bool $validate_only
-	 * @return bool
-	 */
 	function process( $validate_only = FALSE ) {
 		//Because parse functions can create additional records (like groups, titles, branches)
 		//we need to wrap those in a transaction so they can be rolled back on validate_only calls.
@@ -714,9 +572,6 @@ class Import {
 	//
 	// File upload functions.
 	//
-	/**
-	 * @return array|bool
-	 */
 	function getLocalFileData() {
 		$file_name = $this->getStoragePath().$this->getLocalFileName();
 		if ( file_exists($file_name) ) {
@@ -728,20 +583,12 @@ class Import {
 		return FALSE;
 	}
 
-	/**
-	 * @return mixed
-	 */
 	function getRemoteFileName() {
 		if ( isset($this->data['remote_file_name']) ) {
 			return $this->data['remote_file_name'];
 		}
 	}
-
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setRemoteFileName( $value) {
+	function setRemoteFileName($value) {
 		if ( $value != '' ) {
 			$this->data['remote_file_name'] = $value;
 
@@ -751,20 +598,13 @@ class Import {
 		return FALSE;
 	}
 
-	/**
-	 * @return string
-	 */
 	function getLocalFileName() {
 		$retval = md5( $this->company_id.$this->user_id );
 		Debug::Text('Local File Name: '. $retval, __FILE__, __LINE__, __METHOD__, 10);
 		return $retval;
 	}
 
-	/**
-	 * @param string $company_id UUID
-	 * @return bool
-	 */
-	function cleanStoragePath( $company_id = NULL) {
+	function cleanStoragePath($company_id = NULL) {
 		if ( $company_id == '' ) {
 			$company_id = $this->company_id;
 		}
@@ -779,17 +619,12 @@ class Import {
 			//Delete tmp files.
 			foreach(glob($dir.'*') as $filename) {
 				unlink($filename);
-				Misc::deleteEmptyDirectory( dirname( $filename ), 0 ); //Recurse to $user_id parent level and remove empty directories.
 			}
 		}
 
 		return TRUE;
 	}
 
-	/**
-	 * @param string $company_id UUID
-	 * @return bool|string
-	 */
 	function getStoragePath( $company_id = NULL ) {
 		if ( $company_id == '' ) {
 			$company_id = $this->company_id;
@@ -803,9 +638,6 @@ class Import {
 		return $config_vars['cache']['dir'] . DIRECTORY_SEPARATOR .'import'. DIRECTORY_SEPARATOR . $company_id . DIRECTORY_SEPARATOR;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function renameLocalFile() {
 		$src_file = $this->getStoragePath().$this->getRemoteFileName();
 		$dst_file = $this->getStoragePath().$this->getLocalFileName();
@@ -818,9 +650,6 @@ class Import {
 		return FALSE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function deleteLocalFile() {
 		$file = $this->getStoragePath().$this->getLocalFileName();
 
@@ -835,12 +664,6 @@ class Import {
 	//
 	// Generic parser functions.
 	//
-	/**
-	 * @param $input
-	 * @param $options
-	 * @param int $match_percent
-	 * @return array|bool|mixed
-	 */
 	function findClosestMatch( $input, $options, $match_percent = 50 ) {
 		//We used to check for the option KEY, but that causes problems if the job code/job name are numeric values
 		//that happen to match the record ID in the database. Use this as a fallback method instead perhaps?
@@ -865,13 +688,8 @@ class Import {
 	}
 
 	//Used by sub-classes to get general users while importing data.
-
-	/**
-	 * @param string $user_id UUID
-	 * @return bool
-	 */
 	function getUserObject( $user_id ) {
-		if ( $user_id != '' ) {
+		if ( $user_id > 0 ) {
 			$ulf = TTnew( 'UserListFactory' );
 			$ulf->getByCompanyIdAndID( $this->company_id, $user_id );
 			if ( $ulf->getRecordCount() == 1 ) {
@@ -881,65 +699,29 @@ class Import {
 		return FALSE;
 	}
 
-	/**
-	 * @return array|null
-	 */
 	function getUserIdentificationColumns() {
 		$uf = TTNew('UserFactory');
 		$retval = Misc::arrayIntersectByKey( array('user_name', 'employee_number', 'sin'), Misc::trimSortPrefix( $uf->getOptions('columns') ) );
 
 		return $retval;
 	}
-
-	/**
-	 * @param $raw_row
-	 * @return bool
-	 */
 	function getUserIDByRowData( $raw_row ) {
 		//NOTE: Keep in mind that employee numbers can be duplicate based on status (ACTIVE vs TERMINATED), so
 		//if there are ever duplicate employee numbers, the import process won't be able to differentiate between them, and the
 		//update process will not work.
 		//Actually, the above is no longer the case.
 		//  **Make sure data is mapped before passed into this function, otherwise it will fail completely. We added mapRowData() to handle this and it should be called before preParseData() is now.
-		//  If they want to import/update the user_name, they can't, since its the 1st priority and used to find the employee record, but it wouldn't exist as they would be importing the new value.
-		//    So maybe we could use the order specified in the mapping to define the priority to be used during searches?
-
-		//Cache the $this->search_column_priority in the object so we aren't doing this work on every row.
-		if ( $this->search_column_priority == NULL ) {
-			//Possible search columns, in priority order.
-			$search_columns = array('user_name', 'sin', 'employee_number');
-
-			//Loop over column map to find any $search_columns in the order specified in the map "parse hint" column, ie: 1, 2, 3
-			$column_map = Sort::arrayMultiSort( $this->getColumnMap(), array('parse_hint' => SORT_ASC) );
-			foreach ( $column_map as $key => $map_data ) {
-				if ( in_array( (string)$map_data['import_column'], $search_columns ) ) { //Cast to string to avoid (int)0 matching in every case.
-					$this->search_column_priority[] = $map_data['import_column'];
-				}
-			}
-
-			//If no search columns are found in the map, just use defaults.
-			if ( !is_array( $this->search_column_priority ) ) {
-				$this->search_column_priority = $search_columns;
-			}
-
-			Debug::Arr($this->search_column_priority, 'Search Column Priority Arr: ', __FILE__, __LINE__, __METHOD__, 10);
-		}
-
-		$filter_data = NULL;
-		foreach( $this->search_column_priority as $search_column ) {
-			if ( isset($raw_row[$search_column]) AND $raw_row[$search_column] != '' ) {
-				$value = $raw_row[$search_column];
-				if ( $search_column == 'user_name' ) {
-					$value = '"'. $value .'"'; //When matching username, make sure its an exact match rather than a fuzzy match, otherwise its easy to match multiple records, causing the import to fail. ie: "john.doe" matches "john.does"
-				}
-
-				$filter_data = array( $search_column => $value );
-				Debug::Text('Searching for existing record based on Column: '. $search_column .' Value: '. $raw_row[$search_column], __FILE__, __LINE__, __METHOD__, 10);
-				break;
-			}
-		}
-
-		if ( !isset($filter_data) ) {
+		if ( isset($raw_row['user_name']) AND $raw_row['user_name'] != '' ) {
+			$filter_data = array( 'user_name' => $raw_row['user_name'] );
+			Debug::Text('Searching for existing record based on User Name: '. $raw_row['user_name'], __FILE__, __LINE__, __METHOD__, 10);
+		} elseif ( isset($raw_row['sin']) AND $raw_row['sin'] != '' ) {
+			//Search for SIN before employee_number, as employee numbers are more likely to change.
+			$filter_data = array( 'sin' => $raw_row['sin'] );
+			Debug::Text('Searching for existing record based on SIN: '. (int)$raw_row['sin'], __FILE__, __LINE__, __METHOD__, 10);
+		} elseif ( isset($raw_row['employee_number']) AND $raw_row['employee_number'] != '' ) {
+			$filter_data = array( 'employee_number' => (int)$raw_row['employee_number'] );
+			Debug::Text('Searching for existing record based on Employee Number: '. (int)$raw_row['employee_number'], __FILE__, __LINE__, __METHOD__, 10);
+		} else {
 			Debug::Text('No suitable columns for identifying the employee were specified... ', __FILE__, __LINE__, __METHOD__, 10);
 		}
 
@@ -959,9 +741,8 @@ class Import {
 					//return $tmp_user_obj->getID();
 					$this->user_id_cache[$cache_id] = $tmp_user_obj->getID();
 					return $this->user_id_cache[$cache_id];
-				} elseif ( $ulf->getRecordCount() > 0 ) {
-					Debug::Text('Found more than one record, unable to match...', __FILE__, __LINE__, __METHOD__, 10);
 				}
+
 			}
 		}
 
@@ -969,14 +750,6 @@ class Import {
 		return FALSE;
 	}
 
-	/**
-	 * @param $column
-	 * @param $input
-	 * @param null $default_value
-	 * @param null $parse_hint
-	 * @param null $raw_row
-	 * @return mixed|string
-	 */
 	function _parse_name( $column, $input, $default_value = NULL, $parse_hint = NULL, $raw_row = NULL ) {
 		if ( $parse_hint == '' ) {
 			$parse_hint = 'first_name';
@@ -1046,46 +819,16 @@ class Import {
 		return $retval;
 	}
 
-	/**
-	 * @param $input
-	 * @param null $default_value
-	 * @param null $parse_hint
-	 * @param null $raw_row
-	 * @return mixed|string
-	 */
 	function parse_first_name( $input, $default_value = NULL, $parse_hint = NULL, $raw_row = NULL ) {
 		return $this->_parse_name( 'first_name', $input, $default_value, $parse_hint, $raw_row );
 	}
-
-	/**
-	 * @param $input
-	 * @param null $default_value
-	 * @param null $parse_hint
-	 * @param null $raw_row
-	 * @return mixed|string
-	 */
 	function parse_middle_name( $input, $default_value = NULL, $parse_hint = NULL, $raw_row = NULL ) {
 		return $this->_parse_name( 'middle_name', $input, $default_value, $parse_hint, $raw_row );
 	}
-
-	/**
-	 * @param $input
-	 * @param null $default_value
-	 * @param null $parse_hint
-	 * @param null $raw_row
-	 * @return mixed|string
-	 */
 	function parse_last_name( $input, $default_value = NULL, $parse_hint = NULL, $raw_row = NULL ) {
 		return $this->_parse_name( 'last_name', $input, $default_value, $parse_hint, $raw_row );
 	}
 
-	/**
-	 * @param $input
-	 * @param null $default_value
-	 * @param null $parse_hint
-	 * @param null $raw_row
-	 * @return string
-	 */
 	function parse_postal_code( $input, $default_value = NULL, $parse_hint = NULL, $raw_row = NULL ) {
 		//Excel likes to strip leading zeros from fields, so take 4 digit US zip codes and prepend the zero.
 		if ( is_numeric( $input) AND strlen( $input ) <= 4 AND strlen( $input ) >= 1 ) {
@@ -1096,58 +839,22 @@ class Import {
 	}
 
 
-	/**
-	 * @param $input
-	 * @param null $default_value
-	 * @param null $parse_hint
-	 * @param null $raw_row
-	 * @return mixed
-	 */
 	function parse_phone( $input, $default_value = NULL, $parse_hint = NULL, $raw_row = NULL ) {
 		$input = str_replace( array('/'), '-', $input);
 
 		return $input;
 	}
 
-	/**
-	 * @param $input
-	 * @param null $default_value
-	 * @param null $parse_hint
-	 * @param null $raw_row
-	 * @return mixed
-	 */
 	function parse_work_phone( $input, $default_value = NULL, $parse_hint = NULL, $raw_row = NULL ) {
 		return $this->parse_phone( $input, $default_value = NULL, $parse_hint = NULL, $raw_row = NULL );
 	}
-
-	/**
-	 * @param $input
-	 * @param null $default_value
-	 * @param null $parse_hint
-	 * @param null $raw_row
-	 * @return mixed
-	 */
 	function parse_home_phone( $input, $default_value = NULL, $parse_hint = NULL, $raw_row = NULL ) {
 		return $this->parse_phone( $input, $default_value = NULL, $parse_hint = NULL, $raw_row = NULL );
 	}
-
-	/**
-	 * @param $input
-	 * @param null $default_value
-	 * @param null $parse_hint
-	 * @param null $raw_row
-	 * @return mixed
-	 */
 	function parse_fax_phone( $input, $default_value = NULL, $parse_hint = NULL, $raw_row = NULL ) {
 		return $this->parse_phone( $input, $default_value = NULL, $parse_hint = NULL, $raw_row = NULL );
 	}
 
-	/**
-	 * @param $input
-	 * @param null $default_value
-	 * @param null $parse_hint
-	 * @return false|int
-	 */
 	function parse_date( $input, $default_value = NULL, $parse_hint = NULL ) {
 		if ( $input != '' ) { //Don't try to parse a blank date, this helps in cases where hire/termination dates are imported blank.
 			if ( isset($parse_hint) AND $parse_hint != '' ) {
@@ -1161,12 +868,6 @@ class Import {
 		return $input;
 	}
 
-	/**
-	 * @param $input
-	 * @param null $default_value
-	 * @param null $parse_hint
-	 * @return bool|float|int|number|string
-	 */
 	function parse_time_unit( $input, $default_value = NULL, $parse_hint = NULL ) {
 		if ( $input != '' ) { //Don't try to parse a blank date, this helps in cases where hire/termination dates are imported blank.
 			if ( isset($parse_hint) AND $parse_hint != '' ) {
@@ -1180,13 +881,6 @@ class Import {
 		return $input;
 	}
 
-	/**
-	 * @param $input
-	 * @param null $default_value
-	 * @param null $parse_hint
-	 * @param null $raw_row
-	 * @return int
-	 */
 	function parse_sex( $input, $default_value = NULL, $parse_hint = NULL, $raw_row = NULL ) {
 		if ( strtolower( $input ) == 'f'
 				OR strtolower( $input ) == 'female' ) {
@@ -1201,12 +895,6 @@ class Import {
 		return $retval;
 	}
 
-	/**
-	 * @param $input
-	 * @param null $default_value
-	 * @param null $parse_hint
-	 * @return array|bool|mixed
-	 */
 	function parse_country( $input, $default_value = NULL, $parse_hint = NULL ) {
 		$cf = TTnew('CompanyFactory');
 		$options = $cf->getOptions( 'country' );
@@ -1222,25 +910,9 @@ class Import {
 		}
 	}
 
-	/**
-	 * @param $input
-	 * @param null $default_value
-	 * @param null $parse_hint
-	 * @param null $map_data
-	 * @param null $raw_row
-	 * @return array|bool|mixed|string
-	 */
 	function parse_province( $input, $default_value = NULL, $parse_hint = NULL, $map_data = NULL, $raw_row = NULL ) {
 		$country = $this->callInputParseFunction( 'country', $map_data, $raw_row );
 		Debug::Text('Input: '. $input .' Country: '. $country, __FILE__, __LINE__, __METHOD__, 10);
-
-		//If country is not mapped during the import process (which it often isn't), try to use the user default data country instead to help avoid majority of Invalid Province/State errors.
-		//  UserDefaults can't be passed through to here in the preParseRow() unless the country field is actually mapped (otherwise it would always cause an update of fields the user wasn't expect),
-		//  in which case it would avoid this issue to begin with too.
-		if ( $country == '' AND is_object( $this->getCompanyObject() ) AND is_object( $this->getCompanyObject()->getUserDefaultObject() ) ) {
-			$country = $this->getCompanyObject()->getUserDefaultObject()->getCountry();
-			Debug::Text(' Country not mapped or defined, defaulting to Company Country: '. $country, __FILE__, __LINE__, __METHOD__, 10);
-		}
 
 		$options = array();
 		if ( $country != '' ) {
@@ -1269,9 +941,6 @@ class Import {
 		return $input;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function getBranchOptions() {
 		$this->branch_options = $this->branch_manual_id_options = array();
 		$blf = TTNew('BranchListFactory');
@@ -1287,19 +956,9 @@ class Import {
 		return TRUE;
 	}
 
-	/**
-	 * @param $input
-	 * @param null $default_value
-	 * @param null $parse_hint
-	 * @return array|bool|int|mixed
-	 */
 	function parse_branch( $input, $default_value = NULL, $parse_hint = NULL ) {
 		if ( trim($input) == '' ) {
-			return TTUUID::getZeroID(); //No branch
-		}
-
-		if ( trim($input) == '-1' ) {
-			return TTUUID::getNotExistID(); //User default branch
+			return 0; //No branch
 		}
 
 		if ( !is_array( $this->branch_options ) ) {
@@ -1314,15 +973,12 @@ class Import {
 		}
 
 		if ( $retval === FALSE ) {
-			$retval = TTUUID::getNotExistID( 1 ); //Make sure this fails. ZeroID is allowed and NotExistID gets converted to default job.
+			$retval = -1; //Make sure this fails.
 		}
 
 		return $retval;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function getDepartmentOptions() {
 		//Get departments
 		$this->department_options = $this->department_manual_id_options = array();
@@ -1338,20 +994,9 @@ class Import {
 
 		return TRUE;
 	}
-
-	/**
-	 * @param $input
-	 * @param null $default_value
-	 * @param null $parse_hint
-	 * @return array|bool|int|mixed
-	 */
 	function parse_department( $input, $default_value = NULL, $parse_hint = NULL ) {
 		if ( trim($input) == '' ) {
-			return TTUUID::getZeroID(); //No department
-		}
-
-		if ( trim($input) == '-1' ) {
-			return TTUUID::getNotExistID(); //User default department
+			return 0; //No department
 		}
 
 		if ( !is_array( $this->department_options ) ) {
@@ -1367,15 +1012,12 @@ class Import {
 		}
 
 		if ( $retval === FALSE ) {
-			$retval = TTUUID::getNotExistID( 1 ); //Make sure this fails. ZeroID is allowed and NotExistID gets converted to default job.
+			$retval = -1; //Make sure this fails.
 		}
 
 		return $retval;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function getJobOptions() {
 		//Get jobs
 		$this->job_options = $this->job_manual_id_options = array();
@@ -1391,20 +1033,9 @@ class Import {
 
 		return TRUE;
 	}
-
-	/**
-	 * @param $input
-	 * @param null $default_value
-	 * @param null $parse_hint
-	 * @return array|bool|int|mixed
-	 */
 	function parse_job( $input, $default_value = NULL, $parse_hint = NULL ) {
 		if ( trim($input) == '' ) {
-			return TTUUID::getZeroID(); //No job
-		}
-
-		if ( trim($input) == '-1' ) {
-			return TTUUID::getNotExistID(); //User default job
+			return 0; //No job
 		}
 
 		if ( !is_array( $this->job_options ) ) {
@@ -1419,15 +1050,12 @@ class Import {
 		}
 
 		if ( $retval === FALSE ) {
-			$retval = TTUUID::getNotExistID( 1 ); //Make sure this fails. ZeroID is allowed and NotExistID gets converted to default job.
+			$retval = -1; //Make sure this fails.
 		}
 
 		return $retval;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function getJobItemOptions() {
 		//Get job_items
 		$this->job_item_options = $this->job_item_manual_id_options = array();
@@ -1443,20 +1071,9 @@ class Import {
 
 		return TRUE;
 	}
-
-	/**
-	 * @param $input
-	 * @param null $default_value
-	 * @param null $parse_hint
-	 * @return array|bool|int|mixed
-	 */
 	function parse_job_item( $input, $default_value = NULL, $parse_hint = NULL ) {
 		if ( trim($input) == '' ) {
-			return TTUUID::getZeroID(); //No job_item
-		}
-
-		if ( trim($input) == '-1' ) {
-			return TTUUID::getNotExistID(); //User default job_item
+			return 0; //No job_item
 		}
 
 		if ( !is_array( $this->job_item_options ) ) {
@@ -1471,7 +1088,7 @@ class Import {
 		}
 
 		if ( $retval === FALSE ) {
-			$retval = TTUUID::getNotExistID( 1 ); //Make sure this fails. ZeroID is allowed and NotExistID gets converted to default job.
+			$retval = -1; //Make sure this fails.
 		}
 
 		return $retval;

@@ -11,6 +11,7 @@
 * Technical choices are described in the 'docs/technical' file
 *
 * @package Cache_Lite
+* @version $Id: File.php,v 1.4 2009/03/07 12:55:39 tacker Exp $
 * @author Fabien MARTY <fab@php.net>
 */
  
@@ -55,7 +56,7 @@ class Cache_Lite_File extends Cache_Lite
     function __construct($options = array(NULL))
     {   
         $options['lifetime'] = 0;
-        parent::__construct($options);
+        $this->Cache_Lite($options);
         if (isset($options['masterFile'])) {
             $this->_masterFile = $options['masterFile'];
         } else {
@@ -64,16 +65,6 @@ class Cache_Lite_File extends Cache_Lite
         if (!($this->_masterFile_mtime = @filemtime($this->_masterFile))) {
             return $this->raiseError('Cache_Lite_File : Unable to read masterFile : '.$this->_masterFile, -3);
         }
-    }
-
-    /**
-     * PHP4 constructor for backwards compatibility with older code
-     *
-     * @param array $options Options
-     */
-    function Cache_Lite_File($options = array(NULL))
-    {
-        self::__construct($options);
     }
     
     /**
@@ -98,3 +89,5 @@ class Cache_Lite_File extends Cache_Lite
     }
 
 }
+
+?>

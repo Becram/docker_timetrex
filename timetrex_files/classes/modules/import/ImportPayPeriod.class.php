@@ -1,7 +1,7 @@
 <?php
 /*********************************************************************************
  * TimeTrex is a Workforce Management program developed by
- * TimeTrex Software Inc. Copyright (C) 2003 - 2018 TimeTrex Software Inc.
+ * TimeTrex Software Inc. Copyright (C) 2003 - 2017 TimeTrex Software Inc.
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Affero General Public License version 3 as published by
@@ -45,11 +45,6 @@ class ImportPayPeriod extends Import {
 
 	public $pay_period_schedule_options = FALSE;
 
-	/**
-	 * @param $name
-	 * @param null $parent
-	 * @return array|null
-	 */
 	function _getFactoryOptions( $name, $parent = NULL ) {
 
 		$retval = NULL;
@@ -70,6 +65,7 @@ class ImportPayPeriod extends Import {
 								);
 				break;
 			case 'parse_hint':
+			case 'parse_hint':
 				$upf = TTnew('UserPreferenceFactory');
 
 				$retval = array(
@@ -84,22 +80,12 @@ class ImportPayPeriod extends Import {
 	}
 
 
-	/**
-	 * @param $row_number
-	 * @param $raw_row
-	 * @return mixed
-	 */
 	function _preParseRow( $row_number, $raw_row ) {
 		$retval = $this->getObject()->stripReturnHandler( $this->getObject()->getPayPeriodDefaultData() );
 
 		return $retval;
 	}
 
-	/**
-	 * @param $row_number
-	 * @param $raw_row
-	 * @return mixed
-	 */
 	function _postParseRow( $row_number, $raw_row ) {
 		//$raw_row['user_id'] = $this->getUserIdByRowData( $raw_row );
 		//if ( $raw_row['user_id'] == FALSE ) {
@@ -110,10 +96,6 @@ class ImportPayPeriod extends Import {
 		return $raw_row;
 	}
 
-	/**
-	 * @param int $validate_only EPOCH
-	 * @return mixed
-	 */
 	function _import( $validate_only ) {
 		return $this->getObject()->setPayPeriod( $this->getParsedData(), $validate_only );
 	}
@@ -121,9 +103,6 @@ class ImportPayPeriod extends Import {
 	//
 	// Generic parser functions.
 	//
-	/**
-	 * @return bool
-	 */
 	function getPayPeriodScheduleOptions() {
 		//Get job titles
 		$ppslf = TTNew('PayPeriodScheduleListFactory');
@@ -133,13 +112,6 @@ class ImportPayPeriod extends Import {
 
 		return TRUE;
 	}
-
-	/**
-	 * @param $input
-	 * @param null $default_value
-	 * @param null $parse_hint
-	 * @return array|bool|int|mixed
-	 */
 	function parse_pay_period_schedule( $input, $default_value = NULL, $parse_hint = NULL ) {
 		if ( !is_array( $this->pay_period_schedule_options ) ) {
 			$this->getPayPeriodScheduleOptions();
@@ -158,13 +130,6 @@ class ImportPayPeriod extends Import {
 	}
 
 
-	/**
-	 * @param $input
-	 * @param null $default_value
-	 * @param null $parse_hint
-	 * @param null $raw_row
-	 * @return bool|false|int
-	 */
 	function parse_start_date( $input, $default_value = NULL, $parse_hint = NULL, $raw_row = NULL ) {
 		if ( isset($parse_hint) AND $parse_hint != '' ) {
 			TTDate::setDateFormat( $parse_hint );
@@ -174,13 +139,6 @@ class ImportPayPeriod extends Import {
 		}
 	}
 
-	/**
-	 * @param $input
-	 * @param null $default_value
-	 * @param null $parse_hint
-	 * @param null $raw_row
-	 * @return bool|false|int
-	 */
 	function parse_end_date( $input, $default_value = NULL, $parse_hint = NULL, $raw_row = NULL ) {
 		if ( isset($parse_hint) AND $parse_hint != '' ) {
 			TTDate::setDateFormat( $parse_hint );
@@ -190,13 +148,6 @@ class ImportPayPeriod extends Import {
 		}
 	}
 
-	/**
-	 * @param $input
-	 * @param null $default_value
-	 * @param null $parse_hint
-	 * @param null $raw_row
-	 * @return bool|false|int
-	 */
 	function parse_transaction_date( $input, $default_value = NULL, $parse_hint = NULL, $raw_row = NULL ) {
 		if ( isset($parse_hint) AND $parse_hint != '' ) {
 			TTDate::setDateFormat( $parse_hint );

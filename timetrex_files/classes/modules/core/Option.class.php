@@ -1,7 +1,7 @@
 <?php
 /*********************************************************************************
  * TimeTrex is a Workforce Management program developed by
- * TimeTrex Software Inc. Copyright (C) 2003 - 2018 TimeTrex Software Inc.
+ * TimeTrex Software Inc. Copyright (C) 2003 - 2017 TimeTrex Software Inc.
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Affero General Public License version 3 as published by
@@ -39,13 +39,7 @@
  * @package Core
  */
 class Option {
-	/**
-	 * @param $key
-	 * @param $options
-	 * @param bool $false
-	 * @return bool
-	 */
-	static function getByKey( $key, $options, $false = FALSE ) {
+	static function getByKey($key, $options, $false = FALSE ) {
 		if ( isset($options[$key]) ) {
 			//Debug::text('Returning Value: '. $options[$key], __FILE__, __LINE__, __METHOD__, 9);
 
@@ -56,13 +50,7 @@ class Option {
 		//return FALSE;
 	}
 
-	/**
-	 * @param $value
-	 * @param $options
-	 * @param bool $value_is_translated
-	 * @return bool
-	 */
-	static function getByValue( $value, $options, $value_is_translated = TRUE ) {
+	static function getByValue($value, $options, $value_is_translated = TRUE ) {
 		// I18n: Calling gettext on the value here enables a match with the translated value in the relevant factory.
 		//		 BUT... such string comparisons are messy and we really should be using getByKey for most everything.
 		//		 Exceptions can be made by passing false for $value_is_translated.
@@ -88,13 +76,7 @@ class Option {
 		return FALSE;
 	}
 
-	/**
-	 * @param $value
-	 * @param $options
-	 * @param bool $value_is_translated
-	 * @return array|bool|mixed
-	 */
-	static function getByFuzzyValue( $value, $options, $value_is_translated = TRUE ) {
+	static function getByFuzzyValue($value, $options, $value_is_translated = TRUE ) {
 		// I18n: Calling gettext on the value here enables a match with the translated value in the relevant factory.
 		//		 BUT... such string comparisons are messy and we really should be using getByKey for most everything.
 		//		 Exceptions can be made by passing false for $value_is_translated.
@@ -133,12 +115,7 @@ class Option {
 	//Takes $needles as an array, loops through them returning matching
 	//keys => value pairs from haystack
 	//Useful for filtering results to a select box, like status.
-	/**
-	 * @param $needles
-	 * @param $haystack
-	 * @return array|bool
-	 */
-	static function getByArray( $needles, $haystack) {
+	static function getByArray($needles, $haystack) {
 
 		if (!is_array($needles) ) {
 			$needles = array($needles);
@@ -160,11 +137,6 @@ class Option {
 		return FALSE;
 	}
 
-	/**
-	 * @param $bitmask
-	 * @param $options
-	 * @return array|bool
-	 */
 	static function getArrayByBitMask( $bitmask, $options ) {
 		$bitmask = (int)$bitmask;
 
@@ -187,11 +159,6 @@ class Option {
 		return FALSE;
 	}
 
-	/**
-	 * @param $keys
-	 * @param $options
-	 * @return int|mixed
-	 */
 	static function getBitMaskByArray( $keys, $options ) {
 		$retval = 0;
 		if ( is_array($keys) AND is_array($options) ) {

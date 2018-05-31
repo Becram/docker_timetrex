@@ -1,7 +1,7 @@
 <?php
 /*********************************************************************************
  * TimeTrex is a Workforce Management program developed by
- * TimeTrex Software Inc. Copyright (C) 2003 - 2018 TimeTrex Software Inc.
+ * TimeTrex Software Inc. Copyright (C) 2003 - 2017 TimeTrex Software Inc.
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Affero General Public License version 3 as published by
@@ -45,11 +45,6 @@ class UserIdentificationFactory extends Factory {
 
 	var $user_obj = NULL;
 
-	/**
-	 * @param $name
-	 * @param null $parent
-	 * @return array|null
-	 */
 	function _getFactoryOptions( $name, $parent = NULL ) {
 
 		$retval = NULL;
@@ -64,10 +59,8 @@ class UserIdentificationFactory extends Factory {
 											30	=> TTi18n::gettext('Barcode'), //For barcode readers and USB proximity card readers.
 											35	=> TTi18n::gettext('QRcode'), //For cameras to read QR code badges.
 											40	=> TTi18n::gettext('Proximity Card'), //Mainly for proximity cards on timeclocks.
-											70	=> TTi18n::gettext('Face Image (v1)'), //Raw image of cropped face in as high of quality as possible, and cropped 10-20% larger than the face itself.
-											71	=> TTi18n::gettext('Face Image (v2)'), //Raw image of cropped face in as high of quality as possible, and cropped 10-20% larger than the face itself.
+											70	=> TTi18n::gettext('Face Image'), //Raw image of cropped face in as high of quality as possible.
 											75	=> TTi18n::gettext('Facial Recognition'), //Luxand v5 SDK templates.
-											76	=> TTi18n::gettext('Facial Recognition (v2)'), //Luxand v5 SDK templates, App v4.0+
 											100	=> TTi18n::gettext('TimeClock FingerPrint (v9)'), //TimeClocks v9 algo
 											101	=> TTi18n::gettext('TimeClock FingerPrint (v10)'), //TimeClocks v10 algo
 									);
@@ -78,9 +71,6 @@ class UserIdentificationFactory extends Factory {
 		return $retval;
 	}
 
-	/**
-	 * @return null
-	 */
 	function getUserObject() {
 		if ( is_object($this->user_obj) ) {
 			return $this->user_obj;
@@ -92,41 +82,58 @@ class UserIdentificationFactory extends Factory {
 		}
 	}
 
-	/**
-	 * @return bool|mixed
-	 */
 	function getUser() {
-		return $this->getGenericDataValue( 'user_id' );
-	}
-
-	/**
-	 * @param string $value UUID
-	 * @return bool
-	 */
-	function setUser( $value ) {
-		$value = TTUUID::castUUID( $value );
-		return $this->setGenericDataValue( 'user_id', $value );
-	}
-
-	/**
-	 * @return bool|int
-	 */
-	function getType() {
-		return $this->getGenericDataValue( 'type_id' );
-	}
-
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setType( $value ) {
-		$value = (int)trim($value);
-		//This needs to be stay as TimeTrex Client application still uses names rather than IDs.
-		$key = Option::getByValue($value, $this->getOptions('type') );
-		if ($key !== FALSE) {
-			$value = $key;
+		if ( isset($this->data['user_id']) ) {
+			return (int)$this->data['user_id'];
 		}
-		return $this->setGenericDataValue( 'type_id', $value );
+		
+		return FALSE;
+	}
+	function setUser($id) {
+		$id = trim($id);
+
+		$ulf = TTnew( 'UserListFactory' );
+
+		if ( $id == 0
+				OR $this->Validator->isResultSetWithRows(	'user',
+															$ulf->getByID($id),
+															TTi18n::gettext('Invalid User')
+															) ) {
+			$this->data['user_id'] = $id;
+
+			return TRUE;
+		}
+
+		return FALSE;
+	}
+
+	function getType() {
+		if ( isset($this->data['type_id']) ) {
+			return (int)$this->data['type_id'];
+		}
+
+		return FALSE;
+	}
+	function setType($type) {
+		$type = trim($type);
+
+		//This needs to be stay as TimeTrex Client application still uses names rather than IDs.
+		$key = Option::getByValue($type, $this->getOptions('type') );
+		if ($key !== FALSE) {
+			$type = $key;
+		}
+
+		if ( $this->Validator->inArrayKey(	'type',
+											$type,
+											TTi18n::gettext('Incorrect Type'),
+											$this->getOptions('type')) ) {
+
+			$this->data['type_id'] = $type;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
 	/*
@@ -139,33 +146,34 @@ class UserIdentificationFactory extends Factory {
 			21 = Fingerprint 2	Pass 1.
 			...
 	*/
-	/**
-	 * @return bool|mixed
-	 */
 	function getNumber() {
-		return $this->getGenericDataValue( 'number' );
-	}
+		if ( isset($this->data['number']) ) {
+			return $this->data['number'];
+		}
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setNumber( $value) {
+		return FALSE;
+	}
+	function setNumber($value) {
 		$value = trim($value);
+
 		//Pull out only digits
 		$value = $this->Validator->stripNonNumeric($value);
-		return $this->setGenericDataValue( 'number', $value );
+
+		if (	$this->Validator->isFloat(	'number',
+											$value,
+											TTi18n::gettext('Incorrect Number')) ) {
+
+			$this->data['number'] = $value;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @param string $user_id UUID
-	 * @param int $type_id
-	 * @param $value
-	 * @return bool
-	 */
-	function isUniqueValue( $user_id, $type_id, $value) {
+	function isUniqueValue($user_id, $type_id, $value) {
 		$ph = array(
-					'user_id' => TTUUID::castUUID($user_id),
+					'user_id' => (int)$user_id,
 					'type_id' => (int)$type_id,
 					'value' => (string)$value,
 					);
@@ -194,84 +202,59 @@ class UserIdentificationFactory extends Factory {
 		return FALSE;
 	}
 
-	/**
-	 * @return bool|mixed
-	 */
 	function getValue() {
-		return $this->getGenericDataValue( 'value' );
-	}
-
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setValue( $value) {
-		$value = trim($value);
-		return $this->setGenericDataValue( 'value', $value );
-	}
-
-	/**
-	 * @return bool|mixed
-	 */
-	function getExtraValue() {
-		return $this->getGenericDataValue( 'extra_value' );
-	}
-
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setExtraValue( $value) {
-		$value = trim($value);
-		return $this->setGenericDataValue( 'extra_value', $value );
-	}
-
-	/**
-	 * @param bool $ignore_warning
-	 * @return bool
-	 */
-	function Validate( $ignore_warning = TRUE ) {
-		//
-		// BELOW: Validation code moved from set*() functions.
-		//
-		// User
-		if ( $this->getUser() != TTUUID::getZeroID() ) {
-			$ulf = TTnew( 'UserListFactory' );
-			$this->Validator->isResultSetWithRows(	'user',
-															$ulf->getByID($this->getUser()),
-															TTi18n::gettext('Invalid Employee')
-														);
+		if ( isset($this->data['value']) ) {
+			return $this->data['value'];
 		}
-		// Type
-		$this->Validator->inArrayKey(	'type',
-												$this->getType(),
-												TTi18n::gettext('Incorrect Type'),
-												$this->getOptions('type')
-											);
-		// Number
-		$this->Validator->isFloat(	'number',
-											$this->getNumber(),
-											TTi18n::gettext('Incorrect Number')
-										);
-		// Value
-		$this->Validator->isLength(			'value',
-													$this->getValue(),
+
+		return FALSE;
+	}
+	function setValue($value) {
+		$value = trim($value);
+
+		if (
+				$this->Validator->isLength(			'value',
+													$value,
 													TTi18n::gettext('Value is too short or too long'),
 													1,
-													1024000); //Need relatively large face images.
-		// Extra Value
-		if ( $this->getExtraValue() !== FALSE ) {
-			$this->Validator->isLength(			'extra_value',
-														$this->getExtraValue(),
-														TTi18n::gettext('Extra Value is too long'),
-														1,
-												   		1024000
-													);
+													256000) //Need relatively large face images.
+			) {
+
+			$this->data['value'] = $value;
+
+			return TRUE;
 		}
 
-		//
-		// ABOVE: Validation code moved from set*() functions.
-		//
+		return FALSE;
+	}
+
+	function getExtraValue() {
+		if ( isset($this->data['extra_value']) ) {
+			return $this->data['extra_value'];
+		}
+
+		return FALSE;
+	}
+	function setExtraValue($value) {
+		$value = trim($value);
+
+		if (
+				$this->Validator->isLength(			'extra_value',
+													$value,
+													TTi18n::gettext('Extra Value is too long'),
+													1,
+													256000)
+			) {
+
+			$this->data['extra_value'] = $value;
+
+			return TRUE;
+		}
+
+		return FALSE;
+	}
+
+	function Validate( $ignore_warning = TRUE ) {
 		if ( $this->getValue() == FALSE ) {
 				$this->Validator->isTRUE(			'value',
 													FALSE,
@@ -285,9 +268,6 @@ class UserIdentificationFactory extends Factory {
 		return TRUE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function preSave() {
 		if (  $this->getNumber() == '' ) {
 			$this->setNumber( 0 );
@@ -296,19 +276,12 @@ class UserIdentificationFactory extends Factory {
 		return TRUE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function postSave() {
 		$this->removeCache( $this->getId() );
 
 		return TRUE;
 	}
 
-	/**
-	 * @param $log_action
-	 * @return bool
-	 */
 	function addLog( $log_action ) {
 		//Don't do detail logging for this, as it will store entire figerprints in the log table.
 		return TTLog::addEntry( $this->getId(), $log_action, TTi18n::getText('Employee Identification - Employee'). ': '. UserListFactory::getFullNameById( $this->getUser() ) .' '. TTi18n::getText('Type') . ': '. Option::getByKey($this->getType(), $this->getOptions('type') ), NULL, $this->getTable() );

@@ -1,14 +1,14 @@
 AccrualBalanceViewController = BaseViewController.extend( {
 	el: '#accrual_balance_view_container',
-	_required_files: ['APIAccrualBalance', 'APIAccrual', 'APIUserGroup', 'APIUser', 'APIAccrualPolicyAccount', 'APIBranch', 'APIDepartment','views/attendance/accrual/AccrualViewController'],
+
 	user_group_api: null,
 	user_group_array: null,
 
 	sub_accrual_view_controller: null,
 
 	log_object_ids: null,
-	init: function( options ) {
-		//this._super('initialize', options );
+	initialize: function( options ) {
+		this._super( 'initialize', options );
 		this.edit_view_tpl = 'AccrualBalanceEditView.html';
 		this.permission_id = 'accrual';
 		this.viewId = 'AccrualBalance';
@@ -18,7 +18,6 @@ AccrualBalanceViewController = BaseViewController.extend( {
 		this.navigation_label = $.i18n._( 'Accrual Balance' ) + ':';
 		this.api = new (APIFactory.getAPIClass( 'APIAccrualBalance' ))();
 		this.accrual_api = new (APIFactory.getAPIClass( 'APIAccrual' ))();
-		this.user_api = new (APIFactory.getAPIClass( 'APIUser' ))();
 		this.user_group_api = new (APIFactory.getAPIClass( 'APIUserGroup' ))();
 
 		this.invisible_context_menu_dic[ContextMenuIconName.edit] = true; //Hide some context menus
@@ -58,7 +57,6 @@ AccrualBalanceViewController = BaseViewController.extend( {
 	initOptions: function() {
 		var $this = this;
 
-		this.initDropDownOption( 'status', 'user_status_id', this.user_api, null, 'user_status_array' );
 		this.user_group_api.getUserGroup( '', false, false, {
 			onResult: function( res ) {
 
@@ -120,17 +118,6 @@ AccrualBalanceViewController = BaseViewController.extend( {
 				multiple: true,
 				basic_search: true,
 				adv_search: false,
-				form_item_type: FormItemType.AWESOME_BOX
-			} ),
-
-			new SearchField( {
-				label: $.i18n._( 'Employee Status' ),
-				in_column: 1,
-				field: 'user_status_id',
-				multiple: true,
-				basic_search: true,
-				adv_search: true,
-				layout_name: ALayoutIDs.OPTION_COLUMN,
 				form_item_type: FormItemType.AWESOME_BOX
 			} ),
 
@@ -474,10 +461,12 @@ AccrualBalanceViewController = BaseViewController.extend( {
 		}
 
 		Global.loadScript( 'views/attendance/accrual/AccrualViewController.js', function() {
-			var tab_accrual = $this.edit_view_tab.find('#tab_accrual');
-			var firstColumn = tab_accrual.find('.first-column-sub-view');
-			Global.trackView('Sub' + 'Accrual' + 'View');
-			AccrualViewController.loadSubView(firstColumn, beforeLoadView, afterLoadView);
+
+			var tab_accrual = $this.edit_view_tab.find( '#tab_accrual' );
+			var firstColumn = tab_accrual.find( '.first-column-sub-view' );
+			Global.trackView( 'Sub' + 'Accrual' + 'View' );
+			AccrualViewController.loadSubView( firstColumn, beforeLoadView, afterLoadView );
+
 		} );
 
 		function beforeLoadView() {
@@ -505,16 +494,16 @@ AccrualBalanceViewController = BaseViewController.extend( {
 			$this.sub_log_view_controller.table_name_key = $this.table_name_key;
 			$this.sub_log_view_controller.parent_edit_record = $this.current_edit_record;
 			$this.sub_log_view_controller.parent_view_controller = $this;
-
 			$this.sub_log_view_controller.initData();
 			return;
 		}
 
 		Global.loadScript( 'views/core/log/LogViewController.js', function() {
-			var tab = $this.edit_view_tab.find('#' + tab_id);
-			var firstColumn = tab.find('.first-column-sub-view');
-			Global.trackView('Sub' + 'Log' + 'View');
-			LogViewController.loadSubView(firstColumn, beforeLoadView, afterLoadView);
+
+			var tab = $this.edit_view_tab.find( '#' + tab_id );
+			var firstColumn = tab.find( '.first-column-sub-view' );
+			Global.trackView( 'Sub' + 'Log' + 'View' );
+			LogViewController.loadSubView( firstColumn, beforeLoadView, afterLoadView );
 		} );
 
 		function beforeLoadView() {
@@ -534,10 +523,8 @@ AccrualBalanceViewController = BaseViewController.extend( {
 			$this.sub_log_view_controller.table_name_key = $this.table_name_key;
 			$this.sub_log_view_controller.parent_edit_record = $this.current_edit_record;
 			$this.sub_log_view_controller.parent_view_controller = $this;
+			$this.sub_log_view_controller.initData();
 
-			$this.sub_log_view_controller.postInit = function() {
-				this.initData();
-			};
 		}
 	},
 

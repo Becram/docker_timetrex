@@ -1,7 +1,7 @@
 <?php
 /*********************************************************************************
  * TimeTrex is a Workforce Management program developed by
- * TimeTrex Software Inc. Copyright (C) 2003 - 2018 TimeTrex Software Inc.
+ * TimeTrex Software Inc. Copyright (C) 2003 - 2017 TimeTrex Software Inc.
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Affero General Public License version 3 as published by
@@ -41,9 +41,6 @@
 class APICompanyDeduction extends APIFactory {
 	protected $main_class = 'CompanyDeductionFactory';
 
-	/**
-	 * APICompanyDeduction constructor.
-	 */
 	public function __construct() {
 		parent::__construct(); //Make sure parent constructor is always called.
 
@@ -52,9 +49,9 @@ class APICompanyDeduction extends APIFactory {
 
 	/**
 	 * Get options for dropdown boxes.
-	 * @param bool|string $name Name of options to return, ie: 'columns', 'type', 'status'
+	 * @param string $name Name of options to return, ie: 'columns', 'type', 'status'
 	 * @param mixed $parent Parent name/ID of options to return if data is in hierarchical format. (ie: Province)
-	 * @return bool|array
+	 * @return array
 	 */
 	function getOptions( $name = FALSE, $parent = NULL ) {
 		if ( $name == 'columns'
@@ -72,13 +69,11 @@ class APICompanyDeduction extends APIFactory {
 	 */
 	function getCompanyDeductionDefaultData() {
 		$company_obj = $this->getCurrentCompanyObject();
-		$user_obj = $this->getCurrentUserObject();
 
 		Debug::Text('Getting company_deduction default data...', __FILE__, __LINE__, __METHOD__, 10);
 
 		$data = array(
 						'company_id' => $company_obj->getId(),
-						'legal_entity_id' => $user_obj->getLegalEntity(),
 						'status_id' => 10,
 						'type_id' => 10,
 						'apply_frequency_id' => 10, //each Pay Period
@@ -91,7 +86,6 @@ class APICompanyDeduction extends APIFactory {
 	/**
 	 * Get company_deduction data for one or more company_deductiones.
 	 * @param array $data filter data
-	 * @param bool $disable_paging
 	 * @return array
 	 */
 	function getCompanyDeduction( $data = NULL, $disable_paging = FALSE ) {
@@ -155,9 +149,8 @@ class APICompanyDeduction extends APIFactory {
 
 	/**
 	 * Export data to csv
-	 * @param string $format file format (csv)
 	 * @param array $data filter data
-	 * @param bool $disable_paging
+	 * @param string $format file format (csv)
 	 * @return array
 	 */
 	function exportCompanyDeduction( $format = 'csv', $data = NULL, $disable_paging = TRUE) {
@@ -186,9 +179,7 @@ class APICompanyDeduction extends APIFactory {
 	/**
 	 * Set company_deduction data for one or more company_deductiones.
 	 * @param array $data company_deduction data
-	 * @param bool $validate_only
-	 * @param bool $ignore_warning
-	 * @return array|bool
+	 * @return array
 	 */
 	function setCompanyDeduction( $data, $validate_only = FALSE, $ignore_warning = TRUE ) {
 		$validate_only = (bool)$validate_only;
@@ -207,12 +198,12 @@ class APICompanyDeduction extends APIFactory {
 			Debug::Text('Validating Only!', __FILE__, __LINE__, __METHOD__, 10);
 		}
 
-		list( $data, $total_records ) = $this->convertToMultipleRecords( $data );
+		extract( $this->convertToMultipleRecords($data) );
 		Debug::Text('Received data for: '. $total_records .' CompanyDeductions', __FILE__, __LINE__, __METHOD__, 10);
 		Debug::Arr($data, 'Data: ', __FILE__, __LINE__, __METHOD__, 10);
 
 		$validator_stats = array('total_records' => $total_records, 'valid_records' => 0 );
-		$validator = $save_result = $key = FALSE;
+		$validator = $save_result = FALSE;
 		if ( is_array($data) AND $total_records > 0 ) {
 			$this->getProgressBarObject()->start( $this->getAMFMessageID(), $total_records );
 
@@ -220,7 +211,7 @@ class APICompanyDeduction extends APIFactory {
 				$primary_validator = new Validator();
 				$lf = TTnew( 'CompanyDeductionListFactory' );
 				$lf->StartTransaction();
-				if ( isset($row['id']) AND $row['id'] != '' ) {
+				if ( isset($row['id']) AND $row['id'] > 0 ) {
 					//Modifying existing object.
 					//Get company_deduction object, so we can only modify just changed data for specific records if needed.
 					$lf->getByIdAndCompanyId( $row['id'], $this->getCurrentCompanyObject()->getId() );
@@ -234,7 +225,7 @@ class APICompanyDeduction extends APIFactory {
 									OR ( $this->getPermissionObject()->Check('company_tax_deduction', 'edit_own') AND $this->getPermissionObject()->isOwner( $lf->getCurrent()->getCreatedBy(), $lf->getCurrent()->getID() ) === TRUE )
 								) ) {
 
-							Debug::Text('Row Exists, getting current data for ID: '. $row['id'], __FILE__, __LINE__, __METHOD__, 10);
+							Debug::Text('Row Exists, getting current data: ', $row['id'], __FILE__, __LINE__, __METHOD__, 10);
 							$lf = $lf->getCurrent();
 							$row = array_merge( $lf->getObjectAsArray(), $row );
 						} else {
@@ -302,10 +293,10 @@ class APICompanyDeduction extends APIFactory {
 	/**
 	 * Delete one or more company_deductions.
 	 * @param array $data company_deduction data
-	 * @return array|bool
+	 * @return array
 	 */
 	function deleteCompanyDeduction( $data ) {
-		if ( !is_array($data) ) {
+		if ( is_numeric($data) ) {
 			$data = array($data);
 		}
 
@@ -322,7 +313,7 @@ class APICompanyDeduction extends APIFactory {
 		Debug::Arr($data, 'Data: ', __FILE__, __LINE__, __METHOD__, 10);
 
 		$total_records = count($data);
-		$validator = $save_result = $key = FALSE;
+		$validator = $save_result = FALSE;
 		$validator_stats = array('total_records' => $total_records, 'valid_records' => 0 );
 		if ( is_array($data) AND $total_records > 0 ) {
 			$this->getProgressBarObject()->start( $this->getAMFMessageID(), $total_records );
@@ -331,7 +322,7 @@ class APICompanyDeduction extends APIFactory {
 				$primary_validator = new Validator();
 				$lf = TTnew( 'CompanyDeductionListFactory' );
 				$lf->StartTransaction();
-				if ( $id != '' ) {
+				if ( is_numeric($id) ) {
 					//Modifying existing object.
 					//Get company_deduction object, so we can only modify just changed data for specific records if needed.
 					$lf->getByIdAndCompanyId( $id, $this->getCurrentCompanyObject()->getId() );
@@ -339,7 +330,7 @@ class APICompanyDeduction extends APIFactory {
 						//Object exists, check edit permissions
 						if ( $this->getPermissionObject()->Check('company_tax_deduction', 'delete')
 								OR ( $this->getPermissionObject()->Check('company_tax_deduction', 'delete_own') AND $this->getPermissionObject()->isOwner( $lf->getCurrent()->getCreatedBy(), $lf->getCurrent()->getID() ) === TRUE ) ) {
-							Debug::Text('Record Exists, deleting record ID: '. $id, __FILE__, __LINE__, __METHOD__, 10);
+							Debug::Text('Record Exists, deleting record: ', $id, __FILE__, __LINE__, __METHOD__, 10);
 							$lf = $lf->getCurrent();
 						} else {
 							$primary_validator->isTrue( 'permission', FALSE, TTi18n::gettext('Delete permission denied') );
@@ -394,7 +385,7 @@ class APICompanyDeduction extends APIFactory {
 	 * @return array
 	 */
 	function copyCompanyDeduction( $data ) {
-		if ( !is_array($data) ) {
+		if ( is_numeric($data) ) {
 			$data = array($data);
 		}
 
@@ -422,9 +413,7 @@ class APICompanyDeduction extends APIFactory {
 
 	/**
 	 * Returns combined calculation ID for company deduction layers.
-	 * @param string $calculation_id , $country, $province
-	 * @param null $country
-	 * @param null $province
+	 * @param string $calculation_id, $country, $province
 	 * @return string
 	 */
 	function getCombinedCalculationID( $calculation_id = NULL, $country = NULL, $province = NULL ) {
@@ -436,7 +425,7 @@ class APICompanyDeduction extends APIFactory {
 	/**
 	 * Returns boolean if provided calculation ID is for a country.
 	 * @param integer $calculation_id
-	 * @return bool
+	 * @return boolean
 	 */
 	function isCountryCalculationID( $calculation_id ) {
 		$cdf = TTnew( 'CompanyDeductionFactory' );
@@ -445,7 +434,7 @@ class APICompanyDeduction extends APIFactory {
 	/**
 	 * Returns boolean if provided calculation ID is for a province/state
 	 * @param integer $calculation_id
-	 * @return bool
+	 * @return boolean
 	 */
 	function isProvinceCalculationID( $calculation_id ) {
 		$cdf = TTnew( 'CompanyDeductionFactory' );
@@ -454,7 +443,7 @@ class APICompanyDeduction extends APIFactory {
 	/**
 	 * Returns boolean if provided calculation ID is for a district.
 	 * @param integer $calculation_id
-	 * @return bool
+	 * @return boolean
 	 */
 	function isDistrictCalculationID( $calculation_id ) {
 		$cdf = TTnew( 'CompanyDeductionFactory' );

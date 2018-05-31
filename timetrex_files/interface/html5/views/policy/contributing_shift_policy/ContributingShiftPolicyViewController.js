@@ -1,11 +1,5 @@
 ContributingShiftPolicyViewController = BaseViewController.extend( {
 	el: '#contributing_shift_policy_view_container',
-
-	_required_files: {
-		10: ['APIContributingShiftPolicy', 'APIHolidayPolicy', 'APIBranch', 'APIDepartment',],
-		20: ['APIJobGroup', 'APIJobItemGroup', 'APIJob', 'APIJobItem',],
-	},
-
 	type_array: null,
 	include_holiday_type_array: null,
 	include_shift_type_array: null,
@@ -26,8 +20,8 @@ ContributingShiftPolicyViewController = BaseViewController.extend( {
 	job_item_group_api: null,
 	date_api: null,
 
-	init: function( options ) {
-		//this._super('initialize', options );
+	initialize: function( options ) {
+		this._super( 'initialize', options );
 		this.edit_view_tpl = 'ContributingShiftPolicyEditView.html';
 		this.permission_id = 'contributing_shift_policy';
 		this.viewId = 'ContributingShiftPolicy';
@@ -568,7 +562,7 @@ ContributingShiftPolicyViewController = BaseViewController.extend( {
 	},
 
 	onIncludeHolidayTypeChange: function() {
-		if ( this.current_edit_record['include_holiday_type_id'] == 10 ) {
+		if ( this.current_edit_record['include_holiday_type_id'] === 10 ) {
 			this.detachElement( 'holiday_policy' );
 		} else {
 			this.attachElement( 'holiday_policy' );
@@ -579,7 +573,7 @@ ContributingShiftPolicyViewController = BaseViewController.extend( {
 	},
 
 	onBranchSelectionTypeChange: function() {
-		if ( this.current_edit_record['branch_selection_type_id'] == 10 ) {
+		if ( this.current_edit_record['branch_selection_type_id'] === 10 ) {
 			this.edit_view_ui_dic['branch'].setEnabled( false );
 		} else {
 			this.edit_view_ui_dic['branch'].setEnabled( true );
@@ -587,7 +581,7 @@ ContributingShiftPolicyViewController = BaseViewController.extend( {
 	},
 
 	onDepartmentSelectionTypeChange: function() {
-		if ( this.current_edit_record['department_selection_type_id'] == 10 ) {
+		if ( this.current_edit_record['department_selection_type_id'] === 10 ) {
 			this.edit_view_ui_dic['department'].setEnabled( false );
 		} else {
 			this.edit_view_ui_dic['department'].setEnabled( true );
@@ -598,7 +592,7 @@ ContributingShiftPolicyViewController = BaseViewController.extend( {
 
 		if ( ( LocalCacheData.getCurrentCompany().product_edition_id >= 20 ) ) {
 
-			if ( this.current_edit_record['job_group_selection_type_id'] == 10 || this.is_viewing ) {
+			if ( this.current_edit_record['job_group_selection_type_id'] === 10 || this.is_viewing ) {
 				this.edit_view_ui_dic['job_group'].setEnabled( false );
 			} else {
 				this.edit_view_ui_dic['job_group'].setEnabled( true );
@@ -608,7 +602,7 @@ ContributingShiftPolicyViewController = BaseViewController.extend( {
 
 	onJobSelectionTypeChange: function() {
 		if ( ( LocalCacheData.getCurrentCompany().product_edition_id >= 20 ) ) {
-			if ( this.current_edit_record['job_selection_type_id'] == 10 || this.is_viewing ) {
+			if ( this.current_edit_record['job_selection_type_id'] === 10 || this.is_viewing ) {
 				this.edit_view_ui_dic['job'].setEnabled( false );
 			} else {
 				this.edit_view_ui_dic['job'].setEnabled( true );
@@ -618,7 +612,7 @@ ContributingShiftPolicyViewController = BaseViewController.extend( {
 
 	onJobItemGroupSelectionTypeChange: function() {
 		if ( ( LocalCacheData.getCurrentCompany().product_edition_id >= 20 ) ) {
-			if ( this.current_edit_record['job_item_group_selection_type_id'] == 10 || this.is_viewing ) {
+			if ( this.current_edit_record['job_item_group_selection_type_id'] === 10 || this.is_viewing ) {
 				this.edit_view_ui_dic['job_item_group'].setEnabled( false );
 			} else {
 				this.edit_view_ui_dic['job_item_group'].setEnabled( true );
@@ -628,7 +622,7 @@ ContributingShiftPolicyViewController = BaseViewController.extend( {
 
 	onJobItemSelectionTypeChange: function() {
 		if ( ( LocalCacheData.getCurrentCompany().product_edition_id >= 20 ) ) {
-			if ( this.current_edit_record['job_item_selection_type_id'] == 10 || this.is_viewing ) {
+			if ( this.current_edit_record['job_item_selection_type_id'] === 10 || this.is_viewing ) {
 				this.edit_view_ui_dic['job_item'].setEnabled( false );
 			} else {
 				this.edit_view_ui_dic['job_item'].setEnabled( true );

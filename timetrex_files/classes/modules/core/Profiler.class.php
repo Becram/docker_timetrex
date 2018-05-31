@@ -137,7 +137,7 @@ class Profiler {
 			echo"============================================================================\n";
 			print( "Calls					 Time  Routine\n");
 			echo"-----------------------------------------------------------------------------\n";
-			foreach( $this->description as $key => $val ) {
+			while (list ($key, $val) = each ($this->description)) {
 				$t = $this->elapsedTime($key);
 				if ( isset($this->running[$key]) ) {
 					$total = $this->running[$key];
@@ -170,9 +170,6 @@ class Profiler {
 		}
 	}
 
-	/**
-	 * @param bool $enabled
-	 */
 	function printTrace( $enabled=false )
 	{
 		if($this->trace_enabled||$enabled) {
@@ -215,18 +212,12 @@ class Profiler {
 	}
 }
 
-/**
- * @param $name
- */
-function profiler_start( $name) {
+function profiler_start($name) {
 	if (array_key_exists("midcom_profiler", $GLOBALS))
 	$GLOBALS["midcom_profiler"]->startTimer ($name);
 }
 
-/**
- * @param $name
- */
-function profiler_stop( $name) {
+function profiler_stop($name) {
 	if (array_key_exists("midcom_profiler", $GLOBALS))
 	$GLOBALS["midcom_profiler"]->stopTimer ($name);
 }

@@ -1,7 +1,7 @@
 <?php
 /*********************************************************************************
  * TimeTrex is a Workforce Management program developed by
- * TimeTrex Software Inc. Copyright (C) 2003 - 2018 TimeTrex Software Inc.
+ * TimeTrex Software Inc. Copyright (C) 2003 - 2017 TimeTrex Software Inc.
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Affero General Public License version 3 as published by
@@ -40,14 +40,7 @@
  */
 class HierarchyLevelListFactory extends HierarchyLevelFactory implements IteratorAggregate {
 
-	/**
-	 * @param int $limit Limit the number of records returned
-	 * @param int $page Page number of records to return for pagination
-	 * @param array $where Additional SQL WHERE clause in format of array( $column => $filter, ... ). ie: array( 'id' => 1, ... )
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return $this
-	 */
-	function getAll( $limit = NULL, $page = NULL, $where = NULL, $order = NULL) {
+	function getAll($limit = NULL, $page = NULL, $where = NULL, $order = NULL) {
 		$query = '
 					select	*
 					from	'. $this->getTable() .'
@@ -61,19 +54,13 @@ class HierarchyLevelListFactory extends HierarchyLevelFactory implements Iterato
 		return $this;
 	}
 
-	/**
-	 * @param string $id UUID
-	 * @param array $where Additional SQL WHERE clause in format of array( $column => $filter, ... ). ie: array( 'id' => 1, ... )
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return bool|HierarchyLevelListFactory
-	 */
-	function getById( $id, $where = NULL, $order = NULL) {
+	function getById($id, $where = NULL, $order = NULL) {
 		if ( $id == '' ) {
 			return FALSE;
 		}
 
 		$ph = array(
-					'id' => TTUUID::castUUID($id),
+					'id' => (int)$id,
 					);
 
 
@@ -91,13 +78,7 @@ class HierarchyLevelListFactory extends HierarchyLevelFactory implements Iterato
 		return $this;
 	}
 
-	/**
-	 * @param string $company_id UUID
-	 * @param array $where Additional SQL WHERE clause in format of array( $column => $filter, ... ). ie: array( 'id' => 1, ... )
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return bool|HierarchyLevelListFactory
-	 */
-	function getByCompanyId( $company_id, $where = NULL, $order = NULL) {
+	function getByCompanyId($company_id, $where = NULL, $order = NULL) {
 		if ( $company_id == '' ) {
 			return FALSE;
 		}
@@ -105,7 +86,7 @@ class HierarchyLevelListFactory extends HierarchyLevelFactory implements Iterato
 		$hcf = new HierarchyControlFactory();
 
 		$ph = array(
-					'company_id' => TTUUID::castUUID($company_id)
+					'company_id' => (int)$company_id
 					);
 
 		$query = '
@@ -123,14 +104,7 @@ class HierarchyLevelListFactory extends HierarchyLevelFactory implements Iterato
 		return $this;
 	}
 
-	/**
-	 * @param string $id UUID
-	 * @param string $company_id UUID
-	 * @param array $where Additional SQL WHERE clause in format of array( $column => $filter, ... ). ie: array( 'id' => 1, ... )
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return bool|HierarchyLevelListFactory
-	 */
-	function getByIdAndCompanyId( $id, $company_id, $where = NULL, $order = NULL) {
+	function getByIdAndCompanyId($id, $company_id, $where = NULL, $order = NULL) {
 		if ( $id == '' ) {
 			return FALSE;
 		}
@@ -142,8 +116,8 @@ class HierarchyLevelListFactory extends HierarchyLevelFactory implements Iterato
 		$hcf = new HierarchyControlFactory();
 
 		$ph = array(
-					'id' => TTUUID::castUUID($id),
-					'company_id' => TTUUID::castUUID($company_id)
+					'id' => (int)$id,
+					'company_id' => (int)$company_id
 					);
 
 		$query = '
@@ -162,13 +136,7 @@ class HierarchyLevelListFactory extends HierarchyLevelFactory implements Iterato
 		return $this;
 	}
 
-	/**
-	 * @param string $id UUID
-	 * @param array $where Additional SQL WHERE clause in format of array( $column => $filter, ... ). ie: array( 'id' => 1, ... )
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return bool|HierarchyLevelListFactory
-	 */
-	function getByHierarchyControlId( $id, $where = NULL, $order = NULL) {
+	function getByHierarchyControlId($id, $where = NULL, $order = NULL) {
 		if ( $id == '' ) {
 			return FALSE;
 		}
@@ -180,7 +148,7 @@ class HierarchyLevelListFactory extends HierarchyLevelFactory implements Iterato
 		}
 
 		$ph = array(
-					'id' => TTUUID::castUUID($id),
+					'id' => (int)$id,
 					);
 
 
@@ -198,14 +166,7 @@ class HierarchyLevelListFactory extends HierarchyLevelFactory implements Iterato
 		return $this;
 	}
 
-	/**
-	 * @param string $id UUID
-	 * @param string $user_id UUID
-	 * @param array $where Additional SQL WHERE clause in format of array( $column => $filter, ... ). ie: array( 'id' => 1, ... )
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return bool|HierarchyLevelListFactory
-	 */
-	function getByHierarchyControlIdAndUserId( $id, $user_id, $where = NULL, $order = NULL) {
+	function getByHierarchyControlIdAndUserId($id, $user_id, $where = NULL, $order = NULL) {
 		if ( $id == '' ) {
 			return FALSE;
 		}
@@ -217,8 +178,8 @@ class HierarchyLevelListFactory extends HierarchyLevelFactory implements Iterato
 		}
 
 		$ph = array(
-					'id' => TTUUID::castUUID($id),
-					'user_id' => TTUUID::castUUID($user_id),
+					'id' => (int)$id,
+					'user_id' => (int)$user_id,
 					);
 
 		$query = '
@@ -236,15 +197,7 @@ class HierarchyLevelListFactory extends HierarchyLevelFactory implements Iterato
 		return $this;
 	}
 
-	/**
-	 * @param string $id UUID
-	 * @param string $user_id UUID
-	 * @param string $exclude_id UUID
-	 * @param array $where Additional SQL WHERE clause in format of array( $column => $filter, ... ). ie: array( 'id' => 1, ... )
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return bool|HierarchyLevelListFactory
-	 */
-	function getByHierarchyControlIdAndUserIdAndExcludeID( $id, $user_id, $exclude_id, $where = NULL, $order = NULL) {
+	function getByHierarchyControlIdAndUserIdAndExcludeID($id, $user_id, $exclude_id, $where = NULL, $order = NULL) {
 		if ( $id == '' ) {
 			return FALSE;
 		}
@@ -256,9 +209,9 @@ class HierarchyLevelListFactory extends HierarchyLevelFactory implements Iterato
 		}
 
 		$ph = array(
-					'id' => TTUUID::castUUID($id),
-					'user_id' => TTUUID::castUUID($user_id),
-					'exclude_id' => TTUUID::castUUID($exclude_id)
+					'id' => (int)$id,
+					'user_id' => (int)$user_id,
+					'exclude_id' => (int)$exclude_id
 					);
 
 		$query = '
@@ -277,11 +230,6 @@ class HierarchyLevelListFactory extends HierarchyLevelFactory implements Iterato
 		return $this;
 	}
 
-	/**
-	 * @param string $id UUID
-	 * @param string $user_id UUID
-	 * @return bool
-	 */
 	function getLevelsByHierarchyControlIdAndUserId( $id, $user_id ) {
 		if ( $id == '' ) {
 			return FALSE;
@@ -292,9 +240,9 @@ class HierarchyLevelListFactory extends HierarchyLevelFactory implements Iterato
 		}
 
 		$ph = array(
-					'id' => TTUUID::castUUID($id),
+					'id' => (int)$id,
 					'idb' => $id,
-					'user_id' => TTUUID::castUUID($user_id),
+					'user_id' => (int)$user_id,
 					);
 
 		$query = '
@@ -319,13 +267,9 @@ class HierarchyLevelListFactory extends HierarchyLevelFactory implements Iterato
 
 	}
 
-	/**
-	 * @param string $user_id UUID
-	 * @param int $object_type_id
-	 * @return array|bool
-	 */
-	function getByUserIdAndObjectTypeID( $user_id, $object_type_id = 50 ) { //50 = Requests
-
+	// 50 = Requests
+	function getLevelsByUserIdAndObjectTypeID( $user_id, $object_type_id = 50 ) {
+	
 		if ( $user_id == '' ) {
 			return FALSE;
 		}
@@ -335,34 +279,52 @@ class HierarchyLevelListFactory extends HierarchyLevelFactory implements Iterato
 		}
 
 		$hotf = new HierarchyObjectTypeFactory();
+		$hcf = new HierarchyControlFactory();
 
 		$ph = array(
-					'user_id' => TTUUID::castUUID($user_id),
+					'user_id' => (int)$user_id,
 					);
 
 		$query = '
-				select	a.*
-				from	'. $this->getTable() .' as a
-					LEFT JOIN '. $hotf->getTable() .' as b ON a.hierarchy_control_id = b.hierarchy_control_id
-				where a.user_id = ?
-					AND b.object_type_id in ('. $this->getListSQL( $object_type_id, $ph, 'int' ) .')
-					AND ( a.deleted = 0 )
+				select	distinct (x.level) as level
+				from	'. $this->getTable() .' as x,
+						'. $hcf->getTable() .' as y,
+					(
+								select	a.hierarchy_control_id, a.level
+								from	'. $this->getTable() .' as a
+									LEFT JOIN '. $hotf->getTable() .' as b ON a.hierarchy_control_id = b.hierarchy_control_id
+								where a.user_id = ?
+									AND b.object_type_id in ('. $this->getListSQL( $object_type_id, $ph, 'int' ) .')
+									AND a.deleted = 0
+					) as z
+				where
+					x.hierarchy_control_id = y.id
+					AND x.hierarchy_control_id = z.hierarchy_control_id
+					AND x.level >= z.level
+					AND ( x.deleted = 0 AND y.deleted = 0 )
+				ORDER BY x.level asc
 				';
 
-		$this->ExecuteSQL( $query, $ph );
-		//Debug::Query( $query, $ph, __FILE__, __LINE__, __METHOD__, 10);
+		$rs = $this->db->Execute($query, $ph);
+		//Debug::Text(' Rows: '. $rs->RecordCount(), __FILE__, __LINE__, __METHOD__, 10);
 
-		return $this;
+		if ( $rs->RecordCount() > 0 ) {
+			//The retarr key is the value that will be displayed to the user when switching levels on the authorization page,
+			//so we need to start that from 1 and increasing sequentially, regardless of what the actual hierarchy level is.
+			$i = 1;
+			$retarr = array();
+			foreach( $rs as $row ) {
+				$retarr[$i] = $row['level'];
+				$i++;
+			}
+
+			return $retarr;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @param string $company_id UUID
-	 * @param string $user_id UUID
-	 * @param array $where Additional SQL WHERE clause in format of array( $column => $filter, ... ). ie: array( 'id' => 1, ... )
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return bool|HierarchyLevelListFactory
-	 */
-	function getObjectTypeAndHierarchyAppendedListByCompanyIDAndUserID( $company_id, $user_id, $where = NULL, $order = NULL) {
+	function getObjectTypeAndHierarchyAppendedListByCompanyIDAndUserID($company_id, $user_id, $where = NULL, $order = NULL) {
 		if ( $company_id == '' ) {
 			return FALSE;
 		}
@@ -384,8 +346,8 @@ class HierarchyLevelListFactory extends HierarchyLevelFactory implements Iterato
 		$huf = new HierarchyUserFactory();
 
 		$ph = array(
-					'company_id' => TTUUID::castUUID($company_id),
-					'user_id' => TTUUID::castUUID($user_id),
+					'company_id' => (int)$company_id,
+					'user_id' => (int)$user_id,
 					);
 
 		$query = '
@@ -408,12 +370,7 @@ class HierarchyLevelListFactory extends HierarchyLevelFactory implements Iterato
 		return $this;
 	}
 
-	/**
-	 * @param string $user_id UUID
-	 * @param int $object_type_id
-	 * @return array|bool
-	 */
-	function getLevelsAndHierarchyControlIDsByUserIdAndObjectTypeID( $user_id, $object_type_id = 50 ) {
+	function getLevelsAndHierarchyControlIDsByUserIdAndObjectTypeID( $user_id, $object_type_id = 50 ) { 
 		if ( $user_id == '' ) {
 			return FALSE;
 		}
@@ -426,7 +383,7 @@ class HierarchyLevelListFactory extends HierarchyLevelFactory implements Iterato
 		$hcf = new HierarchyControlFactory();
 
 		$ph = array(
-					'user_id' => TTUUID::castUUID($user_id),
+					'user_id' => (int)$user_id,
 					);
 
 		//Include object_type_ids for each hierarchy_control_id, because we need to do additional filtering by hierarchy_control_id, level, object_type_ids
@@ -476,7 +433,7 @@ class HierarchyLevelListFactory extends HierarchyLevelFactory implements Iterato
 				//Unique each level arr so we don't start creating extra virtual levels when multiple superiors are at the same level.
 				//This fixes a bug where if there were 5 superiors at the same level, 5 virtual levels would be created.
 				$level_arr = array_unique($level_arr);
-
+				
 				$i = 1;
 				foreach( $level_arr as $level ) {
 					if ( $level == end($hierarchy_to_level_map[$hierarchy_control_id]) ) {
@@ -485,7 +442,7 @@ class HierarchyLevelListFactory extends HierarchyLevelFactory implements Iterato
 						$last_level = FALSE;
 					}
 
-					$retarr[$i][] = array('hierarchy_control_id' => TTUUID::castUUID($hierarchy_control_id), 'level' => $level, 'last_level' => $last_level, 'object_type_id' => array_unique( $hierarchy_to_object_type_map[$hierarchy_control_id] ) );
+					$retarr[$i][] = array('hierarchy_control_id' => (int)$hierarchy_control_id, 'level' => $level, 'last_level' => $last_level, 'object_type_id' => array_unique( $hierarchy_to_object_type_map[$hierarchy_control_id] ) );
 
 					$i++;
 				}
@@ -498,15 +455,6 @@ class HierarchyLevelListFactory extends HierarchyLevelFactory implements Iterato
 		return FALSE;
 	}
 
-	/**
-	 * @param string $company_id UUID
-	 * @param $filter_data
-	 * @param int $limit Limit the number of records returned
-	 * @param int $page Page number of records to return for pagination
-	 * @param array $where Additional SQL WHERE clause in format of array( $column => $filter, ... ). ie: array( 'id' => 1, ... )
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return bool|HierarchyLevelListFactory
-	 */
 	function getAPISearchByCompanyIdAndArrayCriteria( $company_id, $filter_data, $limit = NULL, $page = NULL, $where = NULL, $order = NULL ) {
 		if ( $company_id == '') {
 			return FALSE;
@@ -542,7 +490,7 @@ class HierarchyLevelListFactory extends HierarchyLevelFactory implements Iterato
 		$hcf = new HierarchyControlFactory();
 
 		$ph = array(
-					'company_id' => TTUUID::castUUID($company_id),
+					'company_id' => (int)$company_id,
 					);
 
 		$query = '
@@ -560,11 +508,11 @@ class HierarchyLevelListFactory extends HierarchyLevelFactory implements Iterato
 					where	b.company_id = ?
 					';
 
-		$query .= ( isset($filter_data['permission_children_ids']) ) ? $this->getWhereClauseSQL( 'a.created_by', $filter_data['permission_children_ids'], 'uuid_list', $ph ) : NULL;
-		$query .= ( isset($filter_data['id']) ) ? $this->getWhereClauseSQL( 'a.id', $filter_data['id'], 'uuid_list', $ph ) : NULL;
-		$query .= ( isset($filter_data['exclude_id']) ) ? $this->getWhereClauseSQL( 'a.id', $filter_data['exclude_id'], 'not_uuid_list', $ph ) : NULL;
+		$query .= ( isset($filter_data['permission_children_ids']) ) ? $this->getWhereClauseSQL( 'a.created_by', $filter_data['permission_children_ids'], 'numeric_list', $ph ) : NULL;
+		$query .= ( isset($filter_data['id']) ) ? $this->getWhereClauseSQL( 'a.id', $filter_data['id'], 'numeric_list', $ph ) : NULL;
+		$query .= ( isset($filter_data['exclude_id']) ) ? $this->getWhereClauseSQL( 'a.id', $filter_data['exclude_id'], 'not_numeric_list', $ph ) : NULL;
 
-		$query .= ( isset($filter_data['hierarchy_control_id']) ) ? $this->getWhereClauseSQL( 'a.hierarchy_control_id', $filter_data['hierarchy_control_id'], 'uuid_list', $ph ) : NULL;
+		$query .= ( isset($filter_data['hierarchy_control_id']) ) ? $this->getWhereClauseSQL( 'a.hierarchy_control_id', $filter_data['hierarchy_control_id'], 'numeric_list', $ph ) : NULL;
 
 		$query .= ( isset($filter_data['created_by']) ) ? $this->getWhereClauseSQL( array('a.created_by', 'y.first_name', 'y.last_name'), $filter_data['created_by'], 'user_id_or_name', $ph ) : NULL;
 		$query .= ( isset($filter_data['updated_by']) ) ? $this->getWhereClauseSQL( array('a.updated_by', 'z.first_name', 'z.last_name'), $filter_data['updated_by'], 'user_id_or_name', $ph ) : NULL;

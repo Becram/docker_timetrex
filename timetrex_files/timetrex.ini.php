@@ -12,7 +12,6 @@
 [path]
 ;URL to TimeTrex web root directory. ie: http://your.domain.com/<*BASE_URL*>
 ;DO NOT INCLUDE http://your.domain.com, just the directory AFTER your domain
-;base_url = "/timetrex/interface/"
 base_url = "/interface/"
 
 ;
@@ -91,11 +90,10 @@ verbosity = 10
 
 
 [other]
-uuid_seed = fabdbdea9638
 default_interface = html5
 ; Force all clients to use SSL.
 force_ssl = FALSE
-installer_enabled = TRUE
+installer_enabled = FALSE
 primary_company_id = 2
 
 ;Specify the URL hostname to be used to access TimeTrex. The BASE_URL specified above will be appended on to this automatically.
@@ -111,5 +109,4 @@ system_admin_email = admins@olenepal.org
 ;WARNING: DO NOT CHANGE THIS AFTER YOU HAVE INSTALLED TIMETREX.
 ;If you do it will cause all your passwords to become invalid,
 ;and you may lose access to some encrypted data.
-salt = d7a0c4036dd26eca6904e23912eec36d
-#salt = bb97e41bb7e462cb2f7028808d475b0e
+salt = 55a8b172ed7086ee6bbfb066ab933d4b

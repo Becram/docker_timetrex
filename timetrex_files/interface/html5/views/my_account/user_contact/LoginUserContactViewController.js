@@ -4,11 +4,9 @@ LoginUserContactViewController = BaseViewController.extend( {
 
 	company_api: null,
 
-	_required_files: ['APIUser', 'APICompany'],
+	initialize: function( options ) {
 
-	init: function( options ) {
-
-		//this._super('initialize', options );
+		this._super( 'initialize', options );
 
 		this.permission_id = 'user';
 		this.viewId = 'LoginUserContact';
@@ -144,7 +142,7 @@ LoginUserContactViewController = BaseViewController.extend( {
 				var result_data = result.getResult();
 				if ( result_data === true ) {
 					$this.refresh_id = $this.current_edit_record.id;
-				} else if ( TTUUID.isUUID( result_data ) && result_data != TTUUID.zero_id && result_data != TTUUID.not_exist_id ) {
+				} else if ( result_data > 0 ) {
 					$this.refresh_id = result_data;
 				}
 

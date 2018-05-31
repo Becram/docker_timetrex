@@ -8,8 +8,8 @@ AccrualPolicyUserModifierViewController = BaseViewController.extend( {
 
 	result_details: null,
 
-	init: function( options ) {
-		//this._super('initialize', options );
+	initialize: function( options ) {
+		this._super( 'initialize', options );
 		if ( this.parent_view === 'employee' ) {
 			this.context_menu_name = $.i18n._( 'Accruals' );
 			this.navigation_label = $.i18n._( 'Accrual' ) + ':';
@@ -44,52 +44,6 @@ AccrualPolicyUserModifierViewController = BaseViewController.extend( {
 		this.setSelectRibbonMenuIfNecessary();
 
 	},
-
-    initSubLogView: function( tab_id ) {
-        var $this = this;
-        if ( this.sub_log_view_controller ) {
-            this.sub_log_view_controller.buildContextMenu( true );
-            this.sub_log_view_controller.setDefaultMenu();
-            $this.sub_log_view_controller.parent_edit_record = $this.current_edit_record;
-            $this.sub_log_view_controller.getSubViewFilter = function( filter ) {
-                filter['table_name_object_id'] = {
-                    'accrual_policy_user_modifier': [this.parent_edit_record.accrual_policy_id],
-                };
-
-                return filter;
-            };
-
-            $this.sub_log_view_controller.initData();
-            return;
-        }
-
-        Global.loadScript( 'views/core/log/LogViewController.js', function() {
-            var tab = $this.edit_view_tab.find( '#' + tab_id );
-            var firstColumn = tab.find( '.first-column-sub-view' );
-            Global.trackView( 'Sub' + 'Log' + 'View' );
-            LogViewController.loadSubView( firstColumn, beforeLoadView, afterLoadView );
-        } );
-
-        function beforeLoadView() {
-
-        }
-
-        function afterLoadView( subViewController ) {
-            $this.sub_log_view_controller = subViewController;
-            $this.sub_log_view_controller.parent_edit_record = $this.current_edit_record;
-            $this.sub_log_view_controller.getSubViewFilter = function( filter ) {
-                filter['table_name_object_id'] = {
-                    'accrual_policy_user_modifier': [this.parent_edit_record.accrual_policy_id],
-                };
-
-                return filter;
-            };
-            $this.sub_log_view_controller.parent_view_controller = $this;
-            $this.sub_log_view_controller.postInit = function() {
-                this.initData();
-            }
-        }
-    },
 
 	onAddClick: function() {
 		var $this = this;
@@ -421,7 +375,7 @@ AccrualPolicyUserModifierViewController = BaseViewController.extend( {
 		LocalCacheData.current_doing_context_action = 'edit';
 		$this.openEditView();
 
-		if ( TTUUID.isUUID(selectedId) && selectedId != TTUUID.not_exist_id && selectedId != TTUUID.zero_id ) {
+		if ( selectedId > 0 ) {
 
 			var filter = {};
 
@@ -458,9 +412,8 @@ AccrualPolicyUserModifierViewController = BaseViewController.extend( {
 
 			var result_data = this.getRecordFromGridById( selectedId );
 
-			if ( result_data && result_data.id ) {
-				result_data.id = '';
-			}
+			result_data.id = '';
+
 			if ( $this.sub_view_mode && $this.parent_key ) {
 				result_data[$this.parent_key] = $this.parent_value;
 			}
@@ -481,7 +434,7 @@ AccrualPolicyUserModifierViewController = BaseViewController.extend( {
 			if ( !this.edit_only_mode ) {
 				if ( result_data === true ) {
 					$this.refresh_id = $this.current_edit_record.id;
-				} else if ( TTUUID.isUUID( result_data ) && result_data != TTUUID.zero_id && result_data != TTUUID.not_exist_id ) {
+				} else if ( result_data > 0 ) {
 					$this.refresh_id = result_data;
 				}
 
@@ -567,7 +520,7 @@ AccrualPolicyUserModifierViewController = BaseViewController.extend( {
 		filter.filter_data = Global.convertLayoutFilterToAPIFilter( this.select_layout );
 		filter.filter_sort = this.select_layout.data.filter_sort;
 
-		if ( TTUUID.isUUID(this.refresh_id) ) {
+		if ( this.refresh_id > 0 ) {
 			filter.filter_data = {};
 			filter.filter_data.id = [this.refresh_id];
 
@@ -603,7 +556,7 @@ AccrualPolicyUserModifierViewController = BaseViewController.extend( {
 
 					len = result_data.length;
 				}
-				if ( TTUUID.isUUID($this.refresh_id) ) {
+				if ( $this.refresh_id > 0 ) {
 					$this.refresh_id = null;
 					var grid_source_data = $this.grid.getGridParam( 'data' );
 					len = grid_source_data.length;
@@ -623,9 +576,9 @@ AccrualPolicyUserModifierViewController = BaseViewController.extend( {
 							var record = grid_source_data[i];
 
 							//Fixed === issue. The id set by jQGrid is string type.
-							// if ( !isNaN( parseInt( record.id ) ) ) {
-							// 	record.id = parseInt( record.id );
-							// }
+							if ( !isNaN( parseInt( record.id ) ) ) {
+								record.id = parseInt( record.id );
+							}
 
 							if ( record.id == new_record.id ) {
 								$this.grid.setRowData( new_record.id, new_record );
@@ -885,7 +838,7 @@ AccrualPolicyUserModifierViewController = BaseViewController.extend( {
 			}
 		}
 
-		if ( this.current_edit_record.type_id == 30 ) {
+		if ( this.current_edit_record.type_id === 30 ) {
 			this.attachElement( 'annual_maximum_time_modifier' );
 		} else {
 			this.detachElement( 'annual_maximum_time_modifier' );
@@ -1257,26 +1210,7 @@ AccrualPolicyUserModifierViewController = BaseViewController.extend( {
 
 			}
 		} );
-	},
-
-	setDefaultMenuDeleteIcon : function( context_btn, grid_selected_length, pId ) {
-		if ( (!this.addPermissionValidate( pId ) && !this.editPermissionValidate( pId )) || this.edit_only_mode ) {
-			context_btn.addClass( 'invisible-image' );
-		}
-
-		var grid_selected_id_array = this.getGridSelectIdArray();
-		var enabled = false;
-
-		for ( var i in grid_selected_id_array ) {
-			if ( TTUUID.isUUID(grid_selected_id_array[i]) ) {
-				enabled = true;
-			}
-		}
-
-		if(!enabled){
-			context_btn.addClass('disable-image');
-		}
-	},
+	}
 
 } );
 

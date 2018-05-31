@@ -1,7 +1,7 @@
 <?php
 /*********************************************************************************
  * TimeTrex is a Workforce Management program developed by
- * TimeTrex Software Inc. Copyright (C) 2003 - 2018 TimeTrex Software Inc.
+ * TimeTrex Software Inc. Copyright (C) 2003 - 2017 TimeTrex Software Inc.
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Affero General Public License version 3 as published by
@@ -34,14 +34,7 @@
  * the words "Powered by TimeTrex".
  ********************************************************************************/
 
-/**
- * Class Redis_Cache_Lite
- */
 class Redis_Cache_Lite extends Cache_Lite {
-	/**
-	 * Redis_Cache_Lite constructor.
-	 * @param array $options
-	 */
 	function __construct( $options = array(NULL) ) {
 		//$this->Cache_Lite( $options );
 		parent::__construct( $options );
@@ -55,10 +48,6 @@ class Redis_Cache_Lite extends Cache_Lite {
 		return TRUE;
 	}
 
-	/**
-	 * @param $key
-	 * @return bool
-	 */
 	function redisConnect( $key ) {
 		if ( isset($this->_redisHostConn[$key]) AND $this->_redisHostConn[$key] === FALSE ) {
 			Debug::Text( 'Previous error connecting to the Redis database, not attempting again during this request...', __FILE__, __LINE__, __METHOD__, 1);
@@ -106,9 +95,6 @@ class Redis_Cache_Lite extends Cache_Lite {
 		return FALSE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function redisConnectMaster() {
 		Debug::text('Connecting to REDIS Host: '. $this->_redisHost, __FILE__, __LINE__, __METHOD__, 10);
 		if ( isset( $this->_redisHost ) AND $this->_redisHost != '' ) {
@@ -128,10 +114,6 @@ class Redis_Cache_Lite extends Cache_Lite {
 		}
 	}
 
-	/**
-	 * @param string $name
-	 * @param mixed $value
-	 */
 	function setOption( $name, $value ) {
 		$availableOptions = array('redisHost', 'redisDB', 'errorHandlingAPIBreak', 'hashedDirectoryUmask', 'hashedDirectoryLevel', 'automaticCleaningFactor', 'automaticSerialization', 'fileNameProtection', 'memoryCaching', 'onlyMemoryCaching', 'memoryCachingLimit', 'cacheDir', 'caching', 'lifeTime', 'fileLocking', 'writeControl', 'readControl', 'readControlType', 'pearErrorMode', 'hashedDirectoryGroup', 'cacheFileMode', 'cacheFileGroup');
 		if (in_array($name, $availableOptions)) {
@@ -140,12 +122,6 @@ class Redis_Cache_Lite extends Cache_Lite {
 		}
 	}
 
-	/**
-	 * @param string $id
-	 * @param string $group
-	 * @param bool $doNotTestCacheValidity
-	 * @return bool|mixed
-	 */
 	function get( $id, $group = 'default', $doNotTestCacheValidity = FALSE ) {
 		$this->_id = $id;
 		$this->_group = $group;
@@ -177,9 +153,6 @@ class Redis_Cache_Lite extends Cache_Lite {
 		return FALSE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function _read() {
 		$redis = $this->redisConnect('master');
 		//if ( !PEAR::isError($redis) ) {
@@ -195,12 +168,6 @@ class Redis_Cache_Lite extends Cache_Lite {
 		return FALSE;
 	}
 
-	/**
-	 * @param string $data
-	 * @param string $id UUID
-	 * @param string $group
-	 * @return bool
-	 */
 	function save( $data, $id = NULL, $group = 'default' ) {
 		if ($this->_caching) {
 			if ($this->_automaticSerialization) {
@@ -231,10 +198,6 @@ class Redis_Cache_Lite extends Cache_Lite {
 		return FALSE;
 	}
 
-	/**
-	 * @param string $id
-	 * @param string $group
-	 */
 	function _setFileName( $id, $group ) {
 		//if ($this->_fileNameProtection) {
 		//    $suffix = md5($group).'_'.md5($id);
@@ -246,10 +209,6 @@ class Redis_Cache_Lite extends Cache_Lite {
 		$this->_file = $suffix;
 	}
 
-	/**
-	 * @param string $data
-	 * @return bool
-	 */
 	function _write( $data ) {
 		$redis = $this->redisConnect('master');
 		//if ( !PEAR::isError($redis) ) {
@@ -266,11 +225,6 @@ class Redis_Cache_Lite extends Cache_Lite {
 		return FALSE;
 	}
 
-	/**
-	 * @param string $file
-	 * @param bool $skip_master
-	 * @return bool
-	 */
 	function _unlink( $file, $skip_master = FALSE ) {
 		//When multiple redis servers are specified, we need to expire cache on them all.
 		foreach( $this->_redisHostHost as $server_key => $value ) {
@@ -295,26 +249,7 @@ class Redis_Cache_Lite extends Cache_Lite {
 		return TRUE;
 	}
 
-	/**
-	 * @param bool $group
-	 * @param string $mode
-	 * @param bool $skip_master
-	 * @return bool
-	 */
 	function clean( $group = FALSE, $mode = 'ingroup', $skip_master = FALSE ) {
-		//Make sure we still clear local PHP memory cache too.
-		if ($this->_memoryCaching) {
-			foreach($this->_memoryCachingArray as $key => $v) {
-				if ( $group == FALSE OR strpos( $key, $group .'_' ) !== FALSE ) {
-					unset($this->_memoryCachingArray[$key]);
-					$this->_memoryCachingCounter = $this->_memoryCachingCounter - 1;
-				}
-			}
-			if ($this->_onlyMemoryCaching) {
-				return true;
-			}
-		}
-
 		//When multiple redis servers are specified, we need to expire cache on them all.
 		foreach( $this->_redisHostHost as $server_key => $value ) {
 			if ( $skip_master == FALSE OR ( $skip_master == TRUE AND $server_key != 'master' ) ) {
@@ -343,54 +278,22 @@ class Redis_Cache_Lite extends Cache_Lite {
 	 * Support ADODB Cache module.
 	 */
 	var $createdir = FALSE; // do not set this to true unless you use temp directories in cache path
-
-	/**
-	 * @param $filename
-	 * @param $contents
-	 * @param bool $debug
-	 * @return bool
-	 */
-	function writecache( $filename, $contents, $debug = FALSE ) {
+	function writecache($filename, $contents, $debug = FALSE ) {
 		return $this->save( $contents, $filename, 'adodb' );
 	}
-
-	/**
-	 * @param $filename
-	 * @param $err
-	 * @param $secs2cache
-	 * @param $rsClass
-	 * @return mixed
-	 */
-	function readcache( $filename, &$err, $secs2cache, $rsClass) {
+	function readcache($filename, &$err, $secs2cache, $rsClass) {
 		$rs = explode("\n", $this->get( $filename, 'adodb' ) );
 		unset($rs[0]);
 		$rs = join("\n", $rs);
 		return unserialize( $rs );
 	}
-
-	/**
-	 * @param bool $debug
-	 * @return bool
-	 */
-	function flushall( $debug = FALSE) {
+	function flushall($debug = FALSE) {
 		return $this->clean( 'adodb' );
 	}
-
-	/**
-	 * @param $filename
-	 * @param bool $debug
-	 * @return bool
-	 */
-	function flushcache( $filename, $debug = FALSE ) {
+	function flushcache($filename, $debug = FALSE ) {
 		return $this->remove( $filename, 'adodb' );
 	}
-
-	/**
-	 * @param $dir
-	 * @param $hash
-	 * @return bool
-	 */
-	function createdir( $dir, $hash) {
+	function createdir($dir, $hash) {
 		return TRUE;
 	}
 }

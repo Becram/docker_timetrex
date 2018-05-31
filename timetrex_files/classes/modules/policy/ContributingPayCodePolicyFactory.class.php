@@ -1,7 +1,7 @@
 <?php
 /*********************************************************************************
  * TimeTrex is a Workforce Management program developed by
- * TimeTrex Software Inc. Copyright (C) 2003 - 2018 TimeTrex Software Inc.
+ * TimeTrex Software Inc. Copyright (C) 2003 - 2017 TimeTrex Software Inc.
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Affero General Public License version 3 as published by
@@ -44,11 +44,6 @@ class ContributingPayCodePolicyFactory extends Factory {
 
 	protected $company_obj = NULL;
 
-	/**
-	 * @param $name
-	 * @param null $parent
-	 * @return array|null
-	 */
 	function _getFactoryOptions( $name, $parent = NULL ) {
 		$retval = NULL;
 		switch( $name ) {
@@ -91,10 +86,6 @@ class ContributingPayCodePolicyFactory extends Factory {
 		return $retval;
 	}
 
-	/**
-	 * @param $data
-	 * @return array
-	 */
 	function _getVariableToFunctionMap( $data ) {
 		$variable_function_map = array(
 										'id' => 'ID',
@@ -109,42 +100,44 @@ class ContributingPayCodePolicyFactory extends Factory {
 		return $variable_function_map;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function getCompanyObject() {
 		return $this->getGenericObject( 'CompanyListFactory', $this->getCompany(), 'company_obj' );
 	}
 
-	/**
-	 * @return bool|mixed
-	 */
 	function getCompany() {
-		return $this->getGenericDataValue( 'company_id' );
+		if ( isset($this->data['company_id']) ) {
+			return (int)$this->data['company_id'];
+		}
+
+		return FALSE;
+	}
+	function setCompany($id) {
+		$id = trim($id);
+
+		Debug::Text('Company ID: '. $id, __FILE__, __LINE__, __METHOD__, 10);
+		$clf = TTnew( 'CompanyListFactory' );
+
+		if ( $this->Validator->isResultSetWithRows(	'company',
+													$clf->getByID($id),
+													TTi18n::gettext('Company is invalid')
+													) ) {
+
+			$this->data['company_id'] = $id;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @param string $value UUID
-	 * @return bool
-	 */
-	function setCompany( $value) {
-		$value = TTUUID::castUUID( $value );
-		Debug::Text('Company ID: '. $value, __FILE__, __LINE__, __METHOD__, 10);
-		return $this->setGenericDataValue( 'company_id', $value );
-	}
-
-	/**
-	 * @param $name
-	 * @return bool
-	 */
-	function isUniqueName( $name) {
+	function isUniqueName($name) {
 		$name = trim($name);
 		if ( $name == '' ) {
 			return FALSE;
 		}
 
 		$ph = array(
-					'company_id' => TTUUID::castUUID($this->getCompany()),
+					'company_id' => (int)$this->getCompany(),
 					'name' => TTi18n::strtolower($name),
 					);
 
@@ -162,42 +155,57 @@ class ContributingPayCodePolicyFactory extends Factory {
 
 		return FALSE;
 	}
-
-	/**
-	 * @return bool|mixed
-	 */
 	function getName() {
-		return $this->getGenericDataValue( 'name' );
+		if ( isset($this->data['name']) ) {
+			return $this->data['name'];
+		}
+
+		return FALSE;
+	}
+	function setName($name) {
+		$name = trim($name);
+		if (	$this->Validator->isLength(	'name',
+											$name,
+											TTi18n::gettext('Name is too short or too long'),
+											2, 75)
+				AND
+				$this->Validator->isTrue(	'name',
+											$this->isUniqueName($name),
+											TTi18n::gettext('Name is already in use') )
+						) {
+
+			$this->data['name'] = $name;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setName( $value) {
-		$value = trim($value);
-		return $this->setGenericDataValue( 'name', $value );
-	}
-
-	/**
-	 * @return bool|mixed
-	 */
 	function getDescription() {
-		return $this->getGenericDataValue( 'description' );
+		if ( isset($this->data['description']) ) {
+			return $this->data['description'];
+		}
+
+		return FALSE;
+	}
+	function setDescription($description) {
+		$description = trim($description);
+
+		if (	$description == ''
+				OR $this->Validator->isLength(	'description',
+												$description,
+												TTi18n::gettext('Description is invalid'),
+												1, 250) ) {
+
+			$this->data['description'] = $description;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setDescription( $value) {
-		$value = trim($value);
-		return $this->setGenericDataValue( 'description', $value );
-	}
-
-	/**
-	 * @return mixed
-	 */
 	function getPayCode() {
 		//Since Validate() calls this function, it causes problems with caching.
 		//  As we set the new pay codes it purges the cache, then immediately after in Validate() we
@@ -215,67 +223,18 @@ class ContributingPayCodePolicyFactory extends Factory {
 
 		return $this->getCompanyGenericMapData( $this->getCompany(), 90, $this->getID(), 'pay_code_map' );
 	}
-
-	/**
-	 * @param string $ids UUID
-	 * @return bool
-	 */
-	function setPayCode( $ids) {
+	function setPayCode($ids) {
 		Debug::text('Setting Pay Code IDs...', __FILE__, __LINE__, __METHOD__, 10);
 		return CompanyGenericMapFactory::setMapIDs( $this->getCompany(), 90, $this->getID(), (array)$ids, FALSE, TRUE );
 	}
 
-	/**
-	 * @param bool $ignore_warning
-	 * @return bool
-	 */
 	function Validate( $ignore_warning = TRUE ) {
-		//
-		// BELOW: Validation code moved from set*() functions.
-		//
-		// Company
-		$clf = TTnew( 'CompanyListFactory' );
-		$this->Validator->isResultSetWithRows(	'company',
-														$clf->getByID($this->getCompany()),
-														TTi18n::gettext('Company is invalid')
-													);
-		// Name
-		if ( $this->Validator->getValidateOnly() == FALSE ) { //Don't check the below when mass editing, but must check when adding a new record..
-			if ( $this->getName() == '' ) {
-				$this->Validator->isTRUE( 'name',
-											FALSE,
-											TTi18n::gettext( 'Please specify a name' ) );
-									}
-		}
-		if ( $this->getName() !== FALSE ) {
-			if ( $this->getName() != '' AND $this->Validator->isError('name') == FALSE ) {
-				$this->Validator->isLength(	'name',
-													$this->getName(),
-													TTi18n::gettext('Name is too short or too long'),
-													2, 75
-												);
-			}
-			if ( $this->getName() != '' AND $this->Validator->isError('name') == FALSE ) {
-				$this->Validator->isTrue(	'name',
-													$this->isUniqueName($this->getName()),
-													TTi18n::gettext('Name is already in use')
-												);
-			}
-		}
-		// Description
-		if ( $this->getDescription() != '' ) {
-			$this->Validator->isLength(	'description',
-												$this->getDescription(),
-												TTi18n::gettext('Description is invalid'),
-												1, 250
-											);
-		}
-
-
-		//
-		// ABOVE: Validation code moved from set*() functions.
-		//
 		if ( $this->getDeleted() != TRUE AND $this->Validator->getValidateOnly() == FALSE ) { //Don't check the below when mass editing.
+			if ( $this->getName() == '' ) {
+				$this->Validator->isTRUE(	'name',
+											FALSE,
+											TTi18n::gettext('Please specify a name') );
+			}
 
 			//During InstallSchema_1064 we create ContributingPayCodePolicies without any pay codes.
 			if ( $this->getPayCode() === FALSE OR count( (array)$this->getPayCode() ) == 0 ) {
@@ -307,26 +266,16 @@ class ContributingPayCodePolicyFactory extends Factory {
 		return TRUE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function preSave() {
 		return TRUE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function postSave() {
 		$this->removeCache( $this->getId() );
 
 		return TRUE;
 	}
 
-	/**
-	 * @param $data
-	 * @return bool
-	 */
 	function setObjectFromArray( $data ) {
 		if ( is_array( $data ) ) {
 			$variable_function_map = $this->getVariableToFunctionMap();
@@ -352,10 +301,6 @@ class ContributingPayCodePolicyFactory extends Factory {
 		return FALSE;
 	}
 
-	/**
-	 * @param null $include_columns
-	 * @return array
-	 */
 	function getObjectAsArray( $include_columns = NULL ) {
 		$data = array();
 		$variable_function_map = $this->getVariableToFunctionMap();
@@ -383,10 +328,6 @@ class ContributingPayCodePolicyFactory extends Factory {
 		return $data;
 	}
 
-	/**
-	 * @param $log_action
-	 * @return bool
-	 */
 	function addLog( $log_action ) {
 		return TTLog::addEntry( $this->getId(), $log_action, TTi18n::getText('Contributing Time Policy'), NULL, $this->getTable(), $this );
 	}

@@ -1,7 +1,7 @@
 <?php
 /*********************************************************************************
  * TimeTrex is a Workforce Management program developed by
- * TimeTrex Software Inc. Copyright (C) 2003 - 2018 TimeTrex Software Inc.
+ * TimeTrex Software Inc. Copyright (C) 2003 - 2017 TimeTrex Software Inc.
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Affero General Public License version 3 as published by
@@ -45,11 +45,6 @@ class RecurringScheduleControlFactory extends Factory {
 	protected $company_obj = NULL;
 	protected $recurring_schedule_template_obj = NULL;
 
-	/**
-	 * @param $name
-	 * @param null $parent
-	 * @return array|null
-	 */
 	function _getFactoryOptions( $name, $parent = NULL ) {
 
 		$retval = NULL;
@@ -103,10 +98,6 @@ class RecurringScheduleControlFactory extends Factory {
 		return $retval;
 	}
 
-	/**
-	 * @param $data
-	 * @return array
-	 */
 	function _getVariableToFunctionMap( $data ) {
 		$variable_function_map = array(
 										'id' => 'ID',
@@ -132,155 +123,197 @@ class RecurringScheduleControlFactory extends Factory {
 		return $variable_function_map;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function getCompanyObject() {
 		return $this->getGenericObject( 'CompanyListFactory', $this->getCompany(), 'company_obj' );
 	}
 
-	/**
-	 * @return bool
-	 */
 	function getRecurringScheduleTemplateControlObject() {
 		return $this->getGenericObject( 'RecurringScheduleTemplateControlListFactory', $this->getRecurringScheduleTemplateControl(), 'recurring_schedule_template_control_obj' );
 	}
 
 
-	/**
-	 * @return bool|mixed
-	 */
 	function getCompany() {
-		return $this->getGenericDataValue( 'company_id' );
+		if ( isset($this->data['company_id']) ) {
+			return (int)$this->data['company_id'];
+		}
+
+		return FALSE;
+	}
+	function setCompany($id) {
+		$id = trim($id);
+
+		$clf = TTnew( 'CompanyListFactory' );
+
+		if ( $this->Validator->isResultSetWithRows(	'company',
+													$clf->getByID($id),
+													TTi18n::gettext('Company is invalid')
+													) ) {
+
+			$this->data['company_id'] = $id;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @param string $value UUID
-	 * @return bool
-	 */
-	function setCompany( $value ) {
-		$value = TTUUID::castUUID( $value );
-		return $this->setGenericDataValue( 'company_id', $value );
-	}
-
-	/**
-	 * @return bool|mixed
-	 */
 	function getRecurringScheduleTemplateControl() {
-		return $this->getGenericDataValue( 'recurring_schedule_template_control_id' );
+		if ( isset($this->data['recurring_schedule_template_control_id']) ) {
+			return (int)$this->data['recurring_schedule_template_control_id'];
+		}
+
+		return FALSE;
+	}
+	function setRecurringScheduleTemplateControl($id) {
+		$id = trim($id);
+
+		$rstclf = TTnew( 'RecurringScheduleTemplateControlListFactory' );
+
+		if ( $this->Validator->isResultSetWithRows(	'recurring_schedule_template_control_id',
+													$rstclf->getByID($id),
+													TTi18n::gettext('Recurring Schedule Template is invalid')
+													) ) {
+
+			$this->data['recurring_schedule_template_control_id'] = $id;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @param string $value UUID
-	 * @return bool
-	 */
-	function setRecurringScheduleTemplateControl( $value ) {
-		$value = TTUUID::castUUID( $value );
-		return $this->setGenericDataValue( 'recurring_schedule_template_control_id', $value );
-	}
-
-	/**
-	 * @return bool|int
-	 */
 	function getStartWeek() {
-		return $this->getGenericDataValue( 'start_week' );
+		if ( isset($this->data['start_week']) ) {
+			return (int)$this->data['start_week'];
+		}
+
+		return FALSE;
+	}
+	function setStartWeek($int) {
+		$int = trim($int);
+
+		if	(
+				$this->Validator->isGreaterThan(	'start_week',
+													$int,
+													TTi18n::gettext('Start week must be at least 1'),
+													1)
+				AND
+				$this->Validator->isNumeric(		'start_week',
+													$int,
+													TTi18n::gettext('Start week is invalid')) ) {
+			$this->data['start_week'] = $int;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setStartWeek( $value ) {
-		$value = (int)trim($value);
-		return $this->setGenericDataValue( 'start_week', $value );
-	}
-
-	/**
-	 * @param bool $raw
-	 * @return bool|int
-	 */
 	function getStartDate( $raw = FALSE ) {
-		$value = $this->getGenericDataValue( 'start_date' );
-		if ( $value !== FALSE ) {
+		if ( isset($this->data['start_date']) ) {
 			if ( $raw === TRUE ) {
-				return $value;
+				return $this->data['start_date'];
 			} else {
-				return TTDate::strtotime( $value );
+				return TTDate::strtotime( $this->data['start_date'] );
 			}
 		}
 
 		return FALSE;
 	}
+	function setStartDate($epoch) {
+		$epoch = ( !is_int($epoch) ) ? trim($epoch) : $epoch; //Dont trim integer values, as it changes them to strings.
 
-	/**
-	 * @param int $value EPOCH
-	 * @return bool
-	 */
-	function setStartDate( $value ) {
-		$value = ( !is_int($value) ) ? trim($value) : $value; //Dont trim integer values, as it changes them to strings.
-		return $this->setGenericDataValue( 'start_date', $value );
+		if	(	$this->Validator->isDate(		'start_date',
+												$epoch,
+												TTi18n::gettext('Incorrect start date'))
+			) {
+
+			$this->data['start_date'] = $epoch;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @param bool $raw
-	 * @return bool|int
-	 */
 	function getEndDate( $raw = FALSE ) {
-		$value = $this->getGenericDataValue( 'end_date' );
-		if ( $value !== FALSE ) {
+		if ( isset($this->data['end_date']) ) {
 			if ( $raw === TRUE ) {
-				return $value;
+				return $this->data['end_date'];
 			} else {
-				return TTDate::strtotime( $value );
+				return TTDate::strtotime( $this->data['end_date'] );
 			}
 		}
 
 		return FALSE;
 	}
+	function setEndDate($epoch) {
+		$epoch = ( !is_int($epoch) ) ? trim($epoch) : $epoch; //Dont trim integer values, as it changes them to strings.
 
-	/**
-	 * @param int $value EPOCH
-	 * @return bool
-	 */
-	function setEndDate( $value ) {
-		$value = ( !is_int($value) ) ? trim($value) : $value; //Dont trim integer values, as it changes them to strings.
-		return $this->setGenericDataValue( 'end_date', $value );
+		if ( $epoch == '' ) {
+			$epoch = NULL;
+		}
+
+		if	(	$epoch == NULL
+				OR
+				$this->Validator->isDate(		'end_date',
+												$epoch,
+												TTi18n::gettext('Incorrect end date'))
+			) {
+
+			$this->data['end_date'] = $epoch;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @return bool|int
-	 */
 	function getDisplayWeeks() {
-		return $this->getGenericDataValue( 'display_weeks' );
+		if ( isset($this->data['display_weeks']) ) {
+			return (int)$this->data['display_weeks'];
+		}
+
+		return FALSE;
+	}
+	function setDisplayWeeks($int) {
+		$int = trim($int);
+
+		if	(
+				$this->Validator->isGreaterThan(	'display_weeks',
+													$int,
+													TTi18n::gettext('Display Weeks must be at least 1'),
+													1)
+				AND
+				$this->Validator->isLessThan(		'display_weeks',
+													$int,
+													TTi18n::gettext('Display Weeks cannot exceed 78'),
+													78)
+				AND
+				$this->Validator->isNumeric(		'display_weeks',
+													$int,
+													TTi18n::gettext('Display weeks is invalid')) ) {
+			$this->data['display_weeks'] = $int;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setDisplayWeeks( $value ) {
-		$value = (int)trim($value);
-		return $this->setGenericDataValue( 'display_weeks', $value );
-	}
-
-	/**
-	 * @return bool
-	 */
 	function getAutoFill() {
-		return $this->fromBool( $this->getGenericDataValue( 'auto_fill' ) );
+		if ( isset($this->data['auto_fill']) ) {
+			return $this->fromBool( $this->data['auto_fill'] );
+		}
+
+		return FALSE;
+	}
+	function setAutoFill($bool) {
+		$this->data['auto_fill'] = $this->toBool($bool);
+
+		return TRUE;
 	}
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setAutoFill( $value ) {
-		return $this->setGenericDataValue( 'auto_fill', $this->toBool($value) );
-	}
-
-	/**
-	 * @return array|bool
-	 */
 	function getUser() {
 		$rsulf = TTnew( 'RecurringScheduleUserListFactory' );
 		$rsulf->getByRecurringScheduleControlId( $this->getId() );
@@ -295,15 +328,10 @@ class RecurringScheduleControlFactory extends Factory {
 
 		return FALSE;
 	}
-
-	/**
-	 * @param string $ids UUID
-	 * @return bool
-	 */
-	function setUser( $ids) {
+	function setUser($ids) {
 		if ( !is_array($ids) ) {
 			global $current_user;
-			if ( $ids == '' AND ( getTTProductEdition() == TT_PRODUCT_COMMUNITY OR $current_user->getCompanyObject()->getProductEdition() == 10 ) ) {
+			if ( (int)$ids == 0 AND ( getTTProductEdition() == TT_PRODUCT_COMMUNITY OR $current_user->getCompanyObject()->getProductEdition() == 10 ) ) {
 				$this->Validator->isTrue(		'user',
 												FALSE,
 												TTi18n::gettext('Please select at least one employee') );
@@ -338,16 +366,12 @@ class RecurringScheduleControlFactory extends Factory {
 
 			//Insert new mappings.
 			$ulf = TTnew( 'UserListFactory' );
-			foreach ($ids as $id) {
-				if ( $id === 0 ) {
-					$id = TTUUID::getZeroID();
-				}
 
-				//if ( $id >= 0 AND isset($tmp_ids) AND !in_array($id, $tmp_ids) ) { //-1 is used as "NONE", so ignore it here.
-				if ( TTUUID::isUUID($id) AND $id != TTUUID::getNotExistID() AND isset($tmp_ids) AND !in_array($id, $tmp_ids) ) { //-1 is used as "NONE", so ignore it here.
+			foreach ($ids as $id) {
+				if ( $id >= 0 AND isset($tmp_ids) AND !in_array($id, $tmp_ids) ) { //-1 is used as "NONE", so ignore it here.
 					//Handle OPEN shifts.
 					$full_name = NULL;
-					if ( $id == TTUUID::getZeroID() ) {
+					if ( $id == 0 ) {
 						$full_name = TTi18n::getText('OPEN');
 					} else {
 						$ulf->getById( $id );
@@ -366,7 +390,7 @@ class RecurringScheduleControlFactory extends Factory {
 						$rsuf->save();
 					}
 					unset($full_name);
-				} elseif ( $id == TTUUID::getNotExistID() ) { //Make sure -1 isn't the only selected option.
+				} elseif ( $id == -1 ) { //Make sure -1 isn't the only selected option.
 					$this->Validator->isTrue(		'user',
 													FALSE,
 													TTi18n::gettext('Please select at least one employee') );
@@ -380,21 +404,11 @@ class RecurringScheduleControlFactory extends Factory {
 		return FALSE;
 	}
 
-	/**
-	 * @param $current
-	 * @param $start
-	 * @param $max
-	 * @return int
-	 */
 	function reMapWeek( $current, $start, $max ) {
 		return ( ( ( ( $current - 1 ) + $max - ( $start - 1 ) ) % $max) + 1 );
 	}
 
-	/**
-	 * @param $week_arr
-	 * @return array
-	 */
-	function ReMapWeeks( $week_arr) {
+	function ReMapWeeks($week_arr) {
 		//We should be able to re-map weeks with simple math:
 		//For example:
 		//	Start Week = 3, Max Week = 5
@@ -435,100 +449,15 @@ class RecurringScheduleControlFactory extends Factory {
 
 		return $week_arr;
 	}
-	/**
-	 * @return bool
-	 */
-	function Validate() {
-		//
-		// BELOW: Validation code moved from set*() functions.
-		//
-		// Company
-		$clf = TTnew( 'CompanyListFactory' );
-		$this->Validator->isResultSetWithRows(	'company',
-														$clf->getByID($this->getCompany()),
-														TTi18n::gettext('Company is invalid')
-				 									);
-		// Recurring Schedule Template
-		if ( $this->getRecurringScheduleTemplateControl() !== FALSE ) {
-			$rstclf = TTnew( 'RecurringScheduleTemplateControlListFactory' );
-			$this->Validator->isResultSetWithRows(	'recurring_schedule_template_control_id',
-															$rstclf->getByID($this->getRecurringScheduleTemplateControl()),
-															TTi18n::gettext('Recurring Schedule Template is invalid')
-														);
-		}
-		// Start week
-		if ( $this->getStartWeek() !== FALSE ) {
-			$this->Validator->isGreaterThan(	'start_week',
-														$this->getStartWeek(),
-														TTi18n::gettext('Start week must be at least 1'),
-														1
-													);
-			if ( $this->Validator->isError('start_week') == FALSE ) {
-				$this->Validator->isNumeric(		'start_week',
-															$this->getStartWeek(),
-															TTi18n::gettext('Start week is invalid')
-														);
-			}
-		}
-		// Start date
-		if ( $this->getStartDate() !== FALSE ) {
-			$this->Validator->isDate(		'start_date',
-													$this->getStartDate(),
-													TTi18n::gettext('Incorrect start date')
-												);
-		}
-		// End date
-		if ( $this->getEndDate() != '' ) {
-			$this->Validator->isDate(		'end_date',
-													$this->getEndDate(),
-													TTi18n::gettext('Incorrect end date')
-												);
-		}
-		// Display Weeks
-		if ( $this->Validator->getValidateOnly() == FALSE OR $this->getDisplayWeeks() !== FALSE ) {
-			$this->Validator->isGreaterThan(	'display_weeks',
-														$this->getDisplayWeeks(),
-														TTi18n::gettext('Display Weeks must be at least 1'),
-														1
-													);
-			if ( $this->Validator->isError('display_weeks') == FALSE ) {
-				$this->Validator->isLessThan(		'display_weeks',
-															$this->getDisplayWeeks(),
-															TTi18n::gettext('Display Weeks cannot exceed 78'),
-															78
-														);
-			}
-			if ( $this->Validator->isError('display_weeks') == FALSE ) {
-				$this->Validator->isNumeric(		'display_weeks',
-															$this->getDisplayWeeks(),
-															TTi18n::gettext('Display weeks is invalid')
-														);
-			}
-		}
-		//
-		// ABOVE: Validation code moved from set*() functions.
-		//
-		return TRUE;
-	}
 
-	/**
-	 * @return bool
-	 */
 	function preSave() {
 		if ( $this->getStartWeek() < 1 ) {
 			$this->setStartWeek( 1 );
 		}
 
-		if ( $this->getDisplayWeeks() < 1 ) {
-			$this->setDisplayWeeks(1);
-		}
-
 		return TRUE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function postSave() {
 		//
 		//**THIS IS DONE IN RecurringScheduleControlFactory, RecurringScheduleTemplateControlFactory, HolidayFactory postSave() as well.
@@ -546,7 +475,7 @@ class RecurringScheduleControlFactory extends Factory {
 			//FIXME: Put a cap on this perhaps, as 3mths into the future so we don't spend a ton of time doing this
 			//if the user puts sets it to display 1-2yrs in the future. Leave creating the rest of the rows to the maintenance job?
 			//Since things may change we will want to delete all schedules with each change, but only add back in X weeks at most unless from a maintenance job.
-			$maximum_end_date = ( TTDate::getEndWeekEpoch($current_epoch + ( 86400 * 7 )) + ( $this->getDisplayWeeks() * ( 86400 * 7 ) ) );
+			$maximum_end_date = ( TTDate::getBeginWeekEpoch($current_epoch) + ( $this->getDisplayWeeks() * ( 86400 * 7 ) ) );
 			if ( $this->getEndDate() != '' AND $maximum_end_date > $this->getEndDate() ) {
 				$maximum_end_date = $this->getEndDate();
 			}
@@ -559,10 +488,6 @@ class RecurringScheduleControlFactory extends Factory {
 		return TRUE;
 	}
 
-	/**
-	 * @param $data
-	 * @return bool
-	 */
 	function setObjectFromArray( $data ) {
 		if ( is_array( $data ) ) {
 			$variable_function_map = $this->getVariableToFunctionMap();
@@ -592,11 +517,6 @@ class RecurringScheduleControlFactory extends Factory {
 		return FALSE;
 	}
 
-	/**
-	 * @param null $include_columns
-	 * @param bool $permission_children_ids
-	 * @return array
-	 */
 	function getObjectAsArray( $include_columns = NULL, $permission_children_ids = FALSE  ) {
 		//
 		//When using the Recurring Schedule view, it returns the user list for every single row and runs out of memory at about 1000 rows.
@@ -652,10 +572,6 @@ class RecurringScheduleControlFactory extends Factory {
 		return $data;
 	}
 
-	/**
-	 * @param $log_action
-	 * @return bool
-	 */
 	function addLog( $log_action ) {
 		return TTLog::addEntry( $this->getId(), $log_action, TTi18n::getText('Recurring Schedule'), NULL, $this->getTable(), $this );
 	}

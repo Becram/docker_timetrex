@@ -1,7 +1,7 @@
 <?php
 /*********************************************************************************
  * TimeTrex is a Workforce Management program developed by
- * TimeTrex Software Inc. Copyright (C) 2003 - 2018 TimeTrex Software Inc.
+ * TimeTrex Software Inc. Copyright (C) 2003 - 2017 TimeTrex Software Inc.
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Affero General Public License version 3 as published by
@@ -42,11 +42,6 @@ class RecurringPayStubAmendmentFactory extends Factory {
 	protected $table = 'recurring_ps_amendment';
 	protected $pk_sequence_name = 'recurring_ps_amendment_id_seq'; //PK Sequence name
 
-	/**
-	 * @param $name
-	 * @param null $parent
-	 * @return array|bool|null
-	 */
 	function _getFactoryOptions( $name, $parent = NULL ) {
 
 		$retval = NULL;
@@ -151,10 +146,6 @@ class RecurringPayStubAmendmentFactory extends Factory {
 		return $retval;
 	}
 
-	/**
-	 * @param $data
-	 * @return array
-	 */
 	function _getVariableToFunctionMap( $data ) {
 		$variable_function_map = array(
 										'id' => 'ID',
@@ -183,118 +174,159 @@ class RecurringPayStubAmendmentFactory extends Factory {
 		return $variable_function_map;
 	}
 
-	/**
-	 * @return bool|mixed
-	 */
 	function getCompany() {
-		return $this->getGenericDataValue( 'company_id' );
+		if ( isset($this->data['company_id']) ) {
+			return (int)$this->data['company_id'];
+		}
+
+		return FALSE;
+	}
+	function setCompany($id) {
+		$id = trim($id);
+
+		Debug::Text('Company ID: '. $id, __FILE__, __LINE__, __METHOD__, 10);
+		$clf = TTnew( 'CompanyListFactory' );
+
+		if ( $this->Validator->isResultSetWithRows(	'company',
+													$clf->getByID($id),
+													TTi18n::gettext('Company is invalid')
+													) ) {
+
+			$this->data['company_id'] = $id;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @param string $value UUID
-	 * @return bool
-	 */
-	function setCompany( $value) {
-		$value = TTUUID::castUUID( $value );
-
-		Debug::Text('Company ID: '. $value, __FILE__, __LINE__, __METHOD__, 10);
-		return $this->setGenericDataValue( 'company_id', $value );
-	}
-
-	/**
-	 * @return mixed
-	 */
 	function getStartDate() {
-		return $this->getGenericDataValue( 'start_date' );
+		return $this->data['start_date'];
 	}
-
-	/**
-	 * @param int $value EPOCH
-	 * @return bool
-	 */
-	function setStartDate( $value) {
-		$value = ( !is_int($value) ) ? trim($value) : $value; //Dont trim integer values, as it changes them to strings.
+	function setStartDate($epoch) {
+		$epoch = ( !is_int($epoch) ) ? trim($epoch) : $epoch; //Dont trim integer values, as it changes them to strings.
 
 		//Add 12 hours to effective date, because we won't want it to be a
 		//day boundary and have issues with pay period end date.
 		//$epoch = TTDate::getBeginDayEpoch( $epoch ) + (43200-1);
 
-		return $this->setGenericDataValue( 'start_date', $value );
+		if	(	$this->Validator->isDate(		'start_date',
+												$epoch,
+												TTi18n::gettext('Incorrect start date')) ) {
+
+			$this->data['start_date'] = $epoch;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @return bool|mixed
-	 */
 	function getEndDate() {
-		return $this->getGenericDataValue( 'end_date' );
-	}
+		if ( isset($this->data['end_date']) ) {
+			return $this->data['end_date'];
+		}
 
-	/**
-	 * @param int $value EPOCH
-	 * @return bool
-	 */
-	function setEndDate( $value) {
-		$value = ( !is_int($value) ) ? trim($value) : $value; //Dont trim integer values, as it changes them to strings.
+		return FALSE;
+	}
+	function setEndDate($epoch) {
+		$epoch = ( !is_int($epoch) ) ? trim($epoch) : $epoch; //Dont trim integer values, as it changes them to strings.
 
 		//Add 12 hours to effective date, because we won't want it to be a
 		//day boundary and have issues with pay period end date.
-		if ( $value != '' ) {
-			$value = ( TTDate::getBeginDayEpoch( $value ) + (43200 - 1) );
+		if ( $epoch != '' ) {
+			$epoch = ( TTDate::getBeginDayEpoch( $epoch ) + (43200 - 1) );
 		}
-		return $this->setGenericDataValue( 'end_date', $value );
+
+		if	(	$epoch == ''
+				OR
+				$this->Validator->isDate(		'end_date',
+												$epoch,
+												TTi18n::gettext('Incorrect end date')) ) {
+
+			$this->data['end_date'] = $epoch;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @return bool|int
-	 */
 	function getFrequency() {
-		return $this->getGenericDataValue( 'frequency_id' );
+		if ( isset($this->data['frequency_id']) ) {
+			return (int)$this->data['frequency_id'];
+		}
+
+		return FALSE;
+	}
+	function setFrequency($status) {
+		$status = trim($status);
+
+		if ( $this->Validator->inArrayKey(	'frequency',
+											$status,
+											TTi18n::gettext('Incorrect Frequency'),
+											$this->getOptions('frequency')) ) {
+
+			$this->data['frequency_id'] = $status;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setFrequency( $value) {
-		$value = (int)trim($value);
-		return $this->setGenericDataValue( 'frequency_id', $value );
-	}
-
-	/**
-	 * @return bool|mixed
-	 */
 	function getName() {
-		return $this->getGenericDataValue( 'name' );
+		if ( isset($this->data['name']) ) {
+			return $this->data['name'];
+		}
+
+		return FALSE;
+	}
+	function setName($text) {
+		$text = trim($text);
+
+		if	(	strlen($text) == 0
+				OR
+				$this->Validator->isLength(		'name',
+												$text,
+												TTi18n::gettext('Invalid Name Length'),
+												2,
+												100) ) {
+
+			$this->data['name'] = htmlspecialchars( $text );
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setName( $value) {
-		$value = trim($value);
-		return $this->setGenericDataValue( 'name', htmlspecialchars( $value ) );
-	}
-
-	/**
-	 * @return bool|mixed
-	 */
 	function getDescription() {
-		return $this->getGenericDataValue( 'description' );
+		if ( isset($this->data['description']) ) {
+			return $this->data['description'];
+		}
+
+		return FALSE;
+	}
+	function setDescription($text) {
+		$text = trim($text);
+
+		if	(	strlen($text) == 0
+				OR
+				$this->Validator->isLength(		'description',
+												$text,
+												TTi18n::gettext('Invalid Description Length'),
+												2,
+												100) ) {
+
+			$this->data['description'] = htmlspecialchars( $text );
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setDescription( $value) {
-		$value = trim($value);
-		return $this->setGenericDataValue( 'description', htmlspecialchars( $value ) );
-	}
-
-	/**
-	 * @return array|bool
-	 */
 	function getUser() {
 		$rpsaulf = TTnew( 'RecurringPayStubAmendmentUserListFactory' );
 		$rpsaulf->getByRecurringPayStubAmendment( $this->getId() );
@@ -309,12 +341,7 @@ class RecurringPayStubAmendmentFactory extends Factory {
 
 		return FALSE;
 	}
-
-	/**
-	 * @param string $ids UUID
-	 * @return bool
-	 */
-	function setUser( $ids) {
+	function setUser($ids) {
 		if ( !is_array($ids) ) {
 			$ids = array($ids);
 		}
@@ -390,18 +417,14 @@ class RecurringPayStubAmendmentFactory extends Factory {
 		return FALSE;
 	}
 
-	/**
-	 * @return bool|mixed
-	 */
 	function getPayStubEntryNameId() {
-		return $this->getGenericDataValue( 'pay_stub_entry_name_id' );
-	}
+		if ( isset($this->data['pay_stub_entry_name_id']) ) {
+			return (int)$this->data['pay_stub_entry_name_id'];
+		}
 
-	/**
-	 * @param string $id UUID
-	 * @return bool
-	 */
-	function setPayStubEntryNameId( $id) {
+		return FALSE;
+	}
+	function setPayStubEntryNameId($id) {
 		$id = trim($id);
 
 		$psealf = TTnew( 'PayStubEntryAccountListFactory' );
@@ -420,11 +443,7 @@ class RecurringPayStubAmendmentFactory extends Factory {
 		return FALSE;
 	}
 
-	/**
-	 * @param $name
-	 * @return bool
-	 */
-	function setPayStubEntryName( $name) {
+	function setPayStubEntryName($name) {
 		$name = trim($name);
 
 		$psenlf = TTnew( 'PayStubEntryNameListFactory' );
@@ -443,92 +462,157 @@ class RecurringPayStubAmendmentFactory extends Factory {
 		return FALSE;
 	}
 
-	/**
-	 * @return bool|int
-	 */
 	function getStatus() {
-		return $this->getGenericDataValue( 'status_id' );
+		if ( isset($this->data['status_id']) ) {
+			return (int)$this->data['status_id'];
+		}
+
+		return FALSE;
+	}
+	function setStatus($status) {
+		$status = trim($status);
+
+		if ( $this->Validator->inArrayKey(	'status',
+											$status,
+											TTi18n::gettext('Incorrect Status'),
+											$this->getOptions('status')) ) {
+
+			$this->data['status_id'] = $status;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setStatus( $value) {
-		$value = (int)trim($value);
-		return $this->setGenericDataValue( 'status_id', $value );
-	}
-
-	/**
-	 * @return bool|int
-	 */
 	function getType() {
-		return $this->getGenericDataValue( 'type_id' );
+		if ( isset($this->data['type_id']) ) {
+			return (int)$this->data['type_id'];
+		}
+
+		return FALSE;
+	}
+	function setType($type) {
+		$type = trim($type);
+
+		if ( $this->Validator->inArrayKey(	'type',
+											$type,
+											TTi18n::gettext('Incorrect Type'),
+											$this->getOptions('type')) ) {
+
+			$this->data['type_id'] = $type;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setType( $value) {
-		$value = (int)trim($value);
-		return $this->setGenericDataValue( 'type_id', $value );
-	}
-
-	/**
-	 * @return null
-	 */
 	function getRate() {
-		return $this->getGenericDataValue( 'rate' );
-	}
-
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setRate( $value) {
-		$value = trim($value);
-		Debug::text('Setting Rate to: '. $value, __FILE__, __LINE__, __METHOD__, 10);
-		//Must round to 2 decimals otherwise discreptancy can occur when generating pay stubs.
-		//$this->data['rate'] = Misc::MoneyFormat( $value, FALSE );
-		return $this->setGenericDataValue( 'rate', $value );
-	}
-
-	/**
-	 * @return null
-	 */
-	function getUnits() {
-		return $this->getGenericDataValue( 'units' );
-	}
-
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setUnits( $value) {
-		$value = trim($value);
-		//Must round to 2 decimals otherwise discreptancy can occur when generating pay stubs.
-		//$this->data['units'] = Misc::MoneyFormat( $value, FALSE );
-		return $this->setGenericDataValue( 'units', $value );
-	}
-
-	/**
-	 * @return null|string
-	 */
-	function getAmount() {
-		$value = $this->getGenericDataValue( 'amount' );
-		if ( $value !== FALSE ) {
-			return Misc::removeTrailingZeros( $value, 2);
+		if ( isset($this->data['rate']) ) {
+			return $this->data['rate'];
 		}
 
 		return NULL;
 	}
+	function setRate($value) {
+		$value = trim($value);
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setAmount( $value) {
+		if ($value == 0 OR $value == '') {
+			$value = NULL;
+		}
+
+		if (	empty($value) OR
+				(
+				$this->Validator->isFloat(				'rate',
+														$value,
+														TTi18n::gettext('Invalid Rate') )
+				AND
+				$this->Validator->isLength(				'rate',
+											$value,
+											TTi18n::gettext('Rate has too many digits'),
+											0,
+											21) //Need to include decimal.
+				AND
+				$this->Validator->isLengthBeforeDecimal('rate',
+											$value,
+											TTi18n::gettext('Rate has too many digits before the decimal'),
+											0,
+											16)
+				AND
+				$this->Validator->isLengthAfterDecimal(	'rate',
+											$value,
+											TTi18n::gettext('Rate has too many digits after the decimal'),
+											0,
+											4)
+				) ) {
+			Debug::text('Setting Rate to: '. $value, __FILE__, __LINE__, __METHOD__, 10);
+			//Must round to 2 decimals otherwise discreptancy can occur when generating pay stubs.
+			//$this->data['rate'] = Misc::MoneyFormat( $value, FALSE );
+			$this->data['rate'] = $value;
+
+			return TRUE;
+		}
+
+		return FALSE;
+	}
+
+	function getUnits() {
+		if ( isset($this->data['units']) ) {
+			return $this->data['units'];
+		}
+
+		return NULL;
+	}
+	function setUnits($value) {
+		$value = trim($value);
+
+		if ($value == 0 OR $value == '') {
+			$value = NULL;
+		}
+
+		if (	empty($value) OR
+				(
+				$this->Validator->isFloat(				'units',
+														$value,
+														TTi18n::gettext('Invalid Units') )
+				AND
+				$this->Validator->isLength(				'units',
+											$value,
+											TTi18n::gettext('Units has too many digits'),
+											0,
+											21) //Need to include decimal
+				AND
+				$this->Validator->isLengthBeforeDecimal('units',
+											$value,
+											TTi18n::gettext('Units has too many digits before the decimal'),
+											0,
+											16)
+				AND
+				$this->Validator->isLengthAfterDecimal(	'units',
+											$value,
+											TTi18n::gettext('Units has too many digits after the decimal'),
+											0,
+											4)
+				) ) {
+			//Must round to 2 decimals otherwise discreptancy can occur when generating pay stubs.
+			//$this->data['units'] = Misc::MoneyFormat( $value, FALSE );
+			$this->data['units'] = $value;
+
+			return TRUE;
+		}
+
+		return FALSE;
+	}
+
+	function getAmount() {
+		if ( isset($this->data['amount']) ) {
+			return Misc::removeTrailingZeros( $this->data['amount'], 2);
+		}
+
+		return NULL;
+	}
+	function setAmount($value) {
 		$value = trim($value);
 
 		Debug::text('Amount: '. $value .' Name: '. $this->getPayStubEntryNameId(), __FILE__, __LINE__, __METHOD__, 10);
@@ -536,67 +620,116 @@ class RecurringPayStubAmendmentFactory extends Factory {
 		if ($value == NULL OR $value == '') {
 			return FALSE;
 		}
-		return $this->setGenericDataValue( 'amount', $value );
+
+		if (  $this->Validator->isFloat(				'amount',
+														$value,
+														TTi18n::gettext('Invalid Amount') )
+				AND
+				$this->Validator->isLength(				'amount',
+											$value,
+											TTi18n::gettext('Amount has too many digits'),
+											0,
+											21) //Need to include decimal
+				AND
+				$this->Validator->isLengthBeforeDecimal('amount',
+											$value,
+											TTi18n::gettext('Amount has too many digits before the decimal'),
+											0,
+											16)
+				AND
+				$this->Validator->isLengthAfterDecimal(	'amount',
+											$value,
+											TTi18n::gettext('Amount has too many digits after the decimal'),
+											0,
+											4)
+			) {
+			$this->data['amount'] = $value;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @return null
-	 */
 	function getPercentAmount() {
-		return $this->getGenericDataValue( 'percent_amount' );
-	}
+		if ( isset($this->data['percent_amount']) ) {
+			return $this->data['percent_amount'];
+		}
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setPercentAmount( $value) {
+		return NULL;
+	}
+	function setPercentAmount($value) {
 		$value = trim($value);
+
 		Debug::text('Amount: '. $value .' Name: '. $this->getPayStubEntryNameId(), __FILE__, __LINE__, __METHOD__, 10);
+
 		if ($value == NULL OR $value == '') {
 			return FALSE;
 		}
-		return $this->setGenericDataValue( 'percent_amount',  round( $value, 2) );
+
+		if (  $this->Validator->isFloat(				'percent_amount',
+														$value,
+														TTi18n::gettext('Invalid Percent')
+														) ) {
+			//$this->data['amount'] = number_format( $value, 2, '.', '');
+			$this->data['percent_amount'] = round( $value, 2);
+
+			return TRUE;
+		}
+		return FALSE;
 	}
 
-	/**
-	 * @return bool|mixed
-	 */
 	function getPercentAmountEntryNameId() {
-		return $this->getGenericDataValue( 'percent_amount_entry_name_id' );
-	}
+		if ( isset($this->data['percent_amount_entry_name_id']) ) {
+			return (int)$this->data['percent_amount_entry_name_id'];
+		}
 
-	/**
-	 * @param string $value UUID
-	 * @return bool
-	 */
-	function setPercentAmountEntryNameId( $value) {
-		$value = TTUUID::castUUID( $value );
+		return FALSE;
+	}
+	function setPercentAmountEntryNameId($id) {
+		$id = trim($id);
+
+		$psealf = TTnew( 'PayStubEntryAccountListFactory' );
+		$psealf->getById( $id );
 		//Not sure why we tried to use $result here, as if the ID passed is NULL, it causes a fatal error.
 		//$result = $psealf->getById( $id )->getCurrent();
-		return $this->setGenericDataValue( 'percent_amount_entry_name_id', $value );
-	}
 
-	/**
-	 * @return mixed
-	 */
+		if (	( $id == NULL OR $id == 0 )
+				OR
+				$this->Validator->isResultSetWithRows(	'percent_amount_entry_name',
+														$psealf,
+														TTi18n::gettext('Invalid Percent Of')
+														) ) {
+
+			$this->data['percent_amount_entry_name_id'] = $id;
+
+			return TRUE;
+		}
+
+		return FALSE;
+	}
 	function getPayStubAmendmentDescription() {
-		return $this->getGenericDataValue( 'ps_amendment_description' );
+		return $this->data['ps_amendment_description'];
+	}
+	function setPayStubAmendmentDescription($text) {
+		$text = trim($text);
+
+		if	(	strlen($text) == 0
+				OR
+				$this->Validator->isLength(		'ps_amendment_description',
+												$text,
+												TTi18n::gettext('Invalid Pay Stub Amendment Description Length'),
+												2,
+												100) ) {
+
+			$this->data['ps_amendment_description'] = htmlspecialchars( $text );
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setPayStubAmendmentDescription( $value) {
-		$value = trim($value);
-		return $this->setGenericDataValue( 'ps_amendment_description', htmlspecialchars( $value ) );
-	}
-
-	/**
-	 * @param int $epoch EPOCH
-	 * @return bool
-	 */
 	function checkTimeFrame( $epoch = NULL ) {
 		if ( $epoch == NULL ) {
 			$epoch = TTDate::getTime();
@@ -616,12 +749,7 @@ class RecurringPayStubAmendmentFactory extends Factory {
 	}
 
 	//function createRecurringPayStubAmendments() {
-
-	/**
-	 * @param int $epoch EPOCH
-	 * @return bool
-	 */
-	function createPayStubAmendments( $epoch = NULL) {
+	function createPayStubAmendments($epoch = NULL) {
 		//Get all recurring pay stub amendments and generate single pay stub amendments if appropriate.
 
 		if ( $epoch == '' ) {
@@ -816,193 +944,7 @@ class RecurringPayStubAmendmentFactory extends Factory {
 		return TRUE;
 	}
 
-	/**
-	 * @param bool $ignore_warning
-	 * @return bool
-	 */
 	function Validate( $ignore_warning = TRUE ) {
-		//
-		// BELOW: Validation code moved from set*() functions.
-		//
-		// Company
-		$clf = TTnew( 'CompanyListFactory' );
-		$this->Validator->isResultSetWithRows(	'company',
-														$clf->getByID($this->getCompany()),
-														TTi18n::gettext('Company is invalid')
-						 							);
-		// Start date
-		$this->Validator->isDate(		'start_date',
-												$this->getStartDate(),
-												TTi18n::gettext('Incorrect start date')
-											);
-		// End Date
-		if ( $this->getEndDate() != '' ) {
-			$this->Validator->isDate(		'end_date',
-													$this->getEndDate(),
-													TTi18n::gettext('Incorrect end date')
-												);
-		}
-		// Frequency
-		$this->Validator->inArrayKey(	'frequency',
-												$this->getFrequency(),
-												TTi18n::gettext('Incorrect Frequency'),
-												$this->getOptions('frequency')
-											);
-		// Name
-		if ( $this->getName() != '' ) {
-			$this->Validator->isLength(		'name',
-													$this->getName(),
-													TTi18n::gettext('Invalid Name Length'),
-													2,
-													100
-												);
-		}
-		// Description
-		if ( $this->getDescription() != '' ) {
-			$this->Validator->isLength(		'description',
-													$this->getDescription(),
-													TTi18n::gettext('Invalid Description Length'),
-													2,
-													100
-												);
-		}
-		// Status
-		$this->Validator->inArrayKey(	'status',
-												$this->getStatus(),
-												TTi18n::gettext('Incorrect Status'),
-												$this->getOptions('status')
-											);
-		// Type
-		$this->Validator->inArrayKey(	'type',
-												$this->getType(),
-												TTi18n::gettext('Incorrect Type'),
-												$this->getOptions('type')
-											);
-		// Rate
-		if ( $this->getRate() != '' ) {
-			$this->Validator->isFloat( 'rate',
-												$this->getRate(),
-												TTi18n::gettext('Invalid Rate')
-											);
-			if ( $this->Validator->isError('rate') == FALSE ) {
-				$this->Validator->isLength( 'rate',
-												$this->getRate(),
-												TTi18n::gettext('Rate has too many digits'),
-												0,
-												21
-											); //Need to include decimal.
-			}
-			if ( $this->Validator->isError('rate') == FALSE ) {
-				$this->Validator->isLengthBeforeDecimal('rate',
-																$this->getRate(),
-																TTi18n::gettext('Rate has too many digits before the decimal'),
-																0,
-																16
-															);
-			}
-			if ( $this->Validator->isError('rate') == FALSE ) {
-				$this->Validator->isLengthAfterDecimal(	'rate',
-																$this->getRate(),
-																TTi18n::gettext('Rate has too many digits after the decimal'),
-																0,
-																4
-															);
-			}
-		}
-		// Units
-		if ( $this->getUnits() != '' ) {
-			$this->Validator->isFloat(				'units',
-															$this->getUnits(),
-															TTi18n::gettext('Invalid Units')
-														);
-			if ( $this->Validator->isError('units') == FALSE ) {
-				$this->Validator->isLength(				'units',
-																$this->getUnits(),
-																TTi18n::gettext('Units has too many digits'),
-																0,
-																21
-															); //Need to include decimal
-			}
-			if ( $this->Validator->isError('units') == FALSE ) {
-				$this->Validator->isLengthBeforeDecimal('units',
-																$this->getUnits(),
-																TTi18n::gettext('Units has too many digits before the decimal'),
-																0,
-																16
-															);
-			}
-			if ( $this->Validator->isError('units') == FALSE ) {
-				$this->Validator->isLengthAfterDecimal(	'units',
-																$this->getUnits(),
-																TTi18n::gettext('Units has too many digits after the decimal'),
-																0,
-																4
-															);
-			}
-		}
-		// Amount
-		if ( $this->getGenericDataValue( 'amount' ) !== FALSE ) {
-			$this->Validator->isFloat(				'amount',
-															$this->getGenericDataValue( 'amount' ),
-															TTi18n::gettext('Invalid Amount')
-														);
-			if ( $this->Validator->isError('amount') == FALSE ) {
-				$this->Validator->isLength(				'amount',
-																$this->getGenericDataValue( 'amount' ),
-																TTi18n::gettext('Amount has too many digits'),
-																0,
-																21
-															); //Need to include decimal
-			}
-			if ( $this->Validator->isError('amount') == FALSE ) {
-				$this->Validator->isLengthBeforeDecimal('amount',
-																$this->getGenericDataValue( 'amount' ),
-																TTi18n::gettext('Amount has too many digits before the decimal'),
-																0,
-																16
-															);
-			}
-			if ( $this->Validator->isError('amount') == FALSE ) {
-				$this->Validator->isLengthAfterDecimal(	'amount',
-																$this->getGenericDataValue( 'amount' ),
-																TTi18n::gettext('Amount has too many digits after the decimal'),
-																0,
-																4
-															);
-			}
-		}
-		// Percent
-		if ( $this->getPercentAmount() !== FALSE ) {
-			$this->Validator->isFloat(				'percent_amount',
-															$this->getPercentAmount(),
-															TTi18n::gettext('Invalid Percent')
-														);
-		}
-		// Percent Of
-		if ( $this->getPercentAmountEntryNameId() != TTUUID::getZeroID() ) {
-			$psealf = TTnew( 'PayStubEntryAccountListFactory' );
-			$psealf->getById( $this->getPercentAmountEntryNameId() );
-			//Not sure why we tried to use $result here, as if the ID passed is NULL, it causes a fatal error.
-			//$result = $psealf->getById( $id )->getCurrent();
-
-			$this->Validator->isResultSetWithRows(	'percent_amount_entry_name',
-															$psealf,
-															TTi18n::gettext('Invalid Percent Of')
-														);
-		}
-		// Pay Stub Amendment Description
-		if ( $this->getPayStubAmendmentDescription() != '' ) {
-			$this->Validator->isLength(		'ps_amendment_description',
-													$this->getPayStubAmendmentDescription(),
-													TTi18n::gettext('Invalid Pay Stub Amendment Description Length'),
-													2,
-													100
-												);
-		}
-
-		//
-		// ABOVE: Validation code moved from set*() functions.
-		//
 
 		/*
 		//If amount is set, make sure percent is cleared. The type defines this, so its not really needed.
@@ -1041,9 +983,6 @@ class RecurringPayStubAmendmentFactory extends Factory {
 		return TRUE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function preSave() {
 		if ( $this->getFrequency() == 40 ) {
 			if ( TTDate::getDayOfMonth( $this->getStartDate() ) > 28 ) {
@@ -1079,10 +1018,6 @@ class RecurringPayStubAmendmentFactory extends Factory {
 		}
 	}
 
-	/**
-	 * @param $data
-	 * @return bool
-	 */
 	function setObjectFromArray( $data ) {
 		if ( is_array( $data ) ) {
 			$variable_function_map = $this->getVariableToFunctionMap();
@@ -1113,12 +1048,8 @@ class RecurringPayStubAmendmentFactory extends Factory {
 		return FALSE;
 	}
 
-	/**
-	 * @param null $include_columns
-	 * @return array
-	 */
 	function getObjectAsArray( $include_columns = NULL ) {
-
+		
 		$data = array();
 		$variable_function_map = $this->getVariableToFunctionMap();
 		if ( is_array( $variable_function_map ) ) {
@@ -1159,10 +1090,6 @@ class RecurringPayStubAmendmentFactory extends Factory {
 		return $data;
 	}
 
-	/**
-	 * @param $log_action
-	 * @return bool
-	 */
 	function addLog( $log_action ) {
 		return TTLog::addEntry( $this->getId(), $log_action, TTi18n::getText('Recurring Pay Stub Amendment'), NULL, $this->getTable(), $this );
 	}

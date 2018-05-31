@@ -1,9 +1,5 @@
 InOutViewController = BaseViewController.extend( {
 
-	_required_files: {
-		10: ['APIPunch', 'APIStation', 'APIBranch', 'APIDepartment' , 'APICompany'],
-		20: ['APIJob', 'APIJobItem']
-	},
 	type_array: null,
 
 	job_api: null,
@@ -20,12 +16,9 @@ InOutViewController = BaseViewController.extend( {
 	show_transfer_ui: false,
 	show_node_ui: false,
 
-	original_note: false,
-	new_note: false,
-
-    init: function( options ) {
+	initialize: function( options ) {
 		Global.setUINotready(true);
-
+		this._super( 'initialize', options );
 		this.permission_id = 'punch';
 		this.viewId = 'InOut';
 		this.script_name = 'InOutView';
@@ -310,9 +303,9 @@ InOutViewController = BaseViewController.extend( {
 	openEditView: function() {
 		var $this = this;
 
-		if ( this.edit_only_mode && this.api) {
+		if ( $this.edit_only_mode ) {
 
-			this.initOptions( function( result ) {
+			$this.initOptions( function( result ) {
 
 				if ( !$this.edit_view ) {
 					$this.initEditViewUI( 'InOut', 'InOutEditView.html' );
@@ -348,7 +341,7 @@ InOutViewController = BaseViewController.extend( {
 
 		switch ( key ) {
 			case 'transfer':
-				this.onTransferChanged();
+				this.onTransferChanged( c_value );
 				break;
 			case 'job_id':
 				if ( ( LocalCacheData.getCurrentCompany().product_edition_id >= 20 ) ) {
@@ -379,17 +372,12 @@ InOutViewController = BaseViewController.extend( {
 
 	},
 
-	onTransferChanged: function( initial_load ) {
-
-		var is_transfer = false;
-		if ( this.edit_view_ui_dic && this.edit_view_ui_dic['transfer'] && this.edit_view_ui_dic['transfer'].getValue() == true ) {
-			is_transfer = true;
-		}
+	onTransferChanged: function( value ) {
 
 		// type_id_widget is undefined in interface/html5/framework/jquery.min.js?v=9.0.1-20151022-091549 line 2 > eval line 390
 		var type_id_widget = this.edit_view_ui_dic['type_id'];
 		var status_id_widget = this.edit_view_ui_dic['status_id'];
-		if ( is_transfer && type_id_widget && status_id_widget ) {
+		if ( value && type_id_widget && status_id_widget ) {
 
 			type_id_widget.setEnabled( false );
 			status_id_widget.setEnabled( false );
@@ -415,22 +403,6 @@ InOutViewController = BaseViewController.extend( {
 				this.current_edit_record.status_id = this.old_type_status.status_id;
 			}
 
-		}
-
-		if ( is_transfer == true ) {
-			if ( this.original_note == '' ) {
-				this.original_note = this.current_edit_record.note;
-			} else {
-				this.original_note = this.edit_view_ui_dic.note.getValue();
-			}
-			this.edit_view_ui_dic.note.setValue( this.new_note ? this.new_note : '' );
-			this.current_edit_record.note = this.new_note ? this.new_note : '';
-
-		} else if ( typeof initial_load == 'undefined' || initial_load === false ) {
-
-			this.new_note = this.edit_view_ui_dic.note.getValue();
-			this.edit_view_ui_dic.note.setValue(this.original_note ? this.original_note : '');
-			this.current_edit_record.note = this.original_note ? this.original_note : '';
 		}
 	},
 
@@ -537,17 +509,17 @@ InOutViewController = BaseViewController.extend( {
 
 				if ( result.isValid() ) {
 					var result_data = result.getResult();
-					// Error: TypeError: $this.current_edit_record is null in /interface/html5/framework/jquery.min.js?v=8.0.6-20150417-082707 line 2 > eval line 550
+					// Error: TypeError: $this.current_edit_record is null in /interface/html5/framework/jquery.min.js?v=8.0.6-20150417-082707 line 2 > eval line 550 
 					if ( result_data === true && $this.current_edit_record ) {
 						$this.refresh_id = $this.current_edit_record.id;
-					} else if ( TTUUID.isUUID( result_data ) && result_data != TTUUID.zero_id && result_data != TTUUID.not_exist_id ) {
+					} else if ( result_data > 0 ) {
 						$this.refresh_id = result_data
 					}
 
 
 					$this.removeEditView();
 
-					if ( LocalCacheData.current_open_primary_controller && LocalCacheData.current_open_primary_controller.viewId === 'TimeSheet' ) {
+					if ( LocalCacheData.current_open_primary_controller.viewId === 'TimeSheet' ) {
 						LocalCacheData.current_open_primary_controller.search();
 					}
 
@@ -873,8 +845,6 @@ InOutViewController = BaseViewController.extend( {
 			this.edit_view_ui_dic['transfer'].setValue( this.current_edit_record['transfer'] );
 		}
 
-		this.onTransferChanged( true );
-
 		this.collectUIDataToCurrentEditRecord();
 		this.setEditViewDataDone();
 
@@ -882,6 +852,7 @@ InOutViewController = BaseViewController.extend( {
 
 	setEditViewDataDone: function() {
 		this._super( 'setEditViewDataDone' );
+		this.onTransferChanged( this.current_edit_record['transfer'] );
 		this.confirm_on_exit = true; //confirm on leaving even if no changes have been made so users can't accidentally not save punches by logging out without clicking save for example
 	}
 } );

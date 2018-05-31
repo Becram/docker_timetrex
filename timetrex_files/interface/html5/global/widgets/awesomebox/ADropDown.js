@@ -37,8 +37,6 @@
 
 		var tree_mode = false;
 
-		var on_tree_grid_row_select = false; //#2566 - added select row callback so that trees can be used for edit-view navigation
-
 		var unselect_grid_last_row = '';
 
 		var select_grid_last_row = '';
@@ -506,36 +504,22 @@
 				$.each( source_data, function( index, content ) {
 					var temp_val = val;
 					!val && (temp_val = source_data[0]);
-
-					var content_key = key;
-					if ( tree_mode && key == 'id' ) {
-						content_key = '_id_';
-					}
-
-					if ( content[content_key] == temp_val[key] ) {  //Some times 0, sometimes '0'
-
-
-						var content_id_key = 'id';
-						if ( tree_mode ) {
-							content_id_key = '_id_';
-						}
-
-
+					if ( content[key] == temp_val[key] ) {  //Some times 0, sometimes '0'
 						//Always use id to set select row, all record array should have id
-						target_grid.find( 'tr[id="' + content[content_id_key] + '"]' ).focus();
+						target_grid.find( 'tr[id="' + content['id'] + '"]' ).focus();
 						if ( target_grid.hasClass( 'unselect-grid' ) ) {
 							if ( unselect_grid_last_row ) {
 								target_grid.jqGrid( 'saveRow', unselect_grid_last_row );
 							}
-							unselect_grid_last_row = content[content_id_key];
+							unselect_grid_last_row = content['id'];
 						} else {
 							if ( select_grid_last_row ) {
 								target_grid.jqGrid( 'saveRow', select_grid_last_row );
 							}
-							select_grid_last_row = content[content_id_key];
+							select_grid_last_row = content['id'];
 						}
-						target_grid.jqGrid( 'setSelection', content[content_id_key], false );
-						target_grid.jqGrid( 'editRow', content[content_id_key], true );
+						target_grid.jqGrid( 'setSelection', content['id'], false );
+						target_grid.jqGrid( 'editRow', content['id'], true );
 						val && (select_item = content);
 						return false;
 					}
@@ -777,30 +761,22 @@
 				treedatatype: 'local',
 				ExpandColumn: 'name',
 				onSelectRow: function( id ) {
+
 					id = Global.convertToNumberIfPossible( id );
 
-					if ( !allow_multiple_selection ) {
-						var source_data = unselect_grid.getGridParam( 'data' );
-						$.each( source_data, function( index, content ) {
-
-							if ( tree_mode && key == 'id' ) {
-								key = '_id_';
-							}
-
-							if ( content[key] == id ) {
-								select_item = content;
-								isChanged = true;
-								if ( !LocalCacheData.currently_collapsing_navigation_tree_element ) { //#2583 - must allow null or false
-									a_dropdown_this.trigger('close', [a_dropdown_this]);
+					if ( id >= -1 || $.type( id ) === 'string' ) {
+						if ( !allow_multiple_selection ) {
+							var source_data = unselect_grid.getGridParam( 'data' );
+							$.each( source_data, function( index, content ) {
+								if ( content[key] == id ) {
+									select_item = content;
+									isChanged = true;
+									a_dropdown_this.trigger( 'close', [a_dropdown_this] );
+									return;
 								}
-								return;
-							}
-						} );
+							} );
 
-					}
-
-					if ( on_tree_grid_row_select ) {
-						on_tree_grid_row_select(id, LocalCacheData.currently_collapsing_navigation_tree_element );
+						}
 					}
 				},
 				jsonReader: {
@@ -942,43 +918,46 @@
 					onSelectRow: function( id ) {
 						id = Global.convertToNumberIfPossible( id );
 
-						if ( !allow_multiple_selection ) {
+						if ( id >= -1 || $.type( id ) === 'string' ) {
 
-							var source_data = unselect_grid.getGridParam( 'data' );
+							if ( !allow_multiple_selection ) {
 
-							$.each( source_data, function( index, content ) {
+								var source_data = unselect_grid.getGridParam( 'data' );
 
-								if ( key !== 'id' ) {
-									if ( content['id'] == id ) {
-										select_item = content;
-										isChanged = true;
-										a_dropdown_this.trigger( 'close', [a_dropdown_this] );
-										return false;
+								$.each( source_data, function( index, content ) {
+
+									if ( key !== 'id' ) {
+										if ( content['id'] == id ) {
+											select_item = content;
+											isChanged = true;
+											a_dropdown_this.trigger( 'close', [a_dropdown_this] );
+											return false;
+										}
+									} else {
+										if ( content[key] == id ) {
+											select_item = content;
+											isChanged = true;
+											a_dropdown_this.trigger( 'close', [a_dropdown_this] );
+											return false;
+										}
 									}
-								} else {
-									if ( content[key] == id ) {
-										select_item = content;
-										isChanged = true;
-										a_dropdown_this.trigger( 'close', [a_dropdown_this] );
-										return false;
-									}
-								}
 
-							} );
+								} );
 
-						}
+							}
 
-						if ( unselect_grid_last_row ) {
-							unselect_grid.jqGrid( 'saveRow', unselect_grid_last_row );
-						}
-						unselect_grid.jqGrid( 'editRow', id, true );
-						unselect_grid_last_row = id;
+							if ( unselect_grid_last_row ) {
+								unselect_grid.jqGrid( 'saveRow', unselect_grid_last_row );
+							}
+							unselect_grid.jqGrid( 'editRow', id, true );
+							unselect_grid_last_row = id;
 
-						a_dropdown_this.setTotalDisplaySpan();
+							a_dropdown_this.setTotalDisplaySpan();
 
-						function getSelectValue() {
-							var len = source_data.length;
+							function getSelectValue() {
+								var len = source_data.length;
 
+							}
 						}
 					}
 				} );
@@ -1021,16 +1000,6 @@
 						records: function( obj ) {
 							return obj.length;
 						}
-					},
-
-
-					onSelectRow: function( id ) {
-						id = Global.convertToNumberIfPossible( id );
-
-						if ( on_tree_grid_row_select ) {
-							on_tree_grid_row_select( id );
-						}
-
 					}
 				} );
 			}
@@ -1188,20 +1157,13 @@
 				}
 			}
 
-			var unselect_grid_width = unselect_grid.width();
-			var unselect_grid_search_div_width = unselect_grid_width + 15;
-			if ( tree_mode ){
-				unselect_grid.jqGrid('setGridWidth', unselect_grid_width - 7);
-				unselect_grid_width = unselect_grid.width();
-			} else {
-				//grid header row
-				unselect_grid_width += 18;
-			}
-			unselect_grid.parent().parent().parent().find( '.ui-jqgrid-hdiv' ).css( 'width', unselect_grid_width );
-			unselect_grid.parent().parent().parent().parent().css( 'width', unselect_grid_width );
-			unselect_grid.parent().parent().parent().css( 'width', unselect_grid_width );
-			unselect_grid.parent().parent().css( 'width', unselect_grid_width );
-			unselect_grid_search_div.css( 'width', unselect_grid_search_div_width );
+//			//grid header row
+			unselect_grid.parent().parent().parent().find( '.ui-jqgrid-hdiv' ).css( 'width', unselect_grid.width() + 18 );
+			unselect_grid.parent().parent().parent().parent().css( 'width', unselect_grid.width() + 18 );
+			unselect_grid.parent().parent().parent().css( 'width', unselect_grid.width() + 18 );
+			unselect_grid.parent().parent().css( 'width', unselect_grid.width() + 18 );
+			unselect_grid_search_div.css( 'width', unselect_grid.width() + 15 );
+
 		};
 
 		this.resizeSelectSearchInputs = function() {
@@ -2167,7 +2129,7 @@
 		var initColumnSettingsBtn = function() {
 			var edit_icon_div = $( a_dropdown_this ).find( '.edit-columnIcon-div' );
 			var edit_icon = $( a_dropdown_this ).find( '.edit_column_icon' );
-			if ( !display_column_settings || tree_mode ) {
+			if ( !display_column_settings ) {
 				edit_icon_div.hide();
 				return;
 			} else {
@@ -2517,10 +2479,6 @@
 
 			if ( o.tree_mode ) {
 				tree_mode = o.tree_mode;
-			}
-
-			if ( o.on_tree_grid_row_select ) {
-				on_tree_grid_row_select = o.on_tree_grid_row_select;
 			}
 
 			unselect_grid = $( this ).find( '.unselect-grid' ); //Must add id for them

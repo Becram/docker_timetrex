@@ -1,7 +1,7 @@
 <?php
 /*********************************************************************************
  * TimeTrex is a Workforce Management program developed by
- * TimeTrex Software Inc. Copyright (C) 2003 - 2018 TimeTrex Software Inc.
+ * TimeTrex Software Inc. Copyright (C) 2003 - 2017 TimeTrex Software Inc.
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Affero General Public License version 3 as published by
@@ -44,11 +44,6 @@ class RequestFactory extends Factory {
 
 	var $user_date_obj = NULL;
 
-	/**
-	 * @param $name
-	 * @param null $parent
-	 * @return array|null
-	 */
 	function _getFactoryOptions( $name, $parent = NULL ) {
 
 		$retval = NULL;
@@ -118,10 +113,6 @@ class RequestFactory extends Factory {
 		return $retval;
 	}
 
-	/**
-	 * @param $data
-	 * @return array
-	 */
 	function _getVariableToFunctionMap( $data ) {
 		$variable_function_map = array(
 										'id' => 'ID',
@@ -139,6 +130,7 @@ class RequestFactory extends Factory {
 										'user_group' => FALSE,
 										'title' => FALSE,
 
+										'date_stamp' => 'DateStamp',
 										'type_id' => 'Type',
 										'type' => FALSE,
 										'hierarchy_type_id' => 'HierarchyTypeId',
@@ -155,83 +147,103 @@ class RequestFactory extends Factory {
 		return $variable_function_map;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function getUserObject() {
 		return $this->getGenericObject( 'UserListFactory', $this->getUser(), 'user_obj' );
 	}
 
-	/**
-	 * @return bool|mixed
-	 */
 	function getUser() {
-		return $this->getGenericDataValue( 'user_id' );
-	}
-
-	/**
-	 * @param string $value UUID
-	 * @return bool
-	 */
-	function setUser( $value ) {
-		$value = TTUUID::castUUID( $value );
-
-		return $this->setGenericDataValue( 'user_id', $value );
-	}
-
-	/**
-	 * @return bool|mixed
-	 */
-	function getPayPeriod() {
-		return $this->getGenericDataValue( 'pay_period_id' );
-	}
-
-	/**
-	 * @param string $value UUID
-	 * @return bool
-	 */
-	function setPayPeriod( $value = NULL) {
-		if ( $value == NULL ) {
-			$value = PayPeriodListFactory::findPayPeriod( $this->getUser(), $this->getDateStamp() );
+		if ( isset($this->data['user_id']) ) {
+			return (int)$this->data['user_id'];
 		}
-		$value = TTUUID::castUUID( $value );
+
+		return FALSE;
+	}
+	function setUser($id) {
+		$id = trim($id);
+
+		$ulf = TTnew( 'UserListFactory' );
+
+		//Need to be able to support user_id=0 for open shifts. But this can cause problems with importing punches with user_id=0.
+		if ( $this->Validator->isResultSetWithRows(	'user',
+															$ulf->getByID($id),
+															TTi18n::gettext('Invalid User')
+															) ) {
+			$this->data['user_id'] = $id;
+
+			return TRUE;
+		}
+
+		return FALSE;
+	}
+
+	function getPayPeriod() {
+		if ( isset($this->data['pay_period_id']) ) {
+			return (int)$this->data['pay_period_id'];
+		}
+
+		return FALSE;
+	}
+	function setPayPeriod($id = NULL) {
+		$id = trim($id);
+
+		if ( $id == NULL ) {
+			$id = (int)PayPeriodListFactory::findPayPeriod( $this->getUser(), $this->getDateStamp() );
+		}
+
+		$pplf = TTnew( 'PayPeriodListFactory' );
+
 		//Allow NULL pay period, incase its an absence or something in the future.
 		//Cron will fill in the pay period later.
-		return $this->setGenericDataValue( 'pay_period_id', $value );
+		if (
+				$id == 0
+				OR
+				$this->Validator->isResultSetWithRows(	'pay_period',
+														$pplf->getByID($id),
+														TTi18n::gettext('Invalid Pay Period')
+														) ) {
+			$this->data['pay_period_id'] = $id;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @param bool $raw
-	 * @return bool|int
-	 */
 	function getDateStamp( $raw = FALSE ) {
-		$value = $this->getGenericDataValue( 'date_stamp' );
-		if ( $value !== FALSE ) {
+		if ( isset($this->data['date_stamp']) ) {
 			if ( $raw === TRUE ) {
-				return $value;
+				return $this->data['date_stamp'];
 			} else {
-				return TTDate::strtotime( $value );
+				return TTDate::strtotime( $this->data['date_stamp'] );
+			}
+		}
+
+		return FALSE;
+	}
+	function setDateStamp($epoch) {
+		$epoch = (int)$epoch;
+
+		if	(	$this->Validator->isDate(		'date_stamp',
+												$epoch,
+												TTi18n::gettext('Incorrect date').' (a)')
+			) {
+
+			if	( $epoch > 0 ) {
+				$this->data['date_stamp'] = $epoch;
+
+				$this->setPayPeriod(); //Force pay period to be set as soon as the date is.
+				return TRUE;
+			} else {
+				$this->Validator->isTRUE(		'date_stamp',
+												FALSE,
+												TTi18n::gettext('Incorrect date').' (b)');
 			}
 		}
 
 		return FALSE;
 	}
 
-	/**
-	 * @param int $value EPOCH
-	 * @return bool
-	 */
-	function setDateStamp( $value ) {
-		$value = (int)$value;
-		return $this->setGenericDataValue( 'date_stamp', $value );
-	}
-
 	//Convert hierarchy type_ids back to request type_ids.
-
-	/**
-	 * @param int $type_id
-	 * @return array|int
-	 */
 	function getTypeIdFromHierarchyTypeId( $type_id ) {
 		//Make sure we support an array of type_ids.
 		if ( is_array($type_id) ) {
@@ -239,17 +251,12 @@ class RequestFactory extends Factory {
 				$retval[] = ( $request_type_id >= 1000 AND $request_type_id < 2000 ) ? ( (int)$request_type_id - 1000 ) : (int)$request_type_id;
 			}
 		} else {
-			$retval = ( $type_id >= 1000 AND $type_id < 2000 ) ? ( (int)$type_id - 1000 ) : (int)$type_id;
+			$retval = ( $request_type_id >= 1000 AND $request_type_id < 2000 ) ? ( (int)$type_id - 1000 ) : (int)$type_id;
 			Debug::text('Hierarchy Type ID: '. $type_id .' Request Type ID: '. $retval, __FILE__, __LINE__, __METHOD__, 10);
 		}
 
 		return $retval;
 	}
-
-	/**
-	 * @param int $type_id ID
-	 * @return array|bool|int
-	 */
 	function getHierarchyTypeId( $type_id = NULL ) {
 		if ( $type_id == '' ) {
 			$type_id = $this->getType();
@@ -273,93 +280,125 @@ class RequestFactory extends Factory {
 		return $retval;
 	}
 
-	/**
-	 * @return bool|int
-	 */
 	function getType() {
-		return $this->getGenericDataValue( 'type_id' );
+		if ( isset($this->data['type_id']) ) {
+			return (int)$this->data['type_id'];
+		}
+
+		return FALSE;
+	}
+	function setType($value) {
+		$value = trim($value);
+
+		if ( $this->Validator->inArrayKey(	'type',
+											$value,
+											TTi18n::gettext('Incorrect Type'),
+											$this->getOptions('type')) ) {
+
+			$this->data['type_id'] = $value;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setType( $value) {
-		$value = (int)trim($value);
-		return $this->setGenericDataValue( 'type_id', $value );
-	}
-
-	/**
-	 * @return bool|int
-	 */
 	function getStatus() {
-		return $this->getGenericDataValue( 'status_id' );
+		if ( isset($this->data['status_id']) ) {
+			return (int)$this->data['status_id'];
+		}
+
+		return FALSE;
+	}
+	function setStatus($value) {
+		$value = trim($value);
+
+		if ( $this->Validator->inArrayKey(	'status',
+											$value,
+											TTi18n::gettext('Incorrect Status'),
+											$this->getOptions('status')) ) {
+
+			$this->data['status_id'] = $value;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setStatus( $value ) {
-		$value = (int)trim($value);
-		return $this->setGenericDataValue( 'status_id', $value );
-	}
-
-	/**
-	 * @return bool|null
-	 */
 	function getAuthorized() {
-		return $this->fromBool( $this->getGenericDataValue( 'authorized' ) );
+		if ( isset($this->data['authorized']) AND $this->data['authorized'] !== NULL) {
+			return $this->fromBool( $this->data['authorized'] );
+		}
+
+		return NULL;
+	}
+	function setAuthorized($bool) {
+		$this->data['authorized'] = $this->toBool($bool);
+
+		return TRUE;
 	}
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setAuthorized( $value ) {
-		return $this->setGenericDataValue( 'authorized', $this->toBool($value) );
-	}
-
-	/**
-	 * @return bool|mixed
-	 */
 	function getAuthorizationLevel() {
-		return $this->getGenericDataValue( 'authorization_level' );
-	}
+		if ( isset($this->data['authorization_level']) ) {
+			return $this->data['authorization_level'];
+		}
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setAuthorizationLevel( $value) {
+		return FALSE;
+	}
+	function setAuthorizationLevel($value) {
 		$value = (int)trim( $value );
+
 		if ( $value < 0 ) {
 			$value = 0;
 		}
-		return $this->setGenericDataValue( 'authorization_level', $value );
+
+		if ( $this->Validator->isNumeric(	'authorization_level',
+											$value,
+											TTi18n::gettext('Incorrect authorization level') ) ) {
+
+			$this->data['authorization_level'] = $value;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function getMessage() {
-		return $this->getGenericTempDataValue( 'message' );
+		if ( isset($this->tmp_data['message']) ) {
+			return $this->tmp_data['message'];
+		}
+
+		return FALSE;
+	}
+	function setMessage($text) {
+		$text = trim($text);
+
+		//Flex interface validates the message too soon, make it skip a 0 length message when only validating.
+		if ( $this->Validator->getValidateOnly() == TRUE AND $text == '' ) {
+			$minimum_length = 0;
+		} else {
+			$minimum_length = 5;
+		}
+
+		if	(	$this->Validator->isLength(		'message',
+												$text,
+												TTi18n::gettext('Invalid message length'),
+												$minimum_length,
+												1024) ) {
+
+			$this->tmp_data['message'] = htmlspecialchars( $text );
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setMessage( $value ) {
-		$value = trim($value);
-		return $this->setGenericTempDataValue( 'message', htmlspecialchars( $value ) );
-	}
-
-	/**
-	 * @return bool
-	 */
 	function getRequestSchedule() {
-		if ( $this->getUserObject()->getCompanyObject()->getProductEdition() > 10 ) {
+
+		if( $this->getUserObject()->getCompanyObject()->getProductEdition() > 10 ) {
 			$rslf = TTNew( 'RequestScheduleListFactory' );
 			$rslf->getAPISearchByCompanyIdAndArrayCriteria( $this->getUserObject()->getCompany(), array('request_id' => $this->getId()) );
 			if ( $rslf->getRecordCount() == 1 ) {
@@ -377,117 +416,14 @@ class RequestFactory extends Factory {
 		return FALSE;
 	}
 
-	/**
-	 * @param bool $ignore_warning
-	 * @return bool
-	 */
 	function Validate( $ignore_warning = TRUE ) {
-		//
-		// BELOW: Validation code moved from set*() functions.
-		//
-		// User
-		$ulf = TTnew( 'UserListFactory' );
-		$this->Validator->isResultSetWithRows(	'user',
-														$ulf->getByID($this->getUser()),
-														TTi18n::gettext('Invalid Employee')
-													);
-		// Pay Period
-		if ( $this->getPayPeriod() !== FALSE AND $this->getPayPeriod() != TTUUID::getZeroID() ) {
-			$pplf = TTnew( 'PayPeriodListFactory' );
-			$this->Validator->isResultSetWithRows(	'pay_period',
-															$pplf->getByID($this->getPayPeriod()),
-															TTi18n::gettext('Invalid Pay Period')
-														);
-		}
-		// Date
-		$this->Validator->isDate(		'date_stamp',
-												$this->getDateStamp(),
-												TTi18n::gettext('Incorrect date').' (a)'
-											);
-		if ( $this->Validator->isError('date_stamp') == FALSE ) {
-			if ( $this->getDateStamp() > 0 ) {
-				$this->setPayPeriod(); //Force pay period to be set as soon as the date is.
-			} else {
-				$this->Validator->isTRUE(		'date_stamp',
-												FALSE,
-												TTi18n::gettext('Incorrect date').' (b)'
-											);
-			}
-		}
-
-		if ( $this->Validator->isError('date_stamp') == FALSE AND $this->getDateStamp() < ( time() - (86400 * 365 * 1 ) ) ) { //No more than 1 year in the past
-			$this->Validator->isTRUE(		'date_stamp',
-											 FALSE,
-											 TTi18n::gettext('Date cannot be more than 1 year in the past')
-			);
-		}
-
-		if ( $this->Validator->isError('date_stamp') == FALSE AND $this->getDateStamp() > ( time() + (86400 * 365 * 5 ) ) ) { //No more than 5 years in the future.
-			$this->Validator->isTRUE(		'date_stamp',
-											 FALSE,
-											 TTi18n::gettext('Date cannot be more than 5 years in the future')
-			);
-		}
-
-		//Make sure the user isn't entering requests before the employees hire or after termination date
-		if ( $this->Validator->isError('date_stamp') == FALSE AND $this->getDeleted() == FALSE AND $this->getDateStamp() != FALSE AND is_object( $this->getUserObject() ) ) {
-			if ( $this->getUserObject()->getHireDate() != '' AND TTDate::getBeginDayEpoch( $this->getDateStamp() ) < TTDate::getBeginDayEpoch( $this->getUserObject()->getHireDate() ) ) {
-				$this->Validator->isTRUE(	'date_stamp',
-											 FALSE,
-											 TTi18n::gettext('Date cannot be before your hire date') );
-			}
-			//Don't bother checking termination date, as it leak sensitive information.
-		}
-
-		// Type
-		$this->Validator->inArrayKey(	'type',
-												$this->getType(),
-												TTi18n::gettext('Incorrect Type'),
-												$this->getOptions('type')
-											);
-		// Status
-		if ( $this->getStatus() != FALSE ) {
-			$this->Validator->inArrayKey( 'status',
-										  $this->getStatus(),
-										  TTi18n::gettext( 'Incorrect Status' ),
-										  $this->getOptions( 'status' )
-			);
-		}
-
-		// Authorization level
-		if ( $this->getAuthorizationLevel() !== FALSE ) {
-			$this->Validator->isNumeric(	'authorization_level',
-													$this->getAuthorizationLevel(),
-													TTi18n::gettext('Incorrect authorization level')
-												);
-		}
-
-		if ( $this->getMessage() !== FALSE ) {
-			// HTML interface validates the message too soon, make it skip a 0 length message when only validating.
-			if ( $this->Validator->getValidateOnly() == TRUE AND $this->getMessage() == '' ) {
-				$minimum_length = 0;
-			} else {
-				$minimum_length = 2;
-			}
-			$this->Validator->isLength( 'message',
-										$this->getMessage(),
-										TTi18n::gettext( 'Reason / Message is too short or too long' ),
-										$minimum_length,
-										10240
-			);
-		}
-
-		//
-		// ABOVE: Validation code moved from set*() functions.
-		//
-
 		if (	$this->isNew() == TRUE
 				AND $this->Validator->hasError('message') == FALSE
 				AND $this->getMessage() == FALSE
 				AND $this->Validator->getValidateOnly() == FALSE ) {
 			$this->Validator->isTRUE(		'message',
 											FALSE,
-											TTi18n::gettext('Reason / Message must be specified') );
+											TTi18n::gettext('Invalid message length') );
 		}
 
 		if ( $this->getDateStamp() == FALSE
@@ -497,7 +433,7 @@ class RequestFactory extends Factory {
 											TTi18n::gettext('Incorrect Date').' (c)' );
 		}
 
-		if ( !is_object( $this->getUserObject() ) AND $this->Validator->hasError('user_id') == FALSE ) {
+		if ( !is_object( $this->getUserObject() ) ) {
 			$this->Validator->isTRUE(		'user_id',
 											FALSE,
 											TTi18n::gettext('Invalid Employee') );
@@ -525,14 +461,11 @@ class RequestFactory extends Factory {
 		return TRUE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function preSave() {
 		//If this is a new request, find the current authorization level to assign to it.
 		// isNew should be a force check due to request schedule child table
 		if ( $this->isNew(TRUE) == TRUE ) {
-			if ( $this->getStatus() == FALSE OR $this->getStatus() < 30 ) { //10=INCOMPLETE, 20=OPEN. When upgrading from v10 to v11 if the browser cache isn't cleared the status_id comes through as 20. We saw some cases of it coming through as 10 too.
+			if ( $this->getStatus() == FALSE ) {
 				$this->setStatus( 30 ); //Pending Auth.
 			}
 
@@ -546,9 +479,6 @@ class RequestFactory extends Factory {
 		return TRUE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function postSave() {
 		//Save message here after we have the request_id.
 		if ( $this->getMessage() !== FALSE ) {
@@ -564,7 +494,7 @@ class RequestFactory extends Factory {
 			$mcf->setToUserId( $request_parent_level_user_ids );
 			$mcf->setObjectType( 50 ); //Messages don't break out request types like hierarchies do.
 			$mcf->setObject( $this->getID() );
-			$mcf->setParent( TTUUID::getZeroID() );
+			$mcf->setParent( 0 );
 			$mcf->setSubject( Option::getByKey( $this->getType(), $this->getOptions('type') ) .' '. TTi18n::gettext('request from') .': '. $this->getUserObject()->getFullName(TRUE) );
 			$mcf->setBody( $this->getMessage() );
 			$mcf->setEnableEmailMessage( FALSE ); //Dont email message notification, send authorization notice instead.
@@ -606,10 +536,6 @@ class RequestFactory extends Factory {
 		return TRUE;
 	}
 
-	/**
-	 * @param $data
-	 * @return bool
-	 */
 	function setObjectFromArray( $data ) {
 		if ( is_array( $data ) ) {
 			/*
@@ -658,11 +584,6 @@ class RequestFactory extends Factory {
 		return FALSE;
 	}
 
-	/**
-	 * @param null $include_columns
-	 * @param bool $permission_children_ids
-	 * @return mixed
-	 */
 	function getObjectAsArray( $include_columns = NULL, $permission_children_ids = FALSE ) {
 		$variable_function_map = $this->getVariableToFunctionMap();
 		if ( is_array( $variable_function_map ) ) {
@@ -695,8 +616,8 @@ class RequestFactory extends Factory {
 						case 'request_schedule':
 							if( $this->getUserObject()->getCompanyObject()->getProductEdition() > 10 ) {
 								if ( $this->getType() == 30 OR $this->getType() == 40 ) {
-									$request_schedule = $this->getRequestSchedule();
-									if ( $request_schedule != FALSE AND count( $request_schedule ) > 0 ) {
+									$request_schedule = $this->getRequestSchedule( array('request_schedule_id' => $this->getId()) );
+									if ( $request_schedule != FALSE && count( $request_schedule ) > 0 ) {
 										$data[$variable] = $request_schedule;
 									}
 								}
@@ -717,10 +638,6 @@ class RequestFactory extends Factory {
 		return $data;
 	}
 
-	/**
-	 * @param $log_action
-	 * @return bool
-	 */
 	function addLog( $log_action ) {
 		return TTLog::addEntry( $this->getId(), $log_action, TTi18n::getText('Request - Employee').': '. UserListFactory::getFullNameById( $this->getUser() ) .' '. TTi18n::getText('Type').': '. Option::getByKey( $this->getType(), $this->getOptions('type') ) .' '. TTi18n::getText('Date').': '. TTDate::getDate('DATE+TIME', $this->getDateStamp() ), NULL, $this->getTable(), $this );
 	}

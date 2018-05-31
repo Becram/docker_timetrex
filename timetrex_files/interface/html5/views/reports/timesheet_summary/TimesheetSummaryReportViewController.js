@@ -1,14 +1,15 @@
 TimesheetSummaryReportViewController = ReportBaseViewController.extend( {
 
-	_required_files: [ 'APITimesheetSummaryReport', 'APICurrency', 'APITimeSheetVerify'],
-
-	initReport: function ( options ) {
+	initialize: function( options ) {
+		this.__super( 'initialize', options );
 		this.script_name = 'TimesheetSummaryReport';
 		this.viewId = 'TimesheetSummaryReport';
 		this.context_menu_name = $.i18n._( 'TimeSheet Summary' );
 		this.navigation_label = $.i18n._( 'Saved Report' ) +':';
 		this.view_file = 'TimesheetSummaryReportView.html';
 		this.api = new (APIFactory.getAPIClass( 'APITimesheetSummaryReport' ))();
+		this.buildContextMenu();
+
 	},
 
 	buildContextMenuModels: function() {
@@ -110,15 +111,13 @@ TimesheetSummaryReportViewController = ReportBaseViewController.extend( {
 
 		switch ( id ) {
 			case ContextMenuIconName.view:
-				ProgressBar.showOverlay();
 				this.onViewClick();
 				break;
 			case ContextMenuIconName.view_html:
-				ProgressBar.showOverlay();
+
 				this.onViewClick('html');
 				break;
 			case ContextMenuIconName.view_html_new_window:
-				ProgressBar.showOverlay();
 				this.onViewClick('html', true);
 				break;
 			case ContextMenuIconName.export_excel:

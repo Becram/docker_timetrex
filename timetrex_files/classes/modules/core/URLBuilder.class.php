@@ -1,7 +1,7 @@
 <?php
 /*********************************************************************************
  * TimeTrex is a Workforce Management program developed by
- * TimeTrex Software Inc. Copyright (C) 2003 - 2018 TimeTrex Software Inc.
+ * TimeTrex Software Inc. Copyright (C) 2003 - 2017 TimeTrex Software Inc.
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Affero General Public License version 3 as published by
@@ -43,25 +43,18 @@ class URLBuilder {
 	static protected $script = 'index.php';
 
 	//Recursively convert an array to a URL.
-
-	/**
-	 * @param $var
-	 * @param null $varName
-	 * @param bool $sub_array
-	 * @return string
-	 */
-	static function urlencode_array( $var, $varName = NULL, $sub_array = FALSE ) {
+	static function urlencode_array($var, $varName = NULL, $sub_array = FALSE ) {
 		$separator = '&';
 		$toImplode = array();
 		foreach ($var as $key => $value) {
 			if ( is_array($value) ) {
-
+				
 				if ( $sub_array == FALSE ) {
 					$toImplode[] = self::urlencode_array($value, $key, TRUE );
 				} else {
 					$toImplode[] = self::urlencode_array($value, $varName.'['.$key.']', TRUE );
 				}
-			} else {
+			} else {				
 				if ( $sub_array == TRUE ) {
 					//$toImplode[] = $varName.'['.$key.']='.urlencode($value);
 					$toImplode[] = $varName.'['.$key.']='.$value;
@@ -71,16 +64,11 @@ class URLBuilder {
 				}
 			}
 		}
-
+		
 		return implode($separator, $toImplode);
 	}
 
-	/**
-	 * @param $script
-	 * @param null $array
-	 * @return bool
-	 */
-	static function setURL( $script, $array = NULL) {
+	static function setURL($script, $array = NULL) {
 		//Debug::Arr(self::$data, 'Before: ', __FILE__, __LINE__, __METHOD__, 10);
 		if ( is_array($array) AND count($array) > 0) {
 			self::$data = array_merge(self::$data, $array);
@@ -92,13 +80,7 @@ class URLBuilder {
 		return TRUE;
 	}
 
-	/**
-	 * @param null $array
-	 * @param null $script
-	 * @param bool $merge
-	 * @return null|string
-	 */
-	static function getURL( $array = NULL, $script = NULL, $merge = TRUE) {
+	static function getURL($array = NULL, $script = NULL, $merge = TRUE) {
 		//Debug::Arr($array, 'Passed Array', __FILE__, __LINE__, __METHOD__, 10);
 
 		//Debug::Arr(self::$data, 'bSelf Data: ', __FILE__, __LINE__, __METHOD__, 10);

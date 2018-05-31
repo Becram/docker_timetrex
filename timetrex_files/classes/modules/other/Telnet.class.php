@@ -181,7 +181,7 @@ class Telnet {
 	/**
 	 * Gets character from the socket
 	 *
-	 * @return bool|string|void
+	 * @return void
 	 */
 	private function getc() {
 		return fgetc($this->socket);

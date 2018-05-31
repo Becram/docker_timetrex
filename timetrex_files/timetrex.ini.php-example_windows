@@ -35,7 +35,8 @@ php_cli = c:\php\php.exe
 ; Database connection settings. These can be set from the installer.
 ;
 [database]
-type = postgres
+type = postgres8
+;type = mysqli
 
 host = localhost
 database_name = timetrex

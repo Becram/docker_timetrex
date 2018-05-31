@@ -1,7 +1,7 @@
 <?php
 /*********************************************************************************
  * TimeTrex is a Workforce Management program developed by
- * TimeTrex Software Inc. Copyright (C) 2003 - 2018 TimeTrex Software Inc.
+ * TimeTrex Software Inc. Copyright (C) 2003 - 2017 TimeTrex Software Inc.
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Affero General Public License version 3 as published by
@@ -40,14 +40,7 @@
  */
 class UserDeductionListFactory extends UserDeductionFactory implements IteratorAggregate {
 
-	/**
-	 * @param int $limit Limit the number of records returned
-	 * @param int $page Page number of records to return for pagination
-	 * @param array $where Additional SQL WHERE clause in format of array( $column => $filter, ... ). ie: array( 'id' => 1, ... )
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return $this
-	 */
-	function getAll( $limit = NULL, $page = NULL, $where = NULL, $order = NULL) {
+	function getAll($limit = NULL, $page = NULL, $where = NULL, $order = NULL) {
 		$query = '
 					select	*
 					from	'. $this->getTable() .'
@@ -61,13 +54,7 @@ class UserDeductionListFactory extends UserDeductionFactory implements IteratorA
 		return $this;
 	}
 
-	/**
-	 * @param string $id UUID
-	 * @param array $where Additional SQL WHERE clause in format of array( $column => $filter, ... ). ie: array( 'id' => 1, ... )
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return bool|UserDeductionListFactory
-	 */
-	function getById( $id, $where = NULL, $order = NULL) {
+	function getById($id, $where = NULL, $order = NULL) {
 		if ( $id == '') {
 			return FALSE;
 		}
@@ -84,7 +71,7 @@ class UserDeductionListFactory extends UserDeductionFactory implements IteratorA
 			$query = '
 						select	*
 						from	'. $this->getTable() .'
-						where	id in ('. $this->getListSQL( $id, $ph, 'uuid' ) .')
+						where	id in ('. $this->getListSQL( $id, $ph, 'int' ) .')
 							AND deleted = 0';
 			$query .= $this->getWhereSQL( $where );
 			$query .= $this->getSortSQL( $order );
@@ -99,24 +86,10 @@ class UserDeductionListFactory extends UserDeductionFactory implements IteratorA
 		return $this;
 	}
 
-	/**
-	 * @param string $id UUID
-	 * @param string $company_id UUID
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return bool|UserDeductionListFactory
-	 */
-	function getByIdAndCompanyId( $id, $company_id, $order = NULL) {
+	function getByIdAndCompanyId($id, $company_id, $order = NULL) {
 		return $this->getByCompanyIdAndId( $company_id, $id, $order );
 	}
-
-	/**
-	 * @param string $company_id UUID
-	 * @param string $id UUID
-	 * @param array $where Additional SQL WHERE clause in format of array( $column => $filter, ... ). ie: array( 'id' => 1, ... )
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return bool|UserDeductionListFactory
-	 */
-	function getByCompanyIdAndId( $company_id, $id, $where = NULL, $order = NULL) {
+	function getByCompanyIdAndId($company_id, $id, $where = NULL, $order = NULL) {
 		if ( $company_id == '') {
 			return FALSE;
 		}
@@ -128,8 +101,8 @@ class UserDeductionListFactory extends UserDeductionFactory implements IteratorA
 		$uf = new UserFactory();
 
 		$ph = array(
-					'company_id' => TTUUID::castUUID($company_id),
-					'id' => TTUUID::castUUID($id),
+					'company_id' => (int)$company_id,
+					'id' => (int)$id,
 					);
 
 		$query = '
@@ -150,13 +123,7 @@ class UserDeductionListFactory extends UserDeductionFactory implements IteratorA
 		return $this;
 	}
 
-	/**
-	 * @param string $deduction_id UUID
-	 * @param array $where Additional SQL WHERE clause in format of array( $column => $filter, ... ). ie: array( 'id' => 1, ... )
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return bool|UserDeductionListFactory
-	 */
-	function getByCompanyDeductionId( $deduction_id, $where = NULL, $order = NULL) {
+	function getByCompanyDeductionId($deduction_id, $where = NULL, $order = NULL) {
 		if ( $deduction_id == '') {
 			return FALSE;
 		}
@@ -164,7 +131,7 @@ class UserDeductionListFactory extends UserDeductionFactory implements IteratorA
 		$uf = new UserFactory();
 
 		$ph = array(
-					'deduction_id' => TTUUID::castUUID($deduction_id),
+					'deduction_id' => (int)$deduction_id,
 					);
 
 		$query = '
@@ -184,13 +151,7 @@ class UserDeductionListFactory extends UserDeductionFactory implements IteratorA
 		return $this;
 	}
 
-	/**
-	 * @param string $company_id UUID
-	 * @param array $where Additional SQL WHERE clause in format of array( $column => $filter, ... ). ie: array( 'id' => 1, ... )
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return bool|UserDeductionListFactory
-	 */
-	function getByCompanyId( $company_id, $where = NULL, $order = NULL) {
+	function getByCompanyId($company_id, $where = NULL, $order = NULL) {
 		if ( $company_id == '') {
 			return FALSE;
 		}
@@ -199,7 +160,7 @@ class UserDeductionListFactory extends UserDeductionFactory implements IteratorA
 		$cdf = new CompanyDeductionFactory();
 
 		$ph = array(
-					'company_id' => TTUUID::castUUID($company_id),
+					'company_id' => (int)$company_id,
 					);
 
 		$query = '
@@ -222,14 +183,7 @@ class UserDeductionListFactory extends UserDeductionFactory implements IteratorA
 		return $this;
 	}
 
-	/**
-	 * @param string $company_id UUID
-	 * @param string $deduction_id UUID
-	 * @param array $where Additional SQL WHERE clause in format of array( $column => $filter, ... ). ie: array( 'id' => 1, ... )
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return bool|UserDeductionListFactory
-	 */
-	function getByCompanyIdAndCompanyDeductionId( $company_id, $deduction_id, $where = NULL, $order = NULL) {
+	function getByCompanyIdAndCompanyDeductionId($company_id, $deduction_id, $where = NULL, $order = NULL) {
 		if ( $company_id == '') {
 			return FALSE;
 		}
@@ -241,7 +195,7 @@ class UserDeductionListFactory extends UserDeductionFactory implements IteratorA
 		$uf = new UserFactory();
 
 		$ph = array(
-					'company_id' => TTUUID::castUUID($company_id),
+					'company_id' => (int)$company_id,
 					);
 
 		$query = '
@@ -251,7 +205,7 @@ class UserDeductionListFactory extends UserDeductionFactory implements IteratorA
 					where
 						a.user_id = b.id
 						AND b.company_id = ?
-						AND a.company_deduction_id in ('. $this->getListSQL( $deduction_id, $ph, 'uuid' ) .')
+						AND a.company_deduction_id in ('. $this->getListSQL( $deduction_id, $ph, 'int' ) .')
 						AND ( a.deleted = 0 AND b.deleted = 0 )
 					';
 		$query .= $this->getWhereSQL( $where );
@@ -262,14 +216,7 @@ class UserDeductionListFactory extends UserDeductionFactory implements IteratorA
 		return $this;
 	}
 
-	/**
-	 * @param string $user_id UUID
-	 * @param string $deduction_id UUID
-	 * @param array $where Additional SQL WHERE clause in format of array( $column => $filter, ... ). ie: array( 'id' => 1, ... )
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return bool|UserDeductionListFactory
-	 */
-	function getByUserIdAndCompanyDeductionId( $user_id, $deduction_id, $where = NULL, $order = NULL) {
+	function getByUserIdAndCompanyDeductionId($user_id, $deduction_id, $where = NULL, $order = NULL) {
 		if ( $user_id == '') {
 			return FALSE;
 		}
@@ -281,7 +228,7 @@ class UserDeductionListFactory extends UserDeductionFactory implements IteratorA
 		$uf = new UserFactory();
 
 		$ph = array(
-					'deduction_id' => TTUUID::castUUID($deduction_id),
+					'deduction_id' => (int)$deduction_id,
 					);
 
 		$query = '
@@ -291,7 +238,7 @@ class UserDeductionListFactory extends UserDeductionFactory implements IteratorA
 					where
 						a.user_id = b.id
 						AND a.company_deduction_id = ?
-						AND a.user_id in ('. $this->getListSQL( $user_id, $ph, 'uuid' ) .')
+						AND a.user_id in ('. $this->getListSQL( $user_id, $ph, 'int' ) .')
 						AND (a.deleted = 0 AND b.deleted = 0)
 					';
 		$query .= $this->getWhereSQL( $where );
@@ -302,19 +249,12 @@ class UserDeductionListFactory extends UserDeductionFactory implements IteratorA
 		return $this;
 	}
 
-	/**
-	 * @param string $user_id UUID
-	 * @param string $country_code UUID
-	 * @param array $where Additional SQL WHERE clause in format of array( $column => $filter, ... ). ie: array( 'id' => 1, ... )
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return bool|UserDeductionListFactory
-	 */
-	function getByUserIdAndCountryID( $user_id, $country_code, $where = NULL, $order = NULL) {
+	function getByUserIdAndCountryID($user_id, $country_id, $where = NULL, $order = NULL) {
 		if ( $user_id == '') {
 			return FALSE;
 		}
 
-		if ( $country_code == '') {
+		if ( $country_id == '') {
 			return FALSE;
 		}
 
@@ -322,9 +262,9 @@ class UserDeductionListFactory extends UserDeductionFactory implements IteratorA
 		$cdf = new CompanyDeductionFactory();
 
 		$ph = array(
-				'user_id' => TTUUID::castUUID($user_id),
-				'country_code' => (string)$country_code,
-		);
+					'user_id' => (int)$user_id,
+					'country_id' => (int)$country_id,
+					);
 
 		$query = '
 					select	a.*
@@ -344,14 +284,7 @@ class UserDeductionListFactory extends UserDeductionFactory implements IteratorA
 		return $this;
 	}
 
-	/**
-	 * @param string $user_id UUID
-	 * @param string $pse_account_id UUID
-	 * @param array $where Additional SQL WHERE clause in format of array( $column => $filter, ... ). ie: array( 'id' => 1, ... )
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return bool|UserDeductionListFactory
-	 */
-	function getByUserIdAndPayStubEntryAccountID( $user_id, $pse_account_id, $where = NULL, $order = NULL) {
+	function getByUserIdAndPayStubEntryAccountID($user_id, $pse_account_id, $where = NULL, $order = NULL) {
 		if ( $user_id == '') {
 			return FALSE;
 		}
@@ -364,7 +297,7 @@ class UserDeductionListFactory extends UserDeductionFactory implements IteratorA
 		$cdf = new CompanyDeductionFactory();
 
 		$ph = array(
-					'user_id' => TTUUID::castUUID($user_id),
+					'user_id' => (int)$user_id,
 					);
 
 		$query = '
@@ -374,7 +307,7 @@ class UserDeductionListFactory extends UserDeductionFactory implements IteratorA
 					where
 						a.company_deduction_id = b.id
 						AND a.user_id = ?
-						AND b.pay_stub_entry_account_id in ('. $this->getListSQL( $pse_account_id, $ph, 'uuid' ) .')
+						AND b.pay_stub_entry_account_id in ('. $this->getListSQL( $pse_account_id, $ph, 'int' ) .')
 						AND ( a.deleted = 0 AND b.deleted = 0 )
 					';
 		$query .= $this->getWhereSQL( $where );
@@ -385,14 +318,7 @@ class UserDeductionListFactory extends UserDeductionFactory implements IteratorA
 		return $this;
 	}
 
-	/**
-	 * @param string $company_id UUID
-	 * @param string $user_id UUID
-	 * @param array $where Additional SQL WHERE clause in format of array( $column => $filter, ... ). ie: array( 'id' => 1, ... )
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return bool|UserDeductionListFactory
-	 */
-	function getByCompanyIdAndUserId( $company_id, $user_id, $where = NULL, $order = NULL) {
+	function getByCompanyIdAndUserId($company_id, $user_id, $where = NULL, $order = NULL) {
 		if ( $company_id == '') {
 			return FALSE;
 		}
@@ -412,7 +338,7 @@ class UserDeductionListFactory extends UserDeductionFactory implements IteratorA
 		$cdf = new CompanyDeductionFactory();
 
 		$ph = array(
-					'company_id' => TTUUID::castUUID($company_id),
+					'company_id' => (int)$company_id,
 					);
 
 		$query = '
@@ -449,7 +375,7 @@ class UserDeductionListFactory extends UserDeductionFactory implements IteratorA
 						a.user_id = uf.id
 						AND a.company_deduction_id = cdf.id
 						AND uf.company_id = ?
-						AND a.user_id in ('. $this->getListSQL( $user_id, $ph, 'uuid' ) .')
+						AND a.user_id in ('. $this->getListSQL( $user_id, $ph, 'int' ) .')
 						AND (a.deleted = 0 AND cdf.deleted = 0)
 					';
 		$query .= $this->getWhereSQL( $where );
@@ -460,15 +386,7 @@ class UserDeductionListFactory extends UserDeductionFactory implements IteratorA
 		return $this;
 	}
 
-	/**
-	 * @param string $company_id UUID
-	 * @param string $user_id UUID
-	 * @param string $id UUID
-	 * @param array $where Additional SQL WHERE clause in format of array( $column => $filter, ... ). ie: array( 'id' => 1, ... )
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return bool|UserDeductionListFactory
-	 */
-	function getByCompanyIdAndUserIdAndId( $company_id, $user_id, $id, $where = NULL, $order = NULL) {
+	function getByCompanyIdAndUserIdAndId($company_id, $user_id, $id, $where = NULL, $order = NULL) {
 		if ( $company_id == '') {
 			return FALSE;
 		}
@@ -485,9 +403,9 @@ class UserDeductionListFactory extends UserDeductionFactory implements IteratorA
 		$cdf = new CompanyDeductionFactory();
 
 		$ph = array(
-					'company_id' => TTUUID::castUUID($company_id),
-					'user_id' => TTUUID::castUUID($user_id),
-					'id' => TTUUID::castUUID($id),
+					'company_id' => (int)$company_id,
+					'user_id' => (int)$user_id,
+					'id' => (int)$id,
 					);
 
 		$query = '
@@ -534,15 +452,6 @@ class UserDeductionListFactory extends UserDeductionFactory implements IteratorA
 		return $this;
 	}
 
-	/**
-	 * @param string $company_id UUID
-	 * @param $filter_data
-	 * @param int $limit Limit the number of records returned
-	 * @param int $page Page number of records to return for pagination
-	 * @param array $where Additional SQL WHERE clause in format of array( $column => $filter, ... ). ie: array( 'id' => 1, ... )
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return bool|UserDeductionListFactory
-	 */
 	function getAPISearchByCompanyIdAndArrayCriteria( $company_id, $filter_data, $limit = NULL, $page = NULL, $where = NULL, $order = NULL ) {
 		if ( $company_id == '') {
 			return FALSE;
@@ -579,7 +488,7 @@ class UserDeductionListFactory extends UserDeductionFactory implements IteratorA
 		$cdf = new CompanyDeductionFactory();
 
 		$ph = array(
-					'company_id' => TTUUID::castUUID($company_id),
+					'company_id' => (int)$company_id,
 					);
 
 		$query = '
@@ -604,8 +513,6 @@ class UserDeductionListFactory extends UserDeductionFactory implements IteratorA
 
 							uf.first_name as first_name,
 							uf.last_name as last_name,
-							uf.middle_name as middle_name,
-							uf.status_id as user_status_id,
 							uf.country as country,
 							uf.province as province,
 							
@@ -636,15 +543,15 @@ class UserDeductionListFactory extends UserDeductionFactory implements IteratorA
 					where	uf.company_id = ?
 					';
 
-		$query .= ( isset($filter_data['permission_children_ids']) ) ? $this->getWhereClauseSQL( 'a.user_id', $filter_data['permission_children_ids'], 'uuid_list', $ph ) : NULL;
-		$query .= ( isset($filter_data['id']) ) ? $this->getWhereClauseSQL( 'a.id', $filter_data['id'], 'uuid_list', $ph ) : NULL;
-		$query .= ( isset($filter_data['exclude_id']) ) ? $this->getWhereClauseSQL( 'a.id', $filter_data['exclude_id'], 'not_uuid_list', $ph ) : NULL;
+		$query .= ( isset($filter_data['permission_children_ids']) ) ? $this->getWhereClauseSQL( 'a.user_id', $filter_data['permission_children_ids'], 'numeric_list', $ph ) : NULL;
+		$query .= ( isset($filter_data['id']) ) ? $this->getWhereClauseSQL( 'a.id', $filter_data['id'], 'numeric_list', $ph ) : NULL;
+		$query .= ( isset($filter_data['exclude_id']) ) ? $this->getWhereClauseSQL( 'a.id', $filter_data['exclude_id'], 'not_numeric_list', $ph ) : NULL;
 
 		$query .= ( isset($filter_data['status_id']) ) ? $this->getWhereClauseSQL( 'cdf.status_id', $filter_data['status_id'], 'numeric_list', $ph ) : NULL;
 		$query .= ( isset($filter_data['type_id']) ) ? $this->getWhereClauseSQL( 'cdf.type_id', $filter_data['type_id'], 'numeric_list', $ph ) : NULL;
 
-		$query .= ( isset($filter_data['user_id']) ) ? $this->getWhereClauseSQL( 'a.user_id', $filter_data['user_id'], 'uuid_list', $ph ) : NULL;
-		$query .= ( isset($filter_data['company_deduction_id']) ) ? $this->getWhereClauseSQL( 'a.company_deduction_id', $filter_data['company_deduction_id'], 'uuid_list', $ph ) : NULL;
+		$query .= ( isset($filter_data['user_id']) ) ? $this->getWhereClauseSQL( 'a.user_id', $filter_data['user_id'], 'numeric_list', $ph ) : NULL;
+		$query .= ( isset($filter_data['company_deduction_id']) ) ? $this->getWhereClauseSQL( 'a.company_deduction_id', $filter_data['company_deduction_id'], 'numeric_list', $ph ) : NULL;
 		$query .= ( isset($filter_data['calculation_id']) ) ? $this->getWhereClauseSQL( 'cdf.calculation_id', $filter_data['calculation_id'], 'numeric_list', $ph ) : NULL;
 
 		$query .= ( isset($filter_data['created_by']) ) ? $this->getWhereClauseSQL( array('a.created_by', 'y.first_name', 'y.last_name'), $filter_data['created_by'], 'user_id_or_name', $ph ) : NULL;

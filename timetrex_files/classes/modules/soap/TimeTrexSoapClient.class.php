@@ -1,7 +1,7 @@
 <?php
 /*********************************************************************************
  * TimeTrex is a Workforce Management program developed by
- * TimeTrex Software Inc. Copyright (C) 2003 - 2018 TimeTrex Software Inc.
+ * TimeTrex Software Inc. Copyright (C) 2003 - 2017 TimeTrex Software Inc.
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Affero General Public License version 3 as published by
@@ -35,16 +35,7 @@
  ********************************************************************************/
 
 //Add custom soap client that automatically retries calls on network errors like "Could not connect to host"
-
-/**
- * Class TTSoapClient
- */
 class TTSoapClient extends SoapClient {
-	/**
-	 * @param string $function_name
-	 * @param string $arguments
-	 * @return mixed|SoapFault
-	 */
 	public function __call( $function_name, $arguments ) {
 		$max_retries = 4;
 		$retry_count = 0;
@@ -56,13 +47,8 @@ class TTSoapClient extends SoapClient {
 				Debug::Text('WARNING: Due to failed connection attempts, falling back to non-SSL SOAP communication: '. $this->location, __FILE__, __LINE__, __METHOD__, 10);
 			}
 
-			if ( Debug::getEnable() == TRUE AND Debug::getVerbosity() >= 11 ) {
-				$result = parent::__call( $function_name, $arguments );
-			} else {
-				$result = @parent::__call( $function_name, $arguments );
-			}
-
-			if ( is_soap_fault( $result ) AND ( $result->faultstring == 'Could not connect to host' OR $result->faultstring == 'Error Fetching http headers' OR $result->faultstring == 'Failed Sending HTTP SOAP request' ) ) {
+			$result = parent::__call( $function_name, $arguments );
+			if ( is_soap_fault( $result ) AND $result->faultstring == 'Could not connect to host' ) {
 				Debug::Text('SOAP connection failed, retrying...', __FILE__, __LINE__, __METHOD__, 10);
 				sleep( 2 );
 				$retry_count++;
@@ -85,18 +71,12 @@ class TTSoapClient extends SoapClient {
 class TimeTrexSoapClient {
 	var $soap_client_obj = NULL;
 
-	/**
-	 * TimeTrexSoapClient constructor.
-	 */
 	function __construct() {
 		$this->getSoapObject();
 
 		return TRUE;
 	}
 
-	/**
-	 * @return null|TTSoapClient
-	 */
 	function getSoapObject() {
 		if ( $this->soap_client_obj == NULL ) {
 			if ( function_exists('openssl_encrypt') ) {
@@ -113,7 +93,7 @@ class TimeTrexSoapClient {
 											'use' => SOAP_ENCODED,
 											'encoding' => 'UTF-8',
 											'connection_timeout' => 30,
-											'keep_alive' => FALSE, //This should help prevent "Error fetching HTTP headers" or "errno=10054 An existing connection was forcibly closed by the remote host." SOAP errors.
+											'keep_alive' => FALSE, //This should prevent "Error fetching HTTP headers" or "errno=10054 An existing connection was forcibly closed by the remote host." SOAP errors.
 											'trace' => 1,
 											'exceptions' => 0
 											)
@@ -123,11 +103,6 @@ class TimeTrexSoapClient {
 		return $this->soap_client_obj;
 	}
 
-	/**
-	 * @param $data
-	 * @param string $format
-	 * @return null
-	 */
 	function convertDocument( $data, $format = 'pdf' ) {
 		$company_data = $this->getPrimaryCompanyData();
 		if ( is_array( $company_data ) ) {
@@ -137,11 +112,6 @@ class TimeTrexSoapClient {
 		return NULL; //Return NULL when no data available, and FALSE to try again later.
 	}
 
-	/**
-	 * @param $resume_data
-	 * @param $file_name
-	 * @return null
-	 */
 	function parseResume( $resume_data, $file_name ) {
 		$company_data = $this->getPrimaryCompanyData();
 		if ( is_array( $company_data ) ) {
@@ -159,16 +129,10 @@ class TimeTrexSoapClient {
 		echo "</pre>\n";
 	}
 
-	/**
-	 * @return mixed
-	 */
 	function ping() {
 		return $this->getSoapObject()->ping();
 	}
 
-	/**
-	 * @return bool
-	 */
 	function isUpdateNotifyEnabled() {
 		global $config_vars;
 		if ( getTTProductEdition() > 10 AND DEPLOYMENT_ON_DEMAND == TRUE AND isset( $config_vars['other']['enable_update_notify'] ) AND $config_vars['other']['enable_update_notify'] == FALSE ) {
@@ -185,29 +149,18 @@ class TimeTrexSoapClient {
 		return TRUE;
 	}
 
-	/**
-	 * @return array|bool
-	 */
 	function getPrimaryCompanyData() {
 		global $config_vars, $db;
 
 		//Make sure a database connection has been established at least, otherwise this can cause FATAL error
 		//which during installation (before any database exists) is bad.
 		if ( isset($db) AND is_object($db) ) {
-			$clf = TTnew( 'CompanyListFactory' );
-
 			if ( !isset( $config_vars['other']['primary_company_id'] ) ) {
-				//$config_vars['other']['primary_company_id'] = 1;
-
-				//Find the first created company that is still active.
-				Debug::Text('WARNING: Primary company is not defined in .ini file, attempting to guess...', __FILE__, __LINE__, __METHOD__, 10);
-				$clf->getAll( 1, NULL, array( 'status_id' => '= 10' ), array( 'created_date' => 'asc' ) );
-				if ( $clf->getAll() == 1 ) {
-					$config_vars['other']['primary_company_id'] = $clf->getCurrent()->getId();
-				}
+				$config_vars['other']['primary_company_id'] = 1;
 			}
 
 			try {
+				$clf = TTnew( 'CompanyListFactory' );
 				$clf->getById( $config_vars['other']['primary_company_id'] );
 				if ( $clf->getRecordCount() > 0 ) {
 																																																			$obj_class = "\124\124\114\x69\x63\x65\x6e\x73\x65"; @$obj = new $obj_class; $hardware_id = $obj->getHardwareID(); unset($obj, $obj_class);
@@ -242,10 +195,6 @@ class TimeTrexSoapClient {
 		return FALSE;
 	}
 
-	/**
-	 * @param string $company_id UUID
-	 * @return bool
-	 */
 	function isLatestVersion( $company_id ) {
 		$version = SystemSettingFactory::getSystemSettingValueByKey( 'system_version' );
 		if ( $version !== FALSE ) {
@@ -261,10 +210,6 @@ class TimeTrexSoapClient {
 		return TRUE; //Default to TRUE (already running latest version) in the event that something goes wrong.
 	}
 
-	/**
-	 * @param $key
-	 * @return bool
-	 */
 	function isValidRegistrationKey( $key ) {
 		$key = trim($key);
 		if ( strlen( $key ) == 32 OR strlen( $key ) == 40 ) {
@@ -274,9 +219,6 @@ class TimeTrexSoapClient {
 		return FALSE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function getLocalRegistrationKey() {
 		$key = SystemSettingFactory::getSystemSettingValueByKey( 'registration_key' );
 
@@ -288,17 +230,10 @@ class TimeTrexSoapClient {
 
 		return $key;
 	}
-
-	/**
-	 * @return mixed
-	 */
 	function getRegistrationKey() {
 		return $this->getSoapObject()->generateRegistrationKey();
 	}
 
-	/**
-	 * @return bool
-	 */
 	function saveRegistrationKey() {
 		$sslf = TTnew( 'SystemSettingListFactory' );
 		$sslf->getByName('registration_key');
@@ -326,7 +261,7 @@ class TimeTrexSoapClient {
 			Debug::Text('Registration Key from server: '. $key, __FILE__, __LINE__, __METHOD__, 10);
 
 			if ( $this->isValidRegistrationKey( $key ) == FALSE ) {
-				$key = md5( uniqid( NULL, TRUE ) );
+				$key = md5( uniqid() );
 				Debug::Text('Failed getting registration key from server...', __FILE__, __LINE__, __METHOD__, 10);
 			}
 
@@ -344,10 +279,6 @@ class TimeTrexSoapClient {
 		return TRUE;
 	}
 
-	/**
-	 * @param string $company_id UUID
-	 * @return bool
-	 */
 	function sendCompanyVersionData( $company_id ) {
 		Debug::Text('Sending Company Version Data...', __FILE__, __LINE__, __METHOD__, 10);
 		$cf = TTnew( 'CompanyFactory' );
@@ -404,10 +335,6 @@ class TimeTrexSoapClient {
 		return FALSE;
 	}
 
-	/**
-	 * @param string $company_id UUID
-	 * @return bool
-	 */
 	function sendCompanyUserCountData( $company_id ) {
 		$cuclf = TTnew( 'CompanyUserCountListFactory' );
 		$cuclf->getActiveUsers();
@@ -442,10 +369,6 @@ class TimeTrexSoapClient {
 		return FALSE;
 	}
 
-	/**
-	 * @param string $company_id UUID
-	 * @return bool
-	 */
 	function sendCompanyUserLocationData( $company_id ) {
 		if ( $company_id == '' ) {
 			return FALSE;
@@ -483,11 +406,6 @@ class TimeTrexSoapClient {
 		return FALSE;
 	}
 
-	/**
-	 * @param string $company_id UUID
-	 * @param bool $force
-	 * @return bool
-	 */
 	function sendCompanyData( $company_id, $force = FALSE ) {
 		Debug::Text('Sending Company Data...', __FILE__, __LINE__, __METHOD__, 10);
 		if ( $company_id == '' ) {
@@ -648,12 +566,6 @@ class TimeTrexSoapClient {
 	//
 	// Currency Data Feed functions
 	//
-	/**
-	 * @param string $company_id UUID
-	 * @param $currency_arr
-	 * @param $base_currency
-	 * @return bool
-	 */
 	function getCurrencyExchangeRates( $company_id, $currency_arr, $base_currency ) {
 		/*
 
@@ -681,14 +593,6 @@ class TimeTrexSoapClient {
 		return FALSE;
 	}
 
-	/**
-	 * @param string $company_id UUID
-	 * @param $currency_arr
-	 * @param $base_currency
-	 * @param int $start_date EPOCH
-	 * @param int $end_date EPOCH
-	 * @return bool|array
-	 */
 	function getCurrencyExchangeRatesByDate( $company_id, $currency_arr, $base_currency, $start_date = NULL, $end_date = NULL ) {
 		/*
 
@@ -724,10 +628,6 @@ class TimeTrexSoapClient {
 		return FALSE;
 	}
 
-	/**
-	 * @param bool $force
-	 * @return bool
-	 */
 	function isNewVersionReadyForUpgrade( $force = FALSE ) {
 		$company_data = $this->getPrimaryCompanyData();
 		if ( is_array( $company_data ) ) {
@@ -742,10 +642,6 @@ class TimeTrexSoapClient {
 		return FALSE;
 	}
 
-	/**
-	 * @param bool $force
-	 * @return bool
-	 */
 	function getUpgradeFileURL( $force = FALSE ) {
 		$company_data = $this->getPrimaryCompanyData();
 		if ( is_array( $company_data ) ) {
@@ -761,10 +657,6 @@ class TimeTrexSoapClient {
 	//
 	// Email relay through SOAP
 	//
-	/**
-	 * @param $email
-	 * @return bool
-	 */
 	function validateEmail( $email ) {
 		$company_data = $this->getPrimaryCompanyData();
 		if ( is_array( $company_data ) AND $email != '' ) {
@@ -774,12 +666,6 @@ class TimeTrexSoapClient {
 		return FALSE;
 	}
 
-	/**
-	 * @param $to
-	 * @param $headers
-	 * @param $body
-	 * @return bool
-	 */
 	function sendEmail( $to, $headers, $body ) {
 		$company_data = $this->getPrimaryCompanyData();
 		if ( is_array( $company_data ) AND $to != '' AND $body != '' ) {
@@ -797,15 +683,6 @@ class TimeTrexSoapClient {
 	//
 	// GEO Coding
 	//
-	/**
-	 * @param $address1
-	 * @param $address2
-	 * @param $city
-	 * @param $province
-	 * @param $country
-	 * @param $postal_code
-	 * @return null
-	 */
 	function getGeoCodeByAddress( $address1, $address2, $city, $province, $country, $postal_code ) {
 		$company_data = $this->getPrimaryCompanyData();
 		if ( is_array( $company_data ) AND $city != '' AND $country != '' ) {
@@ -815,10 +692,6 @@ class TimeTrexSoapClient {
 		return NULL; //Return NULL when no data available, and FALSE to try again later.
 	}
 
-	/**
-	 * @param $ip_address
-	 * @return null
-	 */
 	function getGeoIPData( $ip_address ) {
 		$company_data = $this->getPrimaryCompanyData();
 		if ( is_array( $company_data ) AND $ip_address != '' ) {
@@ -828,12 +701,6 @@ class TimeTrexSoapClient {
 		return NULL; //Return NULL when no data available, and FALSE to try again later.
 	}
 
-	/**
-	 * @param $rating
-	 * @param $message
-	 * @param object $u_obj
-	 * @return null
-	 */
 	function sendUserFeedback( $rating, $message, $u_obj ) {
 		$company_data = $this->getPrimaryCompanyData();
 		if ( is_array( $company_data ) ) {

@@ -1,7 +1,7 @@
 <?php
 /*********************************************************************************
  * TimeTrex is a Workforce Management program developed by
- * TimeTrex Software Inc. Copyright (C) 2003 - 2018 TimeTrex Software Inc.
+ * TimeTrex Software Inc. Copyright (C) 2003 - 2017 TimeTrex Software Inc.
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Affero General Public License version 3 as published by
@@ -503,7 +503,7 @@ class GovernmentForms_CA_T4ASum extends GovernmentForms_CA {
 						),
 				),
 				'l78'             => array(
-						'function'    => array('filterphone', 'drawSegments'),
+						'function'    => array('filterL78', 'drawSegments'),
 						'coordinates' => array(
 								array(
 										'x'      => 335,
@@ -516,7 +516,14 @@ class GovernmentForms_CA_T4ASum extends GovernmentForms_CA {
 										'x'      => 385,
 										'y'      => 591,
 										'h'      => 13,
-										'w'      => 40,
+										'w'      => 20,
+										'halign' => 'C',
+								),
+								array(
+										'x'      => 440,
+										'y'      => 591,
+										'h'      => 13,
+										'w'      => 20,
 										'halign' => 'C',
 								),
 						),
@@ -540,14 +547,11 @@ class GovernmentForms_CA_T4ASum extends GovernmentForms_CA {
 		}
 	}
 
-	function filterPhone( $value ) {
+	function filterL78( $value ) {
 		//Strip non-digits.
 		$value = $this->stripNonNumeric( $value );
-		if ( $value != '' ) {
-			return array(substr( $value, 0, 3 ), substr( $value, 3, 3 ), substr( $value, 6, 4 ));
-		}
 
-		return FALSE;
+		return array(substr( $value, 0, 3 ), substr( $value, 3, 3 ), substr( $value, 6, 4 ));
 	}
 
 	function calcL82Diff( $value, $schema ) {
@@ -593,17 +597,11 @@ class GovernmentForms_CA_T4ASum extends GovernmentForms_CA {
 
 		$xml->Return->T4A->T4ASummary->addChild( 'CNTC' ); //Contact Name
 		$xml->Return->T4A->T4ASummary->CNTC->addChild( 'cntc_nm', $this->l76 );
-
-		if ( $this->l78 != '' ) {
-			$phone_arr = $this->filterPhone( $this->l78 );
-		} else {
-			$phone_arr = $this->filterPhone( '000-000-0000' );
-		}
-
+		$phone_arr = $this->filterL78( $this->l78 );
 		if ( is_array( $phone_arr ) ) {
 			$xml->Return->T4A->T4ASummary->CNTC->addChild( 'cntc_area_cd', $phone_arr[0] );
 			$xml->Return->T4A->T4ASummary->CNTC->addChild( 'cntc_phn_nbr', $phone_arr[1] . '-' . $phone_arr[2] );
-			//$xml->Return->T4A->T4ASummary->CNTC->addChild( 'cntc_extn_nbr', '' );
+			//$xml->Return->T4A->T4ASummary->CNTC->addChild('cntc_extn_nbr', '' );
 		}
 
 		$xml->Return->T4A->T4ASummary->addChild( 'T4A_TAMT' );

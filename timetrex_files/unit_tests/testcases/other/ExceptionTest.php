@@ -1,7 +1,7 @@
 <?php
 /*********************************************************************************
  * TimeTrex is a Workforce Management program developed by
- * TimeTrex Software Inc. Copyright (C) 2003 - 2018 TimeTrex Software Inc.
+ * TimeTrex Software Inc. Copyright (C) 2003 - 2017 TimeTrex Software Inc.
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Affero General Public License version 3 as published by
@@ -72,7 +72,6 @@ class ExceptionTest extends PHPUnit_Framework_TestCase {
 		$dd->setEnableQuickPunch( FALSE ); //Helps prevent duplicate punch IDs and validation failures.
 		$dd->setUserNamePostFix( '_'.uniqid( NULL, TRUE ) ); //Needs to be super random to prevent conflicts and random failing tests.
 		$this->company_id = $dd->createCompany();
-		$this->legal_entity_id = $dd->createLegalEntity( $this->company_id, 10 );
 		Debug::text('Company ID: '. $this->company_id, __FILE__, __LINE__, __METHOD__, 10);
 		$this->assertGreaterThan( 0, $this->company_id );
 
@@ -93,7 +92,7 @@ class ExceptionTest extends PHPUnit_Framework_TestCase {
 		$this->policy_ids['pay_formula_policy'][100] = $dd->createPayFormulaPolicy( $this->company_id, 100 ); //Reg 1.0x
 		$this->policy_ids['pay_code'][100] = $dd->createPayCode( $this->company_id, 100, $this->policy_ids['pay_formula_policy'][100] ); //Regular
 
-		$this->user_id = $dd->createUser( $this->company_id, $this->legal_entity_id, 100 );
+		$this->user_id = $dd->createUser( $this->company_id, 100 );
 		$ulf = TTnew('UserListFactory');
 		$this->user_obj = $ulf->getById( $this->user_id)->getCurrent();
 
@@ -590,6 +589,8 @@ class ExceptionTest extends PHPUnit_Framework_TestCase {
 		$udtlf->getByCompanyIDAndUserIdAndObjectTypeAndStartDateAndEndDate( $this->company_id, $this->user_id, array(5, 20, 30, 40, 100, 110), $start_date, $end_date);
 		if ( $udtlf->getRecordCount() > 0 ) {
 			foreach($udtlf as $udt_obj) {
+				$type_and_policy_id = $udt_obj->getObjectType().(int)$udt_obj->getPayCode();
+
 				$date_totals[$udt_obj->getDateStamp()][] = array(
 												'date_stamp' => $udt_obj->getDateStamp(),
 												'id' => $udt_obj->getId(),
@@ -602,7 +603,8 @@ class ExceptionTest extends PHPUnit_Framework_TestCase {
 												'object_type_id' => $udt_obj->getObjectType(),
 												'pay_code_id' => $udt_obj->getPayCode(),
 
-												'branch_id' => $udt_obj->getBranch(),
+												'type_and_policy_id' => $type_and_policy_id,
+												'branch_id' => (int)$udt_obj->getBranch(),
 												'department_id' => $udt_obj->getDepartment(),
 												'total_time' => $udt_obj->getTotalTime(),
 												'name' => $udt_obj->getName(),
@@ -654,7 +656,7 @@ class ExceptionTest extends PHPUnit_Framework_TestCase {
 			}
 		}
 
-		return array(); //Return blank array to make count() not complain about FALSE.
+		return FALSE;
 	}
 
 	function checkCalcQuickExceptions( $user_id, $start_date, $end_date, $check_date ) {
@@ -1385,7 +1387,7 @@ class ExceptionTest extends PHPUnit_Framework_TestCase {
 
 		$punch_arr = $this->getPunchDataArray( TTDate::getBeginDayEpoch($date_epoch), TTDate::getEndDayEpoch($date_epoch) );
 		//print_r($punch_arr);
-		$this->assertEquals( 0, count( $punch_arr ) );
+		$this->assertEquals( 0, count($punch_arr[$date_epoch]) );
 		$this->assertEquals( TRUE, $this->checkCalcQuickExceptions( $this->user_id, ($date_epoch - 86400), ($date_epoch + 86400), $date_epoch ) );
 
 		//Calculate exceptions, and check to make sure the proper ones exist.
@@ -1483,7 +1485,7 @@ class ExceptionTest extends PHPUnit_Framework_TestCase {
 
 		$punch_arr = $this->getPunchDataArray( TTDate::getBeginDayEpoch($date_epoch), TTDate::getEndDayEpoch($date_epoch) );
 		//print_r($punch_arr);
-		$this->assertEquals( 0, count( $punch_arr ) );
+		$this->assertEquals( 0, count($punch_arr[$date_epoch]) );
 		$this->assertEquals( TRUE, $this->checkCalcQuickExceptions( $this->user_id, ($date_epoch - 86400), ($date_epoch + 86400), $date_epoch ) );
 
 		//Calculate exceptions, and check to make sure the proper ones exist.
@@ -1887,7 +1889,7 @@ class ExceptionTest extends PHPUnit_Framework_TestCase {
 
 		$punch_arr = $this->getPunchDataArray( TTDate::getBeginDayEpoch($date_epoch), TTDate::getEndDayEpoch($date_epoch) );
 		//print_r($punch_arr);
-		$this->assertEquals( 0, count( $punch_arr ) );
+		$this->assertEquals( 0, count($punch_arr[$date_epoch]) );
 		$this->assertEquals( FALSE, $this->checkCalcQuickExceptions( $this->user_id, ($date_epoch - 86400), ($date_epoch + 86400), $date_epoch ) );
 
 		//Calculate exceptions, and check to make sure the proper ones exist.
@@ -1978,9 +1980,9 @@ class ExceptionTest extends PHPUnit_Framework_TestCase {
 
 		//If this is run before 8AM, the In punch is on the previous day.
 		if ( TTDate::getBeginDayEpoch( time() ) > $date_epoch ) {
-			$this->assertEquals( 1, count( $punch_arr[$date_epoch] ) );
+			$this->assertEquals( 1, count($punch_arr[$date_epoch]) );
 		} else {
-			$this->assertEquals( 0, count( $punch_arr ) );
+			$this->assertEquals( 0, count($punch_arr[$date_epoch]) );
 		}
 		$this->assertEquals( TRUE, $this->checkCalcQuickExceptions( $this->user_id, ($date_epoch - 86400), ($date_epoch + 86400), $date_epoch ) );
 

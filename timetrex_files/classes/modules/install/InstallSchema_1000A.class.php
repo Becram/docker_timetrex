@@ -1,7 +1,7 @@
 <?php
 /*********************************************************************************
  * TimeTrex is a Workforce Management program developed by
- * TimeTrex Software Inc. Copyright (C) 2003 - 2018 TimeTrex Software Inc.
+ * TimeTrex Software Inc. Copyright (C) 2003 - 2017 TimeTrex Software Inc.
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Affero General Public License version 3 as published by
@@ -40,9 +40,6 @@
  */
 class InstallSchema_1000A extends InstallSchema_Base {
 
-	/**
-	 * @return bool
-	 */
 	function preInstall() {
 		Debug::text('preInstall: '. $this->getVersion(), __FILE__, __LINE__, __METHOD__, 9);
 
@@ -50,25 +47,12 @@ class InstallSchema_1000A extends InstallSchema_Base {
 	}
 
 
-	/**
-	 * @return bool
-	 */
 	function postInstall() {
+		
 		// @codingStandardsIgnoreStart
 		global $config_vars;
 		// @codingStandardsIgnoreEnd
 		Debug::text('postInstall: '. $this->getVersion(), __FILE__, __LINE__, __METHOD__, 9);
-
-		//Immediately after '1000A' schema version is completed, try to get a registration key so help with UUID generation.
-		// Also seed InstallSchema_Base->replaceSQLVariables(), as it needs to run a similar check.
-		Debug::text('Initializing database, after first schema file executed, setting registration key/UUID seed...', __FILE__, __LINE__, __METHOD__, 9);
-		$ttsc = new TimeTrexSoapClient();
-		$ttsc->saveRegistrationKey();
-
-		if ( TTUUID::generateSeed() === FALSE ) { //Generate UUID seed and save it to config file.
-			Debug::text('ERROR: Failed writing seed to config file... Failing!', __FILE__, __LINE__, __METHOD__, 9);
-			return FALSE;
-		}
 
 		$maint_base_path = Environment::getBasePath() . DIRECTORY_SEPARATOR .'maint'. DIRECTORY_SEPARATOR;
 		if ( PHP_OS == 'WINNT' ) {

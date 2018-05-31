@@ -1,7 +1,7 @@
 <?php
 /*********************************************************************************
  * TimeTrex is a Workforce Management program developed by
- * TimeTrex Software Inc. Copyright (C) 2003 - 2018 TimeTrex Software Inc.
+ * TimeTrex Software Inc. Copyright (C) 2003 - 2017 TimeTrex Software Inc.
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Affero General Public License version 3 as published by
@@ -41,9 +41,6 @@
 class APINotification extends APIFactory {
 	protected $main_class = '';
 
-	/**
-	 * APINotification constructor.
-	 */
 	public function __construct() {
 		parent::__construct(); //Make sure parent constructor is always called.
 
@@ -52,7 +49,7 @@ class APINotification extends APIFactory {
 
 	/**
 	 * Returns array of notifications message to be displayed to the user.
-	 * @param bool|string $action Action that is being performed, possible values: 'login', 'preference', 'notification', 'pay_period'
+	 * @param string $action Action that is being performed, possible values: 'login', 'preference', 'notification', 'pay_period'
 	 * @return array
 	 */
 	function getNotifications( $action = FALSE ) {
@@ -120,16 +117,6 @@ class APINotification extends APIFactory {
 										'message' => TTi18n::getText('WARNING: %1 database schema is out of sync with edition and likely corrupt. Please contact your %1 administrator immediately.', APPLICATION_NAME ),
 										'destination' => NULL,
 										);
-				}
-
-				//Warn that MySQL database support is deprecated.
-				if ( strncmp($config_vars['database']['type'], 'mysql', 5) == 0 AND ( time() > strtotime('22-Jan-2018') OR $this->getPermissionObject()->getLevel() >= 20 ) ) {
-					$retarr[] = array(
-							'delay' => -1, //0= Show until clicked, -1 = Show until next getNotifications call.
-							'bg_color' => '#FF0000', //Red
-							'message' => TTi18n::getText('WARNING: MySQL database support has been deprecated and migration to PostgreSQL is required. Click here for instructions.', APPLICATION_NAME ),
-							'destination' => 'https://forums.timetrex.com/viewtopic.php?f=6&t=7519',
-					);
 				}
 
 				//Give early warning to installs using older stack components before the next version is released that forces the upgrade.

@@ -1,7 +1,7 @@
 <?php
 /*********************************************************************************
  * TimeTrex is a Workforce Management program developed by
- * TimeTrex Software Inc. Copyright (C) 2003 - 2018 TimeTrex Software Inc.
+ * TimeTrex Software Inc. Copyright (C) 2003 - 2017 TimeTrex Software Inc.
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Affero General Public License version 3 as published by
@@ -45,11 +45,6 @@ class AccrualPolicyAccountFactory extends Factory {
 	protected $company_obj = NULL;
 	protected $milestone_objs = NULL;
 
-	/**
-	 * @param $name
-	 * @param null $parent
-	 * @return array|null
-	 */
 	function _getFactoryOptions( $name, $parent = NULL ) {
 
 		$retval = NULL;
@@ -93,10 +88,6 @@ class AccrualPolicyAccountFactory extends Factory {
 		return $retval;
 	}
 
-	/**
-	 * @param $data
-	 * @return array
-	 */
 	function _getVariableToFunctionMap( $data ) {
 			$variable_function_map = array(
 											'id' => 'ID',
@@ -110,9 +101,6 @@ class AccrualPolicyAccountFactory extends Factory {
 			return $variable_function_map;
 	}
 
-	/**
-	 * @return null
-	 */
 	function getCompanyObject() {
 		if ( is_object($this->company_obj) ) {
 			return $this->company_obj;
@@ -124,36 +112,40 @@ class AccrualPolicyAccountFactory extends Factory {
 		}
 	}
 
-	/**
-	 * @return bool|mixed
-	 */
 	function getCompany() {
-		return $this->getGenericDataValue( 'company_id' );
+		if ( isset($this->data['company_id']) ) {
+			return (int)$this->data['company_id'];
+		}
+
+		return FALSE;
+	}
+	function setCompany($id) {
+		$id = trim($id);
+
+		Debug::Text('Company ID: '. $id, __FILE__, __LINE__, __METHOD__, 10);
+		$clf = TTnew( 'CompanyListFactory' );
+
+		if ( $this->Validator->isResultSetWithRows(	'company',
+													$clf->getByID($id),
+													TTi18n::gettext('Company is invalid')
+													) ) {
+
+			$this->data['company_id'] = $id;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @param string $value UUID
-	 * @return bool
-	 */
-	function setCompany( $value) {
-		$value = TTUUID::castUUID( $value );
-
-		Debug::Text('Company ID: '. $value, __FILE__, __LINE__, __METHOD__, 10);
-		return $this->setGenericDataValue( 'company_id', $value );
-	}
-
-	/**
-	 * @param $name
-	 * @return bool
-	 */
-	function isUniqueName( $name) {
+	function isUniqueName($name) {
 		$name = trim($name);
 		if ( $name == '' ) {
 			return FALSE;
 		}
 
 		$ph = array(
-					'company_id' => TTUUID::castUUID($this->getCompany()),
+					'company_id' => (int)$this->getCompany(),
 					'name' => TTi18n::strtolower($name),
 					);
 
@@ -171,105 +163,74 @@ class AccrualPolicyAccountFactory extends Factory {
 
 		return FALSE;
 	}
-
-	/**
-	 * @return bool|mixed
-	 */
 	function getName() {
-		return $this->getGenericDataValue( 'name' );
-	}
-
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setName( $value) {
-		$value = trim($value);
-		return $this->setGenericDataValue( 'name', $value );
-	}
-
-	/**
-	 * @return bool|mixed
-	 */
-	function getDescription() {
-		return $this->getGenericDataValue( 'description' );
-	}
-
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setDescription( $value) {
-		$value = trim($value);
-		return $this->setGenericDataValue( 'description', $value );
-	}
-
-	/**
-	 * @return bool
-	 */
-	function getEnablePayStubBalanceDisplay() {
-		return $this->fromBool( $this->getGenericDataValue( 'enable_pay_stub_balance_display' ) );
-	}
-
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setEnablePayStubBalanceDisplay( $value) {
-		return $this->setGenericDataValue( 'enable_pay_stub_balance_display', $this->toBool($value) );
-	}
-
-	/**
-	 * @param bool $ignore_warning
-	 * @return bool
-	 */
-	function Validate( $ignore_warning = TRUE ) {
-		//
-		// BELOW: Validation code moved from set*() functions.
-		//
-		// Company
-		$clf = TTnew( 'CompanyListFactory' );
-		$this->Validator->isResultSetWithRows(	'company',
-														$clf->getByID($this->getCompany()),
-														TTi18n::gettext('Company is invalid')
-													);
-		// Name
-		if ( $this->Validator->getValidateOnly() == FALSE ) { //Don't check the below when mass editing, but must check when adding a new record.
-			if ( $this->getName() == '' ) {
-				$this->Validator->isTRUE( 'name',
-										  FALSE,
-										  TTi18n::gettext( 'Please specify a name' ) );
-			}
+		if ( isset($this->data['name']) ) {
+			return $this->data['name'];
 		}
 
-		if ( $this->getName() !== FALSE ) {
-			if ( $this->getName() != '' AND $this->Validator->isError('name') == FALSE ) {
-				$this->Validator->isLength( 'name',
-											$this->getName(),
-											TTi18n::gettext( 'Name is too short or too long' ),
-											2, 50
-				);
-			}
-			if ( $this->getName() != '' AND $this->Validator->isError('name') == FALSE ) {
+		return FALSE;
+	}
+	function setName($name) {
+		$name = trim($name);
+		if (	$this->Validator->isLength(	'name',
+											$name,
+											TTi18n::gettext('Name is too short or too long'),
+											2, 50)
+				AND
 				$this->Validator->isTrue(	'name',
-											 $this->isUniqueName($this->getName()),
-											 TTi18n::gettext('Name is already in use')
-				);
+											$this->isUniqueName($name),
+											TTi18n::gettext('Name is already in use') )
+						) {
+
+			$this->data['name'] = $name;
+
+			return TRUE;
+		}
+
+		return FALSE;
+	}
+
+	function getDescription() {
+		if ( isset($this->data['description']) ) {
+			return $this->data['description'];
+		}
+
+		return FALSE;
+	}
+	function setDescription($description) {
+		$description = trim($description);
+
+		if (	$description == ''
+			OR $this->Validator->isLength(	'description',
+				$description,
+				TTi18n::gettext('Description is invalid'),
+				1, 250) ) {
+
+			$this->data['description'] = $description;
+
+			return TRUE;
+		}
+
+		return FALSE;
+	}
+
+	function getEnablePayStubBalanceDisplay() {
+		return $this->fromBool( $this->data['enable_pay_stub_balance_display'] );
+	}
+	function setEnablePayStubBalanceDisplay($bool) {
+		$this->data['enable_pay_stub_balance_display'] = $this->toBool($bool);
+
+		return TRUE;
+	}
+
+	function Validate( $ignore_warning = TRUE ) {
+		if ( $this->getDeleted() != TRUE AND $this->Validator->getValidateOnly() == FALSE ) { //Don't check the below when mass editing.
+			if ( $this->getName() == '' ) {
+				$this->Validator->isTRUE(	'name',
+											FALSE,
+											TTi18n::gettext('Please specify a name') );
 			}
 		}
-
-		// Description
-		if ( $this->getDescription() != '' ) {
-			$this->Validator->isLength(	'description',
-												$this->getDescription(),
-												TTi18n::gettext('Description is invalid'),
-												1, 250
-											);
-		}
-
-		//
-		// ABOVE: Validation code moved from set*() functions.
-		//
 
 		if ( $this->getDeleted() == TRUE ) {
 			$aplf = TTnew( 'AccrualPolicyListFactory' );
@@ -297,27 +258,16 @@ class AccrualPolicyAccountFactory extends Factory {
 		return TRUE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function preSave() {
 		return TRUE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function postSave() {
 		$this->removeCache( $this->getId() );
 
 		return TRUE;
 	}
 
-	/**
-	 * @param string $user_id UUID
-	 * @param string $accrual_policy_account_id UUID
-	 * @return bool|int
-	 */
 	function getCurrentAccrualBalance( $user_id, $accrual_policy_account_id = NULL ) {
 		if ( $user_id == '' ) {
 			return FALSE;
@@ -341,10 +291,6 @@ class AccrualPolicyAccountFactory extends Factory {
 		return $accrual_balance;
 	}
 
-	/**
-	 * @param $data
-	 * @return bool
-	 */
 	function setObjectFromArray( $data ) {
 		if ( is_array( $data ) ) {
 			$variable_function_map = $this->getVariableToFunctionMap();
@@ -370,10 +316,6 @@ class AccrualPolicyAccountFactory extends Factory {
 		return FALSE;
 	}
 
-	/**
-	 * @param null $include_columns
-	 * @return array
-	 */
 	function getObjectAsArray( $include_columns = NULL ) {
 		$data = array();
 		$variable_function_map = $this->getVariableToFunctionMap();
@@ -400,10 +342,6 @@ class AccrualPolicyAccountFactory extends Factory {
 		return $data;
 	}
 
-	/**
-	 * @param $log_action
-	 * @return bool
-	 */
 	function addLog( $log_action ) {
 		return TTLog::addEntry( $this->getId(), $log_action, TTi18n::getText('Accrual Account'), NULL, $this->getTable(), $this );
 	}

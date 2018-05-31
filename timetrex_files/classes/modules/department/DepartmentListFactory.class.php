@@ -1,7 +1,7 @@
 <?php
 /*********************************************************************************
  * TimeTrex is a Workforce Management program developed by
- * TimeTrex Software Inc. Copyright (C) 2003 - 2018 TimeTrex Software Inc.
+ * TimeTrex Software Inc. Copyright (C) 2003 - 2017 TimeTrex Software Inc.
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Affero General Public License version 3 as published by
@@ -40,14 +40,7 @@
  */
 class DepartmentListFactory extends DepartmentFactory implements IteratorAggregate {
 
-	/**
-	 * @param int $limit Limit the number of records returned
-	 * @param int $page Page number of records to return for pagination
-	 * @param array $where Additional SQL WHERE clause in format of array( $column => $filter, ... ). ie: array( 'id' => 1, ... )
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return $this
-	 */
-	function getAll( $limit = NULL, $page = NULL, $where = NULL, $order = NULL) {
+	function getAll($limit = NULL, $page = NULL, $where = NULL, $order = NULL) {
 		$query = '
 					select	*
 					from	'. $this->getTable() .'
@@ -60,13 +53,7 @@ class DepartmentListFactory extends DepartmentFactory implements IteratorAggrega
 		return $this;
 	}
 
-	/**
-	 * @param string $id UUID
-	 * @param array $where Additional SQL WHERE clause in format of array( $column => $filter, ... ). ie: array( 'id' => 1, ... )
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return bool|DepartmentListFactory
-	 */
-	function getById( $id, $where = NULL, $order = NULL) {
+	function getById($id, $where = NULL, $order = NULL) {
 		if ( $id == '' ) {
 			return FALSE;
 		}
@@ -74,7 +61,7 @@ class DepartmentListFactory extends DepartmentFactory implements IteratorAggrega
 		$this->rs = $this->getCache($id);
 		if ( $this->rs === FALSE ) {
 			$ph = array(
-						'id' => TTUUID::castUUID($id),
+						'id' => (int)$id,
 						);
 
 			$query = '
@@ -93,15 +80,7 @@ class DepartmentListFactory extends DepartmentFactory implements IteratorAggrega
 		return $this;
 	}
 
-	/**
-	 * @param string $id UUID
-	 * @param int $limit Limit the number of records returned
-	 * @param int $page Page number of records to return for pagination
-	 * @param array $where Additional SQL WHERE clause in format of array( $column => $filter, ... ). ie: array( 'id' => 1, ... )
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return bool|DepartmentListFactory
-	 */
-	function getByCompanyId( $id, $limit = NULL, $page = NULL, $where = NULL, $order = NULL) {
+	function getByCompanyId($id, $limit = NULL, $page = NULL, $where = NULL, $order = NULL) {
 		if ( $id == '' ) {
 			return FALSE;
 		}
@@ -114,7 +93,7 @@ class DepartmentListFactory extends DepartmentFactory implements IteratorAggrega
 		}
 
 		$ph = array(
-					'id' => TTUUID::castUUID($id),
+					'id' => (int)$id,
 					);
 
 
@@ -131,13 +110,7 @@ class DepartmentListFactory extends DepartmentFactory implements IteratorAggrega
 		return $this;
 	}
 
-	/**
-	 * @param string $company_id UUID
-	 * @param int $status_id
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return bool|DepartmentListFactory
-	 */
-	function getByCompanyIdAndStatus( $company_id, $status_id, $order = NULL) {
+	function getByCompanyIdAndStatus($company_id, $status_id, $order = NULL) {
 		if ( $company_id == '' ) {
 			return FALSE;
 		}
@@ -146,7 +119,7 @@ class DepartmentListFactory extends DepartmentFactory implements IteratorAggrega
 		}
 
 		$ph = array(
-					'company_id' => TTUUID::castUUID($company_id),
+					'company_id' => (int)$company_id,
 					'status_id' => (int)$status_id,
 					);
 
@@ -163,13 +136,7 @@ class DepartmentListFactory extends DepartmentFactory implements IteratorAggrega
 		return $this;
 	}
 
-	/**
-	 * @param string $id UUID
-	 * @param string $company_id UUID
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return bool|DepartmentListFactory
-	 */
-	function getByIdAndCompanyId( $id, $company_id, $order = NULL) {
+	function getByIdAndCompanyId($id, $company_id, $order = NULL) {
 		if ( $id == '' ) {
 			return FALSE;
 		}
@@ -178,8 +145,8 @@ class DepartmentListFactory extends DepartmentFactory implements IteratorAggrega
 		}
 
 		$ph = array(
-					'company_id' => TTUUID::castUUID($company_id),
-					'id' => TTUUID::castUUID($id),
+					'company_id' => (int)$company_id,
+					'id' => (int)$id,
 					);
 
 		$query = '
@@ -195,14 +162,7 @@ class DepartmentListFactory extends DepartmentFactory implements IteratorAggrega
 		return $this;
 	}
 
-	/**
-	 * @param string $id UUID
-	 * @param string $company_id UUID
-	 * @param array $where Additional SQL WHERE clause in format of array( $column => $filter, ... ). ie: array( 'id' => 1, ... )
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return bool|DepartmentListFactory
-	 */
-	function getByManualIdAndCompanyId( $id, $company_id, $where = NULL, $order = NULL) {
+	function getByManualIdAndCompanyId($id, $company_id, $where = NULL, $order = NULL) {
 		if ( $id == '') {
 			return FALSE;
 		}
@@ -213,7 +173,7 @@ class DepartmentListFactory extends DepartmentFactory implements IteratorAggrega
 
 		$ph = array(
 					'id' => (int)$this->Validator->stripNon32bitInteger( $id ),
-					'company_id' => TTUUID::castUUID($company_id),
+					'company_id' => (int)$company_id,
 					);
 
 		$query = '
@@ -230,17 +190,7 @@ class DepartmentListFactory extends DepartmentFactory implements IteratorAggrega
 		return $this;
 	}
 
-	/**
-	 * @param string $company_id UUID
-	 * @param int $status_id
-	 * @param int $date EPOCH
-	 * @param int $limit Limit the number of records returned
-	 * @param int $page Page number of records to return for pagination
-	 * @param array $where Additional SQL WHERE clause in format of array( $column => $filter, ... ). ie: array( 'id' => 1, ... )
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return bool|DepartmentListFactory
-	 */
-	function getByCompanyIDAndStatusAndDate( $company_id, $status_id, $date = NULL, $limit = NULL, $page = NULL, $where = NULL, $order = NULL) {
+	function getByCompanyIDAndStatusAndDate($company_id, $status_id, $date = NULL, $limit = NULL, $page = NULL, $where = NULL, $order = NULL) {
 		if ( $company_id == '') {
 			return FALSE;
 		}
@@ -261,7 +211,7 @@ class DepartmentListFactory extends DepartmentFactory implements IteratorAggrega
 		}
 
 		$ph = array(
-					'company_id' => TTUUID::castUUID($company_id),
+					'company_id' => (int)$company_id,
 					'status_id' => (int)$status_id,
 					);
 
@@ -289,18 +239,7 @@ class DepartmentListFactory extends DepartmentFactory implements IteratorAggrega
 		return $this;
 	}
 
-	/**
-	 * @param string $company_id UUID
-	 * @param int $status_id
-	 * @param int $date EPOCH
-	 * @param array $valid_ids
-	 * @param int $limit Limit the number of records returned
-	 * @param int $page Page number of records to return for pagination
-	 * @param array $where Additional SQL WHERE clause in format of array( $column => $filter, ... ). ie: array( 'id' => 1, ... )
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return bool|DepartmentListFactory
-	 */
-	function getByCompanyIDAndStatusAndDateAndValidIDs( $company_id, $status_id, $date = NULL, $valid_ids = array(), $limit = NULL, $page = NULL, $where = NULL, $order = NULL) {
+	function getByCompanyIDAndStatusAndDateAndValidIDs($company_id, $status_id, $date = NULL, $valid_ids = array(), $limit = NULL, $page = NULL, $where = NULL, $order = NULL) {
 		if ( $company_id == '') {
 			return FALSE;
 		}
@@ -321,7 +260,7 @@ class DepartmentListFactory extends DepartmentFactory implements IteratorAggrega
 		}
 
 		$ph = array(
-					'company_id' => TTUUID::castUUID($company_id),
+					'company_id' => (int)$company_id,
 					'status_id' => (int)$status_id,
 					);
 
@@ -344,7 +283,7 @@ class DepartmentListFactory extends DepartmentFactory implements IteratorAggrega
 		}
 
 		if ( isset($valid_ids) AND is_array($valid_ids) AND count($valid_ids) > 0 ) {
-			$query	.=	' OR a.id in ('. $this->getListSQL( $valid_ids, $ph, 'uuid') .') ';
+			$query	.=	' OR a.id in ('. $this->getListSQL( $valid_ids, $ph, 'int' ) .') ';
 		}
 
 		$query .= '	)
@@ -358,19 +297,13 @@ class DepartmentListFactory extends DepartmentFactory implements IteratorAggrega
 		return $this;
 	}
 
-	/**
-	 * @param string $id UUID
-	 * @param array $where Additional SQL WHERE clause in format of array( $column => $filter, ... ). ie: array( 'id' => 1, ... )
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return bool|DepartmentListFactory
-	 */
-	function getHighestManualIDByCompanyId( $id, $where = NULL, $order = NULL) {
+	function getHighestManualIDByCompanyId($id, $where = NULL, $order = NULL) {
 		if ( $id == '' ) {
 			return FALSE;
 		}
 
 		$ph = array(
-					'id' => TTUUID::castUUID($id),
+					'id' => (int)$id,
 					'id2' => $id,
 					);
 
@@ -397,13 +330,7 @@ class DepartmentListFactory extends DepartmentFactory implements IteratorAggrega
 		return $this;
 	}
 
-	/**
-	 * @param string $company_id UUID
-	 * @param bool $include_blank
-	 * @param bool $include_disabled
-	 * @return array|bool
-	 */
-	function getByCompanyIdArray( $company_id, $include_blank = TRUE, $include_disabled = TRUE) {
+	function getByCompanyIdArray($company_id, $include_blank = TRUE, $include_disabled = TRUE) {
 
 		$dlf = new DepartmentListFactory();
 		$dlf->getByCompanyId($company_id);
@@ -411,20 +338,14 @@ class DepartmentListFactory extends DepartmentFactory implements IteratorAggrega
 		return $dlf->getArrayByListFactory( $dlf, $include_blank, $include_disabled );
 	}
 
-	/**
-	 * @param $lf
-	 * @param bool $include_blank
-	 * @param bool $include_disabled
-	 * @return array|bool
-	 */
-	function getArrayByListFactory( $lf, $include_blank = TRUE, $include_disabled = TRUE ) {
+	function getArrayByListFactory($lf, $include_blank = TRUE, $include_disabled = TRUE ) {
 		if ( !is_object($lf) ) {
 			return FALSE;
 		}
 
 		$list = array();
 		if ( $include_blank == TRUE ) {
-			$list[TTUUID::getZeroID()] = '--';
+			$list[0] = '--';
 		}
 
 		foreach ($lf as $obj) {
@@ -446,14 +367,7 @@ class DepartmentListFactory extends DepartmentFactory implements IteratorAggrega
 		return FALSE;
 	}
 
-	/**
-	 * @param string $company_id UUID
-	 * @param int $date EPOCH
-	 * @param array $where Additional SQL WHERE clause in format of array( $column => $filter, ... ). ie: array( 'id' => 1, ... )
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return bool
-	 */
-	function getIsModifiedByCompanyIdAndDate( $company_id, $date, $where = NULL, $order = NULL) {
+	function getIsModifiedByCompanyIdAndDate($company_id, $date, $where = NULL, $order = NULL) {
 		if ( $company_id == '') {
 			return FALSE;
 		}
@@ -463,7 +377,7 @@ class DepartmentListFactory extends DepartmentFactory implements IteratorAggrega
 		}
 
 		$ph = array(
-					'company_id' => TTUUID::castUUID($company_id),
+					'company_id' => (int)$company_id,
 					'created_date' => $date,
 					'updated_date' => $date,
 					'deleted_date' => $date,
@@ -492,15 +406,6 @@ class DepartmentListFactory extends DepartmentFactory implements IteratorAggrega
 		return FALSE;
 	}
 
-	/**
-	 * @param string $company_id UUID
-	 * @param $filter_data
-	 * @param int $limit Limit the number of records returned
-	 * @param int $page Page number of records to return for pagination
-	 * @param array $where Additional SQL WHERE clause in format of array( $column => $filter, ... ). ie: array( 'id' => 1, ... )
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return bool|DepartmentListFactory
-	 */
 	function getAPISearchByCompanyIdAndArrayCriteria( $company_id, $filter_data, $limit = NULL, $page = NULL, $where = NULL, $order = NULL ) {
 		if ( $company_id == '') {
 			return FALSE;
@@ -540,7 +445,7 @@ class DepartmentListFactory extends DepartmentFactory implements IteratorAggrega
 		$uf = new UserFactory();
 
 		$ph = array(
-					'company_id' => TTUUID::castUUID($company_id),
+					'company_id' => (int)$company_id,
 					);
 
 		$query = '
@@ -557,9 +462,9 @@ class DepartmentListFactory extends DepartmentFactory implements IteratorAggrega
 					where	a.company_id = ?
 					';
 
-		$query .= ( isset($filter_data['permission_children_ids']) ) ? $this->getWhereClauseSQL( 'a.created_by', $filter_data['permission_children_ids'], 'uuid_list', $ph ) : NULL;
-		$query .= ( isset($filter_data['id']) ) ? $this->getWhereClauseSQL( 'a.id', $filter_data['id'], 'uuid_list', $ph ) : NULL;
-		$query .= ( isset($filter_data['exclude_id']) ) ? $this->getWhereClauseSQL( 'a.id', $filter_data['exclude_id'], 'not_uuid_list', $ph ) : NULL;
+		$query .= ( isset($filter_data['permission_children_ids']) ) ? $this->getWhereClauseSQL( 'a.created_by', $filter_data['permission_children_ids'], 'numeric_list', $ph ) : NULL;
+		$query .= ( isset($filter_data['id']) ) ? $this->getWhereClauseSQL( 'a.id', $filter_data['id'], 'numeric_list', $ph ) : NULL;
+		$query .= ( isset($filter_data['exclude_id']) ) ? $this->getWhereClauseSQL( 'a.id', $filter_data['exclude_id'], 'not_numeric_list', $ph ) : NULL;
 
 		if ( isset($filter_data['status']) AND !is_array($filter_data['status']) AND trim($filter_data['status']) != '' AND !isset($filter_data['status_id']) ) {
 			$filter_data['status_id'] = Option::getByFuzzyValue( $filter_data['status'], $this->getOptions('status') );
@@ -568,13 +473,38 @@ class DepartmentListFactory extends DepartmentFactory implements IteratorAggrega
 		$query .= ( isset($filter_data['name']) ) ? $this->getWhereClauseSQL( 'a.name', $filter_data['name'], 'text_metaphone', $ph ) : NULL;
 		$query .= ( isset($filter_data['manual_id']) ) ? $this->getWhereClauseSQL( 'a.manual_id', $this->Validator->stripNon32bitInteger( $filter_data['manual_id'] ), 'numeric', $ph ) : NULL;
 
-		$query .= ( isset($filter_data['tag']) ) ? $this->getWhereClauseSQL( 'a.id', array( 'company_id' => TTUUID::castUUID($company_id), 'object_type_id' => 120, 'tag' => $filter_data['tag'] ), 'tag', $ph ) : NULL;
+		$query .= ( isset($filter_data['tag']) ) ? $this->getWhereClauseSQL( 'a.id', array( 'company_id' => (int)$company_id, 'object_type_id' => 120, 'tag' => $filter_data['tag'] ), 'tag', $ph ) : NULL;
 
+/*
+		if ( isset($filter_data['permission_children_ids']) AND isset($filter_data['permission_children_ids'][0]) AND !in_array(-1, (array)$filter_data['permission_children_ids']) ) {
+			$query	.=	' AND a.created_by in ('. $this->getListSQL($filter_data['permission_children_ids'], $ph) .') ';
+		}
+		if ( isset($filter_data['id']) AND isset($filter_data['id'][0]) AND !in_array(-1, (array)$filter_data['id']) ) {
+			$query	.=	' AND a.id in ('. $this->getListSQL($filter_data['id'], $ph) .') ';
+		}
+		if ( isset($filter_data['exclude_id']) AND isset($filter_data['exclude_id'][0]) AND !in_array(-1, (array)$filter_data['exclude_id']) ) {
+			$query	.=	' AND a.id not in ('. $this->getListSQL($filter_data['exclude_id'], $ph) .') ';
+		}
+		if ( isset($filter_data['status_id']) AND isset($filter_data['status_id'][0]) AND !in_array(-1, (array)$filter_data['status_id']) ) {
+			$query	.=	' AND a.status_id in ('. $this->getListSQL($filter_data['status_id'], $ph) .') ';
+		}
+		if ( isset($filter_data['name']) AND !is_array($filter_data['name']) AND trim($filter_data['name']) != '' ) {
+			$ph[] = strtolower(trim($filter_data['name']));
+			$query	.=	' AND lower(a.name) LIKE ?';
+		}
+		if ( isset($filter_data['manual_id']) AND !is_array($filter_data['manual_id']) AND trim($filter_data['manual_id']) != '' ) {
+			$ph[] = $this->Validator->stripNonNumeric( trim($filter_data['manual_id']) );
+			$query	.=	' AND a.manual_id = ?';
+		}
+*/
 		$query .= ( isset($filter_data['created_date']) ) ? $this->getWhereClauseSQL( 'a.created_date', $filter_data['created_date'], 'date_range', $ph ) : NULL;
+
 		$query .= ( isset($filter_data['updated_date']) ) ? $this->getWhereClauseSQL( 'a.updated_date', $filter_data['updated_date'], 'date_range', $ph ) : NULL;
 
 		$query .= ( isset($filter_data['created_by']) ) ? $this->getWhereClauseSQL( array('a.created_by', 'y.first_name', 'y.last_name'), $filter_data['created_by'], 'user_id_or_name', $ph ) : NULL;
+
 		$query .= ( isset($filter_data['updated_by']) ) ? $this->getWhereClauseSQL( array('a.updated_by', 'z.first_name', 'z.last_name'), $filter_data['updated_by'], 'user_id_or_name', $ph ) : NULL;
+
 
 		$query .=	'
 						AND a.deleted = 0

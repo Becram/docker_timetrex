@@ -1,7 +1,7 @@
 <?php
 /*********************************************************************************
  * TimeTrex is a Workforce Management program developed by
- * TimeTrex Software Inc. Copyright (C) 2003 - 2018 TimeTrex Software Inc.
+ * TimeTrex Software Inc. Copyright (C) 2003 - 2017 TimeTrex Software Inc.
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Affero General Public License version 3 as published by
@@ -49,10 +49,6 @@ class Misc {
 		This is useful for identifying which submit button actually
 		submitted the form.
 	*/
-	/**
-	 * @param string $prefix
-	 * @return null|string
-	 */
 	static function findSubmitButton( $prefix = 'action' ) {
 		// search post vars, then get vars.
 		$queries = array($_POST, $_GET);
@@ -79,10 +75,6 @@ class Misc {
 		return NULL;
 	}
 
-	/**
-	 * @param bool $text_keys
-	 * @return array
-	 */
 	static function getSortDirectionArray( $text_keys = FALSE ) {
 		if ( $text_keys === TRUE ) {
 			return array('asc' => 'ASC', 'desc' => 'DESC');
@@ -92,14 +84,6 @@ class Misc {
 	}
 
 	//This function totals arrays where the data wanting to be totaled is deep in a multi-dimentional array.
-	//Usually a row array just before its passed to smarty.
-	/**
-	 * @param $array
-	 * @param null $element
-	 * @param null $decimals
-	 * @param bool $include_non_numeric
-	 * @return array|bool
-	 */
 	static function ArrayAssocSum($array, $element = NULL, $decimals = NULL, $include_non_numeric = FALSE ) {
 		if ( !is_array($array) ) {
 			return FALSE;
@@ -149,13 +133,6 @@ class Misc {
 	}
 
 	//This function is similar to a SQL group by clause, only its done on a AssocArray
-	//Pass it a row array just before you send it to smarty.
-	/**
-	 * @param $array
-	 * @param $group_by_elements
-	 * @param array $ignore_elements
-	 * @return array
-	 */
 	static function ArrayGroupBy($array, $group_by_elements, $ignore_elements = array() ) {
 
 		if ( !is_array($group_by_elements) ) {
@@ -204,11 +181,7 @@ class Misc {
 		return $retarr;
 	}
 
-	/**
-	 * @param $arr
-	 * @return bool|float|int
-	 */
-	static function ArrayAvg( $arr) {
+	static function ArrayAvg($arr) {
 
 		if ((!is_array($arr)) OR (!count($arr) > 0)) {
 			return FALSE;
@@ -217,12 +190,7 @@ class Misc {
 		return ( array_sum($arr) / count($arr) );
 	}
 
-	/**
-	 * @param $prepend_arr
-	 * @param $arr
-	 * @return array|bool
-	 */
-	static function prependArray( $prepend_arr, $arr) {
+	static function prependArray($prepend_arr, $arr) {
 		if ( !is_array($prepend_arr) AND is_array($arr) ) {
 			return $arr;
 		} elseif ( is_array($prepend_arr) AND !is_array($arr) ) {
@@ -243,12 +211,6 @@ class Misc {
 		return $retarr;
 	}
 
-	/**
-	 * @param null $input
-	 * @param null $columnKey
-	 * @param null $indexKey
-	 * @return array|bool|null
-	 */
 	static function arrayColumn( $input = NULL, $columnKey = NULL, $indexKey = NULL ) {
 		if ( function_exists('array_column') ) {
 			return array_column( (array)$input, $columnKey, $indexKey );
@@ -337,13 +299,7 @@ class Misc {
 		}
 	}
 
-	/**
-	 * @param $array
-	 * @param bool $preserve
-	 * @param array $r
-	 * @return array
-	 */
-	static function flattenArray( $array, $preserve = FALSE, $r = array() ) {
+	static function flattenArray($array, $preserve = FALSE, $r = array() ) {
 		foreach( $array as $key => $value ) {
 			if ( is_array($value) ) {
 				foreach( $value as $k => $v ) {
@@ -371,11 +327,6 @@ class Misc {
 		this function will return all the output_key => output_value pairs where
 		input_key == output_key
 	*/
-	/**
-	 * @param $keys
-	 * @param $options
-	 * @return array|null
-	 */
 	static function arrayIntersectByKey( $keys, $options ) {
 		if ( is_array($keys) AND is_array($options) ) {
 			$retarr = array();
@@ -405,10 +356,6 @@ class Misc {
 		pairs that intersect across all rows.
 
 	*/
-	/**
-	 * @param $rows
-	 * @return bool|mixed
-	 */
 	static function arrayIntersectByRow( $rows ) {
 		if ( !is_array($rows) ) {
 			return FALSE;
@@ -444,11 +391,6 @@ class Misc {
 		the input_keys are not present in output array keys.
 
 	*/
-	/**
-	 * @param $keys
-	 * @param $options
-	 * @return array|null
-	 */
 	static function arrayDiffByKey( $keys, $options ) {
 		if ( is_array($keys) AND is_array($options) ) {
 			$retarr = array();
@@ -470,12 +412,6 @@ class Misc {
 	}
 
 	//This only merges arrays where the array keys must already exist.
-
-	/**
-	 * @param array $array1
-	 * @param array $array2
-	 * @return array
-	 */
 	static function arrayMergeRecursiveDistinct( array $array1, array $array2 ) {
 		$merged = $array1;
 
@@ -491,12 +427,6 @@ class Misc {
 	}
 
 	//Merges arrays with overwriting whereas PHP standard array_merge_recursive does not overwrites but combines.
-
-	/**
-	 * @param array $array1
-	 * @param array $array2
-	 * @return array
-	 */
 	static function arrayMergeRecursive( array $array1, array $array2 ) {
 		foreach( $array2 as $key => $value ) {
 			if ( array_key_exists($key, $array1) AND is_array($value) ) {
@@ -509,12 +439,7 @@ class Misc {
 		return $array1;
 	}
 
-	/**
-	 * @param $array1
-	 * @param $array2
-	 * @return array|bool
-	 */
-	static function arrayDiffAssocRecursive( $array1, $array2) {
+	static function arrayDiffAssocRecursive($array1, $array2) {
 		$difference = array();
 		if ( is_array($array1) ) {
 			foreach($array1 as $key => $value) {
@@ -542,10 +467,6 @@ class Misc {
 		return $difference;
 	}
 
-	/**
-	 * @param $arr
-	 * @return mixed
-	 */
 	static function arrayCommonValue( $arr ) {
 		$arr_count = array_count_values( $arr );
 		arsort( $arr_count );
@@ -562,13 +483,6 @@ class Misc {
 	}
 
 	//Adds prefix to all array keys, mainly for reportings and joining array data together to avoid conflicting keys.
-
-	/**
-	 * @param $prefix
-	 * @param $arr
-	 * @param null $ignore_elements
-	 * @return array
-	 */
 	static function addKeyPrefix( $prefix, $arr, $ignore_elements = NULL ) {
 		if ( is_array( $arr ) ) {
 			$retarr = array();
@@ -590,13 +504,6 @@ class Misc {
 		return $arr;
 	}
 	//Removes prefix to all array keys, mainly for reportings and joining array data together to avoid conflicting keys.
-
-	/**
-	 * @param $prefix
-	 * @param $arr
-	 * @param null $ignore_elements
-	 * @return array|bool
-	 */
 	static function removeKeyPrefix( $prefix, $arr, $ignore_elements = NULL ) {
 		if ( is_array( $arr ) ) {
 			$retarr = array();
@@ -617,40 +524,26 @@ class Misc {
 	}
 
 	//Adds sort prefixes to an array maintaining the original order. Primarily used because Flex likes to reorded arrays with string keys.
-
-	/**
-	 * @param $arr
-	 * @param int $begin_counter
-	 * @return array|bool
-	 */
 	static function addSortPrefix( $arr, $begin_counter = 1 ) {
-		if ( is_array($arr) ) {
-			$retarr = array();
-			$i = $begin_counter;
-			foreach ( $arr as $key => $value ) {
-				$sort_prefix = NULL;
-				if ( substr( $key, 0, 1 ) != '-' ) {
-					$sort_prefix = '-' . str_pad( $i, 4, 0, STR_PAD_LEFT ) . '-';
-				}
-				$retarr[$sort_prefix . $key] = $value;
-				$i++;
+		$retarr = array();
+		$i = $begin_counter;
+		foreach( $arr as $key => $value ) {
+			$sort_prefix = NULL;
+			if ( substr($key, 0, 1 ) != '-' ) {
+				$sort_prefix = '-'.str_pad($i, 4, 0, STR_PAD_LEFT).'-';
 			}
+			$retarr[$sort_prefix.$key] = $value;
+			$i++;
+		}
 
-			if ( empty( $retarr ) == FALSE ) {
-				return $retarr;
-			}
+		if ( empty($retarr) == FALSE ) {
+			return $retarr;
 		}
 
 		return FALSE;
 	}
 
 	//Removes sort prefixes from an array.
-
-	/**
-	 * @param $value
-	 * @param bool $trim_arr_value
-	 * @return array|mixed
-	 */
 	static function trimSortPrefix( $value, $trim_arr_value = FALSE ) {
 		$retval = array();
 		if ( is_array($value) AND count($value) > 0 ) {
@@ -672,13 +565,7 @@ class Misc {
 		return $value;
 	}
 
-	/**
-	 * @param $str_pattern
-	 * @param $str_replacement
-	 * @param $string
-	 * @return mixed
-	 */
-	static function strReplaceOnce( $str_pattern, $str_replacement, $string) {
+	static function strReplaceOnce($str_pattern, $str_replacement, $string) {
 		if ( strpos($string, $str_pattern) !== FALSE ) {
 			return substr_replace($string, $str_replacement, strpos($string, $str_pattern), strlen($str_pattern));
 		}
@@ -686,34 +573,33 @@ class Misc {
 		return $string;
 	}
 
-	/**
-	 * @param $file_name
-	 * @param $type
-	 * @param $size
-	 * @return bool
-	 */
-	static function FileDownloadHeader( $file_name, $type, $size ) {
+	static function FileDownloadHeader($file_name, $type, $size) {
 		if ( $file_name == '' OR $size == '') {
 			return FALSE;
 		}
 
-		Header( 'Content-Type: '. $type );
-		//Header('Content-disposition: inline; filename='.$file_name); //Displays document inline (in browser window) if available
-		Header( 'Content-Disposition: attachment; filename="'. $file_name .'"'); //Forces document to download
-		Header( 'Content-Length: '. $size );
+		Header('Content-Type: '. $type);
+
+		$agent = ( isset($_SERVER['HTTP_USER_AGENT']) ) ? trim($_SERVER['HTTP_USER_AGENT']) : '';
+		if ( preg_match( '|MSIE ([0-9.]+)|', $agent, $version) OR preg_match( '|Internet Explorer/([0-9.]+)|', $agent, $version) ) {
+			//header('Content-Type: application/x-msdownload');
+			if ( $version == '5.5' ) {
+				Header('Content-Disposition: filename="'.$file_name.'"');
+			} else {
+				Header('Content-Disposition: attachment; filename="'.$file_name.'"');
+			}
+		} else {
+			//Header('Content-disposition: inline; filename='.$file_name); //Displays document inline (in browser window) if available
+			Header('Content-Disposition: attachment; filename="'.$file_name.'"'); //Forces document to download
+		}
+
+		Header('Content-Length: '. $size);
 
 		return TRUE;
 	}
 
 	//This function helps sending binary data to the client for saving/viewing as a file.
-
-	/**
-	 * @param $file_name
-	 * @param $type
-	 * @param $data
-	 * @return bool
-	 */
-	static function APIFileDownload( $file_name, $type, $data) {
+	static function APIFileDownload($file_name, $type, $data) {
 		if ( $file_name == '' OR $data == '' ) {
 			return FALSE;
 		}
@@ -777,11 +663,6 @@ class Misc {
 	}
 
 	//Removes vowels from the string always keeping the first and last letter.
-
-	/**
-	 * @param $str
-	 * @return bool|string
-	 */
 	static function abbreviateString( $str ) {
 		$vowels = array('a', 'e', 'i', 'o', 'u');
 
@@ -807,13 +688,6 @@ class Misc {
 		return FALSE;
 	}
 
-	/**
-	 * @param $str
-	 * @param $length
-	 * @param int $start
-	 * @param bool $abbreviate
-	 * @return string
-	 */
 	static function TruncateString( $str, $length, $start = 0, $abbreviate = FALSE ) {
 		if ( strlen( $str ) > $length ) {
 			if ( $abbreviate == TRUE ) {
@@ -832,11 +706,7 @@ class Misc {
 		return $retval;
 	}
 
-	/**
-	 * @param $bool
-	 * @return string
-	 */
-	static function HumanBoolean( $bool) {
+	static function HumanBoolean($bool) {
 		if ( $bool == TRUE ) {
 			return 'Yes';
 		} else {
@@ -844,22 +714,13 @@ class Misc {
 		}
 	}
 
-	/**
-	 * @param $float
-	 * @return int
-	 */
-	static function getBeforeDecimal( $float) {
+	static function getBeforeDecimal($float) {
 		//$split_float = explode(TTi18n::getDecimalSymbol(), $float);
 		$split_float = explode('.', $float);
 		return (int)$split_float[0];
 	}
 
-	/**
-	 * @param $float
-	 * @param bool $format_number
-	 * @return int
-	 */
-	static function getAfterDecimal( $float, $format_number = TRUE ) {
+	static function getAfterDecimal($float, $format_number = TRUE ) {
 		if ( $format_number == TRUE ) {
 			$float = Misc::MoneyFormat( $float, FALSE );
 		}
@@ -873,20 +734,11 @@ class Misc {
 		}
 	}
 
-	/**
-	 * @param $value
-	 * @return mixed
-	 */
 	static function removeDecimal( $value ) {
 		return str_replace('.', '', number_format( $value, 2, '.', '') );
 	}
 
 	//Encode integer to a alphanumeric value that is reversible.
-
-	/**
-	 * @param $int
-	 * @return string
-	 */
 	static function encodeInteger( $int ) {
 		if ( $int != '' ) {
 			return strtoupper( base_convert( strrev( str_pad( $int, 11, 0, STR_PAD_LEFT ) ), 10, 36) );
@@ -894,12 +746,6 @@ class Misc {
 
 		return $int;
 	}
-
-	/**
-	 * @param $str
-	 * @param int $max
-	 * @return int
-	 */
 	static function decodeInteger( $str, $max = 2147483646 ) {
 		$retval = (int)str_pad( strrev( base_convert( $str, 36, 10) ), 11, 0, STR_PAD_RIGHT );
 		if ( $retval > $max ) { //This helps prevent out of range errors in SQL queries.
@@ -910,12 +756,6 @@ class Misc {
 		return $retval;
 	}
 
-	/**
-	 * @param $current
-	 * @param $maximum
-	 * @param int $precision
-	 * @return float|int
-	 */
 	static function calculatePercent( $current, $maximum, $precision = 0 ) {
 		if ( $maximum == 0 ) {
 			return 100;
@@ -931,13 +771,7 @@ class Misc {
 	}
 
 	//Takes an array with columns, and a 2nd array with column names to sum.
-
-	/**
-	 * @param $data
-	 * @param $sum_elements
-	 * @return bool|int|string
-	 */
-	static function sumMultipleColumns( $data, $sum_elements) {
+	static function sumMultipleColumns($data, $sum_elements) {
 		if (!is_array($data) ) {
 			return FALSE;
 		}
@@ -958,13 +792,6 @@ class Misc {
 		return $retval;
 	}
 
-	/**
-	 * @param $amount
-	 * @param $element
-	 * @param array $include_elements
-	 * @param array $exclude_elements
-	 * @return int
-	 */
 	static function calculateIncludeExcludeAmount( $amount, $element, $include_elements = array(), $exclude_elements = array() ) {
 		//Make sure the element isnt in both include and exclude.
 		if ( in_array( $element, $include_elements ) AND !in_array( $element, $exclude_elements ) ) {
@@ -976,13 +803,7 @@ class Misc {
 		}
 	}
 
-	/**
-	 * @param $data
-	 * @param array $include_elements
-	 * @param array $exclude_elements
-	 * @return bool|int|string
-	 */
-	static function calculateMultipleColumns( $data, $include_elements = array(), $exclude_elements = array() ) {
+	static function calculateMultipleColumns($data, $include_elements = array(), $exclude_elements = array() ) {
 		if ( !is_array($data) ) {
 			return FALSE;
 		}
@@ -1010,12 +831,6 @@ class Misc {
 		return $retval;
 	}
 
-	/**
-	 * @param $array
-	 * @param $element
-	 * @param int $start
-	 * @return mixed
-	 */
 	static function getPointerFromArray( $array, $element, $start = 1 ) {
 		//Debug::Arr($array, 'Source Array: ', __FILE__, __LINE__, __METHOD__, 10);
 		//Debug::Text('Searching for Element: '. $element, __FILE__, __LINE__, __METHOD__, 10);
@@ -1033,25 +848,12 @@ class Misc {
 		return $key;
 	}
 
-	/**
-	 * @param $coord
-	 * @param $adjust_coord
-	 * @return mixed
-	 */
 	static function AdjustXY( $coord, $adjust_coord) {
 		return ( $coord + $adjust_coord );
 	}
 
 	// Static class, static function. avoid PHP strict error.
-
-	/**
-	 * @param $file_name
-	 * @param $num
-	 * @param bool $print_text
-	 * @param int $height
-	 * @return bool
-	 */
-	static function writeBarCodeFile( $file_name, $num, $print_text = TRUE, $height = 60 ) {
+	static function writeBarCodeFile($file_name, $num, $print_text = TRUE, $height = 60 ) {
 		if ( !class_exists('Image_Barcode') ) {
 			require_once(Environment::getBasePath().'/classes/Image_Barcode/Barcode.php');
 		}
@@ -1062,7 +864,7 @@ class Misc {
 		$ob_contents = ob_get_contents();
 		ob_end_clean();
 
-		if ( @file_put_contents($file_name, $ob_contents) > 0 ) {
+		if ( file_put_contents($file_name, $ob_contents) > 0 ) {
 			//echo "Writing file successfull<Br>\n";
 			return TRUE;
 		} else {
@@ -1071,11 +873,6 @@ class Misc {
 		}
 	}
 
-	/**
-	 * @param $hex
-	 * @param bool $asString
-	 * @return array|string
-	 */
 	static function hex2rgb( $hex, $asString = TRUE ) {
 		// strip off any leading #
 		if (0 === strpos($hex, '#')) {
@@ -1100,32 +897,21 @@ class Misc {
 	//[1] https://www.owasp.org/index.php/CSV_Excel_Macro_Injection
 	//[2] https://hackerone.com/reports/72785
 	//[3] https://hackerone.com/reports/90131
-	/**
-	 * @param $input
-	 * @return mixed
-	 */
 	static function escapeCSVTriggerChars( $input ) {
 		$first_char = substr( trim($input), 0, 1 );
 		$trigger_chars = array( '=', '-','+', '|');
 		if ( in_array( $first_char, $trigger_chars ) ) {
 			$retval = '\''. $input; //Prepend with single quote "'" to force it to text.
 		} else {
-			$retval = $input;
+			$retval =  $input;
 		}
 
 		return str_replace('|', '\|', $retval ); //Make sure pipes are escaped anywhere in the string.
 	}
 
-	/**
-	 * @param $data
-	 * @param null $columns
-	 * @param bool $ignore_last_row
-	 * @param bool $include_header
-	 * @param string $eol
-	 * @return bool|null|string
-	 */
 	static function Array2CSV( $data, $columns = NULL, $ignore_last_row = TRUE, $include_header = TRUE, $eol = "\n" ) {
-		if ( is_array($columns) AND count($columns) > 0 ) { //If data is FALSE or not an array, we still want to output some CSV encoded data.
+		if ( is_array($data) AND count($data) > 0
+				AND is_array($columns) AND count($columns) > 0 ) {
 
 			if ( $ignore_last_row === TRUE ) {
 				array_pop($data);
@@ -1142,21 +928,19 @@ class Misc {
 				$out = NULL;
 			}
 
-			if ( is_array($data) AND count($data) > 0 ) {
-				foreach ( $data as $rows ) {
-					$row_values = array();
-					foreach ( $columns as $column_key => $column_name ) {
-						if ( isset( $rows[ $column_key ] ) ) {
-							$row_values[] = str_replace( "\"", "\"\"", Misc::escapeCSVTriggerChars( $rows[ $column_key ] ) );
-						} else {
-							//Make sure we insert blank columns to keep proper order of values.
-							$row_values[] = NULL;
-						}
+			foreach( $data as $rows ) {
+				$row_values = array();
+				foreach ($columns as $column_key => $column_name ) {
+					if ( isset($rows[$column_key]) ) {
+						$row_values[] = str_replace("\"", "\"\"", Misc::escapeCSVTriggerChars( $rows[$column_key] ) );
+					} else {
+						//Make sure we insert blank columns to keep proper order of values.
+						$row_values[] = NULL;
 					}
-
-					$out .= '"' . implode( '","', $row_values ) . '"' . $eol;
-					unset( $row_values );
 				}
+
+				$out .= '"'.implode('","', $row_values).'"'.$eol;
+				unset($row_values);
 			}
 
 			return $out;
@@ -1165,48 +949,9 @@ class Misc {
 		return FALSE;
 	}
 
-	/**
-	 * @param $data
-	 * @param null $columns
-	 * @return bool|null|string
-	 */
-	static function Array2JSON( $data, $columns = NULL ) {
-		if ( is_array($columns) AND count($columns) > 0 ) { //If data is FALSE or not an array, we still want to output some JSON encoded data.
-
-			$out = array();
-
-			if ( is_array($data) AND count($data) > 0 ) {
-				foreach ( $data as $rows ) {
-					$row_values = array();
-					foreach ( $columns as $column_key => $column_name ) {
-						if ( isset( $rows[ $column_key ] ) ) {
-							$row_values[ $column_name ] = $rows[ $column_key ];
-						}
-					}
-
-					$out[] = $row_values;
-					unset( $row_values );
-				}
-			}
-
-			return json_encode( $out, JSON_PRETTY_PRINT );
-		}
-
-		return FALSE;
-	}
-
-	/**
-	 * @param $data
-	 * @param null $columns
-	 * @param null $column_format
-	 * @param bool $ignore_last_row
-	 * @param bool $include_xml_header
-	 * @param string $root_element_name
-	 * @param string $row_element_name
-	 * @return bool|null|string
-	 */
 	static function Array2XML( $data, $columns = NULL, $column_format = NULL, $ignore_last_row = TRUE, $include_xml_header = FALSE, $root_element_name = 'data', $row_element_name = 'row') {
-		if ( is_array($columns) AND count($columns) > 0 ) { //If data is FALSE or not an array, we still want to output some XML encoded data.
+		if ( is_array($data) AND count($data) > 0
+				AND is_array($columns) AND count($columns) > 0 ) {
 
 			if ( $ignore_last_row === TRUE ) {
 				array_pop($data);
@@ -1253,7 +998,6 @@ class Misc {
 							break;
 						case 'boolean':
 							$data_type = 'string';
-							break;
 						default:
 							$data_type = 'string';
 							break;
@@ -1274,16 +1018,14 @@ class Misc {
 				$out .= '<'. $root_element_name .'>'."\n";
 			}
 
-			if ( is_array($data) AND count($data) > 0 ) {
-				foreach ( $data as $rows ) {
-					$out .= '<' . $row_element_name . '>' . "\n";
-					foreach ( $columns as $column_key => $column_name ) {
-						if ( isset( $rows[ $column_key ] ) ) {
-							$out .= '	 <' . $column_key . '>' . $rows[ $column_key ] . '</' . $column_key . '>' . "\n";
-						}
+			foreach( $data as $rows ) {
+				$out .= '<'. $row_element_name .'>'."\n";
+				foreach ($columns as $column_key => $column_name ) {
+					if ( isset($rows[$column_key]) ) {
+						$out .= '	 <'. $column_key .'>'. $rows[$column_key] .'</'. $column_key .'>'."\n";
 					}
-					$out .= '</' . $row_element_name . '>' . "\n";
 				}
+				$out .= '</'. $row_element_name .'>'."\n";
 			}
 
 			if ( $root_element_name != '' ) {
@@ -1298,11 +1040,6 @@ class Misc {
 		return FALSE;
 	}
 
-	/**
-	 * @param $factory_arr
-	 * @param $filter_data
-	 * @param $output_file
-	 */
 	static function Export2XML( $factory_arr, $filter_data, $output_file ) {
 		global $global_class_map;
 
@@ -1382,12 +1119,6 @@ class Misc {
 		}
 	}
 
-	/**
-	 * @param $lf
-	 * @param $filter_data
-	 * @param $file_pointer
-	 * @return bool
-	 */
 	static function ExportListFactory2XML( $lf, $filter_data, $file_pointer ) {
 		require_once(Environment::getBasePath() .'classes/pear/XML/Serializer.php');
 
@@ -1422,12 +1153,6 @@ class Misc {
 		return TRUE;
 	}
 
-	/**
-	 * @param $arr
-	 * @param $search_key
-	 * @param $search_value
-	 * @return bool
-	 */
 	static function inArrayByKeyAndValue( $arr, $search_key, $search_value ) {
 		if ( !is_array($arr) AND $search_key != '' AND $search_value != '') {
 			return FALSE;
@@ -1449,12 +1174,6 @@ class Misc {
 
 	//This function is used to quickly preset array key => value pairs so we don't
 	//have to have so many isset() checks throughout the code.
-	/**
-	 * @param $arr
-	 * @param $keys
-	 * @param null $preset_value
-	 * @return array|bool
-	 */
 	static function preSetArrayValues( $arr, $keys, $preset_value = NULL ) {
 		if ( ( $arr == '' OR is_bool($arr) OR is_null( $arr ) OR is_array( $arr ) OR is_object( $arr ) ) AND is_array( $keys ) ) {
 			foreach( $keys as $key ) {
@@ -1475,13 +1194,6 @@ class Misc {
 		return $arr;
 	}
 
-	/**
-	 * @param $file_name
-	 * @param bool $buffer
-	 * @param bool $keep_charset
-	 * @param string $unknown_type
-	 * @return bool|mixed|string
-	 */
 	static function getMimeType( $file_name, $buffer = FALSE, $keep_charset = FALSE, $unknown_type = 'application/octet-stream' ) {
 		if ( function_exists('finfo_buffer') ) { //finfo extension in PHP v5.3+
 			if ( $buffer == FALSE AND file_exists( $file_name ) ) {
@@ -1536,10 +1248,6 @@ class Misc {
 		return FALSE;
 	}
 
-	/**
-	 * @param $file
-	 * @return int
-	 */
 	static function countLinesInFile( $file ) {
 		ini_set('auto_detect_line_endings', TRUE); //PHP can have problems detecting MAC line endings in some case, this should help solve that.
 
@@ -1557,16 +1265,7 @@ class Misc {
 		return $line_count;
 	}
 
-	/**
-	 * @param $file
-	 * @param bool $head
-	 * @param bool $first_column
-	 * @param string $delim
-	 * @param int $len
-	 * @param null $max_lines
-	 * @return array|bool
-	 */
-	static function parseCSV( $file, $head = FALSE, $first_column = FALSE, $delim=',', $len = 9216, $max_lines = NULL ) {
+	static function parseCSV($file, $head = FALSE, $first_column = FALSE, $delim=',', $len = 9216, $max_lines = NULL ) {
 		if ( !file_exists($file) ) {
 			Debug::text('Files does not exist: '. $file, __FILE__, __LINE__, __METHOD__, 10);
 			return FALSE;
@@ -1589,6 +1288,7 @@ class Misc {
 			if ( $first_column !== FALSE ) {
 				while ( ($header = fgetcsv($handle, $len, $delim) ) !== FALSE) {
 					if ( $header[0] == $first_column ) {
+						//echo "FOUND HEADER!<br>\n";
 						$found_header = TRUE;
 						break;
 					}
@@ -1602,17 +1302,12 @@ class Misc {
 			}
 		}
 
-		//Excel adds a Byte Order Mark (BOM) to the beginning of files with UTF-8 characters. That needs to be stripped off otherwise it looks like a space and columns don't match up.
-		if ( isset($header) AND isset($header[0]) ) {
-			$header[0] = str_replace( "\xEF\xBB\xBF", '', $header[0] );
-		}
-
 		$i = 1;
 		while ( ($data = fgetcsv($handle, $len, $delim) ) !== FALSE) {
-			if ( $data !== array( NULL ) ) { // Ignore blank lines
-				if ( $head == TRUE AND isset($header) ) {
+			if ( $data !== array( NULL ) ) { // ignore blank lines
+				if ( $head AND isset($header) ) {
 					$row = array();
-					foreach ( $header as $key => $heading ) {
+					foreach ($header as $key => $heading) {
 						$row[trim($heading)] = ( isset($data[$key]) ) ? $data[$key] : '';
 					}
 					$return[] = $row;
@@ -1635,11 +1330,6 @@ class Misc {
 		return $return;
 	}
 
-	/**
-	 * @param $column_map
-	 * @param $csv_arr
-	 * @return array|bool
-	 */
 	static function importApplyColumnMap( $column_map, $csv_arr ) {
 		if ( !is_array($column_map) ) {
 			return FALSE;
@@ -1671,171 +1361,58 @@ class Misc {
 		return FALSE;
 	}
 
-	/**
-	 * censor part of a string for purposes of displaying things like SIN, bank accounts, credit card numbers.
-	 * @param $str
-	 * @param string $censor_char
-	 * @param int|null $min_first_chunk_size
-	 * @param int|null $max_first_chunk_size
-	 * @param int|null $min_last_chunk_size
-	 * @param int|null $max_last_chunk_size
-	 * @return bool|string
-	 */
-	static function censorString( $str, $censor_char = 'X', $min_first_chunk_size = NULL, $max_first_chunk_size = NULL, $min_last_chunk_size = NULL, $max_last_chunk_size = NULL ) {
-		$length = strlen( $str );
-		if ( $length == 0 ) {
-			return $str;
-		}
-
-		if ( $str != '' ) {
-			if ( $length < 3 OR $length <= ( $min_first_chunk_size + $min_last_chunk_size + 2) ) {
-				return str_repeat( $censor_char, $length ); //Default to all censored.
-			} else {
-				$first_chunk_size = ( floor( $length / 3 ) );
-				$last_chunk_size = ( floor( $length / 3 ) );
-
-				if ( $min_first_chunk_size != NULL AND $first_chunk_size < $min_first_chunk_size ) {
-					$first_chunk_size = $min_first_chunk_size;
-				}
-				if ( $max_first_chunk_size != NULL AND $first_chunk_size > $max_first_chunk_size ) {
-					$first_chunk_size = $max_first_chunk_size;
-				}
-
-				if ( $min_last_chunk_size != NULL AND $last_chunk_size < $min_last_chunk_size ) {
-					$last_chunk_size = $min_last_chunk_size;
-				}
-				if ( $max_last_chunk_size != NULL AND $last_chunk_size > $max_last_chunk_size ) {
-					$last_chunk_size = $max_last_chunk_size;
-				}
-
-				//Grab the first 1, and last 4 digits.
-				$first_chunk = substr( $str, 0, $first_chunk_size );
-				$last_chunk = substr( $str, ( $last_chunk_size * -1 ) );
-
-				$middle_chunk_size = ( $length - ( $first_chunk_size + $last_chunk_size ) );
-
-				$retval = $first_chunk . str_repeat( $censor_char, $middle_chunk_size ) . $last_chunk;
-
-				return $retval;
-			}
-		}
-
-		return FALSE;
-	}
-
-	/**
-	 * @param $str
-	 * @param null $salt
-	 * @param null $key
-	 * @return bool|string
-	 */
-	static function encrypt( $str, $salt = NULL, $key = NULL ) {
+	static function encrypt( $str, $key = NULL ) {
 		if ( $str == '' OR $str === FALSE OR empty($str) ) {
 			return FALSE;
 		}
 
 		if ( $key == NULL OR $key == '' ) {
 			global $config_vars;
-			if ( isset($config_vars['other']['salt']) AND $config_vars['other']['salt'] != '' ) {
-				$key = $config_vars['other']['salt'];
-			}
+			$key = $config_vars['other']['salt'];
 		}
-		$key .= $salt;
 
-		$strong_seed = TRUE; //passed by ref so we need it as a variable.
-		$iv = openssl_random_pseudo_bytes( openssl_cipher_iv_length('AES-256-CTR'), $strong_seed );
+		$td = mcrypt_module_open( 'tripledes', '', 'ecb', '' );
+		$iv = mcrypt_create_iv( mcrypt_enc_get_iv_size( $td ), MCRYPT_RAND );
+		$max_key_size = mcrypt_enc_get_key_size( $td );
+		mcrypt_generic_init( $td, substr( $key, 0, $max_key_size ), $iv );
 
-		$encrypted_data = '2:'. base64_encode( $iv ) .':'. base64_encode( openssl_encrypt( trim($str), 'AES-256-CTR', $key, 0, $iv ) );
+		$encrypted_data = base64_encode( mcrypt_generic( $td, trim($str) ) );
+
+		mcrypt_generic_deinit( $td );
+		mcrypt_module_close( $td );
 
 		return $encrypted_data;
 	}
 
-	/**
-	 * We can't reliably test that decryption was successful, so type checking should be done in the calling function. (see RemittanceDestinationAccountFactory::getValue3())
-	 * @param $str
-	 * @param null $salt
-	 * @param null $key
-	 * @return bool|string
-	 */
-	static function decrypt( $str, $salt = NULL, $key = NULL ) {
+	static function decrypt( $str, $key = NULL ) {
 		if ( $key == NULL OR $key == '' ) {
 			global $config_vars;
-			if ( isset($config_vars['other']['salt']) AND $config_vars['other']['salt'] != '' ) {
-				$key = $config_vars['other']['salt'];
-			}
+			$key = $config_vars['other']['salt'];
 		}
-
-		$key .= $salt;
 
 		if ( $str == '' ) {
 			return FALSE;
 		}
 
-		$version = 1;
-		if ( strpos($str, ':') !== FALSE ) {
-			$bits = explode(':', $str);
-			$version = $bits[0];
-			$iv = base64_decode( $bits[1] );
-			if ( isset($bits[2]) ) {
-				$encrypted_string = $bits[2];
-			} else {
-				$encrypted_string = $str;
-			}
-			unset($bits);
-
-			if ( !isset($version) OR $version == '' OR !isset($iv) OR $iv == '' ) {
-				Debug::Arr($encrypted_string, 'ERROR: Required encryption data is blank: '. $str, __FILE__, __LINE__, __METHOD__, 10);
-				return $str; //allow for returning the unencrypted values that contain colons;
-			}
-		} else {
-			$encrypted_string = $str;
+		//Check to make sure str is actually base64_encoded.
+		if ( base64_encode( base64_decode($str, TRUE) ) !== $str ) {
+			Debug::Arr($str, 'ERROR: String is not base64_encoded...', __FILE__, __LINE__, __METHOD__, 10);
+			return FALSE;
 		}
 
-		//Check to make sure $encrypted_string is base64_encoded.
-		if ( base64_encode( base64_decode($encrypted_string, TRUE) ) !== $encrypted_string ) {
-			Debug::Arr($encrypted_string, 'ERROR: String is not base64_encoded...', __FILE__, __LINE__, __METHOD__, 10);
-			return $str; //allow for unencrypted values
-		} else {
-			$encrypted_string = base64_decode( $encrypted_string );
+		$td = mcrypt_module_open( 'tripledes', '', 'ecb', '' );
+		$iv = mcrypt_create_iv( mcrypt_enc_get_iv_size($td), MCRYPT_RAND );
+		$max_key_size = mcrypt_enc_get_key_size( $td );
+		mcrypt_generic_init( $td, substr($key, 0, $max_key_size ), $iv );
 
-			switch ( $version ) {
-				case 1:
-					//backwards compatibility for v1 encryption.
-					if ( function_exists('mcrypt_module_open') ) {
-						$td = mcrypt_module_open( 'tripledes', '', 'ecb', '' );
-						$iv = mcrypt_create_iv( mcrypt_enc_get_iv_size( $td ), MCRYPT_RAND );
-						$max_key_size = mcrypt_enc_get_key_size( $td );
-						mcrypt_generic_init( $td, substr( $key, 0, $max_key_size ), $iv );
-						$unencrypted_data = rtrim( mdecrypt_generic( $td, $encrypted_string ) );
-						mcrypt_generic_deinit( $td );
-						mcrypt_module_close( $td );
-					} else {
-						Debug::Text( 'ERROR: MCRYPT extension is not installed!', __FILE__, __LINE__, __METHOD__, 10);
-						return FALSE;
-					}
+		$unencrypted_data = rtrim( mdecrypt_generic( $td, base64_decode( $str ) ) );
 
-					break;
-				case 2: //'AES-256-CTR'
-				default:
-					$unencrypted_data = openssl_decrypt( $encrypted_string, 'AES-256-CTR', $key, NULL, $iv );
+		mcrypt_generic_deinit( $td );
+		mcrypt_module_close( $td );
 
-					break;
-			}
-		}
-
-		/**
-		 * We can't reliably test that decryption was successful, so type checking should be done in the calling function. (see RemittanceDestinationAccountFactory::getValue3())
-		 */
 		return $unencrypted_data;
 	}
 
-	/**
-	 * @param $values
-	 * @param null $name
-	 * @param bool $assoc
-	 * @param bool $object
-	 * @return string
-	 */
 	static function getJSArray( $values, $name = NULL, $assoc = FALSE, $object = FALSE ) {
 		if ( $name != '' AND (bool)$assoc == TRUE ) {
 			$retval = 'new Array();';
@@ -1873,13 +1450,6 @@ class Misc {
 	}
 
 	//Uses the internal array pointer to get array neighnors.
-
-	/**
-	 * @param $arr
-	 * @param $key
-	 * @param string $neighbor
-	 * @return array
-	 */
 	static function getArrayNeighbors( $arr, $key, $neighbor = 'both' ) {
 		$neighbor = strtolower($neighbor);
 		//Neighor can be: Prev, Next, Both
@@ -1905,9 +1475,6 @@ class Misc {
 		return $retarr;
 	}
 
-	/**
-	 * @return string
-	 */
 	static function getURLProtocol() {
 		$retval = 'http';
 		if ( Misc::isSSL() == TRUE ) {
@@ -1917,10 +1484,6 @@ class Misc {
 		return $retval;
 	}
 
-	/**
-	 * @param $url
-	 * @return bool|mixed
-	 */
 	static function getRemoteHTTPFileSize( $url ) {
 		if ( function_exists('curl_exec') ) {
 			Debug::Text( 'Using CURL for HTTP...', __FILE__, __LINE__, __METHOD__, 10);
@@ -1963,72 +1526,44 @@ class Misc {
 		}
 	}
 
-	/**
-	 * @param $url
-	 * @param $file_name
-	 * @return bool|int
-	 */
 	static function downloadHTTPFile( $url, $file_name ) {
-		Debug::Text( 'Downloading: '. $url .' To: '. $file_name, __FILE__, __LINE__, __METHOD__, 10);
-
 		if ( function_exists('curl_exec') ) {
 			Debug::Text( 'Using CURL for HTTP...', __FILE__, __LINE__, __METHOD__, 10);
+			// open file to write
+			$fp = fopen( $file_name, 'w+' );
 
-			if ( is_writable( dirname( $file_name ) ) == TRUE AND ( file_exists( $file_name ) == FALSE OR ( file_exists( $file_name ) == TRUE AND is_writable( $file_name ) ) ) ) {
-				// Open file to write
-				$fp = @fopen( $file_name, 'w+' );
-				if ( $fp !== FALSE ) {
-					$curl = curl_init();
+			$curl = curl_init();
 
-					//Don't require SSL verification, as the SSL certs may be out-of-date: http://stackoverflow.com/questions/316099/cant-connect-to-https-site-using-curl-returns-0-length-content-instead-what-c
-					curl_setopt( $curl, CURLOPT_SSL_VERIFYPEER, FALSE );
-					curl_setopt( $curl, CURLOPT_SSL_VERIFYHOST, FALSE );
+			//Don't require SSL verification, as the SSL certs may be out-of-date: http://stackoverflow.com/questions/316099/cant-connect-to-https-site-using-curl-returns-0-length-content-instead-what-c
+			curl_setopt( $curl, CURLOPT_SSL_VERIFYPEER, FALSE );
+			curl_setopt( $curl, CURLOPT_SSL_VERIFYHOST, FALSE );
 
-					curl_setopt( $curl, CURLOPT_URL, $url );
-					curl_setopt( $curl, CURLOPT_FOLLOWLOCATION, TRUE );
-					curl_setopt( $curl, CURLOPT_RETURNTRANSFER, FALSE ); // Set return transfer to false
-					curl_setopt( $curl, CURLOPT_BINARYTRANSFER, TRUE );
-					curl_setopt( $curl, CURLOPT_SSL_VERIFYPEER, FALSE );
-					curl_setopt( $curl, CURLOPT_CONNECTTIMEOUT, 10 );
-					curl_setopt( $curl, CURLOPT_TIMEOUT, 0 ); //Never timeout
-					curl_setopt( $curl, CURLOPT_FILE, $fp ); // Write data to local file
-					curl_exec( $curl );
-					curl_close( $curl );
-					fclose( $fp );
+			curl_setopt( $curl, CURLOPT_URL, $url );
+			curl_setopt( $curl, CURLOPT_FOLLOWLOCATION, TRUE );
+			curl_setopt( $curl, CURLOPT_RETURNTRANSFER, FALSE ); // Set return transfer to false
+			curl_setopt( $curl, CURLOPT_BINARYTRANSFER, TRUE );
+			curl_setopt( $curl, CURLOPT_SSL_VERIFYPEER, FALSE );
+			curl_setopt( $curl, CURLOPT_CONNECTTIMEOUT, 10 );
+			curl_setopt( $curl, CURLOPT_TIMEOUT, 0); //Never timeout
+			curl_setopt( $curl, CURLOPT_FILE, $fp ); // Write data to local file
+			curl_exec( $curl );
+			curl_close( $curl );
+			fclose( $fp );
 
-					if ( file_exists( $file_name ) ) {
-						$file_size = filesize( $file_name );
-						if ( $file_size > 0 ) {
-							Debug::Text( ' Successfully downloaded... Size: ' . $file_size, __FILE__, __LINE__, __METHOD__, 10 );
-							return (int)$file_size;
-						}
-					}
-
-					Debug::Text( 'ERROR: File download failed: ' . $file_name, __FILE__, __LINE__, __METHOD__, 10 );
-
-					return FALSE;
-				} else {
-					Debug::Arr( error_get_last(), 'ERROR: Unable to open file for download/writing, likely permission problem?: ' . $file_name, __FILE__, __LINE__, __METHOD__, 10 );
-
-					return FALSE;
+			if ( file_exists( $file_name ) ) {
+				$file_size = filesize( $file_name );
+				if ( $file_size > 0 ) {
+					return (int)$file_size;
 				}
-			} else {
-				Debug::Text( 'ERROR: Download directory/file not writable, likely permission problem?: ' . $file_name, __FILE__, __LINE__, __METHOD__, 10 );
 			}
+
+			return FALSE;
 		} else {
 			Debug::Text( 'Using PHP streams for HTTP...', __FILE__, __LINE__, __METHOD__, 10);
-			$retval = @file_put_contents( $file_name, fopen( $url, 'r' ) );
-			if ( $retval === FALSE ) {
-				Debug::Arr( error_get_last(), 'ERROR: Unable to save/download file, likely permission or network access problem?: ' . $file_name, __FILE__, __LINE__, __METHOD__, 10 );
-			}
-
-			return $retval;
+			return @file_put_contents( $file_name, fopen( $url, 'r' ) );
 		}
 	}
 
-	/**
-	 * @return string
-	 */
 	static function getEmailDomain() {
 		global $config_vars;
 
@@ -2044,9 +1579,6 @@ class Misc {
 		return $domain;
 	}
 
-	/**
-	 * @return string
-	 */
 	static function getEmailLocalPart() {
 		global $config_vars;
 
@@ -2062,10 +1594,6 @@ class Misc {
 		return $local_part;
 	}
 
-	/**
-	 * @param null $email
-	 * @return string
-	 */
 	static function getEmailReturnPathLocalPart( $email = NULL ) {
 		global $config_vars;
 
@@ -2087,9 +1615,6 @@ class Misc {
 
 	//Checks if the domain the user is seeing in their browser matches the configured domain that should be used.
 	//If not we can then do a redirect.
-	/**
-	 * @return bool
-	 */
 	static function checkValidDomain() {
 		global $config_vars;
 		if ( PRODUCTION == TRUE AND isset($config_vars['other']['enable_csrf_validation']) AND $config_vars['other']['enable_csrf_validation'] == TRUE ) {
@@ -2137,11 +1662,6 @@ class Misc {
 	}
 
 	//Checks refer to help mitigate CSRF attacks.
-
-	/**
-	 * @param bool $referer
-	 * @return bool
-	 */
 	static function checkValidReferer( $referer = FALSE ) {
 		global $config_vars;
 
@@ -2192,10 +1712,6 @@ class Misc {
 		return TRUE;
 	}
 
-	/**
-	 * @param $host_name
-	 * @return string
-	 */
 	static function getHostNameWithoutSubDomain( $host_name ) {
 		$split_host_name = explode('.', $host_name );
 		if ( count($split_host_name) > 2 ) {
@@ -2206,10 +1722,6 @@ class Misc {
 		return $host_name;
 	}
 
-	/**
-	 * @param bool $include_port
-	 * @return string
-	 */
 	static function getHostName( $include_port = TRUE ) {
 		global $config_vars;
 
@@ -2249,10 +1761,6 @@ class Misc {
 		return $server_domain;
 	}
 
-	/**
-	 * @param $database_host_string
-	 * @return array
-	 */
 	static function parseDatabaseHostString( $database_host_string ) {
 		$retarr = array();
 
@@ -2275,12 +1783,6 @@ class Misc {
 		return $retarr;
 	}
 
-	/**
-	 * @param $address
-	 * @param int $port
-	 * @param int $timeout
-	 * @return bool
-	 */
 	static function isOpenPort( $address, $port = 80, $timeout = 3 ) {
 		$checkport = @fsockopen($address, $port, $errnum, $errstr, $timeout); //The 2 is the time of ping in secs
 
@@ -2292,11 +1794,6 @@ class Misc {
 		return TRUE;
 	}
 
-	/**
-	 * @param $str
-	 * @param $array
-	 * @return bool|int|string
-	 */
 	static function array_isearch( $str, $array ) {
 		foreach ( $array as $key => $value ) {
 			if ( strtolower( $value ) == strtolower( $str ) ) {
@@ -2308,14 +1805,6 @@ class Misc {
 	}
 
 	//Accepts a search_str and key=>val array that it searches through, to return the array key of the closest fuzzy match.
-
-	/**
-	 * @param $search_str
-	 * @param $search_arr
-	 * @param int $minimum_percent_match
-	 * @param bool $return_all_matches
-	 * @return array|bool|mixed
-	 */
 	static function findClosestMatch( $search_str, $search_arr, $minimum_percent_match = 0, $return_all_matches = FALSE ) {
 		if ( $search_str == '' ) {
 			return FALSE;
@@ -2353,11 +1842,6 @@ class Misc {
 	}
 
 	//Converts a number between 0 and 25 to the corresponding letter.
-
-	/**
-	 * @param $number
-	 * @return bool|string
-	 */
 	static function NumberToLetter( $number ) {
 		if ( $number > 25 ) {
 			return FALSE;
@@ -2366,14 +1850,6 @@ class Misc {
 		return chr( ($number + 65) );
 	}
 
-	/**
-	 * @param $value
-	 * @param int $old_min
-	 * @param int $old_max
-	 * @param int $new_min
-	 * @param int $new_max
-	 * @return float|int
-	 */
 	static function reScaleRange( $value, $old_min = 1, $old_max = 5, $new_min = 1, $new_max = 10 ) {
 		if ( $value === '' OR $value === NULL ) {
 			return $value;
@@ -2383,11 +1859,6 @@ class Misc {
 		}
 	}
 
-	/**
-	 * @param $var
-	 * @param null $default
-	 * @return null
-	 */
 	static function issetOr( &$var, $default = NULL ) {
 		if ( isset($var) ) {
 			return $var;
@@ -2396,27 +1867,15 @@ class Misc {
 		return $default;
 	}
 
-	/**
-	 * @param $first_name
-	 * @param $middle_name
-	 * @param $last_name
-	 * @param bool $reverse
-	 * @param bool $include_middle
-	 * @return bool|string
-	 */
-	static function getFullName( $first_name, $middle_name, $last_name, $reverse = FALSE, $include_middle = TRUE) {
+	static function getFullName($first_name, $middle_name, $last_name, $reverse = FALSE, $include_middle = TRUE) {
 		if ( $first_name != '' AND $last_name != '' ) {
 			if ( $reverse === TRUE ) {
 				$retval = $last_name .', '. $first_name;
 				if ( $include_middle == TRUE AND $middle_name != '' ) {
-					$retval .= ' '. $middle_name[0] .'.'; //Use just the middle initial.
+					$retval .= ' '.$middle_name[0].'.'; //Use just the middle initial.
 				}
 			} else {
-				$retval = $first_name;
-				if ( $include_middle == TRUE AND $middle_name != '' ) {
-					$retval .= ' '. $middle_name[0] .'.'; //Use just the middle initial.
-				}
-				$retval .= ' '. $last_name;
+				$retval = $first_name .' '. $last_name;
 			}
 
 			return $retval;
@@ -2425,12 +1884,6 @@ class Misc {
 		return FALSE;
 	}
 
-	/**
-	 * @param $city
-	 * @param $province
-	 * @param $postal_code
-	 * @return string
-	 */
 	static function getCityAndProvinceAndPostalCode( $city, $province, $postal_code ) {
 		$retval = '';
 		if ( $city != '' ) {
@@ -2451,17 +1904,13 @@ class Misc {
 		return $retval;
 	}
 
-	/**
-	 * Caller ID numbers can come in in all sorts of forms:
-	 * 2505551234
-	 * 12505551234
-	 * +12505551234
-	 * (250) 555-1234
-	 * Parse out just the digits, and use only the last 10 digits.
-	 * Currently this will not support international numbers
-	 * @param $number
-	 * @return bool|string
-	 */
+	//Caller ID numbers can come in in all sorts of forms:
+	// 2505551234
+	// 12505551234
+	// +12505551234
+	// (250) 555-1234
+	//Parse out just the digits, and use only the last 10 digits.
+	//Currently this will not support international numbers
 	static function parseCallerID( $number ) {
 		$validator = new Validator();
 
@@ -2470,11 +1919,6 @@ class Misc {
 		return $retval;
 	}
 
-	/**
-	 * @param $name
-	 * @param bool $strict
-	 * @return bool|string
-	 */
 	static function generateCopyName( $name, $strict = FALSE ) {
 		$name = str_replace( TTi18n::getText('Copy of'), '', $name );
 
@@ -2488,12 +1932,6 @@ class Misc {
 		return $retval;
 	}
 
-	/**
-	 * @param $from
-	 * @param $name
-	 * @param bool $strict
-	 * @return bool|string
-	 */
 	static function generateShareName( $from, $name, $strict = FALSE ) {
 		if ( $strict === TRUE ) {
 			$retval = $name .' ('. TTi18n::getText('Shared by').': '. $from .')';
@@ -2506,25 +1944,17 @@ class Misc {
 	}
 
 	/** Delete all files in directory
-	 * @param $path string directory to clean
-	 * @param $recursive boolean delete files in subdirs
-	 * @param bool $del_dirs
-	 * @param bool $del_root
-	 * @param $exclude_regex_filter string regex to exclude paths
-	 * @return bool
-	 * @access public
-	 */
+	* @param $path directory to clean
+	* @param $recursive delete files in subdirs
+	* @param $delDirs delete subdirs
+	* @param $delRoot delete root directory
+	* @access public
+	* @return success
+	*/
 	static function cleanDir( $path, $recursive = FALSE, $del_dirs = FALSE, $del_root = FALSE, $exclude_regex_filter = NULL ) {
 		$result = TRUE;
 
-		if ( $path == '' ) {
-			Debug::Text('Path is blank, unable to clean...', __FILE__, __LINE__, __METHOD__, 10);
-			return FALSE;
-		}
-
-		$dir = @dir($path); //Get directory class object.
-		if( !is_object($dir) ) {
-			Debug::Text('Unable to open path for cleaning: '. $path, __FILE__, __LINE__, __METHOD__, 10);
+		if( !$dir = @dir($path) ) {
 			return FALSE;
 		}
 
@@ -2561,53 +1991,16 @@ class Misc {
 		return $result;
 	}
 
-	static function deleteEmptyDirectory( $path, $recurse_parent_levels = 0 ) {
-		if ( $path == '' ) {
-			Debug::Text('Path is empty: '. $path, __FILE__, __LINE__, __METHOD__, 10);
-			return FALSE;
-		}
-
-		if ( !is_dir( $path ) ) {
-			Debug::Text('Path is not a directory: '. $path, __FILE__, __LINE__, __METHOD__, 10);
-			return FALSE;
-		}
-
-		$fs_iterator = new RecursiveIteratorIterator( new RecursiveDirectoryIterator( $path, FilesystemIterator::SKIP_DOTS ), RecursiveIteratorIterator::CHILD_FIRST );
-		if ( $fs_iterator->valid() == FALSE ) {
-			Debug::Text('Deleting Empty Directory: '. $path, __FILE__, __LINE__, __METHOD__, 10);
-			$parent_dir = realpath( $path . DIRECTORY_SEPARATOR . '..' ); //Need to get parent directory before its deleted, otherwise realpath() fails.
-			rmdir( $path );
-			if ( $recurse_parent_levels > 0 ) {
-				return self::deleteEmptyDirectory( $parent_dir, ( $recurse_parent_levels - 1 ) );
-			}
-		} else {
-			Debug::Text('Skipping Non-Empty Directory: '. $path, __FILE__, __LINE__, __METHOD__, 10);
-		}
-
-		return TRUE;
-	}
-
-	/**
-	 * If rename fails for some reason, attempt a copy instead as that might work, specifically on windows where if the file is in use.
-	 * Might fix possible "Access is denied. (code: 5)" errors on Windows when using PHP v5.2 (https://bugs.php.net/bug.php?id=43817)
-	 * @param $old_name
-	 * @param $new_name
-	 * @return bool
-	 */
-	static function rename( $old_name, $new_name ) {
-		$new_dir = dirname( $new_name );
-		if ( file_exists( $new_dir ) == FALSE ) {
-			@mkdir( $new_dir, 0755, TRUE );
-		}
-
-		if ( @rename( $old_name, $new_name ) == FALSE ) {
-			Debug::Text( 'ERROR: Unable to rename: '. $old_name .' to: '. $new_name, __FILE__, __LINE__, __METHOD__, 10);
-			if ( is_dir( $old_name ) == FALSE AND @copy( $old_name, $new_name ) == TRUE ) {
-				@unlink( $old_name );
-
+	//If rename fails for some reason, attempt a copy instead as that might work, specifically on windows where if the file is in use.
+	//  Might fix possible "Access is denied. (code: 5)" errors on Windows when using PHP v5.2 (https://bugs.php.net/bug.php?id=43817)
+	static function rename( $oldname, $newname ) {
+		if ( @rename( $oldname, $newname ) == FALSE ) {
+			Debug::Text('ERROR: Unable to rename: '. $oldname .' to: '. $newname, __FILE__, __LINE__, __METHOD__, 10);
+			if ( is_dir( $oldname ) == FALSE AND copy( $oldname, $newname ) == TRUE ) {
+				@unlink( $oldname );
 				return TRUE;
 			} else {
-				Debug::Text( 'ERROR: Unable to copy after rename failure: '. $old_name .' to: '. $new_name, __FILE__, __LINE__, __METHOD__, 10);
+				Debug::Text('ERROR: Unable to copy after rename failure: '. $oldname .' to: '. $newname, __FILE__, __LINE__, __METHOD__, 10);
 			}
 
 			return FALSE;
@@ -2616,12 +2009,6 @@ class Misc {
 		return TRUE;
 	}
 
-	/**
-	 * @param $start_dir
-	 * @param null $regex_filter
-	 * @param bool $recurse
-	 * @return array|bool
-	 */
 	static function getFileList( $start_dir, $regex_filter = NULL, $recurse = FALSE ) {
 		$files = array();
 		if ( is_dir($start_dir) AND is_readable( $start_dir ) ) {
@@ -2663,11 +2050,6 @@ class Misc {
 		return $files;
 	}
 
-	/**
-	 * @param $child_dir
-	 * @param $parent_dir
-	 * @return bool
-	 */
 	static function isSubDirectory( $child_dir, $parent_dir ) {
 		//Make sure directories always end in trailing slash, otherwise paths like this will fail:
 		//  Child: /var/www/TimeTrex Parent: /var/www/TimeTrexTest
@@ -2680,17 +2062,13 @@ class Misc {
 			$real_child_dir = realpath( $child_dir );
 			$real_parent_dir = realpath( $parent_dir );
 			if ( $real_child_dir !== FALSE AND $real_parent_dir !== FALSE AND strpos( $real_child_dir.DIRECTORY_SEPARATOR, $real_parent_dir.DIRECTORY_SEPARATOR ) === 0 ) { //Test realpaths incase they are relative or have "../" in them.
-			return TRUE;
-		}
+				return TRUE;
+			}
 		}
 
 		return FALSE;
 	}
 
-	/**
-	 * @param object $obj
-	 * @return array
-	 */
 	static function convertObjectToArray( $obj ) {
 		if ( is_object($obj) ) {
 			$obj = get_object_vars($obj);
@@ -2703,11 +2081,7 @@ class Misc {
 		}
 	}
 
-	/**
-	 * @param $val
-	 * @return int|string
-	 */
-	static function getBytesFromSize( $val) {
+	static function getBytesFromSize($val) {
 		$val = trim($val);
 
 		switch ( strtolower( substr($val, -1) ) ) {
@@ -2742,9 +2116,6 @@ class Misc {
 		return $val;
 	}
 
-	/**
-	 * @return int|string
-	 */
 	static function getSystemMemoryInfo() {
 		if ( OPERATING_SYSTEM == 'LINUX' ) {
 			$memory_file = '/proc/meminfo';
@@ -2766,33 +2137,16 @@ class Misc {
 				Debug::Text(' Memory Info: Free: '. $mem_free .'b Cached: '. $mem_cached .'b', __FILE__, __LINE__, __METHOD__, 10);
 				return ( $mem_free + ( $mem_cached * ( 3 / 4 ) ) ); //Only allow up to 3/4 of cached memory to be used.
 			}
-		} elseif ( OPERATING_SYSTEM == 'WIN' ) {
-			//Windows can use the following commands:
-			//wmic computersystem get TotalPhysicalMemory
-			//wmic OS get FreePhysicalMemory /Value
-
-			//This seems to take about 250ms on Windows 7.
-			$command = 'wmic OS get FreePhysicalMemory';
-			exec($command, $output, $retcode);
-
-			if ( isset($output[1]) AND is_numeric( trim( $output[1] ) ) ) {
-				$retval = ( $output[1] * 1024 ); //Convert from MB to bytes.
-				Debug::Text(' Memory Info: Total Physical: '. $retval .'b', __FILE__, __LINE__, __METHOD__, 10);
-				return $retval;
-			}
 		}
 
-		return PHP_INT_MAX; //If not linux, return large number, this is in Bytes.
+		return 2147483647; //If not linux, return large number, this is in Bytes.
 	}
 
-	/**
-	 * @return int|mixed
-	 */
 	static function getSystemLoad() {
 		if ( OPERATING_SYSTEM == 'LINUX' ) {
 			$loadavg_file = '/proc/loadavg';
-			if ( @file_exists( $loadavg_file ) AND is_readable( $loadavg_file ) ) {
-				//$buffer = '0 0 0';
+			if ( file_exists( $loadavg_file ) AND is_readable( $loadavg_file ) ) {
+				$buffer = '0 0 0';
 				$buffer = file_get_contents( $loadavg_file );
 				$load = explode(' ', $buffer);
 
@@ -2807,9 +2161,6 @@ class Misc {
 		return 0;
 	}
 
-	/**
-	 * @return bool
-	 */
 	static function isSystemLoadValid() {
 		global $config_vars;
 
@@ -2829,11 +2180,6 @@ class Misc {
 		return FALSE;
 	}
 
-	/**
-	 * @param $email
-	 * @param object $user_obj
-	 * @return string
-	 */
 	static function formatEmailAddress( $email, $user_obj ) {
 		if ( !is_object( $user_obj ) ) {
 			return $email;
@@ -2843,13 +2189,7 @@ class Misc {
 	}
 
 	//Parses an RFC822 Email Address ( "John Doe" <john.doe@mydomain.com> ) into its separate components.
-
-	/**
-	 * @param $input
-	 * @param bool $return_just_key
-	 * @return bool
-	 */
-	static function parseRFC822EmailAddress( $input, $return_just_key = FALSE) {
+	static function parseRFC822EmailAddress($input, $return_just_key = FALSE) {
 		if ( strstr( $input, '<>' ) !== FALSE ) { //Check for <> together, as that means no email address is specified.
 			return FALSE;
 		}
@@ -2860,7 +2200,6 @@ class Misc {
 			if ( is_array( $parsed_data ) AND count($parsed_data) > 0 ) {
 				$parsed_data = $parsed_data[0];
 				if ( $parsed_data->host != 'unknown.local' ) {
-					$retarr = array();
 					$retarr['email'] = $parsed_data->mailbox . '@' . $parsed_data->host;
 
 					if ( isset( $parsed_data->personal ) ) {
@@ -2895,19 +2234,12 @@ class Misc {
 		return FALSE;
 	}
 
-	/**
-	 * @param $subject
-	 * @param $body
-	 * @param null $attachments
-	 * @param bool $force
-	 * @return bool
-	 */
 	static function sendSystemMail( $subject, $body, $attachments = NULL, $force = FALSE ) {
 		if ( $subject == '' OR $body == '' ) {
 			return FALSE;
 		}
 
-		if ( function_exists('getTTProductEdition') == FALSE OR getTTProductEdition() > TT_PRODUCT_COMMUNITY AND DEPLOYMENT_ON_DEMAND == TRUE ) {
+		if ( getTTProductEdition() > TT_PRODUCT_COMMUNITY AND DEPLOYMENT_ON_DEMAND == TRUE ) {
 			$allowed_calls = 500;
 		} elseif( getTTProductEdition() > TT_PRODUCT_COMMUNITY ) {
 			$allowed_calls = 100;
@@ -2915,7 +2247,7 @@ class Misc {
 			$allowed_calls = 25;
 		}
 
-		$rl = new RateLimit;
+		$rl = TTNew('RateLimit');
 		$rl->setID( 'system_mail_'. Misc::getRemoteIPAddress() );
 		$rl->setAllowedCalls( $allowed_calls );
 		$rl->setTimeFrame( 86400 ); //24hrs
@@ -2928,8 +2260,8 @@ class Misc {
 		try {
 			//If during an install/schema upgrade a SQL error has occurred, the transaction will be aborted and cause the below select to fail.
 			//To avoid an infinite loop, always check that the transaction hasn't already failed.
-			global $db, $disable_database_connection;
-			if ( ( !isset($disable_database_connection) OR ( isset($disable_database_connection) AND $disable_database_connection != TRUE ) ) AND is_object($db) AND $db->hasFailedTrans() == FALSE ) {
+			global $db;
+			if ( is_object($db) AND $db->hasFailedTrans() == FALSE ) {
 				$registration_key = SystemSettingFactory::getSystemSettingValueByKey( 'registration_key' );
 			}
 		} catch (Exception $e) {
@@ -2947,17 +2279,21 @@ class Misc {
 			}
 		}
 
+		$cc = NULL;
 		$from = APPLICATION_NAME.'@'.Misc::getHostName( FALSE );
 
 		$headers = array(
 							'From'	  => $from,
 							'Subject' => $subject,
+							//'Cc'	  => $cc,
 							'X-Relay-For-Key' => $registration_key,
 						);
 
 		$mail = new TTMail();
 		$mail->setTo( $to );
 		$mail->setHeaders( $headers );
+		//$mail->setBody( $body );
+
 		@$mail->getMIMEObject()->setTXTBody($body);
 
 		if ( is_array($attachments) ) {
@@ -2975,68 +2311,6 @@ class Misc {
 		return $retval;
 	}
 
-	static function isCurrentOSUserRoot() {
-		$user = self::getCurrentOSUser();
-		if ( $user == 'root' ) {
-			return TRUE;
-		}
-
-		return FALSE;
-	}
-
-	static function getCurrentOSUser() {
-		if ( OPERATING_SYSTEM == 'LINUX' ) {
-			if ( function_exists('posix_geteuid') AND function_exists('posix_getpwuid') ) {
-				$user = posix_getpwuid( posix_geteuid() );
-				Debug::text('Running as OS User: '. $user['name'], __FILE__, __LINE__, __METHOD__, 9);
-
-				return $user['name'];
-			} else {
-				Debug::text('POSIX extension not installed, unable to determine webserver user...', __FILE__, __LINE__, __METHOD__, 9);
-			}
-		}
-
-		return FALSE;
-	}
-
-	static function setProcessUID( $uid ) {
-		if ( OPERATING_SYSTEM == 'LINUX' ) {
-			if ( function_exists( 'posix_setuid' ) ) {
-				if ( $uid > 0 ) {
-					Debug::text( 'WARNING: Downgrading process UID to: '. $uid, __FILE__, __LINE__, __METHOD__, 9 );
-					return posix_setuid( $uid );
-				} else {
-					Debug::text( 'UID is invalid or 0 (root), skipping...', __FILE__, __LINE__, __METHOD__, 9 );
-				}
-			}
-		}
-
-		return FALSE;
-	}
-
-	static function findWebServerOSUser() {
-		if ( OPERATING_SYSTEM == 'LINUX' ) {
-			if ( function_exists( 'posix_getpwnam' ) ) {
-				$users = array( 'www-data', 'apache', 'wwwrun' ); //Debian/Ubuntu: www-data, CentOS/Fedora/RHEL: apache, SUSE: wwwrun
-				foreach( $users as $tmp_user ) {
-					$user_data = posix_getpwnam( $tmp_user );
-					if ( $user_data !== FALSE AND isset($user_data['uid']) AND isset($user_data['name']) ) {
-						//return array('uid' => $user_data['uid'], 'name' => $user_data['name']);
-						Debug::text( 'Found web server user: '. $tmp_user .' UID: '. $user_data['uid'], __FILE__, __LINE__, __METHOD__, 9 );
-						return $user_data['uid'];
-					}
-				}
-			}
-		}
-
-		Debug::text( 'No web server user found...', __FILE__, __LINE__, __METHOD__, 9 );
-		return FALSE;
-	}
-
-	/**
-	 * @param bool $email_notification
-	 * @return bool
-	 */
 	static function disableCaching( $email_notification = TRUE ) {
 		//In case the cache directory does not exist, disabling caching can prevent errors from occurring or punches to be missed.
 		//So this should be enabled even for ON-DEMAND services just in case.
@@ -3067,16 +2341,6 @@ class Misc {
 		return FALSE;
 	}
 
-	/**
-	 * @param $address1
-	 * @param $address2
-	 * @param $city
-	 * @param $province
-	 * @param $postal_code
-	 * @param $country
-	 * @param string $service
-	 * @return bool|string
-	 */
 	static function getMapURL( $address1, $address2, $city, $province, $postal_code, $country, $service = 'google' ) {
 		if ( $address1 == '' AND $address2 == '' ) {
 			return FALSE;
@@ -3106,35 +2370,21 @@ class Misc {
 		return FALSE;
 	}
 
-	/**
-	 * @param $email
-	 * @param bool $check_dns
-	 * @param bool $error_level
-	 * @return bool
-	 */
-	static function isEmail( $email, $check_dns = TRUE, $error_level = TRUE, $return_raw_result = FALSE ) {
+	static function isEmail( $email, $check_dns = TRUE, $error_level = TRUE ) {
 		if ( !function_exists('is_email') ) {
 			require_once(Environment::getBasePath().'/classes/misc/is_email.php');
 		}
 
 		$result = is_email( $email, $check_dns, $error_level );
-		if ( $return_raw_result === TRUE ) {
-			return $result;
+		if ( $result === ISEMAIL_VALID ) {
+			return TRUE;
 		} else {
-			if ( $result === ISEMAIL_VALID ) {
-				return TRUE;
-			} else {
-				Debug::Text( 'Result Code: ' . $result, __FILE__, __LINE__, __METHOD__, 10 );
-			}
-
-			return FALSE;
+			Debug::Text('Result Code: '. $result, __FILE__, __LINE__, __METHOD__, 10);
 		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @param $password
-	 * @return int
-	 */
 	static function getPasswordStrength( $password ) {
 		if ( strlen( $password ) == 0 ) {
 			return 1;
@@ -3267,9 +2517,6 @@ class Misc {
 		return $strength;
 	}
 
-	/**
-	 * @return int
-	 */
 	static function getCurrentCompanyProductEdition() {
 		//Attempt to get the edition of the currently logged in users company, so we can better tailor the columns to them.
 		$product_edition_id = getTTProductEdition();
@@ -3283,9 +2530,6 @@ class Misc {
 		return $product_edition_id;
 	}
 
-	/**
-	 * @return bool
-	 */
 	static function redirectMobileBrowser() {
 		$desktop = 0;
 		extract( FormVariables::GetVariables( array('desktop') ) );
@@ -3307,9 +2551,6 @@ class Misc {
 		return FALSE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	static function redirectUnSupportedBrowser() {
 		if ( self::isUnSupportedBrowser() == TRUE ) {
 			Redirect::Page( URLBuilder::getURL( array('tt_version' => APPLICATION_VERSION, 'tt_edition' => getTTProductEdition() ), 'https://www.timetrex.com/supported_web_browsers.php' ) );
@@ -3318,10 +2559,6 @@ class Misc {
 		return TRUE;
 	}
 
-	/**
-	 * @param null $useragent
-	 * @return bool
-	 */
 	static function isUnSupportedBrowser( $useragent = NULL ) {
 		if ( $useragent == '' ) {
 			if ( isset($_SERVER['HTTP_USER_AGENT']) ) {
@@ -3372,10 +2609,6 @@ class Misc {
 		return $retval;
 	}
 
-	/**
-	 * @param null $useragent
-	 * @return bool|string
-	 */
 	static function detectMobileBrowser( $useragent = NULL ) {
 		if ( $useragent == '' ) {
 			if ( isset($_SERVER['HTTP_USER_AGENT']) ) {
@@ -3441,13 +2674,6 @@ class Misc {
 	//Take an amount and a distribution array of key => value pairs, value being a decimal percent (ie: 0.50 for 50%)
 	//return an array with the same keys and resulting distribution between them.
 	//Adding any remainder to the last key is the fastest.
-	/**
-	 * @param $amount
-	 * @param $percent_arr
-	 * @param string $remainder_operation
-	 * @param int $precision
-	 * @return array|bool
-	 */
 	static function PercentDistribution( $amount, $percent_arr, $remainder_operation = 'last', $precision = 2 ) {
 		//$percent_arr = array(
 		//					'key1' => 0.505,
@@ -3483,12 +2709,6 @@ class Misc {
 	}
 
 	//Change the case of all values in an array
-
-	/**
-	 * @param $input
-	 * @param int $case
-	 * @return array|bool
-	 */
 	static function arrayChangeValueCase( $input, $case = CASE_LOWER) {
 		switch ($case) {
 			case CASE_LOWER:
@@ -3505,14 +2725,9 @@ class Misc {
 		return FALSE;
 	}
 
-	/**
-	 * Checks to see if a file/directory is writable.
-	 * @param $path
-	 * @return bool
-	 */
-	static function isWritable( $path ) {
-		if ( substr($path, -1) == DIRECTORY_SEPARATOR OR substr($path, -1) == '.' ) {
-			return self::isWritable( dirname( $path ) . DIRECTORY_SEPARATOR . uniqid( mt_rand() ).'.tmp' );
+	static function isWritable($path) {
+		if ( $path[(strlen($path) - 1)] == '/' ) {
+			return self::isWritable( $path . uniqid( mt_rand() ).'.tmp' );
 		}
 
 		if ( file_exists($path) ) {
@@ -3533,9 +2748,6 @@ class Misc {
 		return TRUE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	static function getRemoteIPAddress() {
 		global $config_vars;
 
@@ -3560,10 +2772,6 @@ class Misc {
 		return FALSE;
 	}
 
-	/**
-	 * @param bool $ignore_force_ssl
-	 * @return bool
-	 */
 	static function isSSL( $ignore_force_ssl = FALSE ) {
 		global $config_vars;
 
@@ -3589,12 +2797,6 @@ class Misc {
 		return FALSE;
 	}
 
-	/**
-	 * @param $version1
-	 * @param $version2
-	 * @param $operator
-	 * @return mixed
-	 */
 	static function MajorVersionCompare( $version1, $version2, $operator ) {
 		$tmp_version1 = explode('.', $version1 ); //Return first two dot versions.
 		array_pop( $tmp_version1 );
@@ -3609,12 +2811,7 @@ class Misc {
 		return version_compare( $version1, $version2, $operator);
 	}
 
-	/**
-	 * @param $primary_company
-	 * @param $system_settings
-	 * @return string
-	 */
-	static function getInstanceIdentificationString( $primary_company, $system_settings ) {
+	static function getInstanceIdentificationString($primary_company, $system_settings ) {
 		$version_string = array();
 		$version_string[] = 'Company:';
 		$version_string[] = ( is_object($primary_company) ) ? $primary_company->getName() : 'N/A';
@@ -3629,11 +2826,6 @@ class Misc {
 	//Removes the word "the" from the beginning of strings and optionally places it at the end.
 	//Primarily for client/company names like: The XYZ Company -> XYZ Company, The
 	//Should often be used to sanitize metaphones.
-	/**
-	 * @param $str
-	 * @param bool $add_to_end
-	 * @return bool|string
-	 */
 	static function stripThe( $str, $add_to_end = FALSE ) {
 		if ( stripos( $str, 'The ' ) === 0 ) {
 			$retval = substr( $str, 4 );
@@ -3648,18 +2840,10 @@ class Misc {
 
 	//Remove any HTML special char (before its encoded) from the string
 	//Useful for things like government forms submitted in XML.
-	/**
-	 * @param $str
-	 * @return mixed
-	 */
 	static function stripHTMLSpecialChars( $str ) {
 		return str_replace( array('&', '"', '\'', '>', '<'), '', $str );
 	}
 
-	/**
-	 * @param $file_data
-	 * @return bool
-	 */
 	static function checkValidImage( $file_data ) {
 		$mime_type = Misc::getMimeType( $file_data, TRUE );
 		if ( strpos( $mime_type, 'image' ) !== FALSE ) {
@@ -3685,42 +2869,18 @@ class Misc {
 		return TRUE; //Isnt an image, don't bother processing...
 	}
 
-	/**
-	 * @param $name
-	 * @param bool $address1
-	 * @param bool $address2
-	 * @param bool $city
-	 * @param bool $province
-	 * @param bool $postal_code
-	 * @param bool $country
-	 * @return string
-	 */
-	static function formatAddress( $name, $address1 = FALSE, $address2 = FALSE, $city = FALSE, $province = FALSE, $postal_code = FALSE, $country = FALSE, $condensed = FALSE ) {
+	static function formatAddress( $name, $address1 = FALSE, $address2 = FALSE, $city = FALSE, $province = FALSE, $postal_code = FALSE, $country = FALSE ) {
 		$retarr = array();
 		$city_arr = array();
 		if ( $name != '' ) {
 			$retarr[] = $name;
 		}
 
-		if ( $condensed == TRUE ) { //Try to reduce the number of lines the address appears on for tight spaces like checks or windowed envelopes.
-			$address = '';
-			if ( $address1 != '' ) {
-				$address = $address1;
-			}
-			if ( $address2 != '' ) {
-				$address .= '  '. $address2;
-			}
-
-			if ( $address != '' ) {
-				$retarr[] = $address;
-			}
-		} else {
-			if ( $address1 != '' ) {
-				$retarr[] = $address1;
-			}
-			if ( $address2 != '' ) {
-				$retarr[] = $address2;
-			}
+		if ( $address1 != '' ) {
+			$retarr[] = $address1;
+		}
+		if ( $address2 != '' ) {
+			$retarr[] = $address2;
 		}
 
 		if ( $city != '' ) {
@@ -3747,9 +2907,6 @@ class Misc {
 		return implode("\n", $retarr );
 	}
 
-	/**
-	 * @return string
-	 */
 	static function getUniqueID() {
 		global $config_vars;
 		if ( isset($config_vars['other']['salt']) AND $config_vars['other']['salt'] != '' ) {
@@ -3758,8 +2915,8 @@ class Misc {
 			$salt = uniqid( dechex( mt_rand() ), TRUE );
 		}
 
-		if ( function_exists('openssl_random_pseudo_bytes') ) {
-			$retval = $salt . bin2hex( openssl_random_pseudo_bytes( 128 ) );
+		if ( function_exists('mcrypt_create_iv') ) {
+			$retval = $salt . bin2hex( mcrypt_create_iv( 128, MCRYPT_DEV_URANDOM ) ); //Use URANDOM as it wont block if there isn't enough entropy.
 		} else {
 			$retval = uniqid( $salt . dechex( mt_rand() ), TRUE );
 		}
@@ -3769,10 +2926,6 @@ class Misc {
 
 	/**
 	 * zips an array of files and returns a file array for download
-	 * @param $file_array
-	 * @param bool $zip_file_name
-	 * @param bool $ignore_single_file
-	 * @return array
 	 */
 	static function zip( $file_array, $zip_file_name = FALSE, $ignore_single_file = FALSE ) {
 		if ( !is_array( $file_array ) OR count( $file_array ) == 0 ) {
@@ -3808,11 +2961,6 @@ class Misc {
 		}
 	}
 
-	/**
-	 * @param $amount
-	 * @param $limit
-	 * @return int
-	 */
 	static function getAmountUpToLimit( $amount, $limit ) {
 		if ( $amount == 0 ) {
 			return 0;
@@ -3855,13 +3003,7 @@ class Misc {
 		return $retval;
 	}
 
-
-	/**
-	 * This is can be used to handle YTD amounts.
-	 * @param $amount
-	 * @param $limit
-	 * @return string
-	 */
+	//This is can be used to handle YTD amounts.
 	static function getAmountDifferenceUpToLimit( $amount, $limit ) {
 		//If no limit is specified, just return the amount.
 		if ( $limit == '' OR $limit === NULL OR $limit === FALSE OR $limit === TRUE ) {

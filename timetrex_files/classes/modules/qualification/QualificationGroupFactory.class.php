@@ -1,7 +1,7 @@
 <?php
 /*********************************************************************************
  * TimeTrex is a Workforce Management program developed by
- * TimeTrex Software Inc. Copyright (C) 2003 - 2018 TimeTrex Software Inc.
+ * TimeTrex Software Inc. Copyright (C) 2003 - 2017 TimeTrex Software Inc.
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Affero General Public License version 3 as published by
@@ -42,12 +42,10 @@ class QualificationGroupFactory extends Factory {
 	protected $table = 'qualification_group';
 	protected $pk_sequence_name = 'qualification_group_id_seq'; //PK Sequence name
 
-	/**
-	 * @param $name
-	 * @param null $parent
-	 * @return array|null
-	 */
+	protected $fasttree_obj = NULL;
+
 	function _getFactoryOptions( $name, $parent = NULL ) {
+
 		$retval = NULL;
 		switch( $name ) {
 			case 'columns':
@@ -78,10 +76,6 @@ class QualificationGroupFactory extends Factory {
 		return $retval;
 	}
 
-	/**
-	 * @param $data
-	 * @return array
-	 */
 	function _getVariableToFunctionMap( $data ) {
 		$variable_function_map = array(
 										'id' => 'ID',
@@ -93,49 +87,80 @@ class QualificationGroupFactory extends Factory {
 		return $variable_function_map;
 	}
 
-	/**
-	 * @return bool
-	 */
+	function getFastTreeObject() {
+
+		if ( is_object($this->fasttree_obj) ) {
+			return $this->fasttree_obj;
+		} else {
+			global $fast_tree_qualification_group_options;
+			$this->fasttree_obj = new FastTree($fast_tree_qualification_group_options);
+
+			return $this->fasttree_obj;
+		}
+	}
+
 	function getCompany() {
-		return $this->getGenericDataValue( 'company_id' );
+		if( isset( $this->data['company_id'] ) ) {
+			return (int)$this->data['company_id'];
+		}
+		return FALSE;
+	}
+	function setCompany($id) {
+		$id = trim($id);
+
+		$clf = TTnew( 'CompanyListFactory' );
+
+		if ( $id == 0
+				OR $this->Validator->isResultSetWithRows(	'company_id',
+															$clf->getByID($id),
+															TTi18n::gettext('Company is invalid')
+															) ) {
+			$this->data['company_id'] = $id;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @param string $id UUID
-	 * @return bool
-	 */
-	function setCompany( $value) {
-		$value = TTUUID::castUUID( $value );
-		return $this->setGenericDataValue( 'company_id', $value );
+	//Use this for completly editing a row in the tree
+	//Basically "old_id".
+	function getPreviousParent() {
+		if ( isset($this->tmp_data['previous_parent_id']) ) {
+			return $this->tmp_data['previous_parent_id'];
+		}
+
+		return FALSE;
+	}
+	function setPreviousParent($id) {
+
+		$this->tmp_data['previous_parent_id'] = $id;
+
+		return TRUE;
 	}
 
-	/**
-	 * @return bool|mixed
-	 */
 	function getParent() {
-		return $this->getGenericDataValue( 'parent_id' );
+		if ( isset($this->tmp_data['parent_id']) ) {
+			return $this->tmp_data['parent_id'];
+		}
+
+		return FALSE;
+	}
+	function setParent($id) {
+
+		$this->tmp_data['parent_id'] = (int)$id;
+
+		return TRUE;
 	}
 
-	/**
-	 * @param string $id UUID
-	 * @return bool
-	 */
-	function setParent( $value) {
-		return $this->setGenericDataValue( 'parent_id', TTUUID::castUUID( $value ) );
-	}
-
-	/**
-	 * @param $name
-	 * @return bool
-	 */
-	function isUniqueName( $name) {
+	function isUniqueName($name) {
 		$name = trim($name);
 		if ( $name == '' ) {
 			return FALSE;
 		}
 
 		$ph = array(
-					'company_id' => TTUUID::castUUID($this->getCompany()),
+					'company_id' => (int)$this->getCompany(),
 					'name' => TTi18n::strtolower($name),
 					);
 
@@ -157,55 +182,36 @@ class QualificationGroupFactory extends Factory {
 		return FALSE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function getName() {
-		return $this->getGenericDataValue( 'name' );
-	}
-
-	/**
-	 * @param $name
-	 * @return bool
-	 */
-	function setName( $value) {
-		$value = trim($value);
-		return $this->setGenericDataValue( 'name', $value );
-	}
-
-	/**
-	 * @param bool $ignore_warning
-	 * @return bool
-	 */
-	function Validate( $ignore_warning = TRUE ) {
-		//
-		// BELOW: Validation code moved from set*() functions.
-		//
-		// Company
-		if ( $this->getCompany() != TTUUID::getZeroID() ) {
-			$clf = TTnew( 'CompanyListFactory' );
-			$this->Validator->isResultSetWithRows(	'company_id',
-															$clf->getByID($this->getCompany()),
-															TTi18n::gettext('Company is invalid')
-														);
+		if ( isset( $this->data['name'] ) ) {
+			return $this->data['name'];
 		}
-		// Name
-		$this->Validator->isLength(		'name',
-												$this->getName(),
+		return FALSE;
+	}
+	function setName($name) {
+		$name = trim($name);
+
+		if	(	$this->Validator->isLength(		'name',
+												$name,
 												TTi18n::gettext('Name is too short or too long'),
 												2,
-												100
-											);
-		if ( $this->Validator->isError('name') == FALSE ) {
-			$this->Validator->isTrue(		'name',
-												$this->isUniqueName($this->getName()),
-												TTi18n::gettext('Group already exists')
-											);
+												100)
+					AND
+						$this->Validator->isTrue(		'name',
+														$this->isUniqueName($name),
+														TTi18n::gettext('Group already exists'))
+
+												) {
+
+			$this->data['name'] = $name;
+
+			return TRUE;
 		}
 
-		//
-		// ABOVE: Validation code moved from set*() functions.
-		//
+		return FALSE;
+	}
+
+	function Validate( $ignore_warning = TRUE ) {
 
 		if ( $this->isNew() == FALSE
 				AND $this->getId() == $this->getParent() ) {
@@ -215,9 +221,14 @@ class QualificationGroupFactory extends Factory {
 											);
 		} else {
 			if ( $this->isNew() == FALSE ) {
-				$qglf = TTnew('QualificationGroupListFactory');
-				$nodes = $qglf->getByCompanyIdArray( $this->getCompany() );
-				$children_ids = TTTree::getElementFromNodes( TTTree::flattenArray( TTTree::createNestedArrayWithDepth( $nodes, $this->getId() ) ), 'id' );
+				$this->getFastTreeObject()->setTree( $this->getCompany() );
+				//$children_ids = array_keys( $this->getFastTreeObject()->getAllChildren( $this->getID(), 'RECURSE' ) );
+
+				$children_ids = $this->getFastTreeObject()->getAllChildren( $this->getID(), 'RECURSE' );
+				if ( is_array($children_ids) ) {
+					$children_ids = array_keys( $children_ids );
+				}
+
 				if ( is_array($children_ids) AND in_array( $this->getParent(), $children_ids) == TRUE ) {
 					Debug::Text(' Objects cant be re-parented to their own children...', __FILE__, __LINE__, __METHOD__, 10);
 					$this->Validator->isTrue(	'parent',
@@ -231,35 +242,29 @@ class QualificationGroupFactory extends Factory {
 		return TRUE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function preSave() {
+
+		if ( $this->isNew() ) {
+			Debug::Text(' Setting Insert Tree TRUE ', __FILE__, __LINE__, __METHOD__, 10);
+			$this->insert_tree = TRUE;
+		} else {
+			Debug::Text(' Setting Insert Tree FALSE ', __FILE__, __LINE__, __METHOD__, 10);
+			$this->insert_tree = FALSE;
+		}
+
 		return TRUE;
 	}
 
 	//Must be postSave because we need the ID of the object.
-
-	/**
-	 * @return bool
-	 */
 	function postSave() {
 
 		$this->StartTransaction();
 
+		$this->getFastTreeObject()->setTree( $this->getCompany() );
+
 		if ( $this->getDeleted() == TRUE ) {
-			//Get parent of this object, and re-parent all groups to it.
-			$qglf = TTnew('QualificationGroupListFactory');
-			$qglf->getByCompanyIdAndParentId( $this->getCompany(), $this->getId() );
-			if ( $qglf->getRecordCount() > 0 ) {
-				foreach( $qglf as $qg_obj ) {
-					Debug::Text(' Re-Parenting ID: '. $qg_obj->getId() .' To: '. $this->getParent(), __FILE__, __LINE__, __METHOD__, 10);
-					$qg_obj->setParent( $this->getParent() );
-					if ( $qg_obj->isValid() ) {
-						$qg_obj->Save();
-					}
-				}
-			}
+			//FIXME: Get parent of this object, and re-parent all groups to it.
+			$parent_id = $this->getFastTreeObject()->getParentId( $this->getId() );
 
 			//Get items by group id.
 			$qlf = TTnew( 'QualificationListFactory' );
@@ -267,31 +272,70 @@ class QualificationGroupFactory extends Factory {
 			if ( $qlf->getRecordCount() > 0 ) {
 				foreach( $qlf as $obj ) {
 					Debug::Text(' Re-Grouping Item: '. $obj->getId(), __FILE__, __LINE__, __METHOD__, 10);
-					$obj->setGroup( $this->getParent() );
+					$obj->setGroup($parent_id);
 					$obj->Save();
 				}
 			}
 
-			//Company generic mapping
+			$this->getFastTreeObject()->delete( $this->getId() );
+
+			//Delete this group from station/job criteria
+			//$sugf = TTnew( 'StationQualificationGroupFactory' );
+
+			//$query = 'delete from '. $sugf->getTable() .' where group_id = '. (int)$this->getId();
+			//$this->db->Execute($query);
+
+			//Job employee criteria
 			$cgmlf = TTnew( 'CompanyGenericMapListFactory' );
 			$cgmlf->getByCompanyIDAndObjectTypeAndMapID( $this->getCompany(), 1090, $this->getID() );
 			if ( $cgmlf->getRecordCount() > 0 ) {
 				foreach( $cgmlf as $cgm_obj ) {
-					Debug::text('Deleting from Company Generic Map: '. $cgm_obj->getID(), __FILE__, __LINE__, __METHOD__, 10);
+					Debug::text('Deleteing from Company Generic Map: '. $cgm_obj->getID(), __FILE__, __LINE__, __METHOD__, 10);
 					$cgm_obj->Delete();
 				}
 			}
+
+			$this->CommitTransaction();
+
+			return TRUE;
+		} else {
+
+			$retval = TRUE;
+			//if ( $this->getId() === FALSE ) {
+
+			if ( $this->insert_tree === TRUE ) {
+				Debug::Text(' Adding Node ', __FILE__, __LINE__, __METHOD__, 10);
+
+				//echo "Current ID: ".	$this->getID() ."<br>\n";
+				//echo "Parent ID: ".  $this->getParent() ."<br>\n";
+
+				//Add node to tree
+				if ( $this->getFastTreeObject()->add( $this->getID(), $this->getParent() ) === FALSE ) {
+					Debug::Text(' Failed adding Node ', __FILE__, __LINE__, __METHOD__, 10);
+
+					$this->Validator->isTrue(	'name',
+												FALSE,
+												TTi18n::gettext('Name is already in use')
+												);
+					$retval = FALSE;
+				}
+			} else {
+				Debug::Text(' Editing Node ', __FILE__, __LINE__, __METHOD__, 10);
+
+				//Edit node.
+				$retval = $this->getFastTreeObject()->move( $this->getID(), $this->getParent() );
+			}
+
+			if ( $retval === TRUE ) {
+				$this->CommitTransaction();
+			} else {
+				$this->FailTransaction();
+			}
+
+			return $retval;
 		}
-
-		$this->CommitTransaction();
-
-		return TRUE;
 	}
 
-	/**
-	 * @param $data
-	 * @return bool
-	 */
 	function setObjectFromArray( $data ) {
 		if ( is_array( $data ) ) {
 			$variable_function_map = $this->getVariableToFunctionMap();
@@ -317,11 +361,6 @@ class QualificationGroupFactory extends Factory {
 		return FALSE;
 	}
 
-	/**
-	 * @param null $include_columns
-	 * @param bool $permission_children_ids
-	 * @return array
-	 */
 	function getObjectAsArray( $include_columns = NULL, $permission_children_ids = FALSE ) {
 		$data = array();
 		$variable_function_map = $this->getVariableToFunctionMap();
@@ -348,10 +387,6 @@ class QualificationGroupFactory extends Factory {
 		return $data;
 	}
 
-	/**
-	 * @param $log_action
-	 * @return bool
-	 */
 	function addLog( $log_action ) {
 		return TTLog::addEntry( $this->getId(), $log_action, TTi18n::getText('Qualification Group'), NULL, $this->getTable(), $this );
 	}

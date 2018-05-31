@@ -42,7 +42,7 @@ LogViewController = BaseViewController.extend( {
 		'document_group': ['document_group'],
 		'document_revision': ['document_revision'],
 		'schedule_policy': ['schedule_policy'],
-		'accrual_policy': ['accrual_policy', 'accrual_policy_milestone', 'accrual_policy_user_modifier'],
+		'accrual_policy': ['accrual_policy', 'accrual_policy_milestone'],
 		'client': ['client', 'client_contact', 'client_payment'],
 		'report_custom_column': ['report_custom_column'],
 		'client_contact': ['client_contact'],
@@ -103,18 +103,14 @@ LogViewController = BaseViewController.extend( {
 		'job_item_amendment': ['job_item_amendment'],
 		'user_date_total': ['user_date_total'],
 		'pay_stub': ['pay_stub', 'pay_stub_entry'],
-		'legal_entity': ['legal_entity'],
-		'payroll_remittance_agency': ['payroll_remittance_agency'],
-		'remittance_source_account': ['remittance_source_account'],
-		'remittance_destination_account': ['remittance_destination_account'],
 		'geo_fence': ['geo_fence']
 	},
 	log_detail_grid: null,
 	log_detail_script_name: null,
 
-	init: function( options ) {
+	initialize: function( options ) {
 
-		//this._super('initialize', options );
+		this._super( 'initialize', options );
 		this.edit_view_tpl = 'LogEditView.html';
 		this.context_menu_name = $.i18n._( 'Audit' );
 		this.navigation_label = $.i18n._( 'Audit' ) + ':';
@@ -255,7 +251,7 @@ LogViewController = BaseViewController.extend( {
 		filter.filter_data = Global.convertLayoutFilterToAPIFilter( this.select_layout );
 		filter.filter_sort = this.select_layout.data.filter_sort;
 
-		if ( TTUUID.isUUID(this.refresh_id) ) {
+		if ( this.refresh_id > 0 ) {
 			filter.filter_data = {};
 			filter.filter_data.id = [this.refresh_id];
 
@@ -283,7 +279,7 @@ LogViewController = BaseViewController.extend( {
 					len = result_data.length;
 				}
 				$this.setAuditInfo();
-				if ( TTUUID.isUUID($this.refresh_id) ) {
+				if ( $this.refresh_id > 0 ) {
 					$this.refresh_id = null;
 					var grid_source_data = $this.grid.getGridParam( 'data' );
 					len = grid_source_data.length;
@@ -301,9 +297,9 @@ LogViewController = BaseViewController.extend( {
 							var record = grid_source_data[i];
 
 							//Fixed === issue. The id set by jQGrid is string type.
-							// if ( !isNaN( parseInt( record.id ) ) ) {
-							// 	record.id = parseInt( record.id );
-							// }
+							if ( !isNaN( parseInt( record.id ) ) ) {
+								record.id = parseInt( record.id );
+							}
 
 							if ( record.id == new_record.id ) {
 								$this.grid.setRowData( new_record.id, new_record );

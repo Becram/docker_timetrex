@@ -30,9 +30,6 @@
 					case 'ProcessPayrollWizard':
 						IndexViewController.openWizard( view_id );
 						break;
-					case 'PayrollRemittanceAgencyEventWizard':
-						IndexViewController.openWizardController( 'PayrollRemittanceAgencyEventWizardController' );
-						break;
 					default:
 //						IndexViewController.goToView( view_id );
 						window.location.href = url;

@@ -1,15 +1,12 @@
 HierarchyControlViewController = BaseViewController.extend( {
 	el: '#hierarchy_control_view_container',
-
-	_required_files: ['APIHierarchyControl', 'APIHierarchyLevel'],
-
 	object_type_array: null,
 	editor: null,
 
 	hierarchy_level_api: null,
 
-	init: function( options ) {
-		//this._super('initialize', options );
+	initialize: function( options ) {
+		this._super( 'initialize', options );
 		this.edit_view_tpl = 'HierarchyControlEditView.html';
 		this.permission_id = 'hierarchy';
 		this.viewId = 'HierarchyControl';
@@ -190,7 +187,7 @@ HierarchyControlViewController = BaseViewController.extend( {
 	insideEditorRemoveRow: function( row ) {
 		var index = row[0].rowIndex - 1;
 		var remove_id = this.rows_widgets_array[index].current_edit_item.id;
-        if ( TTUUID.isUUID( remove_id ) && remove_id != TTUUID.zero_id && remove_id != TTUUID.not_exist_id ) {
+		if ( remove_id > 0 ) {
 			this.delete_ids.push( remove_id );
 		}
 		row.remove();
@@ -282,9 +279,10 @@ HierarchyControlViewController = BaseViewController.extend( {
 			var result_data = result.getResult();
 			if ( result_data === true ) {
 				$this.refresh_id = $this.current_edit_record.id;
-			} else if ( TTUUID.isUUID( result_data ) && result_data != TTUUID.zero_id&& result_data != TTUUID.not_exist_id ) {
+			} else if ( result_data > 0 ) {
 				$this.refresh_id = result_data;
 			}
+
 			$this.saveInsideEditorData( result, function() {
 				$this.search();
 				$this.onSaveDone( result );
@@ -306,7 +304,7 @@ HierarchyControlViewController = BaseViewController.extend( {
 			if ( result_data === true ) {
 				$this.refresh_id = $this.current_edit_record.id;
 
-			} else if ( TTUUID.isUUID( result_data ) && result_data != TTUUID.zero_id && result_data != TTUUID.not_exist_id ) {
+			} else if ( result_data > 0 ) {
 				$this.refresh_id = result_data;
 
 			}
@@ -333,7 +331,7 @@ HierarchyControlViewController = BaseViewController.extend( {
 			if ( result_data === true ) {
 				$this.refresh_id = $this.current_edit_record.id;
 
-			} else if ( TTUUID.isUUID( result_data ) && result_data != TTUUID.zero_id && result_data != TTUUID.not_exist_id ) {
+			} else if ( result_data > 0 ) {
 				$this.refresh_id = result_data;
 			}
 
@@ -355,7 +353,7 @@ HierarchyControlViewController = BaseViewController.extend( {
 			if ( result_data === true ) {
 				$this.refresh_id = $this.current_edit_record.id;
 
-			} else if ( TTUUID.isUUID( result_data ) && result_data != TTUUID.zero_id && result_data != TTUUID.not_exist_id ) {
+			} else if ( result_data > 0 ) {
 				$this.refresh_id = result_data;
 			}
 			$this.copied_record_id = $this.refresh_id;

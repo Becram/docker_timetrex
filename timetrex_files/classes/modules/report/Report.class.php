@@ -1,7 +1,7 @@
 <?php
 /*********************************************************************************
  * TimeTrex is a Workforce Management program developed by
- * TimeTrex Software Inc. Copyright (C) 2003 - 2018 TimeTrex Software Inc.
+ * TimeTrex Software Inc. Copyright (C) 2003 - 2017 TimeTrex Software Inc.
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Affero General Public License version 3 as published by
@@ -64,7 +64,7 @@ class Report {
 
 												//Set limits high for On-Site installs, this is all configurable in the .ini file though.
 												'query_statement_timeout' => 600000, //In milliseconds. Default to 10 minutes.
-												'maximum_memory_limit' => '3072M',
+												'maximum_memory_limit' => '1024M',
 												'maximum_execution_limit' => 1800, //30 Minutes
 
 												'font_size' => 0, //+5, +4, .., +1, 0, -1, ..., -4, -5 (adjusts relative font size)
@@ -124,11 +124,6 @@ class Report {
 	protected $progress_bar_obj = NULL;
 	protected $AMF_message_id = NULL;
 
-	/**
-	 * @param $name
-	 * @param null $params
-	 * @return array|null
-	 */
 	protected function __getOptions( $name, $params = NULL ) {
 		$retval = NULL;
 		switch( $name ) {
@@ -290,14 +285,14 @@ class Report {
 				$pclf->getByCompanyId( $this->getUserObject()->getCompany() );
 				if ( $pclf->getRecordCount() > 0 ) {
 					foreach( $pclf as $pc_obj ) {
-						$retval['-'. $params .'190-pay_code:'.$pc_obj->getId().'_time'] = $pc_obj->getName();
+						$retval['-'. $params .'190-pay_code-'.$pc_obj->getId().'_time'] = $pc_obj->getName();
 						if ( isset($absence_pay_codes[$pc_obj->getId()]) ) {
-							$retval['-'. $params .'195-absence_taken_pay_code:'.$pc_obj->getId().'_time'] = $pc_obj->getName() .' ('. TTi18n::getText('Taken') .')';
+							$retval['-'. $params .'195-absence_taken_pay_code-'.$pc_obj->getId().'_time'] = $pc_obj->getName() .' ('. TTi18n::getText('Taken') .')';
 						}
-						$retval['-'. $params .'290-pay_code:'.$pc_obj->getId().'_wage'] = $pc_obj->getName() .' - '. TTi18n::getText('Wage');
-						$retval['-'. $params .'390-pay_code:'.$pc_obj->getId().'_hourly_rate'] = $pc_obj->getName() .' - '. TTi18n::getText('Hourly Rate');
-						$retval['-'. $params .'490-pay_code:'.$pc_obj->getId().'_wage_with_burden'] = $pc_obj->getName() .' - '. TTi18n::getText('Wage w/Burden');
-						$retval['-'. $params .'590-pay_code:'.$pc_obj->getId().'_hourly_rate_with_burden'] = $pc_obj->getName() .' - '. TTi18n::getText('Hourly Rate w/Burden');
+						$retval['-'. $params .'290-pay_code-'.$pc_obj->getId().'_wage'] = $pc_obj->getName() .' - '. TTi18n::getText('Wage');
+						$retval['-'. $params .'390-pay_code-'.$pc_obj->getId().'_hourly_rate'] = $pc_obj->getName() .' - '. TTi18n::getText('Hourly Rate');
+						$retval['-'. $params .'490-pay_code-'.$pc_obj->getId().'_wage_with_burden'] = $pc_obj->getName() .' - '. TTi18n::getText('Wage w/Burden');
+						$retval['-'. $params .'590-pay_code-'.$pc_obj->getId().'_hourly_rate_with_burden'] = $pc_obj->getName() .' - '. TTi18n::getText('Hourly Rate w/Burden');
 					}
 				}
 				unset($pclf, $pc_obj);
@@ -307,9 +302,6 @@ class Report {
 		return $retval;
 	}
 
-	/**
-	 * Report constructor.
-	 */
 	function __construct() {
 		global $profiler;
 
@@ -324,11 +316,6 @@ class Report {
 	}
 
 	//Defines the max execution timelimit for PHP
-
-	/**
-	 * @param bool $int
-	 * @return bool
-	 */
 	function setExecutionTimeLimit( $int = FALSE ) {
 		if ( $int === FALSE ) {
 			$int = $this->config['other']['maximum_execution_limit'];
@@ -344,11 +331,6 @@ class Report {
 	}
 
 	//Defines the max execution memory limit for PHP
-
-	/**
-	 * @param bool $str
-	 * @return bool
-	 */
 	function setExecutionMemoryLimit( $str = FALSE ) {
 		if ( $str === FALSE ) {
 			$str = $this->config['other']['maximum_memory_limit'];
@@ -372,9 +354,6 @@ class Report {
 		return TRUE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function isSystemLoadValid() {
 		//Check system load and memory usage.
 		if ( $this->maximum_memory_limit > 0 AND memory_get_usage() > $this->maximum_memory_limit ) {
@@ -390,11 +369,6 @@ class Report {
 	}
 
 	//Object of the user generating the report, we use this to base permission checks on, etc...
-
-	/**
-	 * @param object $obj
-	 * @return bool
-	 */
 	function setUserObject( $obj ) {
 		if ( is_object( $obj ) ) {
 			$this->user_obj = $obj;
@@ -403,18 +377,10 @@ class Report {
 
 		return FALSE;
 	}
-
-	/**
-	 * @return null
-	 */
 	function getUserObject() {
 		return $this->user_obj;
 	}
 
-	/**
-	 * @param object $obj
-	 * @return bool
-	 */
 	function setPermissionObject( $obj ) {
 		if ( is_object( $obj ) ) {
 			$this->permission_obj = $obj;
@@ -423,18 +389,11 @@ class Report {
 
 		return FALSE;
 	}
-
-	/**
-	 * @return null
-	 */
 	function getPermissionObject() {
 		return $this->permission_obj;
 	}
 
-	/**
-	 * Object of the currency used in the report, we use this to base currency column formats on.
-	 * @return bool
-	 */
+	//Object of the currency used in the report, we use this to base currency column formats on.
 	function getCurrencyConvertToBase() {
 		$filter_data = $this->getFilterConfig();
 
@@ -454,9 +413,6 @@ class Report {
 		return $currency_convert_to_base;
 	}
 
-	/**
-	 * @return bool|object
-	 */
 	function getBaseCurrencyObject() {
 		$base_currency_obj = FALSE;
 		if ( is_object( $this->getUserObject()->getCompanyObject()->getBaseCurrencyObject() ) ) {
@@ -466,12 +422,6 @@ class Report {
 		return $base_currency_obj;
 	}
 
-	/**
-	 * @param $currency_convert_to_base
-	 * @param object $base_currency_obj
-	 * @param $filter_data
-	 * @return bool
-	 */
 	function handleReportCurrency( $currency_convert_to_base, $base_currency_obj, $filter_data ) {
 		$currency_convert_to_base = $this->getCurrencyConvertToBase();
 		$base_currency_obj = $this->getBaseCurrencyObject();
@@ -481,9 +431,8 @@ class Report {
 		if ( $currency_convert_to_base == TRUE AND is_object( $base_currency_obj ) ) {
 			$this->setCurrencyObject( $base_currency_obj );
 		} else {
-			if ( ( isset($filter_data['currency_id'][0]) AND is_array($filter_data['currency_id']) AND TTUUID::isUUID( $filter_data['currency_id'][0] ) AND $filter_data['currency_id'][0] != TTUUID::getZeroID() AND $filter_data['currency_id'][0] != TTUUID::getNotExistID()  )
-					OR ( isset($filter_data['currency_id']) AND !is_array($filter_data['currency_id'])
-							AND TTUUID::isUUID( $filter_data['currency_id'] ) AND $filter_data['currency_id'] != TTUUID::getZeroID() AND $filter_data['currency_id'] != TTUUID::getNotExistID() ) ) {
+			if ( ( isset($filter_data['currency_id'][0]) AND is_array($filter_data['currency_id']) AND $filter_data['currency_id'][0] > 0 )
+					OR ( isset($filter_data['currency_id']) AND !is_array($filter_data['currency_id']) AND $filter_data['currency_id'] > 0 ) ) {
 				$crlf->getByIdAndCompanyId( ( isset($filter_data['currency_id'][0]) ) ? $filter_data['currency_id'][0] : $filter_data['currency_id'], $this->getUserObject()->getCompany() );
 				if ( $crlf->getRecordCount() == 1 ) {
 					$this->setCurrencyObject( $crlf->getCurrent() );
@@ -496,10 +445,6 @@ class Report {
 		return TRUE;
 	}
 
-	/**
-	 * @param object $obj
-	 * @return bool
-	 */
 	function setCurrencyObject( $obj ) {
 		if ( is_object( $obj ) ) {
 			Debug::Text('Setting Report Currency to: '. $obj->getISOCode(), __FILE__, __LINE__, __METHOD__, 10);
@@ -509,26 +454,15 @@ class Report {
 
 		return FALSE;
 	}
-
-	/**
-	 * @return null
-	 */
 	function getCurrencyObject() {
 		return $this->currency_obj;
 	}
 
 	//Used for TTLog::addEntry.
-
-	/**
-	 * @return string
-	 */
 	function getTable() {
 		return 'report';
 	}
 
-	/**
-	 * @return null|ProgressBar
-	 */
 	function getProgressBarObject() {
 		if	( !is_object( $this->progress_bar_obj ) ) {
 			$this->progress_bar_obj = new ProgressBar();
@@ -537,21 +471,12 @@ class Report {
 		return $this->progress_bar_obj;
 	}
 	//Returns the AMF messageID for each individual call.
-
-	/**
-	 * @return bool|null
-	 */
 	function getAMFMessageID() {
 		if ( $this->AMF_message_id != NULL ) {
 			return $this->AMF_message_id;
 		}
 		return FALSE;
 	}
-
-	/**
-	 * @param string $id UUID
-	 * @return bool
-	 */
 	function setAMFMessageID( $id ) {
 		Debug::Text('AMF Message ID: '. $id, __FILE__, __LINE__, __METHOD__, 10);
 		if ( $id != '' ) {
@@ -563,11 +488,6 @@ class Report {
 	}
 
 	//Set all options at once.
-
-	/**
-	 * @param $data
-	 * @return bool
-	 */
 	function setConfig( $data ) {
 		if ( is_array($data) ) {
 			$data = Misc::trimSortPrefix( $data );
@@ -634,18 +554,10 @@ class Report {
 	}
 
 	//Get all options
-
-	/**
-	 * @return array
-	 */
 	function getConfig() {
 		return $this->config;
 	}
 
-	/**
-	 * @param $name
-	 * @return bool|mixed
-	 */
 	function getTemplate( $name ) {
 		if ( !empty($name) ) {
 			$config = $this->getOptions('template_config', array('template' => $name) );
@@ -658,11 +570,6 @@ class Report {
 	}
 
 	//Loads a template config.
-
-	/**
-	 * @param $name
-	 * @return bool
-	 */
 	function loadTemplate( $name ) {
 		$config = $this->getTemplate( $name );
 		if ( is_array($config) ) {
@@ -677,11 +584,6 @@ class Report {
 	}
 
 	//Store column options - This must be in the format of 'column' => TRUE, ie: 'regular_time => TRUE
-
-	/**
-	 * @param $data
-	 * @return bool
-	 */
 	function setColumnConfig( $data ) {
 		$formatted_data = array();
 		if ( isset( $data[0] ) ) {
@@ -697,10 +599,6 @@ class Report {
 
 		return TRUE;
 	}
-
-	/**
-	 * @return bool|mixed
-	 */
 	function getColumnConfig() {
 		if ( isset($this->config['columns']) ) {
 			return $this->config['columns'];
@@ -709,10 +607,6 @@ class Report {
 		return FALSE;
 	}
 
-	/**
-	 * @param $data
-	 * @return bool
-	 */
 	function setColumnDataConfig( $data ) {
 		if ( is_array( $data ) ) {
 			//getColumnConfig() can return FALSE, make sure we don't merge an array where 0 => FALSE, as that will prevent us from including *all* columns in the report.
@@ -724,9 +618,6 @@ class Report {
 		return TRUE;
 	}
 
-	/**
-	 * @return bool|mixed
-	 */
 	function getColumnDataConfig() {
 		if ( isset($this->config['columns_data']) ) {
 			return $this->config['columns_data'];
@@ -737,12 +628,6 @@ class Report {
 		return FALSE;
 	}
 
-	/**
-	 * @param $time_period_arr
-	 * @param null $prefix
-	 * @param bool $force_dates_for_pay_periods
-	 * @return array|bool
-	 */
 	function convertTimePeriodToStartEndDate( $time_period_arr, $prefix = NULL, $force_dates_for_pay_periods = FALSE ) {
 		Debug::Arr($time_period_arr, 'Input: Time Period Array: ', __FILE__, __LINE__, __METHOD__, 10);
 
@@ -792,7 +677,7 @@ class Report {
 			} else {
 				//No pay period find default to no time period, otherwise the report can take forever to finish.
 				Debug::Text('No pay periods found, defaulting to none (0)...', __FILE__, __LINE__, __METHOD__, 10);
-				$retarr[$prefix.'pay_period_id'] = TTUUID::getZeroID(); //This can actually find data not assigned to a pay period.
+				$retarr[$prefix.'pay_period_id'] = 0; //This can actually find data not assigned to a pay period.
 			}
 
 			if ( $force_dates_for_pay_periods == TRUE AND isset($retarr[$prefix.'pay_period_id']) ) {
@@ -821,11 +706,6 @@ class Report {
 	}
 
 	//Store filter options
-
-	/**
-	 * @param $data
-	 * @return bool
-	 */
 	function setFilterConfig( $data ) {
 		$data = Misc::trimSortPrefix( $data );
 
@@ -854,10 +734,6 @@ class Report {
 		$this->config['filter'] = $data;
 		return TRUE;
 	}
-
-	/**
-	 * @return bool|mixed
-	 */
 	function getFilterConfig() {
 		if ( isset($this->config['filter']) ) {
 			return $this->config['filter'];
@@ -868,10 +744,6 @@ class Report {
 
 	//Used for converting $test[] = blah, or $test[] = array( 'col' => blah ) to $test['col'] => $blah.
 	//Mainly for multi-dimension awesomebox group by, sub_total by, sorting...
-	/**
-	 * @param $arr
-	 * @return array|bool
-	 */
 	function convertArrayNumericKeysToString( $arr ) {
 		$retarr = array();
 		foreach( $arr as $key => $value ) {
@@ -890,10 +762,6 @@ class Report {
 
 		return FALSE;
 	}
-
-	/**
-	 * @return array|bool
-	 */
 	function formatGroupConfig() {
 		$group_config = $this->getGroupConfig();
 		if ( is_array( $group_config ) ) {
@@ -925,12 +793,8 @@ class Report {
 
 	//Grouping options - Use a single re-orderable dropdown for grouping options?
 	//Add function like: getGroupOptions( $columns ), that only shows the possible group_by columns based on the displayed columns?
-	/**
-	 * @param $data
-	 * @return bool
-	 */
 	function setGroupConfig( $data ) {
-		if ( !is_array($data) OR ( is_array($data) AND ( count($data) == 0 OR $data[0] === FALSE OR $data[0] === TTUUID::getZeroID() ) ) ) {
+		if ( !is_array($data) OR ( is_array($data) AND ( count($data) == 0 OR $data[0] === FALSE ) ) ) {
 			return FALSE;
 		}
 
@@ -939,10 +803,6 @@ class Report {
 
 		return TRUE;
 	}
-
-	/**
-	 * @return bool|mixed
-	 */
 	function getGroupConfig() {
 		if ( isset($this->config['group']) ) {
 			return $this->config['group'];
@@ -952,11 +812,6 @@ class Report {
 	}
 
 	//When using grouping, we have to be able to get a list of just the columns that will be displayed for reporting purposes.
-
-	/**
-	 * @param bool $num
-	 * @return bool|mixed
-	 */
 	function getReportColumns( $num = FALSE ) {
 		$columns = $this->getColumnConfig();
 
@@ -991,9 +846,6 @@ class Report {
 
 	// When multiple columns are selected for sub-totaling, we need to multiply the sub-total passes,
 	// ie: pay_period, branch, department would need to sub-total on pay_period.branch.department, pay_period.branch, pay_period
-	/**
-	 * @return array|bool
-	 */
 	function formatSubTotalConfig() {
 		$sub_total_config = $this->getSubTotalConfig();
 
@@ -1002,7 +854,7 @@ class Report {
 			if ( is_array($metadata) ) {
 				$aggregates = $metadata['aggregate'];
 			} else {
-				$aggregates = (array)$this->getOptions('aggregates');
+				$aggregates = $this->getOptions('aggregates');
 			}
 			//Debug::Arr($aggregates, 'Aggregates: ', __FILE__, __LINE__, __METHOD__, 10);
 
@@ -1033,12 +885,8 @@ class Report {
 
 	//Sub-Total options - If grouping is being used, we can only sub-total based on grouped columns.
 	// In any case we can't sub-total by the last column, as that wouldn't make any sense anyways.
-	/**
-	 * @param $data
-	 * @return bool
-	 */
 	function setSubTotalConfig( $data ) {
-		if ( !is_array($data) OR ( is_array($data) AND ( count($data) == 0 OR $data[0] === FALSE OR $data[0] === TTUUID::getZeroID() ) ) ) {
+		if ( !is_array($data) OR ( is_array($data) AND ( count($data) == 0 OR $data[0] === FALSE ) ) ) {
 			return FALSE;
 		}
 		//$data should be a basic array of: 0 => 'first_name', 1 => 'last_name', etc... It will be converted later.
@@ -1057,10 +905,6 @@ class Report {
 
 		return TRUE;
 	}
-
-	/**
-	 * @return bool|mixed
-	 */
 	function getSubTotalConfig() {
 		if ( isset($this->config['sub_total']) ) {
 			return $this->config['sub_total'];
@@ -1071,10 +915,6 @@ class Report {
 
 	//Sorting options
 	//When sub-totaling, we must sort by the sub-total columns *first*, otherwise the sub-totals won't be in the right place.
-	/**
-	 * @param $data
-	 * @return bool
-	 */
 	function setSortConfig( $data ) {
 		$formatted_data = array();
 
@@ -1103,10 +943,6 @@ class Report {
 		$this->config['sort'] = $formatted_data;
 		return TRUE;
 	}
-
-	/**
-	 * @return bool|mixed
-	 */
 	function getSortConfig() {
 		if ( isset($this->config['sort']) ) {
 			return $this->config['sort'];
@@ -1117,10 +953,6 @@ class Report {
 
 	//Uses UserReportData class to save the form config for the entire company.
 	// NOTE: This is duplicated in SetupPresets class. If you change it here, change it there too.
-	/**
-	 * @param null $data
-	 * @return bool
-	 */
 	function setCompanyFormConfig( $data = NULL ) {
 		if ( $this->checkPermissions() == FALSE ) {
 			Debug::Text('Invalid permissions!', __FILE__, __LINE__, __METHOD__, 10);
@@ -1153,10 +985,6 @@ class Report {
 
 		return FALSE;
 	}
-
-	/**
-	 * @return bool
-	 */
 	function getCompanyFormConfig() {
 		if ( $this->checkPermissions() == FALSE ) {
 			Debug::Text('Invalid permissions!', __FILE__, __LINE__, __METHOD__, 10);
@@ -1170,7 +998,6 @@ class Report {
 			$urd_obj = $urdlf->getCurrent();
 			$data = $urd_obj->getData();
 
-			//Debug::Arr( $data, '  Company Report Setup!', __FILE__, __LINE__, __METHOD__, 10);
 			return $data;
 		}
 		unset($urd_obj);
@@ -1179,11 +1006,6 @@ class Report {
 	}
 
 	//Used for government form config.
-
-	/**
-	 * @param $data
-	 * @return bool
-	 */
 	function setFormConfig( $data ) {
 		//Check to see if existing data for the form has already been saved.
 		if ( $this->getCompanyFormConfig() === FALSE ) {
@@ -1193,10 +1015,6 @@ class Report {
 		$this->config['form'] = $data;
 		return TRUE;
 	}
-
-	/**
-	 * @return bool|mixed
-	 */
 	function getFormConfig() {
 		if ( isset($this->config['form']) ) {
 			return $this->config['form'];
@@ -1207,10 +1025,6 @@ class Report {
 
 	//Misc. options
 	//	Possible global options:
-	/**
-	 * @param $data
-	 * @return bool
-	 */
 	function setOtherConfig( $data ) {
 		if ( is_array($data) ) {
 			if ( !isset($data['default_font']) OR ( isset($data['default_font']) AND $data['default_font'] == '' ) ) {
@@ -1233,10 +1047,6 @@ class Report {
 
 		return FALSE;
 	}
-
-	/**
-	 * @return bool|mixed
-	 */
 	function getOtherConfig() {
 		if ( isset($this->config['other']) ) {
 			return $this->config['other'];
@@ -1245,9 +1055,6 @@ class Report {
 		return FALSE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function isEnabledChart() {
 		$config = $this->getChartConfig();
 		if ( isset($config['enable']) AND $config['enable'] == TRUE ) {
@@ -1256,19 +1063,10 @@ class Report {
 
 		return FALSE;
 	}
-
-	/**
-	 * @param $data
-	 * @return bool
-	 */
 	function setChartConfig( $data ) {
 		$this->config['chart'] = $data;
 		return TRUE;
 	}
-
-	/**
-	 * @return bool|mixed
-	 */
 	function getChartConfig() {
 		if ( isset($this->config['chart']) ) {
 			return $this->config['chart'];
@@ -1276,19 +1074,10 @@ class Report {
 
 		return FALSE;
 	}
-
-	/**
-	 * @param $data
-	 * @return bool
-	 */
 	function setCustomFilterConfig( $data ) {
 		$this->config['custom_filter'] = $data;
 		return TRUE;
 	}
-
-	/**
-	 * @return bool|mixed
-	 */
 	function getCustomFilterConfig() {
 		if ( isset($this->config['custom_filter']) ) {
 			return $this->config['custom_filter'];
@@ -1298,11 +1087,6 @@ class Report {
 	}
 
 	//Validates report config, mainly so users aren't surprised when they set group by options that aren't doing anything.
-
-	/**
-	 * @param bool $format
-	 * @return null|Validator
-	 */
 	function validateConfig( $format = FALSE ) {
 		$this->validator = new Validator();
 
@@ -1323,7 +1107,7 @@ class Report {
 				AND isset($config['filter']['time_period']['time_period'])
 				AND $config['filter']['time_period']['time_period'] == 'custom_pay_period'
 				AND ( !isset($config['filter']['pay_period_id'])
-						OR $config['filter']['pay_period_id'] == TTUUID::getZeroID()
+						OR $config['filter']['pay_period_id'] == 0
 						OR count($config['filter']['pay_period_id']) == 0
 						OR ( isset($config['filter']['pay_period_id'][0]) AND $config['filter']['pay_period_id'][0] == FALSE )
 					)
@@ -1348,10 +1132,6 @@ class Report {
 			$group_diff = array_diff( $config['group'], array_keys( $config['columns'] ) );
 			if ( is_array($group_diff) AND count($group_diff) > 0 ) {
 				foreach( $group_diff as $group_bad_column ) {
-					if ( !isset($column_options[$group_bad_column]) ) { //Prevent PHP warning.
-						$column_options[$group_bad_column] = NULL;
-					}
-
 					$this->validator->isTrue( 'group', FALSE, TTi18n::gettext('Group by defines column that is not being displayed on the report').': '. $column_options[$group_bad_column] );
 				}
 			}
@@ -1361,10 +1141,6 @@ class Report {
 			$sub_total_diff = array_diff( $config['sub_total'], array_keys( $config['columns'] ) );
 			if ( is_array($sub_total_diff) AND count($sub_total_diff) > 0 ) {
 				foreach( $sub_total_diff as $sub_total_bad_column ) {
-					if ( !isset($column_options[$sub_total_bad_column]) ) {
-						$column_options[$sub_total_bad_column] = NULL; //Prevent PHP warning.
-					}
-
 					$this->validator->isTrue( 'sub_total', FALSE, TTi18n::gettext('Sub Total defines column that is not being displayed on the report').': '. $column_options[$sub_total_bad_column] );
 				}
 			}
@@ -1376,30 +1152,16 @@ class Report {
 	}
 
 	//Returns the default file name if none is specified.
-
-	/**
-	 * @return string
-	 */
 	function getFileName() {
 		return $this->file_name.'_'.date('Y_m_d').'.pdf';
 	}
 	//Returns the default file mime type if none is specified.
-
-	/**
-	 * @return string
-	 */
 	function getFileMimeType() {
 		return $this->file_mime_type;
 	}
 
 	//Return options from sub-class for things like columns, sorting columns, grouping columns, sub-total columns, etc...
-
-	/**
-	 * @param $name
-	 * @param null $params
-	 * @return bool|mixed
-	 */
-	function getOptions( $name, $params = NULL) {
+	function getOptions($name, $params = NULL) {
 		//Cache getOption() calls as it could require several SQL queries.
 		$id = $name . serialize( $params );
 
@@ -1417,22 +1179,11 @@ class Report {
 
 		return FALSE;
 	}
-
-	/**
-	 * @param $name
-	 * @param null $params
-	 * @return bool
-	 */
 	protected function _getOptions( $name, $params = NULL ) {
 		return FALSE;
 	}
 
 	//Get raw data for report
-
-	/**
-	 * @param $format
-	 * @return bool
-	 */
 	function getData( $format ) {
 		Debug::Arr( $this->config, 'Final Report Config: ', __FILE__, __LINE__, __METHOD__, 10);
 
@@ -1445,11 +1196,6 @@ class Report {
 	}
 
 	//PreProcess data such as calculating additional columns (Day of Week, Year Quarter, combined multiple columns together, etc...) from raw data etc...
-
-	/**
-	 * @param null $format
-	 * @return bool
-	 */
 	function preProcess( $format = NULL ) {
 		$this->profiler->startTimer( 'preProcess' );
 		$this->_preProcess( $format );
@@ -1461,19 +1207,16 @@ class Report {
 
 	//Group Data - Automatically include all static columns that are also selected to be viewed, so the user doesn't have to re-select all columns twice.
 	//				Its actually the opposite, select on NON-static columns, and ignore all static columns except the grouped columns.
-	/**
-	 * @return bool
-	 */
 	function group() {
 		$this->profiler->startTimer( 'group' );
 
 		$format_group_config = $this->formatGroupConfig();
 		if ( is_array( $format_group_config ) AND count( $format_group_config ) > 0 ) {
-			$this->getProgressBarObject()->start( $this->getAMFMessageID(), ( is_array( $this->data ) ) ? count( $this->data ) : 0, NULL, TTi18n::getText('Grouping Data...') );
+			$this->getProgressBarObject()->start( $this->getAMFMessageID(), count($this->data), NULL, TTi18n::getText('Grouping Data...') );
 
 			$this->data = Group::GroupBy( $this->data, $format_group_config );
 
-			$this->getProgressBarObject()->set( $this->getAMFMessageID(), ( is_array( $this->data ) ) ? count( $this->data ) : 0 );
+			$this->getProgressBarObject()->set( $this->getAMFMessageID(), count($this->data) );
 			//Debug::Arr($format_group_config, 'Group Config: ', __FILE__, __LINE__, __METHOD__, 10);
 			//Debug::Arr($this->data, 'Group Data: ', __FILE__, __LINE__, __METHOD__, 10);
 		}
@@ -1484,10 +1227,6 @@ class Report {
 	}
 
 	//Sort data
-
-	/**
-	 * @return bool
-	 */
 	function sort() {
 		if ( is_array( $this->data ) == FALSE ) {
 			return TRUE;
@@ -1495,13 +1234,13 @@ class Report {
 
 		$this->profiler->startTimer( 'sort' );
 		if ( is_array( $this->getSortConfig() ) AND count( $this->getSortConfig() ) > 0 ) {
-			$this->getProgressBarObject()->start( $this->getAMFMessageID(), ( is_array( $this->data ) ) ? count( $this->data ) : 0, NULL, TTi18n::getText('Sorting Data...') );
+			$this->getProgressBarObject()->start( $this->getAMFMessageID(), count($this->data), NULL, TTi18n::getText('Sorting Data...') );
 
 			Debug::Arr($this->getSortConfig(), 'Sort Config: ', __FILE__, __LINE__, __METHOD__, 10);
 
 			$this->data = Sort::arrayMultiSort( $this->data, $this->getSortConfig() );
 
-			$this->getProgressBarObject()->set( $this->getAMFMessageID(), ( is_array( $this->data ) ) ? count( $this->data ) : 0 );
+			$this->getProgressBarObject()->set( $this->getAMFMessageID(), count($this->data) );
 		}
 
 		$this->profiler->stopTimer( 'sort' );
@@ -1511,22 +1250,13 @@ class Report {
 		return TRUE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function sortFormData() {
 		$this->profiler->startTimer( 'sort' );
 		if ( is_array( $this->getSortConfig() ) AND count( $this->getSortConfig() ) > 0 ) {
 			$this->getProgressBarObject()->start( $this->getAMFMessageID(), count($this->form_data), NULL, TTi18n::getText('Sorting Form Data...') );
 
 			Debug::Arr($this->getSortConfig(), 'Sort Config: ', __FILE__, __LINE__, __METHOD__, 10);
-			if ( isset( $this->form_data['user'] ) ) {
-				foreach( $this->form_data['user'] as $legal_entity_id => $legal_entity_users ) {
-					$this->form_data['user'][$legal_entity_id] = Sort::arrayMultiSort( $legal_entity_users, $this->getSortConfig() );
-				}
-			} else {
-				Debug::Text(' WARNING: Unable to sort form data due to user array element does not exist.', __FILE__, __LINE__, __METHOD__, 10);
-			}
+			$this->form_data = Sort::arrayMultiSort( $this->form_data, $this->getSortConfig() );
 
 			$this->getProgressBarObject()->set( $this->getAMFMessageID(), count($this->form_data) );
 		}
@@ -1538,10 +1268,6 @@ class Report {
 	}
 
 	//Calculate overall total in memory before we do any sub-totaling, then append *after* subtotaling is complete.
-
-	/**
-	 * @return bool
-	 */
 	function Total() {
 		$this->profiler->startTimer( 'Total' );
 
@@ -1572,7 +1298,7 @@ class Report {
 			if ( $selected_static_columns > 0 ) {
 				$grand_total_column = $this->getReportColumns( $sub_total_columns_count );
 				if ( isset($static_column_options[$grand_total_column]) ) {
-					$total[0][$grand_total_column] = array('display' => TTi18n::getText('Grand Total').'['. ( ( is_array( $this->data ) ) ? count( $this->data ) : 0 ) .']:'); //Use 'display' array so column formatter isn't run on this.
+					$total[0][$grand_total_column] = array('display' => TTi18n::getText('Grand Total').'['. count($this->data) .']:'); //Use 'display' array so column formatter isn't run on this.
 				} else {
 					Debug::Text('Skipping Grand Total label due to not being static...', __FILE__, __LINE__, __METHOD__, 10);
 				}
@@ -1592,10 +1318,6 @@ class Report {
 	}
 
 	//Calculate subtotals - This must be done *after* sorting, as the data may need to be re-sorted to properly merge sub-totals back into main array.
-
-	/**
-	 * @return bool
-	 */
 	function subTotal() {
 		$this->profiler->startTimer( 'subTotal' );
 		if ( is_array( $this->getSubTotalConfig() ) AND count($this->getSubTotalConfig()) > 0 ) {
@@ -1651,9 +1373,6 @@ class Report {
 		return TRUE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function chart() {
 		$this->profiler->startTimer( 'chart' );
 
@@ -1690,10 +1409,6 @@ class Report {
 	//sometimes there are columns postProcess needs that grouping will drop. For example when two or three columns are required to postProcess into a single column.
 	//If group_by on that single column happens before postProcess, all the necessary data will be lost.
 	//This will have to be one of the restrictions, that postProcess can only use a *SINGLE* column at a time, as its not guaranteed to have more than that due to grouping.
-	/**
-	 * @param null $format
-	 * @return bool
-	 */
 	function postProcess( $format = NULL ) {
 		//Append Total record to the end.
 		if ( isset($this->total_row) AND is_array($this->total_row) ) {
@@ -1708,19 +1423,12 @@ class Report {
 		return TRUE;
 	}
 
-	/**
-	 * @param $type
-	 * @param $column
-	 * @param $value
-	 * @param null $format
-	 * @return array|bool|false|mixed|null|string
-	 */
 	function columnFormatter( $type, $column, $value, $format = NULL ) {
 		if ( is_array($value) AND isset($value['display']) ) { //Found sorting array, use display column.
 			return $value['display'];
 		} else {
 			$retval = $value;
-			if ( $format == 'csv' OR $format == 'json' OR $format == 'raw' ) { //Force specific field formats for exporting to CSV format.
+			if ( $format == 'csv' OR $format == 'raw' ) { //Force specific field formats for exporting to CSV format.
 				switch ( $type ) {
 					case 'report_date':
 						$column = ( strpos( $column, 'custom_column' ) === FALSE ) ? $column : $column.'-'.'date_stamp';
@@ -1756,7 +1464,6 @@ class Report {
 						} else {
 							$retval = TTi18n::getText('No');
 						}
-						break;
 					default:
 						break;
 				}
@@ -1783,7 +1490,7 @@ class Report {
 						$retval = TTDate::getHours( $value ); //Force to hours always.
 						break;
 					case 'date_stamp':
-						$retval = date('Y-m-d', $value ); //type="xs:date"
+						$retval = date('Y-m-d', $value ); ////type="xs:date"
 						break;
 					case 'time':
 						$retval = date('H:i:s', $value ); //type="xs:time"
@@ -1797,7 +1504,6 @@ class Report {
 						} else {
 							$retval = TTi18n::getText('No');
 						}
-						break;
 					default:
 						break;
 				}
@@ -1854,10 +1560,6 @@ class Report {
 		}
 	}
 
-	/**
-	 * @param array $format_options
-	 * @return array
-	 */
 	function getTimePeriodFormatOptions( $format_options = array() ) {
 		$report_date_columns = Misc::trimSortPrefix( $this->getOptions('date_columns') );
 		if ( is_array($report_date_columns) ) {
@@ -1872,10 +1574,6 @@ class Report {
 		return $format_options;
 	}
 
-	/**
-	 * @param array $format_options
-	 * @return array
-	 */
 	function getCustomColumnFormatOptions( $format_options = array() ) {
 		$custom_columns = $this->getCustomColumnConfig();
 		$report_format_options = $this->getOptions('column_format_map');
@@ -1890,9 +1588,6 @@ class Report {
 		return $format_options;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function currencyConvertToBase() {
 		$this->profiler->startTimer( 'currencyConvertToBase' );
 
@@ -1935,17 +1630,10 @@ class Report {
 
 	}
 
-	/**
-	 * @return array
-	 */
 	function getColumnFormatConfig() {
 		return $this->getTimePeriodFormatOptions( array_merge( (array)Misc::trimSortPrefix( $this->getOptions('column_format') ), $this->getCustomColumnFormatOptions() ) );
 	}
 
-	/**
-	 * @param null $format
-	 * @return bool
-	 */
 	function _postProcess( $format = NULL ) {
 		if ( is_array($this->data) AND count($this->data) > 0 ) {
 			$this->getProgressBarObject()->start( $this->getAMFMessageID(), count($this->data), NULL, TTi18n::getText('Post-Processing Data...') );
@@ -1997,12 +1685,6 @@ class Report {
 	}
 
 	//Returns the full description block of text.
-
-	/**
-	 * @param bool $html
-	 * @param bool $relative_time_period
-	 * @return string
-	 */
 	function getDescriptionBlock( $html = FALSE, $relative_time_period = FALSE ) {
 		//Don't include the report name.
 		//$body = TTI18n::getText('Report').': '. $this->title."\n\n";
@@ -2011,49 +1693,43 @@ class Report {
 		//Report Name
 		$report_name = $this->getDescription('report_name');
 		if ( $report_name != '' ) {
-			$body .= TTi18n::getText('Name').': '. $report_name ."\n";
-		}
-
-		//Report Description
-		$report_description = $this->getDescription('report_description');
-		if ( $report_name != '' ) {
-			$body .= TTi18n::getText('Description').': '. $report_description ."\n";
+			$body .= TTi18n::getText('Name').': '. $report_name."\n";
 		}
 
 		//Time Period: start/end date, or pay period.
 		$description = $this->getDescription('time_period', array( 'relative_time_period' => $relative_time_period ) );
 		if ( $description != '' ) {
-			$body .= TTi18n::getText('Time Period').': '. $description ."\n";
+			$body .= TTi18n::getText('Time Period').': '. $description."\n";
 		}
 
 		//Filter:
 		$description = $this->getDescription('filter');
 		if ( $description != '' ) {
-			$body .= TTi18n::getText('Filter').': '. $description ."\n";
+			$body .= TTi18n::getText('Filter').': '. $description."\n";
 		}
 
 		//Group:
 		$description = $this->getDescription('group');
 		if ( $description != '' ) {
-			$body .= TTi18n::getText('Group'). ': '. $description ."\n";
+			$body .= TTi18n::getText('Group'). ': '. $description."\n";
 		}
 
 		//SubTotal:
 		$description = $this->getDescription('sub_total');
 		if ( $description != '' ) {
-			$body .= TTi18n::getText('SubTotal').': '. $description ."\n";
+			$body .= TTi18n::getText('SubTotal').': '. $description."\n";
 		}
 
 		//Sort:
 		$description = $this->getDescription('sort');
 		if ( $description != '' ) {
-			$body .= TTi18n::getText('Sort').': ' . $description ."\n";
+			$body .= TTi18n::getText('Sort').': ' . $description."\n";
 		}
 
 		//Custom Filter:
 		$description = $this->getDescription('custom_filter');
 		if ( $description != '' ) {
-			$body .= TTi18n::getText('Custom Filter').': ' . $description ."\n";
+			$body .= TTi18n::getText('Custom Filter').': ' . $description."\n";
 		}
 
 		if ( $html == TRUE ) {
@@ -2063,11 +1739,6 @@ class Report {
 		return $body;
 	}
 
-	/**
-	 * @param $label
-	 * @param null $params
-	 * @return bool|string
-	 */
 	function getDescription( $label, $params = NULL ) {
 		$retval = FALSE;
 
@@ -2127,12 +1798,6 @@ class Report {
 				$config = $this->getOtherConfig();
 				if ( isset($config['report_name']) AND $config['report_name'] != '' ) {
 					$retval = $config['report_name'];
-				}
-				break;
-			case 'report_description':
-				$config = $this->getOtherConfig();
-				if ( isset($config['report_description']) AND $config['report_description'] != '' ) {
-					$retval = $config['report_description'];
 				}
 				break;
 			case 'filter':
@@ -2209,9 +1874,6 @@ class Report {
 		return $retval;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function checkPermissions() {
 		if ( is_object( $this->getPermissionObject() ) == TRUE ) {
 
@@ -2224,10 +1886,6 @@ class Report {
 		return FALSE;
 	}
 
-	/**
-	 * @param null $milliseconds
-	 * @return bool
-	 */
 	function setQueryStatementTimeout( $milliseconds = NULL ) {
 		global $db;
 
@@ -2247,10 +1905,6 @@ class Report {
 		return TRUE;
 	}
 
-	/**
-	 * @param null $format
-	 * @return array|bool
-	 */
 	function getOutput( $format = NULL ) {
 		//Get format from getMiscOptions().
 		//Formats: RAW (PHP ARRAY), CSV, HTML, PDF
@@ -2397,18 +2051,10 @@ class Report {
 		}
 	}
 
-	/**
-	 * @param null $format
-	 * @return bool
-	 */
 	function _preOutput( $format = NULL ) {
 		return TRUE;
 	}
 
-	/**
-	 * @param null $format
-	 * @return array|bool
-	 */
 	function _output( $format = NULL ) {
 		Debug::Text('Format: '. $format, __FILE__, __LINE__, __METHOD__, 10);
 
@@ -2460,7 +2106,7 @@ class Report {
 			} else {
 				return $this->data;
 			}
-		} elseif ( $format == 'csv' OR $format == 'xml' OR $format == 'json' ) {
+		} elseif ( $format == 'csv' OR $format == 'xml' ) {
 			if ( $format == 'csv' ) {
 				$data = Misc::Array2CSV( $this->data, $columns, FALSE, TRUE );
 				$file_extension = 'csv';
@@ -2468,10 +2114,6 @@ class Report {
 				//Include report name with non-alphanumerics stripped out.
 				$data = Misc::Array2XML( $this->data, $columns, $this->getColumnFormatConfig(), FALSE, FALSE, preg_replace('/[^A-Za-z0-9]/', '', $this->config['other']['report_name'] ), 'row');
 				$file_extension = 'xml';
-			} elseif ( $format == 'json' ) {
-				//Include report name with non-alphanumerics stripped out.
-				$data = Misc::Array2JSON( $this->data, $columns );
-				$file_extension = 'json';
 			}
 
 			return array(
@@ -2487,27 +2129,18 @@ class Report {
 				'file_name' => $this->file_name.'_'.date('Y_m_d').'.html',
 				'mime_type' => 'text/html',
 			);
-		} elseif ( strpos($format, 'pdf') !== FALSE ) {
+		} else {
 			Debug::Text('Exporting PDF format: '. $format, __FILE__, __LINE__, __METHOD__, 10);
 			return $this->_pdf();
-		} else {
-			Debug::Text('ERROR: Unknown report format: '. $format, __FILE__, __LINE__, __METHOD__, 10);
 		}
 
 		return FALSE;
 	}
 
-	/**
-	 * @param null $format
-	 * @return bool
-	 */
 	function _postOutput( $format = NULL ) {
 		return TRUE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function hasData() {
 		$total_rows = count($this->data);
 		$total_form_rows = count($this->form_data);
@@ -2529,11 +2162,6 @@ class Report {
 		return $retval;
 	}
 
-	/**
-	 * @param $output
-	 * @param object $report_schedule_obj
-	 * @return bool
-	 */
 	function email( $output, $report_schedule_obj = NULL ) {
 		Debug::Text('Emailing report...', __FILE__, __LINE__, __METHOD__, 10);
 
@@ -2617,11 +2245,6 @@ class Report {
 		return FALSE;
 	}
 
-	/**
-	 * @param $column_options
-	 * @param $columns
-	 * @return array
-	 */
 	function _pdf_detectPageSize( $column_options, $columns ) {
 		$min_dimensions = array(216, 279); //Letter size, in mm. Exact size is: 215.9x279.4
 
@@ -2658,12 +2281,6 @@ class Report {
 
 
 	//Return the string from each column that is the largest, so we can base the column widths on these.
-
-	/**
-	 * @param $columns
-	 * @param bool $include_headers
-	 * @return array
-	 */
 	function getLargestColumnData( $columns, $include_headers = TRUE ) {
 		//Cache the widths so all data doesn't need to be searched each time.
 		$this->profiler->startTimer( 'getLargestColumnData' );
@@ -2705,12 +2322,6 @@ class Report {
 		return $retarr;
 	}
 
-	/**
-	 * @param $text
-	 * @param $layout
-	 * @param bool $wrap_width
-	 * @return float|int
-	 */
 	function _pdf_getColumnWidth( $text, $layout, $wrap_width = FALSE ) {
 		$this->profiler->startTimer( 'Column Width' );
 		$max_width = 0;
@@ -2743,13 +2354,6 @@ class Report {
 		$this->profiler->stopTimer( 'Column Width' );
 		return $string_width;
 	}
-
-	/**
-	 * @param $text
-	 * @param $layout
-	 * @param bool $wrap_width
-	 * @return float|int
-	 */
 	function _pdf_getColumnHeight( $text, $layout, $wrap_width = FALSE ) {
 		$this->profiler->startTimer( 'Column Height' );
 		$max_height = 0;
@@ -2776,12 +2380,6 @@ class Report {
 		return $string_height;
 	}
 
-	/**
-	 * @param $string
-	 * @param string $width UUID
-	 * @param $layout
-	 * @return null
-	 */
 	function _pdf_getLargestWrappedWord( $string, $width, $layout ) {
 		if ( strlen( $string ) > $width ) {
 			$split_string = explode("\n", wordwrap( $string, $width ) );
@@ -2802,13 +2400,6 @@ class Report {
 		return $word;
 	}
 
-	/**
-	 * @param $columns
-	 * @param $layout
-	 * @param bool $fill_page
-	 * @param bool $wrap_width
-	 * @return array|bool
-	 */
 	function _pdf_getTableColumnWidths( $columns, $layout, $fill_page = TRUE, $wrap_width = FALSE ) {
 		if ( !is_array($columns) ) {
 			return FALSE;
@@ -2851,18 +2442,10 @@ class Report {
 		return $widths;
 	}
 
-	/**
-	 * @param $size
-	 * @return mixed
-	 */
 	function _pdf_unitsToPixels( $size ) {
 		return ( $size * ( $this->PDF_IMAGE_SCALE_RATIO * 2 ) );
 	}
 
-	/**
-	 * @param $size
-	 * @return float
-	 */
 	function _pdf_scaleSize( $size ) {
 		//The config font_size variable should be a scale, not a direct font size.
 		$multiplier = $this->config['other']['font_size'];
@@ -2874,10 +2457,6 @@ class Report {
 		return $retval;
 	}
 
-	/**
-	 * @param $size
-	 * @return float
-	 */
 	function _pdf_fontSize( $size ) {
 		//The config font_size variable should be a scale, not a direct font size.
 		$multiplier = $this->config['other']['font_size'];
@@ -2889,10 +2468,6 @@ class Report {
 		return $retval;
 	}
 
-	/**
-	 * @param $size
-	 * @return float
-	 */
 	function _html_fontSize( $size ) {
 		//The config font_size variable should be a scale, not a direct font size.
 		$multiplier = $this->config['other']['font_size'];
@@ -2905,10 +2480,6 @@ class Report {
 	}
 
 
-	/**
-	 * @param string $min_width UUID
-	 * @return array
-	 */
 	function _pdf_getPageSizeDimensionsFromWidth( $min_width ) {
 		//Handle portrait/landscape modes properly
 		if ( $this->config['other']['page_orientation'] == 'L' ) {
@@ -2925,10 +2496,6 @@ class Report {
 		return array( $width, $height );
 	}
 
-	/**
-	 * @param int $width
-	 * @return bool
-	 */
 	function _pdf_drawLine( $width = 3 ) {
 		$margins = $this->pdf->getMargins();
 
@@ -2946,11 +2513,6 @@ class Report {
 		return TRUE;
 	}
 
-	/**
-	 * @param $height
-	 * @param bool $add_page
-	 * @return bool
-	 */
 	function _pdf_checkPageBreak( $height, $add_page = TRUE ) {
 		$margins = $this->pdf->getMargins();
 
@@ -2963,9 +2525,6 @@ class Report {
 		return FALSE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function _pdf_displayMaximumPageLimitError() {
 		$this->pdf->AddPage();
 		$this->pdf->Ln($this->pdf->getPageHeight() / 2);
@@ -2981,9 +2540,6 @@ class Report {
 		return TRUE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function _pdf_checkMaximumPageLimit() {
 		$total_pages = $this->pdf->getNumPages(); //Get total pages in PDF so far.
 		if ( $total_pages <= $this->config['other']['maximum_page_limit'] ) {
@@ -2994,10 +2550,6 @@ class Report {
 
 		return FALSE;
 	}
-
-	/**
-	 * @return bool
-	 */
 	function _pdf_AddPage() {
 		$this->_pdf_Footer();
 
@@ -3006,9 +2558,6 @@ class Report {
 		return TRUE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function _pdf_TopSummary() {
 		$margins = $this->pdf->getMargins();
 
@@ -3024,7 +2573,6 @@ class Report {
 
 			//Report Name
 			$report_name = $this->getDescription('report_name');
-			$report_description = $this->getDescription('report_description');
 			if ( $report_name != '' ) {
 				//When a report name is specified, make that the large bold font, and just add in smaller font the report name itself.
 				$this->pdf->SetFont($this->config['other']['default_font'], 'B', $this->_pdf_fontSize(18) );
@@ -3034,26 +2582,6 @@ class Report {
 				$this->pdf->SetFont($this->config['other']['default_font'], '', $this->_pdf_fontSize(6) );
 				$this->pdf->Cell( $this->_pdf_scaleSize(15), $this->_pdf_fontSize(3), TTi18n::getText('Report').':', 0, 0, 'L', 0, '', 0);
 				$this->pdf->Cell( $this->_pdf_scaleSize(150), $this->_pdf_fontSize(3), $this->title, 0, 0, 'L', 0, '', 1);
-				$this->pdf->Ln();
-
-				$this->pdf->SetFont($this->config['other']['default_font'], '', $this->_pdf_fontSize(6) );
-				$this->pdf->Cell( $this->_pdf_scaleSize(15), $this->_pdf_fontSize(3), TTi18n::getText('Description').':', 0, 0, 'L', 0, '', 0);
-
-				$report_description_array = explode("\n", $report_description);
-				if ( count( $report_description_array ) != 1 ) {
-					$first = TRUE;
-					foreach( $report_description_array as $report_description ) {
-						if ( $first == TRUE ) {
-							$first = FALSE;
-						} else {
-							$this->pdf->SetFont($this->config['other']['default_font'], '', $this->_pdf_fontSize(6) );
-						}
-						$this->pdf->Cell( $this->_pdf_scaleSize( 150 ), $this->_pdf_fontSize( 3 ), $report_description, 0, 0, 'L', 0, '', 1 );
-						$this->pdf->Ln();
-					}
-				} else {
-					$this->pdf->Cell( $this->_pdf_scaleSize( 150 ), $this->_pdf_fontSize( 3 ), $report_description, 0, 0, 'L', 0, '', 1 );
-				}
 				$this->pdf->Ln();
 			} else {
 				//Report Title top left.
@@ -3130,10 +2658,6 @@ class Report {
 		return FALSE;
 	}
 
-	/**
-	 * @param $cur
-	 * @return bool
-	 */
 	function _html_checkMaximumPageLimit( $cur ) {
 		$total_rows = ( $this->config['other']['maximum_page_limit'] * 25 ); // 25 rows per page default,
 
@@ -3144,9 +2668,6 @@ class Report {
 		return FALSE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function _html_Table() {
 		$this->profiler->startTimer( 'HTML Table' );
 
@@ -3269,7 +2790,7 @@ class Report {
 							if ( ( isset($row['_subtotal']) AND $row['_subtotal'] == TRUE ) ) {
 								//Debug::Text(' SubTotal Row... SI: '. $sub_total_columns_count .' Pos: '. $sub_total_column_label_position .' C: '. $c .' Row SI: '. $total_row_sub_total_columns, __FILE__, __LINE__, __METHOD__, 10);
 								//Need to display "SubTotal" before the column that is being sub-totaled.
-								if ( $sub_total_column_label_position !== FALSE AND $c == $sub_total_column_label_position AND isset($sub_total_rows[$total_row_sub_total_columns]) ) {
+								if ( $sub_total_column_label_position !== FALSE AND $c == $sub_total_column_label_position ) {
 									$value = TTi18n::getText('SubTotal').'['. $sub_total_rows[$total_row_sub_total_columns] .']:';
 								} elseif ( $c < ($total_row_sub_total_columns - 1) ) {
 									$value = '';
@@ -3382,14 +2903,6 @@ class Report {
 		return TRUE;
 	}
 
-	/**
-	 * @param $columns
-	 * @param $column_options
-	 * @param array $column_widths
-	 * @param string $wrap_width UUID
-	 * @param int $min_height
-	 * @return int
-	 */
 	function _pdf_getMaximumHeightFromArray( $columns, $column_options, $column_widths, $wrap_width, $min_height = 0 ) {
 		$this->profiler->startTimer( 'Maximum Height' );
 		$max_height = $min_height;
@@ -3412,9 +2925,6 @@ class Report {
 		return $max_height;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function _pdf_Header() {
 		$column_options = Misc::trimSortPrefix( $this->getOptions('columns') );
 		$columns = $this->getReportColumns();
@@ -3458,9 +2968,6 @@ class Report {
 		return TRUE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function _pdf_Footer() {
 		$margins = $this->pdf->getMargins();
 
@@ -3488,9 +2995,6 @@ class Report {
 		return TRUE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function _pdf_Chart() {
 		if ( $this->isEnabledChart() == TRUE ) {
 			$chart_config = $this->getChartConfig();
@@ -3548,9 +3052,6 @@ class Report {
 		return TRUE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function _html_Chart() {
 		if ( $this->isEnabledChart() == TRUE ) {
 			$chart_config = $this->getChartConfig();
@@ -3599,9 +3100,6 @@ class Report {
 		return TRUE;
 	}
 
-	/**
-	 * @return string
-	 */
 	function _html_CSS() {
 		$css = '* { margin:0; padding:0;}';
 		$css .= 'body{ font-size: 100%, font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;padding: 15px;}';
@@ -3648,9 +3146,6 @@ class Report {
 		return $css;
 	}
 
-	/**
-	 * @return string
-	 */
 	function _html_setPageOrientationCSS() {
 		$css = '@page {size: ';
 		if ( $this->config['other']['page_orientation'] == 'L' ) {
@@ -3664,9 +3159,6 @@ class Report {
 		return $css;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function _html_Initialize() {
 
 		$this->profiler->startTimer( 'HTML' );
@@ -3693,9 +3185,6 @@ class Report {
 		return TRUE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function _pdf_Initialize() {
 		$this->profiler->startTimer( 'PDF' );
 
@@ -3740,9 +3229,6 @@ class Report {
 		return TRUE;
 	}
 
-	/**
-	 * @return bool|null|string
-	 */
 	function _html() {
 		$chart_config = $this->getChartConfig();
 
@@ -3800,9 +3286,6 @@ class Report {
 		$this->html .= '<script>$("table.content").stickyTableHeaders();</script>';
 	}
 
-	/**
-	 * @return bool
-	 */
 	function _html_Header() {
 
 		$this->html .= '<table class="content">';
@@ -3835,11 +3318,8 @@ class Report {
 	}
 
 
-	/**
-	 * @return bool
-	 */
 	function _html_TopSummary() {
-		//global $config_vars;
+		global $config_vars;
 
 		if ( is_object( $this->getUserObject()->getCompanyObject() ) ) {
 			$file_name = $this->getUserObject()->getCompanyObject()->getLogoFileName( $this->getUserObject()->getCompanyObject()->getId() );
@@ -3904,15 +3384,6 @@ class Report {
 				$this->html .= '<td>' .htmlspecialchars($this->title, ENT_QUOTES). '</td>';
 				$this->html .= '</tr>';
 			}
-
-			$report_description = $this->getDescription('report_description');
-			if ( $report_description != '' ) {
-				$this->html .= '<tr>';
-				$this->html .= '<td style="vertical-align:top">' . TTi18n::getText( 'Description' ) . ':' . '</td>';
-				$this->html .= '<td>' . nl2br(htmlspecialchars( $report_description, ENT_QUOTES ) ) . '</td>';
-				$this->html .= '</tr>';
-			}
-
 			//Time Period: start/end date, or pay period.
 			$description = $this->getDescription('time_period');
 			if ( $description != '' ) {
@@ -3990,9 +3461,6 @@ class Report {
 		return TRUE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function _pdf() {
 		$chart_config = $this->getChartConfig();
 
@@ -4023,12 +3491,6 @@ class Report {
 		return FALSE;
 	}
 
-	/**
-	 * @param $row
-	 * @param $columns
-	 * @param $sub_total_columns
-	 * @return bool|mixed
-	 */
 	function getSubTotalColumnLabelPosition( $row, $columns, $sub_total_columns ) {
 		$sub_total_column_position = FALSE;
 		if ( count( $sub_total_columns ) > 0 ) {
@@ -4051,10 +3513,6 @@ class Report {
 	}
 
 	//Generate PDF.
-
-	/**
-	 * @return bool
-	 */
 	function _pdf_Table() {
 		$this->profiler->startTimer( 'PDF Table' );
 
@@ -4170,7 +3628,7 @@ class Report {
 							if ( ( isset($row['_subtotal']) AND $row['_subtotal'] == TRUE ) ) {
 								//Debug::Text(' SubTotal Row... SI: '. $sub_total_columns_count .' Pos: '. $sub_total_column_label_position .' C: '. $c .' Row SI: '. $total_row_sub_total_columns, __FILE__, __LINE__, __METHOD__, 10);
 								//Need to display "SubTotal" before the column that is being sub-totaled.
-								if ( $sub_total_column_label_position !== FALSE AND $c == $sub_total_column_label_position AND isset($sub_total_rows[$total_row_sub_total_columns]) ) {
+								if ( $sub_total_column_label_position !== FALSE AND $c == $sub_total_column_label_position ) {
 									$value = TTi18n::getText('SubTotal').'['. $sub_total_rows[$total_row_sub_total_columns] .']:';
 								} elseif ( $c < ($total_row_sub_total_columns - 1) ) {
 									$value = '';
@@ -4322,9 +3780,6 @@ class Report {
 		return TRUE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function downloadOutput() {
 		/*
 		Misc::FileDownloadHeader('report.pdf', 'application/pdf', strlen($output));
@@ -4335,17 +3790,10 @@ class Report {
 		return TRUE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function emailOutput() {
 		return TRUE;
 	}
 
-	/**
-	 * @param $columns
-	 * @return bool
-	 */
 	function setCustomColumnConfig( $columns ) {
 		if ( getTTProductEdition() >= TT_PRODUCT_PROFESSIONAL ) {
 			$rcclf = TTnew('ReportCustomColumnListFactory');
@@ -4354,7 +3802,7 @@ class Report {
 			if ( $rcclf->getRecordCount() > 0 ) {
 				$row = array();
 				foreach( $rcclf as $rccf ) {
-					$column = 'custom_column:'.$rccf->getId();
+					$column = 'custom_column'.$rccf->getId();
 					if ( in_array( $column, $columns ) ) {
 						$row['variable_name'] = $column;
 						$row['label'] = $rccf->getName();
@@ -4387,9 +3835,6 @@ class Report {
 		return TRUE;
 	}
 
-	/**
-	 * @return bool|mixed
-	 */
 	function getCustomColumnConfig() {
 		if ( isset( $this->config['custom_column'] ) ) {
 			return $this->config['custom_column'];
@@ -4398,10 +3843,6 @@ class Report {
 		return FALSE;
 	}
 
-	/**
-	 * @param int $type_id
-	 * @return bool
-	 */
 	function calculateCustomColumns( $type_id ) {
 		if ( getTTProductEdition() >= TT_PRODUCT_PROFESSIONAL ) {
 			$this->profiler->startTimer( 'calculateCustomColumns' );
@@ -4411,11 +3852,6 @@ class Report {
 
 		return TRUE;
 	}
-
-	/**
-	 * @param int $type_id
-	 * @return bool
-	 */
 	function calculateCustomColumnFilters( $type_id ) {
 		if ( getTTProductEdition() >= TT_PRODUCT_PROFESSIONAL ) {
 			$this->profiler->startTimer( 'calculateCustomColumnFilters' );
@@ -4427,102 +3863,56 @@ class Report {
 	}
 }
 
-/**
- * Class ReportPDF
- */
 class ReportPDF extends Report {
 
-	/**
-	 * @return bool
-	 */
 	function header() {
 		return TRUE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function footer() {
 		return TRUE;
 	}
 
 }
 
-/**
- * Class ReportCell
- */
 class ReportCell {
 	public $report_obj = NULL;
 
 	public $value = NULL;
 
-	/**
-	 * @return string
-	 */
 	function __toString() {
-		return (string)$this->value;
+		return $this->value;
 	}
 
-	/**
-	 * @return int
-	 */
 	function getColumnWidth() {
 		return 0;
 	}
 
-	/**
-	 * @return int
-	 */
 	function getColumnHeight() {
 		return 0;
 	}
 }
 
-/**
- * Class ReportCellImage
- */
 class ReportCellImage extends ReportCell {
 	public $style = NULL;
 
-	/**
-	 * ReportCellImage constructor.
-	 * @param object $report_obj
-	 * @param $image_file_name
-	 * @param bool $style
-	 */
 	function __construct( $report_obj, $image_file_name, $style = FALSE ) {
 		$this->report_obj = $report_obj;
 		$this->image_file_name = $image_file_name;
 	}
 
-	/**
-	 * @return mixed
-	 */
 	function getColumnHeight() {
 		return $this->report_obj->_pdf_scaleSize( 10 );
 	}
 
-	/**
-	 * @return mixed
-	 */
 	function getColumnWidth() {
 		return $this->report_obj->_pdf_scaleSize( 50 );
 	}
 
-	/**
-	 * @return string
-	 */
 	function __toString() {
 		return '<PHOTO>';
 	}
 
-	/**
-	 * @param $format
-	 * @param string $max_width UUID
-	 * @param $max_height
-	 * @param int $row_i
-	 * @return string
-	 */
 	function display( $format, $max_width, $max_height, $row_i = 0 ) {
 		$width = $max_width;
 		$height = $max_height; //Make height the same as width.
@@ -4544,45 +3934,23 @@ class ReportCellImage extends ReportCell {
 	}
 }
 
-/**
- * Class ReportCellBarcode
- */
 class ReportCellBarcode extends ReportCell {
 	public $style = NULL;
 
-	/**
-	 * ReportCellBarcode constructor.
-	 * @param object $report_obj
-	 * @param $value
-	 * @param bool $style
-	 */
 	function __construct( $report_obj, $value, $style = FALSE ) {
 		$this->report_obj = $report_obj;
 		$this->value = $value;
 		//$this->style = $style;
 	}
 
-	/**
-	 * @return mixed
-	 */
 	function getColumnHeight() {
 		return $this->report_obj->_pdf_scaleSize( 10 );
 	}
 
-	/**
-	 * @return mixed
-	 */
 	function getColumnWidth() {
 		return $this->report_obj->_pdf_scaleSize( 50 );
 	}
 
-	/**
-	 * @param $format
-	 * @param string $max_width UUID
-	 * @param $max_height
-	 * @param int $row_i
-	 * @return string
-	 */
 	function display( $format, $max_width, $max_height, $row_i = 0 ) {
 		if ( $format == 'pdf' ) {
 			$style = array(
@@ -4612,48 +3980,26 @@ class ReportCellBarcode extends ReportCell {
 	}
 }
 
-/**
- * Class ReportCellQRcode
- */
 class ReportCellQRcode extends ReportCell {
 	public $report_obj = NULL;
 
 	public $value = NULL;
 	public $style = NULL;
 
-	/**
-	 * ReportCellQRcode constructor.
-	 * @param object $report_obj
-	 * @param $value
-	 * @param bool $style
-	 */
 	function __construct( $report_obj, $value, $style = FALSE ) {
 		$this->report_obj = $report_obj;
 		$this->value = $value;
 		//$this->style = $style;
 	}
 
-	/**
-	 * @return mixed
-	 */
 	function getColumnHeight() {
 		return $this->report_obj->_pdf_scaleSize( 25 );
 	}
 
-	/**
-	 * @return mixed
-	 */
 	function getColumnWidth() {
 		return $this->report_obj->_pdf_scaleSize( 25 );
 	}
 
-	/**
-	 * @param $format
-	 * @param string $max_width UUID
-	 * @param $max_height
-	 * @param int $row_i
-	 * @return string
-	 */
 	function display( $format, $max_width, $max_height, $row_i = 0 ) {
 		$width = $max_width;
 		$height = $max_height;

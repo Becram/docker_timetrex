@@ -1,7 +1,7 @@
 <?php
 /*********************************************************************************
  * TimeTrex is a Workforce Management program developed by
- * TimeTrex Software Inc. Copyright (C) 2003 - 2018 TimeTrex Software Inc.
+ * TimeTrex Software Inc. Copyright (C) 2003 - 2017 TimeTrex Software Inc.
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Affero General Public License version 3 as published by
@@ -41,20 +41,14 @@
 class APIAbout extends APIFactory {
 	protected $main_class = FALSE;
 
-	/**
-	 * APIAbout constructor.
-	 */
 	public function __construct() {
 		parent::__construct(); //Make sure parent constructor is always called.
 
 		return TRUE;
 	}
-
 	/**
 	 * Get about data .
-	 * @param int $ytd
-	 * @param bool $all_companies
-	 * @return array
+	 *
 	 */
 	function getAboutData( $ytd = 0, $all_companies = FALSE ) {
 		global $config_vars;
@@ -169,17 +163,10 @@ class APIAbout extends APIFactory {
 			}
 		}
 
-		$data['system_version'] = $data['system_version'].' ( '.TTDate::getDate('DATE+TIME', $data['system_version_install_date']) . ' )';
-
 		//Debug::Arr($data, 'Data: ', __FILE__, __LINE__, __METHOD__, 10);
 		return $this->returnHandler( $data );
 	}
 
-	/**
-	 * @param int $ytd
-	 * @param bool $all_companies
-	 * @return array
-	 */
 	function isNewVersionAvailable( $ytd = 0, $all_companies = FALSE ) {
 		Debug::Text('Check For Update!', __FILE__, __LINE__, __METHOD__, 10);
 

@@ -2,8 +2,8 @@ GeneratePayStubWizardController = BaseWizardController.extend( {
 
 	el: '.wizard',
 
-	init: function( options ) {
-		//this._super('initialize', options );
+	initialize: function( options ) {
+		this._super( 'initialize', options );
 
 		this.title = $.i18n._( 'Generate Pay Stub Wizard' );
 		this.steps = 3;
@@ -146,21 +146,22 @@ GeneratePayStubWizardController = BaseWizardController.extend( {
 		var api = new (APIFactory.getAPIClass( 'APIPayStub' ))();
 		switch ( this.current_step ) {
 			case 2:
-				if ( current_step_data.pay_period_id ) {
-					var pay_period_ids = current_step_data.pay_period_id
-					pay_period_ids = Global.array_unique(pay_period_ids);
+				var pay_period_ids = current_step_data.pay_period_id
+				pay_period_ids = Global.array_unique(pay_period_ids);
 
-					if ( current_step_data ) {
-						current_step_ui.pay_period_id.setValue( pay_period_ids );
-					}
+				if ( current_step_data ) {
+					current_step_ui.pay_period_id.setValue( pay_period_ids );
+				}
+				if ( current_step_data.pay_period_id ) {
 					$this.setPayRun( pay_period_ids );
 				}
 				this.onPayPeriodChange();
 				break;
 			case 3:
+				var user_ids = current_step_data.user_id;
+				user_ids = Global.array_unique(user_ids);
+
 				if ( current_step_data.user_id ) {
-					var user_ids = current_step_data.user_id;
-					user_ids = Global.array_unique(user_ids);
 					current_step_ui.user_id.setValue( user_ids );
 				}
 				break;
@@ -197,13 +198,12 @@ GeneratePayStubWizardController = BaseWizardController.extend( {
 			if ( result.isValid() ) {
 				var user_generic_status_batch_id = result.getAttributeInAPIDetails( 'user_generic_status_batch_id' );
 
-				if ( user_generic_status_batch_id && TTUUID.isUUID( user_generic_status_batch_id ) && user_generic_status_batch_id != TTUUID.zero_id&& user_generic_status_batch_id != TTUUID.not_exist_id ) {
+				if ( user_generic_status_batch_id && user_generic_status_batch_id > 0 ) {
 					UserGenericStatusWindowController.open( user_generic_status_batch_id, user_ids, function() {
 						if ( cal_pay_stub_amendment ) {
 							var filter = {filter_data: {}};
 							var users = {value: user_ids};
 							filter.filter_data.user_id = users;
-							filter.filter_data.status_id = 50; //active
 							IndexViewController.goToView( 'PayStubAmendment', filter );
 						}
 

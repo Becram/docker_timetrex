@@ -1,7 +1,7 @@
 <?php
 /*********************************************************************************
  * TimeTrex is a Workforce Management program developed by
- * TimeTrex Software Inc. Copyright (C) 2003 - 2018 TimeTrex Software Inc.
+ * TimeTrex Software Inc. Copyright (C) 2003 - 2017 TimeTrex Software Inc.
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Affero General Public License version 3 as published by
@@ -44,11 +44,6 @@ class CompanyGenericTagMapFactory extends Factory {
 
 	protected $tag_obj = NULL;
 
-	/**
-	 * @param $name
-	 * @param null $parent
-	 * @return null
-	 */
 	function _getFactoryOptions( $name, $parent = NULL ) {
 
 		$retval = NULL;
@@ -62,9 +57,6 @@ class CompanyGenericTagMapFactory extends Factory {
 		return $retval;
 	}
 
-	/**
-	 * @return null
-	 */
 	function getTagObject() {
 		if ( is_object($this->tag_obj) ) {
 			return $this->tag_obj;
@@ -76,70 +68,82 @@ class CompanyGenericTagMapFactory extends Factory {
 		}
 	}
 
-	/**
-	 * @return int
-	 */
 	function getObjectType() {
-		return (int)$this->getGenericDataValue( 'object_type_id' );
+		if ( isset($this->data['object_type_id']) ) {
+			return (int)$this->data['object_type_id'];
+		}
+
+		return FALSE;
+	}
+	function setObjectType($type) {
+		$type = trim($type);
+
+		if ( $this->Validator->inArrayKey(	'object_type',
+											$type,
+											TTi18n::gettext('Object Type is invalid'),
+											$this->getOptions('object_type')) ) {
+
+			$this->data['object_type_id'] = $type;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setObjectType( $value) {
-		$value = trim($value);
-		return $this->setGenericDataValue( 'object_type_id', $value );
-	}
-
-	/**
-	 * @return bool|mixed
-	 */
 	function getObjectID() {
-		return $this->getGenericDataValue( 'object_id' );
+		if ( isset($this->data['object_id']) ) {
+			return (int)$this->data['object_id'];
+		}
+
+		return FALSE;
+	}
+	function setObjectID($id) {
+		$id = trim($id);
+
+		if ( $this->Validator->isNumeric(	'object_id',
+										$id,
+										TTi18n::gettext('Object ID is invalid')
+										) ) {
+			$this->data['object_id'] = $id;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setObjectID( $value) {
-		$value = TTUUID::castUUID( $value );
-		return $this->setGenericDataValue( 'object_id', $value );
-	}
-
-	/**
-	 * @return bool|mixed
-	 */
 	function getTagID() {
-		return $this->getGenericDataValue( 'tag_id' );
+		if ( isset($this->data['tag_id']) ) {
+			return (int)$this->data['tag_id'];
+		}
+
+		return FALSE;
+	}
+	function setTagID($id) {
+		$id = trim($id);
+
+		if ( $this->Validator->isNumeric(	'tag_id',
+										$id,
+										TTi18n::gettext('Tag ID is invalid')
+										) ) {
+			$this->data['tag_id'] = $id;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setTagID( $value) {
-		$value = TTUUID::castUUID( $value );
-		return $this->setGenericDataValue( 'tag_id', $value );
-	}
-
-	/**
-	 * @param string $company_id UUID
-	 * @param int $object_type_id
-	 * @param string $object_id UUID
-	 * @param $tags
-	 * @return bool
-	 */
 	static function setTags( $company_id, $object_type_id, $object_id, $tags ) {
-		if ( TTUUID::isUUID($object_id) AND $object_id != TTUUID::getZeroID() AND $object_id != TTUUID::getNotExistID() ) {
+		if ( $object_id > 0 ) {
 			//Parse tags
 			$parsed_tags = CompanyGenericTagFactory::parseTags( $tags );
 			if ( is_array($parsed_tags) ) {
 				Debug::text('Setting Tags: Company: '. $company_id .' Object Type: '. $object_type_id .' Object: '. $object_type_id .' Tags: '. $tags, __FILE__, __LINE__, __METHOD__, 10);
 
 				$existing_tags = CompanyGenericTagFactory::getOrCreateTags( $company_id, $object_type_id, $parsed_tags );
-
+				
 				//$existing_tag_ids = array_values( (array)$existing_tags );
 				//Debug::Arr($existing_tags, 'Existing Tags: ', __FILE__, __LINE__, __METHOD__, 10);
 				//Debug::Arr($existing_tag_ids, 'Existing Tag IDs: ', __FILE__, __LINE__, __METHOD__, 10);
@@ -149,7 +153,7 @@ class CompanyGenericTagMapFactory extends Factory {
 				if ( isset($parsed_tags['delete']) ) {
 					foreach( $parsed_tags['delete'] as $del_tag ) {
 						$del_tag = strtolower($del_tag);
-						if ( isset($existing_tags[$del_tag]) AND TTUUID::isUUID( $existing_tags[$del_tag] ) AND $existing_tags[$del_tag] != TTUUID::getZeroID() ) {
+						if ( isset($existing_tags[$del_tag]) AND $existing_tags[$del_tag] > 0 ) {
 							$del_tag_ids[] = $existing_tags[$del_tag];
 						}
 					}
@@ -169,7 +173,7 @@ class CompanyGenericTagMapFactory extends Factory {
 						$obj->Delete();
 					} else {
 						//Save ID's that need to be updated.
-						Debug::text('NOT Deleting: '. $id, __FILE__, __LINE__, __METHOD__, 10);
+						Debug::text('NOT Deleting : '. $id, __FILE__, __LINE__, __METHOD__, 10);
 						$tmp_ids[] = $id;
 					}
 				}
@@ -180,9 +184,7 @@ class CompanyGenericTagMapFactory extends Factory {
 				if ( isset($parsed_tags['add']) ) {
 					foreach( $parsed_tags['add'] as $add_tag ) {
 						$add_tag = strtolower($add_tag);
-						if ( isset($existing_tags[$add_tag])
-								AND TTUUID::isUUID( $existing_tags[$add_tag] ) AND  $existing_tags[$add_tag] != TTUUID::getZeroID() AND $existing_tags[$add_tag] != TTUUID::getNotExistID()
-								AND !in_array($existing_tags[$add_tag], $tmp_ids) ) {
+						if ( isset($existing_tags[$add_tag]) AND $existing_tags[$add_tag] > 0 AND !in_array($existing_tags[$add_tag], $tmp_ids) ) {
 							$cgtmf = TTnew('CompanyGenericTagMapFactory');
 							$cgtmf->setObjectType( $object_type_id );
 							$cgtmf->setObjectID( $object_id );
@@ -201,146 +203,53 @@ class CompanyGenericTagMapFactory extends Factory {
 		return TRUE;
 	}
 
-	/**
-	 * @return bool
-	 */
-	function Validate() {
-		//
-		// BELOW: Validation code moved from set*() functions.
-		//
-		// Object Type
-		$this->Validator->inArrayKey(	'object_type',
-												$this->getObjectType(),
-												TTi18n::gettext('Object Type is invalid'),
-												$this->getOptions('object_type')
-											);
-		// Object ID
-		$this->Validator->isUUID(	'object_id',
-											$this->getObjectID(),
-											TTi18n::gettext('Object ID is invalid')
-										);
-		// Tag ID
-		$this->Validator->isUUID(	'tag_id',
-											$this->getTagID(),
-											TTi18n::gettext('Tag ID is invalid')
-										);
-		//
-		// ABOVE: Validation code moved from set*() functions.
-		//
-		return TRUE;
-	}
-
 	//This table doesn't have any of these columns, so overload the functions.
-
-	/**
-	 * @return bool
-	 */
 	function getDeleted() {
 		return FALSE;
 	}
-
-	/**
-	 * @param $bool
-	 * @return bool
-	 */
-	function setDeleted( $bool) {
+	function setDeleted($bool) {
 		return FALSE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function getCreatedDate() {
 		return FALSE;
 	}
-
-	/**
-	 * @param int $epoch EPOCH
-	 * @return bool
-	 */
-	function setCreatedDate( $epoch = NULL) {
+	function setCreatedDate($epoch = NULL) {
 		return FALSE;
 	}
-
-	/**
-	 * @return bool
-	 */
 	function getCreatedBy() {
 		return FALSE;
 	}
-
-	/**
-	 * @param string $id UUID
-	 * @return bool
-	 */
-	function setCreatedBy( $id = NULL) {
+	function setCreatedBy($id = NULL) {
 		return FALSE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function getUpdatedDate() {
 		return FALSE;
 	}
-
-	/**
-	 * @param int $epoch EPOCH
-	 * @return bool
-	 */
-	function setUpdatedDate( $epoch = NULL) {
+	function setUpdatedDate($epoch = NULL) {
 		return FALSE;
 	}
-
-	/**
-	 * @return bool
-	 */
 	function getUpdatedBy() {
 		return FALSE;
 	}
-
-	/**
-	 * @param string $id UUID
-	 * @return bool
-	 */
-	function setUpdatedBy( $id = NULL) {
+	function setUpdatedBy($id = NULL) {
 		return FALSE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function getDeletedDate() {
 		return FALSE;
 	}
-
-	/**
-	 * @param int $epoch EPOCH
-	 * @return bool
-	 */
-	function setDeletedDate( $epoch = NULL) {
+	function setDeletedDate($epoch = NULL) {
 		return FALSE;
 	}
-
-	/**
-	 * @return bool
-	 */
 	function getDeletedBy() {
 		return FALSE;
 	}
-
-	/**
-	 * @param string $id UUID
-	 * @return bool
-	 */
-	function setDeletedBy( $id = NULL) {
+	function setDeletedBy($id = NULL) {
 		return FALSE;
 	}
 
-	/**
-	 * @param $log_action
-	 * @return bool
-	 */
 	function addLog( $log_action ) {
 		$retval = FALSE;
 		if ( $this->getObjectType() > 0 ) {

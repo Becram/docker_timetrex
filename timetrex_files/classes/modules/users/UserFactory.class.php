@@ -1,7 +1,7 @@
 <?php
 /*********************************************************************************
  * TimeTrex is a Workforce Management program developed by
- * TimeTrex Software Inc. Copyright (C) 2003 - 2018 TimeTrex Software Inc.
+ * TimeTrex Software Inc. Copyright (C) 2003 - 2017 TimeTrex Software Inc.
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Affero General Public License version 3 as published by
@@ -45,7 +45,6 @@ class UserFactory extends Factory {
 	protected $tmp_data = NULL;
 	protected $user_preference_obj = NULL;
 	protected $user_tax_obj = NULL;
-	protected $legal_entity_obj = NULL;
 	protected $company_obj = NULL;
 	protected $title_obj = NULL;
 	protected $branch_obj = NULL;
@@ -60,11 +59,6 @@ class UserFactory extends Factory {
 	protected $address_validator_regex = '/^[a-zA-Z0-9-,_\/\.\'#\ |\x{0080}-\x{FFFF}]{1,250}$/iu';
 	protected $city_validator_regex = '/^[a-zA-Z0-9-,_\.\'#\ |\x{0080}-\x{FFFF}]{1,250}$/iu';
 
-	/**
-	 * @param $name
-	 * @param null $parent
-	 * @return array|null
-	 */
 	function _getFactoryOptions( $name, $parent = NULL ) {
 
 		$retval = NULL;
@@ -91,7 +85,6 @@ class UserFactory extends Factory {
 			case 'columns':
 				$retval = array(
 										'-1005-company' => TTi18n::gettext('Company'),
-										'-1008-legal_name' => TTi18n::getText('Legal Entity Name'),
 										'-1010-employee_number' => TTi18n::gettext('Employee #'),
 										'-1020-status' => TTi18n::gettext('Status'),
 										'-1030-user_name' => TTi18n::gettext('User Name'),
@@ -202,17 +195,11 @@ class UserFactory extends Factory {
 		return $retval;
 	}
 
-	/**
-	 * @param $data
-	 * @return array
-	 */
 	function _getVariableToFunctionMap( $data ) {
 		$variable_function_map = array(
 										'id' => 'ID',
 										'company_id' => 'Company',
 										'company' => FALSE,
-										'legal_entity_id' => 'LegalEntity',
-										'legal_name' => FALSE,
 										'status_id' => 'Status',
 										'status' => FALSE,
 										'group_id' => 'Group',
@@ -310,9 +297,6 @@ class UserFactory extends Factory {
 		return $variable_function_map;
 	}
 
-	/**
-	 * @return bool|null|object
-	 */
 	function getUserPreferenceObject() {
 		$retval = $this->getGenericObject( 'UserPreferenceListFactory', $this->getID(), 'user_preference_obj', 'getByUserId', 'getUser' );
 
@@ -328,143 +312,123 @@ class UserFactory extends Factory {
 		return $retval;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function getCompanyObject() {
 		return $this->getGenericObject( 'CompanyListFactory', $this->getCompany(), 'company_obj' );
 	}
 
-	/**
-	 * @return bool
-	 */
-	function getLegalEntityObject() {
-		return $this->getGenericObject( 'LegalEntityListFactory', $this->getLegalEntity(), 'legal_entity_obj' );
-	}
-
-	/**
-	 * @return bool
-	 */
 	function getTitleObject() {
 		return $this->getGenericObject( 'UserTitleListFactory', $this->getTitle(), 'title_obj' );
 	}
 
-	/**
-	 * @return bool
-	 */
 	function getDefaultBranchObject() {
 		return $this->getGenericObject( 'BranchListFactory', $this->getDefaultBranch(), 'branch_obj' );
 	}
 
-	/**
-	 * @return bool
-	 */
 	function getDefaultDepartmentObject() {
 		return $this->getGenericObject( 'DepartmentListFactory', $this->getDefaultDepartment(), 'department_obj' );
 	}
 
-	/**
-	 * @return bool
-	 */
 	function getGroupObject() {
 		return $this->getGenericObject( 'UserGroupListFactory', $this->getGroup(), 'group_obj' );
 	}
 
-	/**
-	 * @return bool
-	 */
 	function getCurrencyObject() {
 		return $this->getGenericObject( 'CurrencyListFactory', $this->getCurrency(), 'currency_obj' );
 	}
 
-	/**
-	 * @return bool|int|string
-	 */
 	function getCompany() {
-		return TTUUID::castUUID($this->getGenericDataValue( 'company_id' ));
-	}
-
-	/**
-	 * @param string $value UUID
-	 * @return bool
-	 */
-	function setCompany( $value ) {
-		$value = TTUUID::castUUID( $value );
-		Debug::Text('Company ID: '. $value, __FILE__, __LINE__, __METHOD__, 10);
-		return $this->setGenericDataValue( 'company_id', $value );
-	}
-
-	/**
-	 * @return bool|mixed
-	 */
-	function getLegalEntity() {
-		return $this->getGenericDataValue( 'legal_entity_id' );
-	}
-
-	/**
-	 * @param string $value UUID
-	 * @return bool
-	 */
-	function setLegalEntity( $value ) {
-		$value = TTUUID::castUUID( $value );
-
-		Debug::Text('Legal Entity ID: '. $value, __FILE__, __LINE__, __METHOD__, 10);
-		return $this->setGenericDataValue( 'legal_entity_id', $value );
-	}
-
-
-	/**
-	 * @return bool|int
-	 */
-	function getStatus() {
-		return $this->getGenericDataValue( 'status_id' );
-	}
-
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setStatus( $value ) {
-		$value = (int)trim($value);
-		$modify_status = FALSE;
-		if ( $this->getCurrentUserPermissionLevel() >= $this->getPermissionLevel() ) {
-			$modify_status = TRUE;
-		} elseif (	$this->getStatus() == $value ) { //No modification made.
-			$modify_status = TRUE;
+		if ( isset($this->data['company_id']) ) {
+			return (int)$this->data['company_id'];
 		}
-		if ( $modify_status == TRUE ) {
-			return $this->setGenericDataValue( 'status_id', $value );
+
+		return FALSE;
+	}
+	function setCompany($id) {
+		$id = trim($id);
+
+		Debug::Text('Company ID: '. $id, __FILE__, __LINE__, __METHOD__, 10);
+		$clf = TTnew( 'CompanyListFactory' );
+
+		if ( $this->Validator->isResultSetWithRows(	'company',
+													$clf->getByID($id),
+													TTi18n::gettext('Company is invalid')
+													) ) {
+
+			$this->data['company_id'] = $id;
+
+			return TRUE;
 		}
+
 		return FALSE;
 	}
 
-	/**
-	 * @return bool|mixed
-	 */
+	function getStatus() {
+		if ( isset($this->data['status_id']) ) {
+			return (int)$this->data['status_id'];
+		}
+
+		return FALSE;
+	}
+	function setStatus($status) {
+		$status = trim($status);
+
+		$modify_status = FALSE;
+		if ( $this->getCurrentUserPermissionLevel() >= $this->getPermissionLevel() ) {
+			$modify_status = TRUE;
+		} elseif (	$this->getStatus() == $status ) { //No modification made.
+			$modify_status = TRUE;
+		}
+
+		if ( $this->Validator->inArrayKey(	'status_id',
+											$status,
+											TTi18n::gettext('Incorrect Status'),
+											$this->getOptions('status'))
+				AND
+				$this->Validator->isTrue(		'status_id',
+												$modify_status,
+												TTi18n::gettext('Insufficient access to modify status for this employee')
+												)
+			) {
+
+			$this->data['status_id'] = $status;
+
+			return TRUE;
+		}
+
+		return FALSE;
+	}
+
 	function getGroup() {
-		return $this->getGenericDataValue( 'group_id' );
+		if ( isset($this->data['group_id']) ) {
+			return (int)$this->data['group_id'];
+		}
+
+		return FALSE;
+	}
+	function setGroup($id) {
+		$id = (int)trim($id);
+
+		$uglf = TTnew( 'UserGroupListFactory' );
+		if (	$id == 0
+				OR
+				$this->Validator->isResultSetWithRows(	'group',
+														$uglf->getByID($id),
+														TTi18n::gettext('Group is invalid')
+													) ) {
+
+			$this->data['group_id'] = $id;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @param string $value UUID
-	 * @return bool
-	 */
-	function setGroup( $value ) {
-		$value = TTUUID::castUUID( $value );
-		return $this->setGenericDataValue( 'group_id', $value );
-	}
-
-	/**
-	 * @return bool|int
-	 */
 	function getPermissionLevel() {
 		$permission = new Permission();
 		return $permission->getLevel( $this->getID(), $this->getCompany() );
 	}
 
-	/**
-	 * @return bool|int
-	 */
 	function getCurrentUserPermissionLevel() {
 		//Get currently logged in users permission level, so we can ensure they don't assign another user to a higher level.
 		global $current_user;
@@ -481,17 +445,12 @@ class UserFactory extends Factory {
 		return $current_user_permission_level;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function getPermissionControl() {
 		//Check to see if any temporary data is set for the hierarchy, if not, make a call to the database instead.
 		//postSave() needs to get the tmp_data.
-		$value = $this->getGenericTempDataValue( 'permission_control_id' );
-		if ( $value !== FALSE ) {
-			return $value;
-		} elseif ( TTUUID::isUUID($this->getCompany()) AND $this->getCompany() != TTUUID::getZeroID() AND $this->getCompany() != TTUUID::getNotExistID()
-				AND TTUUID::isUUID($this->getID()) AND $this->getID() != TTUUID::getZeroID() AND $this->getID() != TTUUID::getNotExistID() ) {
+		if ( isset($this->tmp_data['permission_control_id']) ) {
+			return $this->tmp_data['permission_control_id'];
+		} elseif ( $this->getCompany() > 0 AND $this->getID() > 0 ) {
 			$pclfb = TTnew( 'PermissionControlListFactory' );
 			$pclfb->getByCompanyIdAndUserId( $this->getCompany(), $this->getID() );
 			if ( $pclfb->getRecordCount() > 0 ) {
@@ -501,27 +460,59 @@ class UserFactory extends Factory {
 
 		return FALSE;
 	}
+	function setPermissionControl($id) {
+		$id = (int)trim($id);
 
-	/**
-	 * @param string $value UUID
-	 * @return bool
-	 */
-	function setPermissionControl( $value ) {
-		$value = TTUUID::castUUID( $value );
-		return $this->setGenericTempDataValue( 'permission_control_id', $value );
+		$pclf = TTnew( 'PermissionControlListFactory' );
+
+		$current_user_permission_level = $this->getCurrentUserPermissionLevel();
+
+		$modify_permissions = FALSE;
+		if ( $current_user_permission_level >= $this->getPermissionLevel() ) {
+			$modify_permissions = TRUE;
+		}
+
+		global $current_user;
+		if ( is_object($current_user) AND $current_user->getID() == $this->getID() AND $id != $this->getPermissionControl() ) { //Acting on currently logged in user.
+			$logged_in_modify_permissions = FALSE; //Must be false for validation to fail.
+		} else {
+			$logged_in_modify_permissions = TRUE;
+		}
+
+
+		//Don't allow permissions to be modified if the currently logged in user has a lower permission level.
+		//As such if someone with a lower level is able to edit the user of higher level, they must not call this function at all, or use a blank value.
+		if (	$id != ''
+				AND
+				$this->Validator->isResultSetWithRows(		'permission_control_id',
+															$pclf->getByIDAndLevel($id, $current_user_permission_level),
+															TTi18n::gettext('Permission Group is invalid')
+															)
+				AND
+				$this->Validator->isTrue(		'permission_control_id',
+												$modify_permissions,
+												TTi18n::gettext('Insufficient access to modify permissions for this employee')
+												)
+				AND
+				$this->Validator->isTrue(		'permission_control_id',
+												$logged_in_modify_permissions,
+												TTi18n::gettext('Unable to change permissions of your own record')
+												)
+				) {
+			$this->tmp_data['permission_control_id'] = $id;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function getPayPeriodSchedule() {
 		//Check to see if any temporary data is set for the hierarchy, if not, make a call to the database instead.
 		//postSave() needs to get the tmp_data.
-		$value = $this->getGenericTempDataValue( 'pay_period_schedule_id' );
-		if ( $value !== FALSE ) {
-			return $value;
-		} elseif ( TTUUID::isUUID( $this->getCompany() ) AND $this->getCompany() != TTUUID::getZeroID() AND $this->getCompany() != TTUUID::getNotExistID()
-				AND TTUUID::isUUID( $this->getID() ) AND $this->getID() != TTUUID::getZeroID() AND $this->getID() != TTUUID::getNotExistID() ) {
+		if ( isset($this->tmp_data['pay_period_schedule_id']) ) {
+			return $this->tmp_data['pay_period_schedule_id'];
+		} elseif ( $this->getCompany() > 0 AND $this->getID() > 0 ) {
 			$ppslfb = TTnew( 'PayPeriodScheduleListFactory' );
 			$ppslfb->getByUserId( $this->getID() );
 			if ( $ppslfb->getRecordCount() > 0 ) {
@@ -531,27 +522,30 @@ class UserFactory extends Factory {
 
 		return FALSE;
 	}
+	function setPayPeriodSchedule($id) {
+		$id = (int)trim($id);
 
-	/**
-	 * @param string $value UUID
-	 * @return bool
-	 */
-	function setPayPeriodSchedule( $value ) {
-		$value = TTUUID::castUUID( $value );
-		return $this->setGenericTempDataValue( 'pay_period_schedule_id', $value );
+		$ppslf = TTnew( 'PayPeriodScheduleListFactory' );
+
+		if ( $id == 0
+				OR $this->Validator->isResultSetWithRows(	'pay_period_schedule_id',
+															$ppslf->getByID($id),
+															TTi18n::gettext('Pay Period schedule is invalid')
+															) ) {
+			$this->tmp_data['pay_period_schedule_id'] = $id;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function getPolicyGroup() {
 		//Check to see if any temporary data is set for the hierarchy, if not, make a call to the database instead.
 		//postSave() needs to get the tmp_data.
-		$value = $this->getGenericTempDataValue( 'policy_group_id' );
-		if ( $value !== FALSE ) {
-			return $value;
-		} elseif ( TTUUID::isUUID( $this->getCompany() ) AND $this->getCompany() != TTUUID::getZeroID() AND $this->getCompany() != TTUUID::getNotExistID()
-				AND TTUUID::isUUID( $this->getID() ) AND $this->getID() != TTUUID::getZeroID() AND $this->getID() != TTUUID::getNotExistID() ) {
+		if ( isset($this->tmp_data['policy_group_id']) ) {
+			return $this->tmp_data['policy_group_id'];
+		} elseif ( $this->getCompany() > 0 AND $this->getID() > 0 ) {
 			$pglf = TTnew( 'PolicyGroupListFactory' );
 			$pglf->getByUserIds( $this->getID());
 			if ( $pglf->getRecordCount() > 0 ) {
@@ -561,21 +555,30 @@ class UserFactory extends Factory {
 
 		return FALSE;
 	}
+	function setPolicyGroup($id) {
+		$id = (int)trim($id);
 
-	/**
-	 * @param string $value UUID
-	 * @return bool
-	 */
-	function setPolicyGroup( $value ) {
-		$value = TTUUID::castUUID( $value );
-		return $this->setGenericTempDataValue( 'policy_group_id', $value );
+		$pglf = TTnew( 'PolicyGroupListFactory' );
+
+		if (	$id != ''
+				AND
+				(
+					$id == 0
+					OR $this->Validator->isResultSetWithRows(	'policy_group_id',
+																$pglf->getByID($id),
+																TTi18n::gettext('Policy Group is invalid')
+																)
+				)
+				) {
+			$this->tmp_data['policy_group_id'] = $id;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
 	//Display each superior that the employee is assigned too.
-
-	/**
-	 * @return bool|string
-	 */
 	function getHierarchyLevelDisplay() {
 		$hllf = new HierarchyLevelListFactory();
 		$hllf->getObjectTypeAndHierarchyAppendedListByCompanyIDAndUserID( $this->getCompany(), $this->getID() );
@@ -609,10 +612,6 @@ class UserFactory extends Factory {
 	}
 
 	//Display each hierarchy that the employee is assigned too.
-
-	/**
-	 * @return bool|string
-	 */
 	function getHierarchyControlDisplay() {
 		$hclf = TTnew( 'HierarchyControlListFactory' );
 		$hclf->getObjectTypeAppendedListByCompanyIDAndUserID( $this->getCompany(), $this->getID() );
@@ -632,40 +631,42 @@ class UserFactory extends Factory {
 		return FALSE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function getHierarchyControl() {
 		//Check to see if any temporary data is set for the hierarchy, if not, make a call to the database instead.
 		//postSave() needs to get the tmp_data.
-		$value = $this->getGenericTempDataValue( 'hierarchy_control' );
-		if ( $value !== FALSE ) {
-			return $value;
-		} elseif ( TTUUID::isUUID( $this->getCompany() ) AND $this->getCompany() != TTUUID::getZeroID() AND $this->getCompany() != TTUUID::getNotExistID()
-					AND TTUUID::isUUID( $this->getID() ) AND $this->getID() != TTUUID::getZeroID() AND $this->getID() != TTUUID::getNotExistID() ) {
+		if ( isset($this->tmp_data['hierarchy_control']) ) {
+			return $this->tmp_data['hierarchy_control'];
+		} elseif ( $this->getCompany() > 0 AND $this->getID() > 0 ) {
 			$hclf = TTnew( 'HierarchyControlListFactory' );
 			$hclf->getObjectTypeAppendedListByCompanyIDAndUserID( $this->getCompany(), $this->getID() );
-
 			return $hclf->getArrayByListFactory( $hclf, FALSE, TRUE, FALSE );
 		}
 
 		return FALSE;
 	}
-
-	/**
-	 * @param $data
-	 * @return bool
-	 */
-	function setHierarchyControl( $data) {
+	function setHierarchyControl($data) {
 		if ( !is_array($data) ) {
 			return FALSE;
 		}
+
 		//array passed in is hierarchy_object_type_id => hierarchy_control_id
 		if ( is_array($data) ) {
+			$hclf = TTnew( 'HierarchyControlListFactory' );
 			Debug::Arr($data, 'Hierarchy Control Data: ', __FILE__, __LINE__, __METHOD__, 10);
+
 			foreach( $data as $hierarchy_object_type_id => $hierarchy_control_id ) {
 				$hierarchy_control_id = Misc::trimSortPrefix( $hierarchy_control_id );
-				$this->tmp_data['hierarchy_control'][$hierarchy_object_type_id] = $hierarchy_control_id;
+
+				if (	$hierarchy_control_id == 0
+						OR
+						$this->Validator->isResultSetWithRows(		'hierarchy_control_id',
+																	$hclf->getByID($hierarchy_control_id),
+																	TTi18n::gettext('Hierarchy is invalid')
+																	) ) {
+					$this->tmp_data['hierarchy_control'][$hierarchy_object_type_id] = $hierarchy_control_id;
+				} else {
+					return FALSE;
+				}
 			}
 
 			return TRUE;
@@ -674,20 +675,17 @@ class UserFactory extends Factory {
 		return FALSE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function getFeedbackRating() {
-		return $this->getGenericDataValue( 'feedback_rating' );
+		if ( isset( $this->data['feedback_rating'] ) ) {
+			return $this->data['feedback_rating'];
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setFeedbackRating( $value ) {
-		if ( $value == 1 OR $value == 0 OR $value == -1 ) {
-			$this->setGenericDataValue( 'feedback_rating', $value );
+	function setFeedbackRating( $rating ) {
+		if ( $rating == 1 OR $rating == 0 OR $rating == -1 ) {
+			$this->data['feedback_rating'] = $rating;
 
 			return TRUE;
 		}
@@ -695,11 +693,7 @@ class UserFactory extends Factory {
 		return FALSE;
 	}
 
-	/**
-	 * @param $user_name
-	 * @return bool
-	 */
-	function isUniqueUserName( $user_name) {
+	function isUniqueUserName($user_name) {
 		$ph = array(
 					'user_name' => trim(strtolower($user_name)),
 					);
@@ -718,29 +712,94 @@ class UserFactory extends Factory {
 
 		return FALSE;
 	}
-
-	/**
-	 * @return bool|mixed
-	 */
 	function getUserName() {
-		return $this->getGenericDataValue( 'user_name' );
+		if ( isset($this->data['user_name']) ) {
+			return $this->data['user_name'];
+		}
+
+		return FALSE;
+	}
+	function setUserName($user_name) {
+		$user_name = trim(strtolower($user_name));
+
+		if	(	$this->Validator->isRegEx(		'user_name',
+												$user_name,
+												TTi18n::gettext('Incorrect characters in user name'),
+												$this->username_validator_regex)
+					AND
+						$this->Validator->isLength(		'user_name',
+														$user_name,
+														TTi18n::gettext('Incorrect user name length'),
+														3,
+														250)
+					AND
+						$this->Validator->isTrue(		'user_name',
+														$this->isUniqueUserName($user_name),
+														TTi18n::gettext('User name is already taken')
+														)
+			) {
+
+			$this->data['user_name'] = $user_name;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setUserName( $value ) {
-		$value = trim(strtolower($value));
-		return $this->setGenericDataValue( 'user_name', $value );
+	function getPasswordSalt() {
+		global $config_vars;
+
+		if ( isset($config_vars['other']['salt']) AND $config_vars['other']['salt'] != '' ) {
+			$retval = $config_vars['other']['salt'];
+		} else {
+			$retval = 'ttsalt03198238';
+		}
+
+		return trim($retval);
 	}
 
-	/**
-	 * @param $password
-	 * @param bool $check_password_policy
-	 * @return bool
-	 */
-	function checkPassword( $password, $check_password_policy = TRUE ) {
+	function getPasswordVersion( $encrypted_password = FALSE ) {
+		if ( $encrypted_password == '' ) {
+			$encrypted_password = $this->getPassword();
+		}
+
+		$split_password = explode(':', $encrypted_password );
+		if ( is_array($split_password) AND count($split_password) == 2 ) {
+			$version = $split_password[0];
+		} else {
+			$version = 1;
+		}
+
+		return $version;
+	}
+
+	//Always default to latest password version.
+	function encryptPassword( $password, $version = 2 ) {
+		$password = trim($password);
+
+		//Handle password migration/versioning
+		switch( (int)$version ) {
+			case 2: //v2
+				//Case sensitive, uses sha512 and company/user specific salt.
+				//Prepend with password version.
+				//
+				//IMPORTANT: When creating a new user, the ID must be defined before this is called, otherwise the hash is incorrect.
+				//           This manifests itself as an incorrect password when its first created, but can be changed and then starts working.
+				//
+				$encrypted_password = '2:'. hash( 'sha512', $this->getPasswordSalt() . (int)$this->getCompany() . (int)$this->getID() . $password );
+				break;
+			default: //v1
+				//Case insensitive, uses sha1 and global salt.
+				$encrypted_password = sha1( $this->getPasswordSalt() . strtolower($password) );
+				break;
+		}
+		unset($password);
+
+		return $encrypted_password;
+	}
+
+	function checkPassword($password, $check_password_policy = TRUE ) {
 		global $config_vars;
 
 		$password = trim( html_entity_decode( $password ) );
@@ -782,11 +841,11 @@ class UserFactory extends Factory {
 			Debug::Text('LDAP authentication disabled due to config or extension missing...', __FILE__, __LINE__, __METHOD__, 10);
 		}
 
-		$password_version = TTPassword::getPasswordVersion( $this->getPassword() );
-		$encrypted_password = TTPassword::encryptPassword( $password, $this->getCompany(), $this->getID(), $password_version );
+		$password_version = $this->getPasswordVersion();
+		$encrypted_password = $this->encryptPassword( $password, $password_version );
 
 		//Don't check local TT passwords if LDAP Only authentication is enabled. Still accept override passwords though.
-		if ( $ldap_authentication_type_id != 2 AND TTPassword::checkPassword( $encrypted_password, $this->getPassword() ) ) {
+		if ( $ldap_authentication_type_id != 2 AND $encrypted_password === $this->getPassword() ) {
 			//If the passwords match, confirm that the password hasn't exceeded its maximum age.
 			//Allow override passwords always.
 			if ( $check_password_policy == TRUE AND $this->isFirstLogin() == TRUE AND $this->isCompromisedPassword() == TRUE ) { //Need to check for compromised password, as last_login_date doesn't get updated until they can actually login fully.
@@ -800,9 +859,9 @@ class UserFactory extends Factory {
 				return FALSE;
 			} else {
 				//If password version is not the latest, update the password version when it successfully matches.
-				if ( $password_version < TTPassword::getLatestVersion() ) {
+				if ( $password_version < 2 ) {
 					Debug::Text('Converting password to latest encryption version...', __FILE__, __LINE__, __METHOD__, 10);
-					$this->db->Execute( 'UPDATE '. $this->getTable() .' SET password = ? where id = ?', array( 'password' => TTPassword::encryptPassword( $password, $this->getCompany(), $this->getID() ), 'id' => TTUUID::castUUID( $this->getID() ) ) );
+					$this->db->Execute( 'UPDATE '. $this->getTable() .' SET password = ? where id = ?', array( 'password' => $this->encryptPassword( $password ), 'id' => (int)$this->getID() ) );
 					unset($password);
 				}
 
@@ -811,7 +870,7 @@ class UserFactory extends Factory {
 		} elseif ( isset($config_vars['other']['override_password_prefix'])
 						AND $config_vars['other']['override_password_prefix'] != '' ) {
 			//Check override password
-			if ( TTPassword::checkPassword( $encrypted_password, TTPassword::encryptPassword( trim( trim( $config_vars['other']['override_password_prefix'] ).substr($this->getUserName(), 0, 2) ), $this->getCompany(), $this->getID(), $password_version ) ) ) {
+			if ( $encrypted_password == $this->encryptPassword( trim( trim( $config_vars['other']['override_password_prefix'] ).substr($this->getUserName(), 0, 2) ), $password_version ) ) {
 				TTLog::addEntry( $this->getId(), 510, TTi18n::getText('Override Password successful from IP Address').': '. Misc::getRemoteIPAddress(), NULL, $this->getTable() );
 				return TRUE;
 			}
@@ -819,21 +878,14 @@ class UserFactory extends Factory {
 
 		return FALSE;
 	}
-
-	/**
-	 * @return bool|mixed
-	 */
 	function getPassword() {
-		return $this->getGenericDataValue( 'password' );
-	}
+		if ( isset($this->data['password']) ) {
+			return $this->data['password'];
+		}
 
-	/**
-	 * @param $password
-	 * @param null $password_confirm
-	 * @param bool $force
-	 * @return bool
-	 */
-	function setPassword( $password, $password_confirm = NULL, $force = FALSE ) {
+		return FALSE;
+	}
+	function setPassword($password, $password_confirm = NULL, $force = FALSE ) {
 		$password = trim($password);
 		$password_confirm = ( $password_confirm !== NULL ) ? trim($password_confirm) : $password_confirm;
 
@@ -912,9 +964,9 @@ class UserFactory extends Factory {
 													TTi18n::gettext('Password must reach its minimum age before it can be changed again') );
 				}
 
-				if ( TTUUID::isUUID( $this->getId() ) AND $this->getId() != TTUUID::getZeroID() AND $this->getId() != TTUUID::getNotExistID() ) {
+				if ( $this->getId() > 0 ) {
 					$uilf = TTnew( 'UserIdentificationListFactory' );
-					$uilf->getByUserIdAndTypeIdAndValue( $this->getId(), 5, TTPassword::encryptPassword( $password, $this->getCompany(), $this->getID() ) );
+					$uilf->getByUserIdAndTypeIdAndValue( $this->getId(), 5, $this->encryptPassword( $password ) );
 					if ( $uilf->getRecordCount() > 0 ) {
 						$update_password = FALSE;
 						$this->Validator->isTrue(		'password',
@@ -927,7 +979,7 @@ class UserFactory extends Factory {
 
 			if ( $update_password === TRUE ) {
 				Debug::Text('Setting new password...', __FILE__, __LINE__, __METHOD__, 10);
-				$this->data['password'] = TTPassword::encryptPassword( $password, $this->getCompany(), $this->getId() ); //Assumes latest password version is used.
+				$this->data['password'] = $this->encryptPassword( $password ); //Assumes latest password version is used.
 				$this->setPasswordUpdatedDate( time() );
 				$this->setEnableClearPasswordResetData( TRUE ); //Clear any outstanding password reset key to prevent unexpected changes later on.
 			}
@@ -939,9 +991,6 @@ class UserFactory extends Factory {
 	}
 
 
-	/**
-	 * @return bool
-	 */
 	function isPasswordPolicyEnabled() {
 		$c_obj = $this->getCompanyObject();
 		if ( DEMO_MODE == FALSE AND PRODUCTION == TRUE AND is_object( $c_obj ) AND $c_obj->getPasswordPolicyType() == 1 AND $this->getPermissionLevel() >= $c_obj->getPasswordMinimumPermissionLevel() AND $c_obj->getProductEdition() > 10 ) {
@@ -952,9 +1001,6 @@ class UserFactory extends Factory {
 		return FALSE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function isFirstLogin() {
 		if ( DEMO_MODE == FALSE AND $this->getLastLoginDate() == '' ) {
 			Debug::Text('is First Login: TRUE', __FILE__, __LINE__, __METHOD__, 10);
@@ -964,16 +1010,13 @@ class UserFactory extends Factory {
 		return FALSE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function isCompromisedPassword() {
 
 		//Check to see if the password was updated at the same time the user record was created originally, or if the password was updated by an administrator.
 		//  Either way the password should be considered compromised (someone else knows it) and should be changed.
 		if ( DEMO_MODE == FALSE
 				AND ( 	(int)$this->getPasswordUpdatedDate() <= ( (int)$this->getCreatedDate() + 3 )
-						OR ( TTUUID::castUUID($this->getUpdatedBy()) != TTUUID::castUUID($this->getId()) AND (int)$this->getPasswordUpdatedDate() >= ( $this->getUpdatedDate() - 3 ) AND (int)$this->getPasswordUpdatedDate() <= ( $this->getUpdatedDate() + 3 ) )
+						OR ( (int)$this->getUpdatedBy() != (int)$this->getId() AND (int)$this->getPasswordUpdatedDate() >= ( $this->getUpdatedDate() - 3 ) AND (int)$this->getPasswordUpdatedDate() <= ( $this->getUpdatedDate() + 3 ) )
 					)
 			) {
 			Debug::Text('User hasnt ever changed their password... Last Login Date: '. TTDate::getDate('DATE+TIME', $this->getLastLoginDate() ), __FILE__, __LINE__, __METHOD__, 10);
@@ -983,9 +1026,6 @@ class UserFactory extends Factory {
 		return FALSE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function checkPasswordAge() {
 		$c_obj = $this->getCompanyObject();
 		//Always add 1 to the PasswordMaximumAge so if its set to 0 by mistake it will still allow the user to login after changing their password.
@@ -997,27 +1037,34 @@ class UserFactory extends Factory {
 		return TRUE;
 	}
 
-	/**
-	 * @return bool|mixed
-	 */
 	function getPasswordUpdatedDate() {
-		return $this->getGenericDataValue( 'password_updated_date' );
+		if ( isset($this->data['password_updated_date']) ) {
+			return $this->data['password_updated_date'];
+		}
+
+		return FALSE;
+	}
+	function setPasswordUpdatedDate($epoch) {
+		if ( empty($epoch) ) {
+			$epoch = NULL;
+		}
+
+		if	(	$epoch == ''
+				OR
+				$this->Validator->isDate(		'password_updated_date',
+												$epoch,
+												TTi18n::gettext('Password updated date is invalid')) ) {
+
+			Debug::Text('Setting new password date: '. TTDate::getDate('DATE+TIME', $epoch ), __FILE__, __LINE__, __METHOD__, 10);
+			$this->data['password_updated_date'] = $epoch;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @param int $value EPOCH
-	 * @return bool
-	 */
-	function setPasswordUpdatedDate( $value ) {
-		Debug::Text('Setting new password date: '. TTDate::getDate('DATE+TIME', $value ), __FILE__, __LINE__, __METHOD__, 10);
-		return $this->setGenericDataValue( 'password_updated_date', $value );
-	}
-
-	/**
-	 * @param string $phone_id UUID
-	 * @return bool
-	 */
-	function isUniquePhoneId( $phone_id) {
+	function isUniquePhoneId($phone_id) {
 		$ph = array(
 					'phone_id' => $phone_id,
 					);
@@ -1035,28 +1082,47 @@ class UserFactory extends Factory {
 		}
 		return FALSE;
 	}
-
-	/**
-	 * @return bool|string
-	 */
 	function getPhoneId() {
-		return (string)$this->getGenericDataValue( 'phone_id' );//Should not be cast to INT
+		if ( isset($this->data['phone_id']) ) {
+			return (string)$this->data['phone_id']; //Should not be cast to INT
+		}
+
+		return FALSE;
+	}
+	function setPhoneId($phone_id) {
+		$phone_id = trim($phone_id);
+
+		if	(
+				$phone_id == ''
+				OR
+				(
+					$this->Validator->isRegEx(		'phone_id',
+													$phone_id,
+													TTi18n::gettext('Quick Punch ID must be digits only'),
+													$this->phoneid_validator_regex)
+				AND
+					$this->Validator->isLength(		'phone_id',
+													$phone_id,
+													TTi18n::gettext('Incorrect Quick Punch ID length'),
+													4,
+													8)
+				AND
+					$this->Validator->isTrue(		'phone_id',
+													$this->isUniquePhoneId($phone_id),
+													TTi18n::gettext('Quick Punch ID is already in use, please try a different one')
+													)
+				)
+			) {
+
+			$this->data['phone_id'] = $phone_id;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @param string $value UUID
-	 * @return bool
-	 */
-	function setPhoneId( $value ) {
-		$value = trim($value);
-		return $this->setGenericDataValue( 'phone_id', $value );
-	}
-
-	/**
-	 * @param $password
-	 * @return bool
-	 */
-	function checkPhonePassword( $password) {
+	function checkPhonePassword($password) {
 		$password = trim($password);
 
 		if ( $password == $this->getPhonePassword() ) {
@@ -1065,20 +1131,14 @@ class UserFactory extends Factory {
 
 		return FALSE;
 	}
-
-	/**
-	 * @return bool|mixed
-	 */
 	function getPhonePassword() {
-		return $this->getGenericDataValue( 'phone_password' );
-	}
+		if ( isset($this->data['phone_password']) ) {
+			return $this->data['phone_password'];
+		}
 
-	/**
-	 * @param $phone_password
-	 * @param bool $force
-	 * @return bool
-	 */
-	function setPhonePassword( $phone_password, $force = FALSE ) {
+		return FALSE;
+	}
+	function setPhonePassword($phone_password, $force = FALSE ) {
 		$phone_password = trim($phone_password);
 
 		$is_new = $this->isNew( TRUE );
@@ -1107,7 +1167,7 @@ class UserFactory extends Factory {
 												4,
 												9) ) ) {
 
-			$this->setGenericDataValue( 'phone_password', $phone_password );
+			$this->data['phone_password'] = $phone_password;
 
 			return TRUE;
 		}
@@ -1115,14 +1175,10 @@ class UserFactory extends Factory {
 		return FALSE;
 	}
 
-	/**
-	 * @param string $company_id UUID
-	 * @return int|null
-	 */
-	function getNextAvailableEmployeeNumber( $company_id = NULL ) {
+	static function getNextAvailableEmployeeNumber( $company_id = NULL ) {
 		global $current_company;
 
-		if ( $company_id == '' AND is_object($current_company) ) {
+		if ( $company_id == '' ANd is_object($current_company) ) {
 			$company_id = $current_company->getId();
 		} elseif ( $company_id == '' AND isset($this) AND is_object($this) ) {
 			$company_id = $this->getCompany();
@@ -1143,11 +1199,7 @@ class UserFactory extends Factory {
 		}
 	}
 
-	/**
-	 * @param string $id UUID
-	 * @return bool
-	 */
-	function isUniqueEmployeeNumber( $id) {
+	function isUniqueEmployeeNumber($id) {
 		if ( $this->getCompany() == FALSE ) {
 			return FALSE;
 		}
@@ -1175,12 +1227,7 @@ class UserFactory extends Factory {
 
 		return FALSE;
 	}
-
-	/**
-	 * @param string $id UUID
-	 * @return bool
-	 */
-	function checkEmployeeNumber( $id) {
+	function checkEmployeeNumber($id) {
 		$id = trim($id);
 
 		//Use employee ID for now.
@@ -1191,179 +1238,35 @@ class UserFactory extends Factory {
 
 		return FALSE;
 	}
-
-	/**
-	 * @return bool|int
-	 */
 	function getEmployeeNumber() {
-		$value = $this->getGenericDataValue( 'employee_number' );
-		if ( $value !== FALSE AND $value != '' ) {
-			return (int)$value;
+		if ( isset($this->data['employee_number']) AND $this->data['employee_number'] != '' ) {
+			return (int)$this->data['employee_number'];
 		}
 
 		return FALSE;
 	}
-
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setEmployeeNumber( $value) {
+	function setEmployeeNumber($value) {
 		$value = $this->Validator->stripNonNumeric( trim($value) );
-		if ( $value != '' AND $value >= 0 ) {
-			$value = (int)$value;
-		}
+
 		//Allow setting a blank employee number, so we can use Validate() to check employee number against the status_id
 		//To allow terminated employees to have a blank employee number, but active ones always have a number.
-		return $this->setGenericDataValue( 'employee_number', $value );
-	}
+		if (
+				$value == ''
+				OR (
+					$this->Validator->isNumeric(	'employee_number',
+													$value,
+													TTi18n::gettext('Employee number must only be digits'))
+					AND
+					$this->Validator->isTrue(		'employee_number',
+													$this->isUniqueEmployeeNumber($value),
+													TTi18n::gettext('Employee number is already in use, please enter a different one'))
+				)
+												) {
+			if ( $value != '' AND $value >= 0 ) {
+				$value = (int)$value;
+			}
 
-	/**
-	 * @return bool|mixed
-	 */
-	function getTitle() {
-		return $this->getGenericDataValue( 'title_id' );
-	}
-
-	/**
-	 * @param string $value UUID
-	 * @return bool
-	 */
-	function setTitle( $value ) {
-		$value = TTUUID::castUUID( $value );
-		return $this->setGenericDataValue( 'title_id', $value );
-	}
-
-	/**
-	 * @return bool
-	 */
-	function getEthnicGroup() {
-		return $this->getGenericDataValue( 'ethnic_group_id' );
-	}
-
-	/**
-	 * @param string $value UUID
-	 * @return bool
-	 */
-	function setEthnicGroup( $value ) {
-		$value = TTUUID::castUUID( $value );
-		return $this->setGenericDataValue( 'ethnic_group_id', $value );
-	}
-
-	/**
-	 * @return bool|mixed
-	 */
-	function getDefaultJob() {
-		return $this->getGenericDataValue( 'default_job_id' );
-	}
-
-	/**
-	 * @param string $value UUID
-	 * @return bool
-	 */
-	function setDefaultJob( $value ) {
-		$value = TTUUID::castUUID( $value );
-		Debug::Text('Default Job ID: '. $value, __FILE__, __LINE__, __METHOD__, 10);
-		if ( getTTProductEdition() < TT_PRODUCT_CORPORATE ) {
-			$value = TTUUID::getZeroID();
-		}
-		return $this->setGenericDataValue( 'default_job_id', $value );
-	}
-
-	/**
-	 * @return bool|mixed
-	 */
-	function getDefaultJobItem() {
-		return $this->getGenericDataValue( 'default_job_item_id' );
-	}
-
-	/**
-	 * @param string $value UUID
-	 * @return bool
-	 */
-	function setDefaultJobItem( $value ) {
-		$value = TTUUID::castUUID( $value );
-		Debug::Text('Default Job Item ID: '. $value, __FILE__, __LINE__, __METHOD__, 10);
-		if ( getTTProductEdition() < TT_PRODUCT_CORPORATE ) {
-			$value = TTUUID::getZeroID();
-		}
-		return $this->setGenericDataValue( 'default_job_item_id', $value );
-	}
-
-	/**
-	 * @return bool|mixed
-	 */
-	function getDefaultBranch() {
-		return $this->getGenericDataValue( 'default_branch_id' );
-	}
-
-	/**
-	 * @param string $value UUID
-	 * @return bool
-	 */
-	function setDefaultBranch( $value ) {
-		$value = TTUUID::castUUID( $value );
-		return $this->setGenericDataValue( 'default_branch_id', $value );
-	}
-
-	/**
-	 * @return bool|mixed
-	 */
-	function getDefaultDepartment() {
-		return $this->getGenericDataValue( 'default_department_id' );
-	}
-
-	/**
-	 * @param string $value UUID
-	 * @return bool
-	 */
-	function setDefaultDepartment( $value ) {
-		$value = TTUUID::castUUID( $value );
-		return $this->setGenericDataValue( 'default_department_id', $value );
-	}
-
-	/**
-	 * @param bool $reverse
-	 * @param bool $include_middle
-	 * @return bool|string
-	 */
-	function getFullName( $reverse = FALSE, $include_middle = TRUE ) {
-		return Misc::getFullName($this->getFirstName(), $this->getMiddleInitial(), $this->getLastName(), $reverse, $include_middle);
-	}
-
-	/**
-	 * @return bool|mixed
-	 */
-	function getFirstName() {
-		return $this->getGenericDataValue( 'first_name' );
-	}
-
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setFirstName( $value ) {
-		$value = ucwords( trim($value) );
-		$this->setFirstNameMetaphone( $value );
-		return $this->setGenericDataValue( 'first_name', $value );
-	}
-
-	/**
-	 * @return bool|mixed
-	 */
-	function getFirstNameMetaphone() {
-		return $this->getGenericDataValue( 'first_name_metaphone' );
-	}
-
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setFirstNameMetaphone( $value ) {
-		$value = metaphone( trim($value) );
-
-		if	(	$value != '' ) {
-			$this->setGenericDataValue( 'first_name_metaphone', $value );
+			$this->data['employee_number'] = $value;
 
 			return TRUE;
 		}
@@ -1371,9 +1274,238 @@ class UserFactory extends Factory {
 		return FALSE;
 	}
 
-	/**
-	 * @return bool
-	 */
+	function getTitle() {
+		if ( isset($this->data['title_id']) ) {
+			return (int)$this->data['title_id'];
+		}
+
+		return FALSE;
+	}
+	function setTitle($id) {
+		$id = (int)trim($id);
+
+		$utlf = TTnew( 'UserTitleListFactory' );
+		if (
+				$id == 0
+				OR
+				$this->Validator->isResultSetWithRows(	'title',
+														$utlf->getByID($id),
+														TTi18n::gettext('Title is invalid')
+													) ) {
+
+			$this->data['title_id'] = $id;
+
+			return TRUE;
+		}
+
+		return FALSE;
+	}
+
+	function getEthnicGroup() {
+		if ( isset( $this->data['ethnic_group_id'] ) ) {
+			return (int)$this->data['ethnic_group_id'];
+		}
+		return FALSE;
+	}
+
+	function setEthnicGroup($id) {
+		$id = (int)trim($id);
+		$eglf = TTnew( 'EthnicGroupListFactory' );
+
+		if ( $id == 0
+				OR
+			$this->Validator->isResultSetWithRows( 'ethnic_group',
+													$eglf->getById($id),
+													TTi18n::gettext('Ethnic Group is invalid')
+												) ) {
+			$this->data['ethnic_group_id'] = $id;
+
+			return TRUE;
+		}
+
+		return FALSE;
+	}
+
+	function getDefaultJob() {
+		if ( isset($this->data['default_job_id']) ) {
+			return (int)$this->data['default_job_id'];
+		}
+
+		return FALSE;
+	}
+	function setDefaultJob($id) {
+		$id = trim($id);
+
+		if ( $id == FALSE OR $id == 0 OR $id == '' ) {
+			$id = 0;
+		}
+
+		Debug::Text('Default Job ID: '. $id, __FILE__, __LINE__, __METHOD__, 10);
+		if ( getTTProductEdition() >= TT_PRODUCT_CORPORATE ) {
+			$jlf = TTnew( 'JobListFactory' );
+		} else {
+			$id = 0;
+		}
+
+		if (
+				$id == 0
+				OR
+				$this->Validator->isResultSetWithRows(	'default_job_id',
+														$jlf->getByID($id),
+														TTi18n::gettext('Invalid Default Job')
+													) ) {
+
+			$this->data['default_job_id'] = $id;
+
+			return TRUE;
+		}
+
+		return FALSE;
+	}
+
+	function getDefaultJobItem() {
+		if ( isset($this->data['default_job_item_id']) ) {
+			return (int)$this->data['default_job_item_id'];
+		}
+
+		return FALSE;
+	}
+	function setDefaultJobItem($id) {
+		$id = trim($id);
+
+		if ( $id == FALSE OR $id == 0 OR $id == '' ) {
+			$id = 0;
+		}
+
+		Debug::Text('Default Job Item ID: '. $id, __FILE__, __LINE__, __METHOD__, 10);
+		if ( getTTProductEdition() >= TT_PRODUCT_CORPORATE ) {
+			$jilf = TTnew( 'JobItemListFactory' );
+		} else {
+			$id = 0;
+		}
+
+		if (
+				$id == 0
+				OR
+				$this->Validator->isResultSetWithRows(	'default_job_item_id',
+														$jilf->getByID($id),
+														TTi18n::gettext('Invalid Default Task')
+													) ) {
+
+			$this->data['default_job_item_id'] = $id;
+
+			return TRUE;
+		}
+
+		return FALSE;
+	}
+
+	function getDefaultBranch() {
+		if ( isset($this->data['default_branch_id']) ) {
+			return (int)$this->data['default_branch_id'];
+		}
+
+		return FALSE;
+	}
+	function setDefaultBranch($id) {
+		$id = (int)trim($id);
+
+		$blf = TTnew( 'BranchListFactory' );
+		if (
+				$id == 0
+				OR
+				$this->Validator->isResultSetWithRows(	'default_branch',
+														$blf->getByID($id),
+														TTi18n::gettext('Invalid Default Branch')
+													) ) {
+
+			$this->data['default_branch_id'] = $id;
+
+			return TRUE;
+		}
+
+		return FALSE;
+	}
+
+	function getDefaultDepartment() {
+		if ( isset($this->data['default_department_id']) ) {
+			return (int)$this->data['default_department_id'];
+		}
+
+		return FALSE;
+	}
+	function setDefaultDepartment($id) {
+		$id = (int)trim($id);
+
+		$dlf = TTnew( 'DepartmentListFactory' );
+		if (
+				$id == 0
+				OR
+				$this->Validator->isResultSetWithRows(	'default_department',
+														$dlf->getByID($id),
+														TTi18n::gettext('Invalid Default Department')
+													) ) {
+
+			$this->data['default_department_id'] = $id;
+
+			return TRUE;
+		}
+
+		return FALSE;
+	}
+
+	function getFullName($reverse = FALSE, $include_middle = TRUE ) {
+		return Misc::getFullName($this->getFirstName(), $this->getMiddleInitial(), $this->getLastName(), $reverse, $include_middle);
+	}
+
+	function getFirstName() {
+		if ( isset($this->data['first_name']) ) {
+			return $this->data['first_name'];
+		}
+
+		return FALSE;
+	}
+	function setFirstName($first_name) {
+		$first_name = ucwords( trim($first_name) );
+
+		if	(	$this->Validator->isRegEx(		'first_name',
+												$first_name,
+												TTi18n::gettext('First name contains invalid characters'),
+												$this->name_validator_regex)
+				AND
+					$this->Validator->isLength(		'first_name',
+													$first_name,
+													TTi18n::gettext('First name is too short or too long'),
+													2,
+													50) ) {
+
+			$this->data['first_name'] = $first_name;
+			$this->setFirstNameMetaphone( $first_name );
+
+			return TRUE;
+		}
+
+		return FALSE;
+	}
+	function getFirstNameMetaphone() {
+		if ( isset($this->data['first_name_metaphone']) ) {
+			return $this->data['first_name_metaphone'];
+		}
+
+		return FALSE;
+	}
+	function setFirstNameMetaphone($first_name) {
+		$first_name = metaphone( trim($first_name) );
+
+		if	(	$first_name != '' ) {
+			$this->data['first_name_metaphone'] = $first_name;
+
+			return TRUE;
+		}
+
+		return FALSE;
+	}
+
 	function getMiddleInitial() {
 		if ( $this->getMiddleName() != '' ) {
 			$middle_name = $this->getMiddleName();
@@ -1382,56 +1514,83 @@ class UserFactory extends Factory {
 
 		return FALSE;
 	}
-
-	/**
-	 * @return bool|mixed
-	 */
 	function getMiddleName() {
-		return $this->getGenericDataValue( 'middle_name' );
+		if ( isset($this->data['middle_name']) ) {
+			return $this->data['middle_name'];
+		}
+
+		return FALSE;
+	}
+	function setMiddleName($middle_name) {
+		$middle_name = ucwords( trim($middle_name) );
+
+		if	(
+				$middle_name == ''
+				OR
+				(
+				$this->Validator->isRegEx(		'middle_name',
+												$middle_name,
+												TTi18n::gettext('Middle name contains invalid characters'),
+												$this->name_validator_regex)
+				AND
+					$this->Validator->isLength(		'middle_name',
+													$middle_name,
+													TTi18n::gettext('Middle name is too short or too long'),
+													1,
+													50)
+				)
+			) {
+
+			$this->data['middle_name'] = $middle_name;
+
+			return TRUE;
+		}
+
+
+		return FALSE;
 	}
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setMiddleName( $value ) {
-		$value = ucwords( trim($value) );
-		return $this->setGenericDataValue( 'middle_name', $value );
-	}
-
-	/**
-	 * @return bool|mixed
-	 */
 	function getLastName() {
-		return $this->getGenericDataValue( 'last_name' );
-	}
+		if ( isset($this->data['last_name']) ) {
+			return $this->data['last_name'];
+		}
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setLastName( $value ) {
-		$value = ucwords( trim($value) );
-		$this->setLastNameMetaphone( $value );
-		return $this->setGenericDataValue( 'last_name', $value );
+		return FALSE;
 	}
+	function setLastName($last_name) {
+		$last_name = ucwords( trim($last_name) );
 
-	/**
-	 * @return bool|mixed
-	 */
+		if	(	$this->Validator->isRegEx(		'last_name',
+												$last_name,
+												TTi18n::gettext('Last name contains invalid characters'),
+												$this->name_validator_regex)
+				AND
+					$this->Validator->isLength(		'last_name',
+													$last_name,
+													TTi18n::gettext('Last name is too short or too long'),
+													2,
+													50) ) {
+
+			$this->data['last_name'] = $last_name;
+			$this->setLastNameMetaphone( $last_name );
+
+			return TRUE;
+		}
+
+		return FALSE;
+	}
 	function getLastNameMetaphone() {
-		return $this->getGenericDataValue( 'last_name_metaphone' );
+		if ( isset($this->data['last_name_metaphone']) ) {
+			return $this->data['last_name_metaphone'];
+		}
+
+		return FALSE;
 	}
+	function setLastNameMetaphone($last_name) {
+		$last_name = metaphone( trim($last_name) );
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setLastNameMetaphone( $value ) {
-		$value = metaphone( trim($value) );
-
-		if	( $value != '' ) {
-			$this->setGenericDataValue( 'last_name_metaphone', $value );
+		if	( $last_name != '' ) {
+			$this->data['last_name_metaphone'] = $last_name;
 
 			return TRUE;
 		}
@@ -1439,334 +1598,538 @@ class UserFactory extends Factory {
 		return FALSE;
 	}
 
-	/**
-	 * @return bool|mixed
-	 */
 	function getSecondLastName() {
-		return $this->getGenericDataValue( 'second_last_name' );
+		if ( isset($this->data['second_last_name']) ) {
+			return $this->data['second_last_name'];
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setSecondLastName( $value ) {
-		return $this->setGenericDataValue( 'second_last_name', $value );
+	function setSecondLastName($second_last_name) {
+
+		if	(
+				$second_last_name == ''
+				OR
+				(
+					$this->Validator->isRegEx(		'second_last_name',
+													$second_last_name,
+													TTi18n::gettext('Second last name contains invalid characters'),
+													$this->name_validator_regex)
+					AND
+						$this->Validator->isLength(		'second_last_name',
+														$second_last_name,
+														TTi18n::gettext('Second last name is too short or too long'),
+														2,
+														50)
+				)
+			) {
+
+			$this->data['second_last_name'] = $second_last_name;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @return bool|int
-	 */
 	function getSex() {
-		return $this->getGenericDataValue( 'sex_id' );
+		if ( isset($this->data['sex_id']) ) {
+			return (int)$this->data['sex_id'];
+		}
+
+		return FALSE;
+	}
+	function setSex($sex) {
+		$sex = trim($sex);
+
+		if ( $this->Validator->inArrayKey(	'sex',
+											$sex,
+											TTi18n::gettext('Invalid gender'),
+											$this->getOptions('sex') ) ) {
+
+			$this->data['sex_id'] = $sex;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setSex( $value ) {
-		$value = (int)trim($value);
-		return $this->setGenericDataValue( 'sex_id', $value );
-	}
-
-	/**
-	 * @return bool
-	 */
 	function getAddress1() {
-		return $this->getGenericDataValue( 'address1' );
+		if ( isset($this->data['address1']) ) {
+			return $this->data['address1'];
+		}
+
+		return FALSE;
+	}
+	function setAddress1($address1) {
+		$address1 = trim($address1);
+
+		if	(
+				$address1 == ''
+				OR
+				(
+				$this->Validator->isRegEx(		'address1',
+												$address1,
+												TTi18n::gettext('Address1 contains invalid characters'),
+												$this->address_validator_regex)
+				AND
+					$this->Validator->isLength(		'address1',
+													$address1,
+													TTi18n::gettext('Address1 is too short or too long'),
+													2,
+													250)
+				)
+				) {
+
+			$this->data['address1'] = $address1;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setAddress1( $value ) {
-		$value = trim($value);
-		return $this->setGenericDataValue( 'address1', $value );
-	}
-
-	/**
-	 * @return bool
-	 */
 	function getAddress2() {
-		return $this->getGenericDataValue( 'address2' );
+		if ( isset($this->data['address2']) ) {
+			return $this->data['address2'];
+		}
+
+		return FALSE;
+	}
+	function setAddress2($address2) {
+		$address2 = trim($address2);
+
+		if	(	$address2 == ''
+				OR
+				(
+					$this->Validator->isRegEx(		'address2',
+													$address2,
+													TTi18n::gettext('Address2 contains invalid characters'),
+													$this->address_validator_regex)
+				AND
+					$this->Validator->isLength(		'address2',
+													$address2,
+													TTi18n::gettext('Address2 is too short or too long'),
+													2,
+													250) ) ) {
+
+			$this->data['address2'] = $address2;
+
+			return TRUE;
+		}
+
+		return FALSE;
+
 	}
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setAddress2( $value ) {
-		$value = trim($value);
-		return $this->setGenericDataValue( 'address2', $value );
-
-	}
-
-	/**
-	 * @return bool|mixed
-	 */
 	function getCity() {
-		return $this->getGenericDataValue( 'city' );
+		if ( isset($this->data['city']) ) {
+			return $this->data['city'];
+		}
+
+		return FALSE;
+	}
+	function setCity($city) {
+		$city = trim($city);
+
+		if	(
+				$city == ''
+				OR
+				(
+				$this->Validator->isRegEx(		'city',
+												$city,
+												TTi18n::gettext('City contains invalid characters'),
+												$this->city_validator_regex)
+				AND
+					$this->Validator->isLength(		'city',
+													$city,
+													TTi18n::gettext('City name is too short or too long'),
+													2,
+													250)
+				)
+				) {
+
+			$this->data['city'] = $city;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setCity( $value ) {
-		$value = trim($value);
-		return $this->setGenericDataValue( 'city', $value );
-	}
-
-	/**
-	 * @return bool|mixed
-	 */
 	function getCountry() {
-		return $this->getGenericDataValue( 'country' );
+		if ( isset($this->data['country']) ) {
+			return $this->data['country'];
+		}
+
+		return FALSE;
+	}
+	function setCountry($country) {
+		$country = trim($country);
+
+		$cf = TTnew( 'CompanyFactory' );
+
+		if ( $this->Validator->inArrayKey(		'country',
+												$country,
+												TTi18n::gettext('Invalid Country'),
+												$cf->getOptions('country') ) ) {
+
+			$this->data['country'] = $country;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setCountry( $value ) {
-		$value = trim($value);
-		return $this->setGenericDataValue( 'country', $value );
-	}
-
-	/**
-	 * @return bool|mixed
-	 */
 	function getProvince() {
-		return $this->getGenericDataValue( 'province' );
-	}
+		if ( isset($this->data['province']) ) {
+			return $this->data['province'];
+		}
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setProvince( $value ) {
-		$value = trim($value);
+		return FALSE;
+	}
+	function setProvince($province) {
+		$province = trim($province);
+
 		//Debug::Text('Country: '. $this->getCountry() .' Province: '. $province, __FILE__, __LINE__, __METHOD__, 10);
+
+		$cf = TTnew( 'CompanyFactory' );
+
+		$options_arr = $cf->getOptions('province');
+		if ( isset($options_arr[$this->getCountry()]) ) {
+			$options = $options_arr[$this->getCountry()];
+		} else {
+			$options = array();
+		}
+
 		//If country isn't set yet, accept the value and re-validate on save.
-		return $this->setGenericDataValue( 'province', $value );
+		if ( $this->getCountry() == FALSE
+				OR
+				$this->Validator->inArrayKey(	'province',
+												$province,
+												TTi18n::gettext('Invalid Province/State'),
+												$options ) ) {
+
+			$this->data['province'] = $province;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @return bool|mixed
-	 */
 	function getPostalCode() {
-		return $this->getGenericDataValue( 'postal_code' );
+		if ( isset($this->data['postal_code']) ) {
+			return $this->data['postal_code'];
+		}
+
+		return FALSE;
+	}
+	function setPostalCode($postal_code) {
+		$postal_code = strtoupper( $this->Validator->stripSpaces($postal_code) );
+
+		if	(
+				$postal_code == ''
+				OR
+				(
+				$this->Validator->isPostalCode(		'postal_code',
+													$postal_code,
+													TTi18n::gettext('Postal/ZIP Code contains invalid characters, invalid format, or does not match Province/State'),
+													$this->getCountry(), $this->getProvince() )
+				AND
+					$this->Validator->isLength(		'postal_code',
+													$postal_code,
+													TTi18n::gettext('Postal/ZIP Code is too short or too long'),
+													1,
+													10)
+				)
+				) {
+
+			$this->data['postal_code'] = $postal_code;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setPostalCode( $value ) {
-		$value = strtoupper( $this->Validator->stripSpaces($value) );
-		return $this->setGenericDataValue( 'postal_code', $value );
-	}
-
-	/**
-	 * @return bool|float
-	 */
 	function getLongitude() {
-		return $this->getGenericDataValue( 'longitude' );
-	}
-
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setLongitude( $value ) {
-		if ( is_numeric($value) ) {
-			$value = number_format( (float)TTi18n::parseFloat( $value ), 6 ); //Always use 6 decimal places as that is to 0.11m accuracy, this also prevents audit logging 0 vs 0.000000000
-		} else {
-			$value = NULL; //Allow $value=NULL so the coordinates can be cleared. Also make sure if FALSE is passed in here we assume NULL so it doesn't get cast to integer and saved in DB.
+		if ( isset($this->data['longitude']) ) {
+			return (float)$this->data['longitude'];
 		}
 
-		return $this->setGenericDataValue( 'longitude', $value );
+		return FALSE;
+	}
+	function setLongitude($value) {
+		$value = TTi18n::parseFloat( $value );
+
+		if (	$value == 0
+				OR
+				$this->Validator->isFloat(	'longitude',
+											$value,
+											TTi18n::gettext('Longitude is invalid')
+											) ) {
+			$this->data['longitude'] = number_format( $value, 6 ); //Always use 6 decimal places as that is to 0.11m accuracy, this also prevents audit logging 0 vs 0.000000000
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @return bool|float
-	 */
 	function getLatitude() {
-		return $this->getGenericDataValue( 'latitude' );
-	}
-
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setLatitude( $value ) {
-		if ( is_numeric($value) ) {
-			$value = number_format( (float)TTi18n::parseFloat( $value ), 6 ); //Always use 6 decimal places as that is to 0.11m accuracy, this also prevents audit logging 0 vs 0.000000000
-		} else {
-			$value = NULL; //Allow $value=NULL so the coordinates can be cleared. Also make sure if FALSE is passed in here we assume NULL so it doesn't get cast to integer and saved in DB.
+		if ( isset($this->data['latitude']) ) {
+			return (float)$this->data['latitude'];
 		}
 
-		return $this->setGenericDataValue( 'latitude', $value );
+		return FALSE;
+	}
+	function setLatitude($value) {
+		$value = TTi18n::parseFloat( $value );
+
+		if (	$value == 0
+				OR
+				$this->Validator->isFloat(	'latitude',
+											$value,
+											TTi18n::gettext('Latitude is invalid')
+											) ) {
+			$this->data['latitude'] = number_format( $value, 6 ); //Always use 6 decimal places as that is to 0.11m accuracy, this also prevents audit logging 0 vs 0.000000000
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @return bool|mixed
-	 */
 	function getWorkPhone() {
-		return $this->getGenericDataValue( 'work_phone' );
+		if ( isset($this->data['work_phone']) ) {
+			return $this->data['work_phone'];
+		}
+
+		return FALSE;
+	}
+	function setWorkPhone($work_phone) {
+		$work_phone = trim($work_phone);
+
+		if	(
+				$work_phone == ''
+				OR
+				$this->Validator->isPhoneNumber(		'work_phone',
+														$work_phone,
+														TTi18n::gettext('Work phone number is invalid')) ) {
+
+			$this->data['work_phone'] = $work_phone;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setWorkPhone( $value ) {
-		$value = trim($value);
-		return $this->setGenericDataValue( 'work_phone', $value );
-	}
-
-	/**
-	 * @return bool|mixed
-	 */
 	function getWorkPhoneExt() {
-		return $this->getGenericDataValue( 'work_phone_ext' );
+		if ( isset($this->data['work_phone_ext']) ) {
+			return $this->data['work_phone_ext'];
+		}
+
+		return FALSE;
+	}
+	function setWorkPhoneExt($work_phone_ext) {
+		$work_phone_ext = $this->Validator->stripNonNumeric( trim($work_phone_ext) );
+
+		if (	$work_phone_ext == ''
+				OR $this->Validator->isLength(		'work_phone_ext',
+													$work_phone_ext,
+													TTi18n::gettext('Work phone number extension is too short or too long'),
+													2,
+													10) ) {
+
+			$this->data['work_phone_ext'] = $work_phone_ext;
+
+			return TRUE;
+		}
+
+		return FALSE;
+
 	}
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setWorkPhoneExt( $value ) {
-		$value = $this->Validator->stripNonNumeric( trim($value) );
-		return $this->setGenericDataValue( 'work_phone_ext', $value );
-
-	}
-
-	/**
-	 * @return bool|mixed
-	 */
 	function getHomePhone() {
-		return $this->getGenericDataValue( 'home_phone' );
+		if ( isset($this->data['home_phone']) ) {
+			return $this->data['home_phone'];
+		}
+
+		return FALSE;
+	}
+	function setHomePhone($home_phone) {
+		$home_phone = trim($home_phone);
+
+		if	(	$home_phone == ''
+				OR
+				$this->Validator->isPhoneNumber(		'home_phone',
+														$home_phone,
+														TTi18n::gettext('Home phone number is invalid')) ) {
+
+			$this->data['home_phone'] = $home_phone;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setHomePhone( $value ) {
-		$value = trim($value);
-		return $this->setGenericDataValue( 'home_phone', $value );
-	}
-
-	/**
-	 * @return bool|mixed
-	 */
 	function getMobilePhone() {
-		return $this->getGenericDataValue( 'mobile_phone' );
+		if ( isset($this->data['mobile_phone']) ) {
+			return $this->data['mobile_phone'];
+		}
+
+		return FALSE;
+	}
+	function setMobilePhone($mobile_phone) {
+		$mobile_phone = trim($mobile_phone);
+
+		if	(	$mobile_phone == ''
+					OR $this->Validator->isPhoneNumber(	'mobile_phone',
+															$mobile_phone,
+															TTi18n::gettext('Mobile phone number is invalid')) ) {
+
+			$this->data['mobile_phone'] = $mobile_phone;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setMobilePhone( $value ) {
-		$value = trim($value);
-		return $this->setGenericDataValue( 'mobile_phone', $value );
-	}
-
-	/**
-	 * @return bool|mixed
-	 */
 	function getFaxPhone() {
-		return $this->getGenericDataValue( 'fax_phone' );
+		if ( isset($this->data['fax_phone']) ) {
+			return $this->data['fax_phone'];
+		}
+
+		return FALSE;
+	}
+	function setFaxPhone($fax_phone) {
+		$fax_phone = trim($fax_phone);
+
+		if	(	$fax_phone == ''
+					OR $this->Validator->isPhoneNumber(	'fax_phone',
+															$fax_phone,
+															TTi18n::gettext('Fax phone number is invalid')) ) {
+
+			$this->data['fax_phone'] = $fax_phone;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setFaxPhone( $value ) {
-		$value = trim($value);
-		return $this->setGenericDataValue( 'fax_phone', $value );
-	}
-
-	/**
-	 * @param $email
-	 * @return bool
-	 */
 	function isUniqueHomeEmail( $email ) {
 		return $this->isUniqueWorkEmail( $email );
 	}
-
-	/**
-	 * @return bool|mixed
-	 */
 	function getHomeEmail() {
-		return $this->getGenericDataValue( 'home_email' );
+		if ( isset($this->data['home_email']) ) {
+			return $this->data['home_email'];
+		}
+
+		return FALSE;
+	}
+	function setHomeEmail($home_email) {
+		$home_email = trim($home_email);
+
+		$modify_email = FALSE;
+		if ( $this->getCurrentUserPermissionLevel() >= $this->getPermissionLevel() ) {
+			$modify_email = TRUE;
+		} elseif ( $this->getHomeEmail() == $home_email ) { //No modification made.
+			$modify_email = TRUE;
+		}
+
+		$error_threshold = 7; //No DNS checks.
+		//if ( PRODUCTION === TRUE AND DEPLOYMENT_ON_DEMAND === TRUE AND DEMO_MODE === FALSE ) {
+		if ( PRODUCTION === TRUE AND DEMO_MODE === FALSE ) {
+			$error_threshold = 0; //DNS checks on email address.
+		}
+		if	(	( $home_email == ''
+					OR $this->Validator->isEmailAdvanced(	'home_email',
+													$home_email,
+													TTi18n::gettext('Home Email address is invalid'),
+													$error_threshold )
+				)
+				AND
+				$this->Validator->isTrue(		'home_email',
+												$modify_email,
+												TTi18n::gettext('Insufficient access to modify home email for this employee')
+												)
+				) {
+
+			$this->data['home_email'] = $home_email;
+			$this->setEnableClearPasswordResetData( TRUE ); //Clear any outstanding password reset key to prevent unexpected changes later on.
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setHomeEmail( $value ) {
-		$value = trim($value);
-		$this->setEnableClearPasswordResetData( TRUE ); //Clear any outstanding password reset key to prevent unexpected changes later on.
-		return $this->setGenericDataValue( 'home_email', $value );
-	}
-
-	/**
-	 * @return bool
-	 */
 	function getHomeEmailIsValid() {
-		return $this->fromBool( $this->getGenericDataValue( 'home_email_is_valid' ) );
+		return $this->fromBool( $this->data['home_email_is_valid'] );
+	}
+	function setHomeEmailIsValid($bool) {
+		$this->data['home_email_is_valid'] = $this->toBool($bool);
+
+		return TRUE;
 	}
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setHomeEmailIsValid( $value ) {
-		return $this->setGenericDataValue( 'home_email_is_valid', $this->toBool($value) );
-	}
-
-	/**
-	 * @return bool|mixed
-	 */
 	function getHomeEmailIsValidKey() {
-		return $this->getGenericDataValue( 'home_email_is_valid_key' );
-	}
+		if ( isset($this->data['home_email_is_valid_key']) ) {
+			return $this->data['home_email_is_valid_key'];
+		}
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setHomeEmailIsValidKey( $value) {
+		return FALSE;
+	}
+	function setHomeEmailIsValidKey($value) {
 		$value = trim($value);
-		return $this->setGenericDataValue( 'home_email_is_valid_key', $value );
+
+		if (	$value == ''
+				OR
+				$this->Validator->isLength(	'home_email_is_valid_key',
+											$value,
+											TTi18n::gettext('Email validation key is invalid'),
+											1, 255) ) {
+
+			$this->data['home_email_is_valid_key'] = $value;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @return mixed
-	 */
 	function getHomeEmailIsValidDate() {
-		return $this->getGenericDataValue( 'home_email_is_valid_date' );
+		if ( isset($this->data['home_email_is_valid_date']) ) {
+			return $this->data['home_email_is_valid_date'];
+		}
+	}
+	function setHomeEmailIsValidDate($epoch) {
+		if ( empty($epoch) ) {
+			$epoch = NULL;
+		}
+
+		if	(	$epoch == ''
+				OR
+				$this->Validator->isDate(		'home_email_is_valid_date',
+												$epoch,
+												TTi18n::gettext('Email validation date is invalid')) ) {
+
+			$this->data['home_email_is_valid_date'] = $epoch;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @param int $value EPOCH
-	 * @return bool
-	 */
-	function setHomeEmailIsValidDate( $value ) {
-		return $this->setGenericDataValue( 'home_email_is_valid_date', $value );
-	}
-
-	/**
-	 * @param $email
-	 * @return bool
-	 */
 	function isUniqueWorkEmail( $email ) {
 		//Ignore blank emails.
 		if ( $email == '' ) {
@@ -1792,149 +2155,170 @@ class UserFactory extends Factory {
 
 		return FALSE;
 	}
-
-	/**
-	 * @return bool|mixed
-	 */
 	function getWorkEmail() {
-		return $this->getGenericDataValue( 'work_email' );
+		if ( isset($this->data['work_email']) ) {
+			return $this->data['work_email'];
+		}
+
+		return FALSE;
+	}
+	function setWorkEmail($work_email) {
+		$work_email = trim($work_email);
+
+		$modify_email = FALSE;
+		if ( $this->getCurrentUserPermissionLevel() >= $this->getPermissionLevel() ) {
+			$modify_email = TRUE;
+		} elseif ( $this->getWorkEmail() == $work_email ) { //No modification made.
+			$modify_email = TRUE;
+		}
+
+		$error_threshold = 7; //No DNS checks.
+		//if ( PRODUCTION === TRUE AND DEPLOYMENT_ON_DEMAND === TRUE AND DEMO_MODE === FALSE ) {
+		if ( PRODUCTION === TRUE AND DEMO_MODE === FALSE ) {
+			$error_threshold = 0; //DNS checks on email address.
+		}
+		if	(	( $work_email == ''
+					OR	$this->Validator->isEmailAdvanced(	'work_email',
+													$work_email,
+													TTi18n::gettext('Work Email address is invalid'),
+													$error_threshold)
+				)
+				AND
+				$this->Validator->isTrue(		'work_email',
+												$modify_email,
+												TTi18n::gettext('Insufficient access to modify work email for this employee')
+												)
+					) {
+
+			$this->data['work_email'] = $work_email;
+			$this->setEnableClearPasswordResetData( TRUE ); //Clear any outstanding password reset key to prevent unexpected changes later on.
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setWorkEmail( $value ) {
-		$value = trim($value);
-		$this->setEnableClearPasswordResetData( TRUE ); //Clear any outstanding password reset key to prevent unexpected changes later on.
-		return $this->setGenericDataValue( 'work_email', $value );
-	}
-
-	/**
-	 * @return bool
-	 */
 	function getWorkEmailIsValid() {
-		return $this->fromBool( $this->getGenericDataValue( 'work_email_is_valid' ) );
+		return $this->fromBool( $this->data['work_email_is_valid'] );
+	}
+	function setWorkEmailIsValid($bool) {
+		$this->data['work_email_is_valid'] = $this->toBool($bool);
+
+		return TRUE;
 	}
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setWorkEmailIsValid( $value ) {
-		return $this->setGenericDataValue( 'work_email_is_valid', $this->toBool($value)  );
-	}
-
-	/**
-	 * @return bool|mixed
-	 */
 	function getWorkEmailIsValidKey() {
-		return $this->getGenericDataValue( 'work_email_is_valid_key' );
-	}
+		if ( isset($this->data['work_email_is_valid_key']) ) {
+			return $this->data['work_email_is_valid_key'];
+		}
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setWorkEmailIsValidKey( $value) {
+		return FALSE;
+	}
+	function setWorkEmailIsValidKey($value) {
 		$value = trim($value);
-		return $this->setGenericDataValue( 'work_email_is_valid_key', $value );
+
+		if (	$value == ''
+				OR
+				$this->Validator->isLength(	'work_email_is_valid_key',
+											$value,
+											TTi18n::gettext('Email validation key is invalid'),
+											1, 255) ) {
+
+			$this->data['work_email_is_valid_key'] = $value;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @return mixed
-	 */
 	function getWorkEmailIsValidDate() {
-		return $this->getGenericDataValue( 'work_email_is_valid_date' );
+		if ( isset($this->data['work_email_is_valid_date']) ) {
+			return $this->data['work_email_is_valid_date'];
+		}
+	}
+	function setWorkEmailIsValidDate($epoch) {
+		if ( empty($epoch) ) {
+			$epoch = NULL;
+		}
+
+		if	(	$epoch == ''
+				OR
+				$this->Validator->isDate(		'work_email_is_valid_date',
+												$epoch,
+												TTi18n::gettext('Email validation date is invalid')) ) {
+
+			$this->data['work_email_is_valid_date'] = $epoch;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @param int $value EPOCH
-	 * @return bool
-	 */
-	function setWorkEmailIsValidDate( $value ) {
-		return $this->setGenericDataValue( 'work_email_is_valid_date', $value );
-	}
-
-	/**
-	 * @return float
-	 */
 	function getAge() {
 		return round( TTDate::getYearDifference( $this->getBirthDate(), TTDate::getTime() ), 1 );
 	}
 
-	/**
-	 * @return bool|mixed
-	 */
 	function getBirthDate() {
-		return $this->getGenericDataValue( 'birth_date' );
-	}
-
-	/**
-	 * @param int $value EPOCH
-	 * @return bool
-	 */
-	function setBirthDate( $value ) {
-		//Allow for negative epochs, for birthdates less than 1960's
-		if ( $value == '' ) {
-			$value = NULL; //Force to NULL if no birth date is set, this prevents "0" from being entered and causing problems with "is NULL" SQL queries.
+		if ( isset($this->data['birth_date']) ) {
+			return $this->data['birth_date'];
 		}
-		return $this->setGenericDataValue( 'birth_date', ( $value != 0 AND $value != '' ) ? TTDate::getMiddleDayEpoch( $value ) : NULL );
+
+		return FALSE;
+	}
+	function setBirthDate($epoch) {
+		if	( ( $epoch !== FALSE AND $epoch == '' )
+				OR
+				(
+					$this->Validator->isDate(	'birth_date',
+												$epoch,
+												TTi18n::gettext('Birth date is invalid, try specifying the year with four digits'))
+					AND
+					$this->Validator->isTRUE(	'birth_date',
+												( TTDate::getMiddleDayEpoch( $epoch ) <= TTDate::getMiddleDayEpoch( time() ) ) ? TRUE : FALSE,
+												TTi18n::gettext('Birth date can not be in the future'))
+				)
+			) {
+
+			//Allow for negative epochs, for birthdates less than 1960's
+			$this->data['birth_date'] = ( $epoch != 0 AND $epoch != '' ) ? TTDate::getMiddleDayEpoch( $epoch ) : '' ; //Allow blank birthdate.
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @param int $epoch EPOCH
-	 * @return bool
-	 */
 	function isValidWageForHireDate( $epoch ) {
-		if ( TTUUID::isUUID( $this->getId() ) AND $this->getId() != TTUUID::getZeroID() AND $this->getId() != TTUUID::getNotExistID() AND $epoch != '' ) {
+		if ( $this->getID() > 0 AND $epoch != '' ) {
 			$uwlf = TTnew( 'UserWageListFactory' );
 
 			//Check to see if any wage entries exist for this employee
 			$uwlf->getLastWageByUserId( $this->getID() );
 			if ( $uwlf->getRecordCount() >= 1 ) {
-				Debug::Text('Wage entries exist...', __FILE__, __LINE__, __METHOD__, 10);
+				Debug::Text('No wage entries exist...', __FILE__, __LINE__, __METHOD__, 10);
 
-				//Work around the fact that hire_date is a epoch and user_wage.effective_date is a 'date' datatype.
-				// So if a user was just hired and has hire_date of 02-Oct-2017 (MST) and they are trying to reset their password with the system timezone to PST
-				// Validation will fail due to the below select statement returning 0 records.
-				if ( is_object( $this->getUserPreferenceObject() ) ) {
-					$original_time_zone = TTDate::getTimeZone();
-					$this->getUserPreferenceObject()->setTimeZonePreferences();
-				}
-
-				$epoch = TTDate::getEndDayEpoch( $epoch ); //*must be done after timezone is changed* Use the middle day epoch only when checking valid wages, to better avoid off-by-one-hour issues.
-
-				$uwlf->getByUserIdAndGroupIDAndBeforeDate( $this->getID(), TTUUID::getZeroID(), $epoch, 1 );
-
-				if ( isset($original_time_zone) ) {
-					TTDate::setTimeZone( $original_time_zone );
-				}
-
+				$uwlf->getByUserIdAndGroupIDAndBeforeDate( $this->getID(), 0, $epoch, 1 );
 				if ( $uwlf->getRecordCount() == 0 ) {
-					Debug::Text('No wage entry on or before: '. TTDate::getDate('DATE+TIME', $epoch ), __FILE__, __LINE__, __METHOD__, 10);
+					Debug::Text('No wage entry on or before : '. TTDate::getDate('DATE+TIME', $epoch ), __FILE__, __LINE__, __METHOD__, 10);
 					return FALSE;
 				}
-			} else {
-				Debug::Text('No wage entries exist...', __FILE__, __LINE__, __METHOD__, 10);
 			}
 		}
 
 		return TRUE;
 	}
 
-	/**
-	 * @return bool|mixed
-	 */
 	function getHireDate() {
-		return $this->getGenericDataValue( 'hire_date' );
-	}
+		if ( isset($this->data['hire_date']) ) {
+			return $this->data['hire_date'];
+		}
 
-	/**
-	 * @param int $epoch EPOCH
-	 * @return bool
-	 */
-	function setHireDate( $value ) {
+		return FALSE;
+	}
+	function setHireDate($epoch) {
 		//Hire Date should be assumed to be the beginning of the day. (inclusive)
 		//Termination Date should be assumed to be the end of the day. (inclusive)
 		//So if an employee is hired and terminated on the same day, and is salary, they should get one day pay.
@@ -1943,238 +2327,317 @@ class UserFactory extends Factory {
 		//		 Alternatively, switch it to use date_stamp datatype, and use >= or <= operators.
 
 		//( $epoch !== FALSE AND $epoch == '' ) //Check for strict FALSE causes data from UserDefault to fail if its not set.
-		//Use the beginning of the day epoch, so accrual policies that apply on the hired date still work.
-		return $this->setGenericDataValue( 'hire_date', TTDate::getBeginDayEpoch( $value ) );
+		if	(	( $epoch == '' )
+				OR
+					(
+						$this->Validator->isDate(		'hire_date',
+														$epoch,
+														TTi18n::gettext('Hire date is invalid'))
+						AND
+						$this->Validator->isTrue(		'hire_date',
+														$this->isValidWageForHireDate( $epoch ),
+														TTi18n::gettext('Hire date must be on or after the employees first wage entry, you may need to change their wage effective date first'))
+					)
+				) {
+
+			//Use the beginning of the day epoch, so accrual policies that apply on the hired date still work.
+			$this->data['hire_date'] = TTDate::getBeginDayEpoch( $epoch );
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @return bool|mixed
-	 */
 	function getTerminationDate() {
-		return $this->getGenericDataValue( 'termination_date' );
-	}
+		if ( isset($this->data['termination_date']) ) {
+			return $this->data['termination_date'];
+		}
 
-	/**
-	 * @param int $value EPOCH
-	 * @return bool
-	 */
-	function setTerminationDate( $value ) {
+		return FALSE;
+	}
+	function setTerminationDate($epoch) {
 		//Hire Date should be assumed to be the beginning of the day. (inclusive)
 		//Termination Date should be assumed to be the end of the day. (inclusive)
 		//So if an employee is hired and terminated on the same day, and is salary, they should get one day pay.
 		//FIXME: Save hire date as getMiddleDayEpoch(), but change all use cases to force it to beginning of the day when comparisons are made on it.
 		//       Save termination date as getMiddleDayEpoch(), but change all use cases to force it to use the end of the day when comparisons are made on it.
 		//		 Alternatively, switch it to use date_stamp datatype, and use >= or <= operators.
-		if ( $value == '' ) {
-			$value = NULL; //Force to NULL if no termination date is set, this prevents "0" from being entered and causing problems with "is NULL" SQL queries.
+
+		if	(	( $epoch == '' )
+				OR
+				$this->Validator->isDate(		'termination_date',
+												$epoch,
+												TTi18n::gettext('Termination date is invalid')) ) {
+
+			if ( $epoch == '' ) {
+				$epoch = NULL; //Force to NULL if no termination date is set, this prevents "0" from being entered and causing problems with "is NULL" SQL queries.
+			}
+			$this->data['termination_date'] = $epoch;
+
+			return TRUE;
 		}
-		return $this->setGenericDataValue( 'termination_date', ( $value != 0 AND $value != '' ) ? TTDate::getEndDayEpoch( $value ) : NULL );
+
+		return FALSE;
 	}
 
-	/**
-	 * @return bool|mixed
-	 */
 	function getLastLoginDate() {
-		return $this->getGenericDataValue( 'last_login_date' );
-	}
-
-	/**
-	 * @param int $value EPOCH
-	 * @return bool
-	 */
-	function setLastLoginDate( $value ) {
-		if ( $value == '' ) {
-			$value = NULL; //Force to NULL if no termination date is set, this prevents "0" from being entered and causing problems with "is NULL" SQL queries.
+		if ( isset($this->data['last_login_date']) ) {
+			return $this->data['last_login_date'];
 		}
-		return $this->setGenericDataValue( 'last_login_date', $value );
+
+		return FALSE;
+	}
+	function setLastLoginDate($epoch) {
+		if	(	( $epoch == '' )
+				OR
+				$this->Validator->isDate(		'last_login_date',
+												$epoch,
+												TTi18n::gettext('Last Login date is invalid')) ) {
+
+			if ( $epoch == '' ) {
+				$epoch = NULL; //Force to NULL if no termination date is set, this prevents "0" from being entered and causing problems with "is NULL" SQL queries.
+			}
+			$this->data['last_login_date'] = $epoch;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @return bool|mixed
-	 */
 	function getCurrency() {
-		return $this->getGenericDataValue( 'currency_id' );
+		if ( isset($this->data['currency_id']) ) {
+			return (int)$this->data['currency_id'];
+		}
+
+		return FALSE;
+	}
+	function setCurrency($id) {
+		$id = trim($id);
+
+		Debug::Text('Currency ID: '. $id, __FILE__, __LINE__, __METHOD__, 10);
+		$culf = TTnew( 'CurrencyListFactory' );
+
+		if (
+				$this->Validator->isResultSetWithRows(	'currency_id',
+														$culf->getByID($id),
+														TTi18n::gettext('Invalid currency')
+													) ) {
+
+			$this->data['currency_id'] = $id;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @param string $value UUID
-	 * @return bool
-	 */
-	function setCurrency( $value ) {
-		$value = TTUUID::castUUID( $value );
-		Debug::Text('Currency ID: '. $value, __FILE__, __LINE__, __METHOD__, 10);
-		return $this->setGenericDataValue( 'currency_id', $value );
-	}
-
-	/**
-	 * @param null $sin
-	 * @return bool|string
-	 */
 	function getSecureSIN( $sin = NULL ) {
 		if ( $sin == '' ) {
 			$sin = $this->getSIN();
 		}
-
 		if ( $sin != '' ) {
-			return Misc::censorString( $sin, 'X', NULL, 1, 4, 4 );
+			//Grab the first 1, and last 4 digits.
+			$first_four = substr( $sin, 0, 1 );
+			$last_four = substr( $sin, -4 );
+
+			$total = (strlen($sin) - 5);
+
+			$retval = $first_four.str_repeat('X', $total).$last_four;
+
+			return $retval;
 		}
 
 		return FALSE;
 	}
-
-	/**
-	 * @return bool|mixed
-	 */
 	function getSIN() {
-		return $this->getGenericDataValue( 'sin' );
-	}
+		if ( isset($this->data['sin']) ) {
+			return $this->data['sin'];
+		}
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setSIN( $value ) {
+		return FALSE;
+	}
+	function setSIN($sin) {
 		//If *'s are in the SIN number, skip setting it
 		//This allows them to change other data without seeing the SIN number.
-		if ( stripos( $value, 'X') !== FALSE ) {
+		if ( stripos( $sin, 'X') !== FALSE	) {
 			return FALSE;
 		}
 
-		//$value = $this->Validator->stripNonNumeric( trim($value) ); //UK National Insurance Number (NINO) has letters.
-		$value = $this->Validator->stripNonAlphaNumeric( trim( $value ) );
+		$sin = $this->Validator->stripNonNumeric( trim($sin) );
 
-		return $this->setGenericDataValue( 'sin', $value );
-	}
+		if	(
+				$sin == ''
+				OR
+				DEMO_MODE === TRUE
+				OR
+				$this->Validator->isSIN(		'sin',
+												$sin,
+												TTi18n::gettext('SIN/SSN is invalid'),
+												$this->getCountry() )
+				) {
 
-	function isUniqueSIN( $sin ) {
-		if ( $sin == '' ) {
+			$this->data['sin'] = $sin;
+
 			return TRUE;
-		}
-
-		$ph = array(
-				'company_id' => TTUUID::castUUID( $this->getCompany() ),
-				'legal_entity_id' => TTUUID::castUUID( $this->getLegalEntity() ),
-				'country_id' => $this->getCountry(),
-				'sin' => $sin,
-		);
-
-		// Unique to company, legal_entity and country.
-		$query = 'select id from '. $this->getTable() .' where company_id = ? AND legal_entity_id = ? AND country = ? AND sin = ? AND deleted = 0';
-
-		$user_id = $this->db->GetOne($query, $ph);
-		Debug::Arr($user_id, 'Unique SIN: '. $sin, __FILE__, __LINE__, __METHOD__, 10);
-
-		if ( $user_id === FALSE ) {
-			return TRUE;
-		} else {
-			if ( $user_id == $this->getId() ) {
-				return TRUE;
-			}
 		}
 
 		return FALSE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function getOtherID1() {
-		return $this->getGenericDataValue( 'other_id1' );
-	}
+		if ( isset($this->data['other_id1']) ) {
+			return $this->data['other_id1'];
+		}
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setOtherID1( $value) {
+		return FALSE;
+	}
+	function setOtherID1($value) {
 		$value = trim($value);
-		return $this->setGenericDataValue( 'other_id1', $value );
+
+		if (	$value == ''
+				OR
+				$this->Validator->isLength(	'other_id1',
+											$value,
+											TTi18n::gettext('Other ID 1 is invalid'),
+											1, 255) ) {
+
+			$this->data['other_id1'] = $value;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function getOtherID2() {
-		return $this->getGenericDataValue( 'other_id2' );
-	}
+		if ( isset($this->data['other_id2']) ) {
+			return $this->data['other_id2'];
+		}
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setOtherID2( $value) {
+		return FALSE;
+	}
+	function setOtherID2($value) {
 		$value = trim($value);
-		return $this->setGenericDataValue( 'other_id2', $value );
+
+		if (	$value == ''
+				OR
+				$this->Validator->isLength(	'other_id2',
+											$value,
+											TTi18n::gettext('Other ID 2 is invalid'),
+											1, 255) ) {
+
+			$this->data['other_id2'] = $value;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function getOtherID3() {
-		return $this->getGenericDataValue( 'other_id3' );
-	}
+		if ( isset($this->data['other_id3']) ) {
+			return $this->data['other_id3'];
+		}
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setOtherID3( $value) {
+		return FALSE;
+	}
+	function setOtherID3($value) {
 		$value = trim($value);
-		return $this->setGenericDataValue( 'other_id3', $value );
+
+		if (	$value == ''
+				OR
+				$this->Validator->isLength(	'other_id3',
+											$value,
+											TTi18n::gettext('Other ID 3 is invalid'),
+											1, 255) ) {
+
+			$this->data['other_id3'] = $value;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function getOtherID4() {
-		return $this->getGenericDataValue( 'other_id4' );
-	}
+		if ( isset($this->data['other_id4']) ) {
+			return $this->data['other_id4'];
+		}
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setOtherID4( $value) {
+		return FALSE;
+	}
+	function setOtherID4($value) {
 		$value = trim($value);
-		return $this->setGenericDataValue( 'other_id4', $value );
+
+		if (	$value == ''
+				OR
+				$this->Validator->isLength(	'other_id4',
+											$value,
+											TTi18n::gettext('Other ID 4 is invalid'),
+											1, 255) ) {
+
+			$this->data['other_id4'] = $value;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function getOtherID5() {
-		return $this->getGenericDataValue( 'other_id5' );
-	}
+		if ( isset($this->data['other_id5']) ) {
+			return $this->data['other_id5'];
+		}
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setOtherID5( $value) {
+		return FALSE;
+	}
+	function setOtherID5($value) {
 		$value = trim($value);
-		return $this->setGenericDataValue( 'other_id5', $value );
+
+		if (	$value == ''
+				OR
+				$this->Validator->isLength(	'other_id5',
+											$value,
+											TTi18n::gettext('Other ID 5 is invalid'),
+											1, 255) ) {
+
+			$this->data['other_id5'] = $value;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @return bool|mixed
-	 */
 	function getNote() {
-		return $this->getGenericDataValue( 'note' );
-	}
+		if ( isset($this->data['note']) ) {
+			return $this->data['note'];
+		}
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setNote( $value) {
+		return FALSE;
+	}
+	function setNote($value) {
 		$value = trim($value);
-		return $this->setGenericDataValue( 'note', $value );
+
+		if (	$value == ''
+				OR
+						$this->Validator->isLength(		'note',
+														$value,
+														TTi18n::gettext('Note is too long'),
+														1,
+														2048)
+			) {
+
+			$this->data['note'] = $value;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @param string $type
-	 * @return bool
-	 */
 	function sendValidateEmail( $type = 'work' ) {
 		if ( $this->getHomeEmail() != FALSE
 				OR $this->getWorkEmail() != FALSE ) {
@@ -2235,21 +2698,21 @@ class UserFactory extends Factory {
 		return FALSE;
 	}
 
-	/**
-	 * @param $key
-	 * @return string
-	 */
 	function encryptPasswordResetKey( $key ) {
-		$retval = sha1( $key . TTPassword::getPasswordSalt() );
+		global $config_vars;
+
+		if ( isset($config_vars['other']['salt']) AND $config_vars['other']['salt'] != '' ) {
+			$salt = $config_vars['other']['salt'];
+		} else {
+			$salt = 'ttsalt93854624';
+		}
+
+		$retval = sha1( $key . $salt );
 
 		return $retval;
 	}
 
-	/**
-	 * @param $key
-	 * @return bool
-	 */
-	function checkPasswordResetKey( $key) {
+	function checkPasswordResetKey($key) {
 		if ( $this->getPasswordResetDate() != ''
 				AND $this->getPasswordResetDate() > (time() - 7200)
 				AND $this->getPasswordResetKey() == $this->encryptPasswordResetKey( $key ) ) {
@@ -2260,9 +2723,6 @@ class UserFactory extends Factory {
 		return FALSE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function sendPasswordResetEmail() {
 		if ( $this->getHomeEmail() != FALSE
 				OR $this->getWorkEmail() != FALSE ) {
@@ -2282,9 +2742,8 @@ class UserFactory extends Factory {
 			$password_reset_key = sha1( Misc::getUniqueID() );
 			$this->setPasswordResetKey( $this->encryptPasswordResetKey( $password_reset_key ) ); //Encrypt the password reset key in the database so if it every gets compromised through SQL injection or other methods, it can be used directly to a reset password.
 			$this->setPasswordResetDate( time() );
-			if ( $this->isValid() ) {
+			if (  $this->isValid() ) {
 				$this->Save( FALSE );
-
 				$subject = APPLICATION_NAME .' '. TTi18n::gettext('password reset requested at') .' '. TTDate::getDate('DATE+TIME', time() ) .' '. TTi18n::gettext('from') .' '. Misc::getRemoteIPAddress();
 				$body = '<html><body>';
 				$body .= TTi18n::gettext('A password reset has been requested for') .' "'. $this->getUserName() .'", ';
@@ -2296,96 +2755,96 @@ class UserFactory extends Factory {
 				$body .= APPLICATION_NAME;
 				$body .= '</body></html>';
 
-				//Don't record the reset key in the audit log for security reasons.
-				TTLog::addEntry( $this->getId(), 500, TTi18n::getText('Employee Password Reset By').': '. Misc::getRemoteIPAddress(), NULL, $this->getTable() );
+			//Don't record the reset key in the audit log for security reasons.
+			TTLog::addEntry( $this->getId(), 500, TTi18n::getText('Employee Password Reset By').': '. Misc::getRemoteIPAddress(), NULL, $this->getTable() );
 
-				$headers = array(
-									'From'	  => '"'. APPLICATION_NAME .' - '. TTi18n::gettext('Password Reset') .'" <'. Misc::getEmailLocalPart() .'@'. Misc::getEmailDomain() .'>',
-									'Subject' => $subject,
-									'Cc'	  => ( $secondary_email != '' ) ? Misc::formatEmailAddress( $secondary_email, $this ) : NULL,
-								);
+			$headers = array(
+								'From'	  => '"'. APPLICATION_NAME .' - '. TTi18n::gettext('Password Reset') .'" <'. Misc::getEmailLocalPart() .'@'. Misc::getEmailDomain() .'>',
+								'Subject' => $subject,
+								'Cc'	  => Misc::formatEmailAddress( $secondary_email, $this ),
+							);
 
-				$mail = new TTMail();
-				$mail->setTo( Misc::formatEmailAddress( $primary_email, $this ) );
-				$mail->setHeaders( $headers );
+			$mail = new TTMail();
+			$mail->setTo( Misc::formatEmailAddress( $primary_email, $this ) );
+			$mail->setHeaders( $headers );
 
-				@$mail->getMIMEObject()->setHTMLBody($body);
-				$mail->setDefaultTXTBody();
+			@$mail->getMIMEObject()->setHTMLBody($body);
 
-				$mail->setBody( $mail->getMIMEObject()->get( $mail->default_mime_config ) );
-				$retval = $mail->Send();
+			$mail->setBody( $mail->getMIMEObject()->get( $mail->default_mime_config ) );
+			$retval = $mail->Send();
 
-				return $retval;
-			}
+			return $retval;
+		}
 		}
 
 		return FALSE;
 	}
 
-	/**
-	 * @return bool|mixed
-	 */
 	function getPasswordResetKey() {
-		return $this->getGenericDataValue( 'password_reset_key' );
-	}
+		if ( isset($this->data['password_reset_key']) ) {
+			return $this->data['password_reset_key'];
+		}
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setPasswordResetKey( $value) {
+		return FALSE;
+	}
+	function setPasswordResetKey($value) {
 		$value = trim($value);
-		return $this->setGenericDataValue( 'password_reset_key', $value );
+
+		if (	$value == ''
+				OR
+				$this->Validator->isLength(	'password_reset_key',
+											$value,
+											TTi18n::gettext('Password reset key is invalid'),
+											1, 255) ) {
+
+			$this->data['password_reset_key'] = $value;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @return mixed
-	 */
 	function getPasswordResetDate() {
-		return $this->getGenericDataValue( 'password_reset_date' );
+		if ( isset($this->data['password_reset_date']) ) {
+			return $this->data['password_reset_date'];
+		}
+	}
+	function setPasswordResetDate($epoch) {
+		if ( empty($epoch) ) {
+			$epoch = NULL;
+		}
+
+		if	(	$epoch == ''
+				OR
+				$this->Validator->isDate(		'password_reset_date',
+												$epoch,
+												TTi18n::gettext('Password reset date is invalid')) ) {
+
+			$this->data['password_reset_date'] = $epoch;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @param int $value EPOCH
-	 * @return bool
-	 */
-	function setPasswordResetDate( $value ) {
-		return $this->setGenericDataValue( 'password_reset_date', $value );
-	}
-
-	/**
-	 * @param bool $value
-	 * @return bool
-	 */
 	function setEnableClearPasswordResetData( $value = TRUE ) {
-		return $this->setGenericTempDataValue( 'enable_clear_password_reset_data', $value );
+		$this->tmp_data['enable_clear_password_reset_data'] = $value;
+		return TRUE;
 	}
-
-	/**
-	 * @return bool
-	 */
 	function getEnableClearPasswordResetData() {
-		return $this->getGenericTempDataValue( 'enable_clear_password_reset_data' );
+		if ( isset($this->tmp_data['enable_clear_password_reset_data']) ) {
+			return $this->tmp_data['enable_clear_password_reset_data'];
+		}
+		return FALSE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function isPhotoExists() {
 		return file_exists( $this->getPhotoFileName() );
 	}
 
-	/**
-	 * @param string $company_id UUID
-	 * @param string $user_id UUID
-	 * @param bool $include_default_photo
-	 * @return bool|string
-	 */
 	function getPhotoFileName( $company_id = NULL, $user_id = NULL, $include_default_photo = TRUE ) {
-		if ( $user_id == NULL ) {
-			$user_id = $this->getId();
-		}
-
 		//Test for both jpg and png
 		$base_name = $this->getStoragePath( $company_id ) . DIRECTORY_SEPARATOR . $user_id;
 		if ( file_exists( $base_name.'.jpg') ) {
@@ -2407,11 +2866,6 @@ class UserFactory extends Factory {
 		return $photo_file_name;
 	}
 
-	/**
-	 * @param string $company_id UUID
-	 * @param string $user_id UUID
-	 * @return bool
-	 */
 	function cleanStoragePath( $company_id = NULL, $user_id = NULL ) {
 		if ( $company_id == '' ) {
 			$company_id = $this->getCompany();
@@ -2429,7 +2883,6 @@ class UserFactory extends Factory {
 				//Delete tmp files.
 				foreach(glob($dir.'*') as $filename) {
 					unlink($filename);
-					Misc::deleteEmptyDirectory( dirname( $filename ), 0 ); //Recurse to $user_id parent level and remove empty directories.
 				}
 			}
 		}
@@ -2437,11 +2890,6 @@ class UserFactory extends Factory {
 		return TRUE;
 	}
 
-	/**
-	 * @param string $company_id UUID
-	 * @param string $user_id UUID
-	 * @return bool|string
-	 */
 	function getStoragePath( $company_id = NULL, $user_id = NULL ) {
 		if ( $company_id == '' ) {
 			$company_id = $this->getID();
@@ -2454,37 +2902,41 @@ class UserFactory extends Factory {
 		return Environment::getStorageBasePath() . DIRECTORY_SEPARATOR .'user_photo'. DIRECTORY_SEPARATOR . $company_id;
 	}
 
-	/**
-	 * @return bool|string
-	 */
 	function getTag() {
 		//Check to see if any temporary data is set for the tags, if not, make a call to the database instead.
 		//postSave() needs to get the tmp_data.
-		$value = $this->getGenericTempDataValue( 'tags' );
-		if ( $value !== FALSE ) {
-			return $value;
-		} elseif ( TTUUID::isUUID( $this->getCompany() ) AND $this->getCompany() != TTUUID::getZeroID() AND $this->getCompany() != TTUUID::getNotExistID()
-				AND TTUUID::isUUID( $this->getID() ) AND $this->getID() != TTUUID::getZeroID() AND $this->getID() != TTUUID::getNotExistID() ) {
+		if ( isset($this->tmp_data['tags']) ) {
+			return $this->tmp_data['tags'];
+		} elseif ( $this->getCompany() > 0 AND $this->getID() > 0 ) {
 			return CompanyGenericTagMapListFactory::getStringByCompanyIDAndObjectTypeIDAndObjectID( $this->getCompany(), 200, $this->getID() );
 		}
 
 		return FALSE;
 	}
+	function setTag( $tags ) {
+		$tags = trim($tags);
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setTag( $value  ) {
-		$value = trim($value);
 		//Save the tags in temporary memory to be committed in postSave()
-		return $this->setGenericTempDataValue( 'tags', $value );
+		$this->tmp_data['tags'] = $tags;
+
+		return TRUE;
 	}
 
-	/**
-	 * @param $email
-	 * @return bool
-	 */
+	function isInformationComplete() {
+		//Make sure the users information is all complete.
+		//No longer check for SIN, as employees can't change it anyways.
+		//Don't check for postal code, as some countries don't have that.
+		if ( $this->getAddress1() == ''
+				OR $this->getCity() == ''
+				OR $this->getHomePhone() == '' ) {
+			Debug::text('User Information is NOT Complete: ', __FILE__, __LINE__, __METHOD__, 10);
+			return FALSE;
+		}
+
+		Debug::text('User Information is Complete: ', __FILE__, __LINE__, __METHOD__, 10);
+		return TRUE;
+	}
+
 	static function UnsubscribeEmail( $email ) {
 		$email = trim(strtolower($email));
 
@@ -2521,667 +2973,22 @@ class UserFactory extends Factory {
 		return FALSE;
 	}
 
-	/**
-	 * @param bool $ignore_warning
-	 * @return bool
-	 */
 	function Validate( $ignore_warning = TRUE ) {
-		global $current_user;
-
-		//
-		// BELOW: Validation code moved from set*() functions.
-		//
-
-		// Company
-		if ( TTUUID::isUUID( $this->getCompany() ) == FALSE OR $this->getCompany() == TTUUID::getZeroID() OR $this->getCompany() == TTUUID::getNotExistID() ) {
-			$this->Validator->isTrue(		'company_id',
-											 FALSE,
-											 TTi18n::gettext('Company must be specified'));
-		}
-		if ( $this->getCompany() !== FALSE AND $this->Validator->isError('company') == FALSE ) {
-			$clf = TTnew( 'CompanyListFactory' );
-			$this->Validator->isResultSetWithRows( 'company_id',
-												   $clf->getByID( $this->getCompany() ),
-												   TTi18n::gettext( 'Company is invalid' )
-			);
-		}
-
-		// Legal entity
-		if ( $this->getLegalEntity() !== FALSE AND ( ( $this->isNew( TRUE ) == TRUE AND TTUUID::isUUID( $this->getLegalEntity() ) == FALSE ) OR $this->getLegalEntity() == TTUUID::getZeroID() OR $this->getLegalEntity() == TTUUID::getNotExistID() ) ) {
-			$this->Validator->isTrue(		'legal_entity_id',
-											 FALSE,
-											 TTi18n::gettext('Legal entity must be specified'));
-		}
-		if ( $this->getLegalEntity() !== FALSE AND $this->Validator->isError('legal_entity_id') == FALSE ) {
-			$clf = TTnew( 'LegalEntityListFactory' );
-			$this->Validator->isResultSetWithRows(	'legal_entity_id',
-															$clf->getByID($this->getLegalEntity()),
-															TTi18n::gettext('Legal entity is invalid')
-														);
-		}
-
-		// Status
-		if ( $this->getStatus() !== FALSE ) {
-			$this->Validator->isTrue(		'status_id',
-													$this->getStatus(),
-													TTi18n::gettext('Insufficient access to modify status for this employee')
-												);
-			if ( $this->Validator->isError('status_id') == FALSE ) {
-				$this->Validator->inArrayKey(	'status_id',
-													$this->getStatus(),
-													TTi18n::gettext('Incorrect Status'),
-													$this->getOptions('status')
-												);
-			}
-		}
-		// Group
-		if ( $this->getGroup() !== FALSE AND $this->getGroup() != TTUUID::getZeroID() ) {
-			$uglf = TTnew( 'UserGroupListFactory' );
-			$this->Validator->isResultSetWithRows(	'group',
-															$uglf->getByID($this->getGroup()),
-															TTi18n::gettext('Group is invalid')
-														);
-		}
-		// Permission Group
-		//Don't allow permissions to be modified if the currently logged in user has a lower permission level.
-		//As such if someone with a lower level is able to edit the user of higher level, they must not call this function at all, or use a blank value.
-		if ( $this->getPermissionControl() != '' ) {
-			$pclf = TTnew( 'PermissionControlListFactory' );
-
-			$current_user_permission_level = $this->getCurrentUserPermissionLevel();
-
-			$modify_permissions = FALSE;
-			if ( $current_user_permission_level >= $this->getPermissionLevel() ) {
-				$modify_permissions = TRUE;
-			}
-
-			if ( is_object($current_user) AND $current_user->getID() == $this->getID() AND $this->getPermissionControl() != $this->getPermissionControl() ) { //Acting on currently logged in user.
-				$logged_in_modify_permissions = FALSE; //Must be false for validation to fail.
-			} else {
-				$logged_in_modify_permissions = TRUE;
-			}
-			$this->Validator->isResultSetWithRows(		'permission_control_id',
-																$pclf->getByIDAndLevel($this->getPermissionControl(), $current_user_permission_level),
-																TTi18n::gettext('Permission Group is invalid')
-															);
-			if ( $this->Validator->isError('permission_control_id') == FALSE ) {
-				$this->Validator->isTrue(		'permission_control_id',
-														$modify_permissions,
-														TTi18n::gettext('Insufficient access to modify permissions for this employee')
-													);
-			}
-			if ( $this->Validator->isError('permission_control_id') == FALSE  ) {
-				$this->Validator->isTrue(		'permission_control_id',
-														$logged_in_modify_permissions,
-														TTi18n::gettext('Unable to change permissions of your own record')
-													);
-			}
-		}
-		// Pay Period schedule
-		if ( $this->getPayPeriodSchedule() !== FALSE AND $this->getPayPeriodSchedule() != TTUUID::getZeroID() ) {
-			$ppslf = TTnew( 'PayPeriodScheduleListFactory' );
-			$this->Validator->isResultSetWithRows(	'pay_period_schedule_id',
-															$ppslf->getByID($this->getPayPeriodSchedule()),
-															TTi18n::gettext('Pay Period schedule is invalid')
-														);
-		}
-		// Policy Group
-		if ( $this->getPolicyGroup() !== FALSE AND $this->getPolicyGroup() != TTUUID::getZeroID() ) {
-			$pglf = TTnew( 'PolicyGroupListFactory' );
-			$this->Validator->isResultSetWithRows(	'policy_group_id',
-															$pglf->getByID($this->getPolicyGroup()),
-															TTi18n::gettext('Policy Group is invalid')
-														);
-		}
-		// Hierarchy
-		if ( $this->getHierarchyControl() !== FALSE AND is_array($this->getHierarchyControl()) ) {
-			$hclf = TTnew( 'HierarchyControlListFactory' );
-			foreach( $this->getHierarchyControl() as $hierarchy_control_id ) {
-				$hierarchy_control_id = Misc::trimSortPrefix( $hierarchy_control_id );
-
-				if ( $hierarchy_control_id != TTUUID::getZeroID() ) {
-					$this->Validator->isResultSetWithRows(		'hierarchy_control_id',
-																	$hclf->getByID($hierarchy_control_id),
-																	TTi18n::gettext('Hierarchy is invalid')
-																);
-				}
-			}
-		}
-		// User name
 		//When doing a mass edit of employees, user name is never specified, so we need to avoid this validation issue.
 		if ( $this->getUserName() == '' ) {
 			$this->Validator->isTrue(		'user_name',
-												FALSE,
-												TTi18n::gettext('User name not specified')
-											);
+											FALSE,
+											TTi18n::gettext('User name not specified'));
 		}
-		if ( $this->Validator->isError('user_name') == FALSE ) {
-			$this->Validator->isRegEx(		'user_name',
-												$this->getUserName(),
-												TTi18n::gettext('Incorrect characters in user name'),
-												$this->username_validator_regex
-											);
-		}
-		if ( $this->Validator->isError('user_name') == FALSE ) {
-			$this->Validator->isLength(		'user_name',
-													$this->getUserName(),
-													TTi18n::gettext('Incorrect user name length'),
-													3,
-													250
-												);
-		}
-		if ( $this->Validator->isError('user_name') == FALSE ) {
-			$this->Validator->isTrue(		'user_name',
-													$this->isUniqueUserName($this->getUserName()),
-													TTi18n::gettext('User name is already taken')
-												);
-		}
-		// Password updated date
-		if ( $this->getPasswordUpdatedDate() != '' ) {
-			$this->Validator->isDate(		'password_updated_date',
-													$this->getPasswordUpdatedDate(),
-													TTi18n::gettext('Password updated date is invalid')
-												);
-		}
-		// Quick Punch ID
-		if ( $this->getPhoneId() != '' ) {
-			$this->Validator->isRegEx(		'phone_id',
-													$this->getPhoneId(),
-													TTi18n::gettext('Quick Punch ID must be digits only'),
-													$this->phoneid_validator_regex
-												);
-			if ( $this->Validator->isError('phone_id') == FALSE ) {
-				$this->Validator->isLength(		'phone_id',
-														$this->getPhoneId(),
-														TTi18n::gettext('Incorrect Quick Punch ID length'),
-														4,
-														8
-													);
-			}
-			if ( $this->Validator->isError('phone_id') == FALSE ) {
-				$this->Validator->isTrue(		'phone_id',
-														$this->isUniquePhoneId($this->getPhoneId()),
-														TTi18n::gettext('Quick Punch ID is already in use, please try a different one')
-													);
-			}
-		}
-		// Employee number
-		if ( $this->getEmployeeNumber() != '' ) {
-			$this->Validator->isNumeric(	'employee_number',
-													$this->getEmployeeNumber(),
-													TTi18n::gettext('Employee number must only be digits')
-												);
-			if ( $this->Validator->isError('employee_number') == FALSE ) {
-				$this->Validator->isTrue(		'employee_number',
-														$this->isUniqueEmployeeNumber($this->getEmployeeNumber()),
-														TTi18n::gettext('Employee number is already in use, please enter a different one')
-													);
-			}
-		}
-		// Title
-		if ( $this->getTitle() !== FALSE AND $this->getTitle() != TTUUID::getZeroID() ) {
-			$utlf = TTnew( 'UserTitleListFactory' );
-			$this->Validator->isResultSetWithRows(	'title',
-															$utlf->getByID($this->getTitle()),
-															TTi18n::gettext('Title is invalid')
-														);
-		}
-		// Ethnic Group
-		if ( $this->getEthnicGroup() !== FALSE AND $this->getEthnicGroup() != TTUUID::getZeroID() ) {
-			$eglf = TTnew( 'EthnicGroupListFactory' );
-			$this->Validator->isResultSetWithRows( 'ethnic_group',
-															$eglf->getById($this->getEthnicGroup()),
-															TTi18n::gettext('Ethnic Group is invalid')
-														);
-		}
-		// Default Job
-		if ( $this->getDefaultJob() !== FALSE AND $this->getDefaultJob() != TTUUID::getZeroID() ) {
-			$jlf = TTnew( 'JobListFactory' );
-			$this->Validator->isResultSetWithRows(	'default_job_id',
-															$jlf->getByID($this->getDefaultJob()),
-															TTi18n::gettext('Invalid Default Job')
-														);
-		}
-		// Default Task
-		if ( $this->getDefaultJobItem() !== FALSE AND $this->getDefaultJobItem() != TTUUID::getZeroID() ) {
-			$jilf = TTnew( 'JobItemListFactory' );
-			$this->Validator->isResultSetWithRows(	'default_job_item_id',
-															$jilf->getByID($this->getDefaultJobItem()),
-															TTi18n::gettext('Invalid Default Task')
-														);
-		}
-		// Default Branch
-		if ( $this->getDefaultBranch() !== FALSE AND $this->getDefaultBranch() != TTUUID::getZeroID() ) {
-			$blf = TTnew( 'BranchListFactory' );
-			$this->Validator->isResultSetWithRows(	'default_branch',
-															$blf->getByID($this->getDefaultBranch()),
-															TTi18n::gettext('Invalid Default Branch')
-														);
-		}
-		// Default Department
-		if ( $this->getDefaultDepartment() !== FALSE AND $this->getDefaultDepartment() != TTUUID::getZeroID() ) {
-			$dlf = TTnew( 'DepartmentListFactory' );
-			$this->Validator->isResultSetWithRows(	'default_department',
-															$dlf->getByID($this->getDefaultDepartment()),
-															TTi18n::gettext('Invalid Default Department')
-														);
-		}
-		// First name
-		if ( $this->getFirstName() !== FALSE ) {
-			$this->Validator->isRegEx(		'first_name',
-													$this->getFirstName(),
-													TTi18n::gettext('First name contains invalid characters'),
-													$this->name_validator_regex
-												);
-			if ( $this->Validator->isError('first_name') == FALSE ) {
-				$this->Validator->isLength(		'first_name',
-														$this->getFirstName(),
-														TTi18n::gettext('First name is too short or too long'),
-														2,
-														50
-													);
-			}
-		}
-		// Middle name
-		if ( $this->getMiddleName() != '' ) {
-			$this->Validator->isRegEx(		'middle_name',
-													$this->getMiddleName(),
-													TTi18n::gettext('Middle name contains invalid characters'),
-													$this->name_validator_regex
-												);
-			if ( $this->Validator->isError('middle_name') == FALSE ) {
-				$this->Validator->isLength(		'middle_name',
-														$this->getMiddleName(),
-														TTi18n::gettext('Middle name is too short or too long'),
-														1,
-														50
-													);
-			}
-		}
-		// Last name
-		if ( $this->getLastName() !== FALSE ) {
-			$this->Validator->isRegEx(		'last_name',
-													$this->getLastName(),
-													TTi18n::gettext('Last name contains invalid characters'),
-													$this->name_validator_regex
-												);
-			if ( $this->Validator->isError('last_name') == FALSE ) {
-				$this->Validator->isLength(		'last_name',
-														$this->getLastName(),
-														TTi18n::gettext('Last name is too short or too long'),
-														2,
-														50);
-			}
-		}
-		// Second last name
-		if ( $this->getSecondLastName() != '' ) {
-			$this->Validator->isRegEx(		'second_last_name',
-													$this->getSecondLastName(),
-													TTi18n::gettext('Second last name contains invalid characters'),
-													$this->name_validator_regex
-												);
-			if ( $this->Validator->isError('second_last_name') == FALSE ) {
-				$this->Validator->isLength(		'second_last_name',
-														$this->getSecondLastName(),
-														TTi18n::gettext('Second last name is too short or too long'),
-														2,
-														50);
-			}
-		}
-		// Gender
-		if ( $this->getSex() !== FALSE ) {
-			$this->Validator->inArrayKey(	'sex',
-													$this->getSex(),
-													TTi18n::gettext('Invalid gender'),
-													$this->getOptions('sex')
-												);
-		}
-		// Address1
-		if ( $this->getAddress1() != '' ) {
-			$this->Validator->isRegEx(		'address1',
-													$this->getAddress1(),
-													TTi18n::gettext('Address1 contains invalid characters'),
-													$this->address_validator_regex
-												);
-			if ( $this->Validator->isError('address1') == FALSE ) {
-				$this->Validator->isLength(		'address1',
-														$this->getAddress1(),
-														TTi18n::gettext('Address1 is too short or too long'),
-														2,
-														250
-													);
-			}
-		}
-		// Address2
-		if ( $this->getAddress2() != '' ) {
-			$this->Validator->isRegEx(		'address2',
-													$this->getAddress2(),
-													TTi18n::gettext('Address2 contains invalid characters'),
-													$this->address_validator_regex
-												);
-			if ( $this->Validator->isError('address2') == FALSE ) {
-				$this->Validator->isLength(		'address2',
-														$this->getAddress2(),
-														TTi18n::gettext('Address2 is too short or too long'),
-														2,
-														250
-													);
-			}
-		}
-		// City
-		if ( $this->getCity() != '' ) {
-			$this->Validator->isRegEx(		'city',
-													$this->getCity(),
-													TTi18n::gettext('City contains invalid characters'),
-													$this->city_validator_regex
-												);
-			if ( $this->Validator->isError('city') == FALSE ) {
-				$this->Validator->isLength(		'city',
-														$this->getCity(),
-														TTi18n::gettext('City name is too short or too long'),
-														2,
-														250
-													);
-			}
-		}
-		// Country
-		$cf = TTnew( 'CompanyFactory' );
-		if ( $this->getCountry() !== FALSE ) {
-			$this->Validator->inArrayKey(		'country',
-													$this->getCountry(),
-													TTi18n::gettext('Invalid Country'),
-													$cf->getOptions('country')
-												);
-		}
-		// Province/State
-		if ( $this->getCountry() !== FALSE ) {
-			$options_arr = $cf->getOptions('province');
-			if ( isset($options_arr[$this->getCountry()]) ) {
-				$options = $options_arr[$this->getCountry()];
-			} else {
-				$options = array();
-			}
-			$this->Validator->inArrayKey(	'province',
-													$this->getProvince(),
-													TTi18n::gettext('Invalid Province/State'),
-													$options
-												);
-		}
-		// Postal/ZIP Code
-		if ( $this->getPostalCode() != '' ) {
-			$this->Validator->isPostalCode(		'postal_code',
-														$this->getPostalCode(),
-														TTi18n::gettext('Postal/ZIP Code contains invalid characters, invalid format, or does not match Province/State'),
-														$this->getCountry(), $this->getProvince()
-													);
-			if ( $this->Validator->isError('postal_code') == FALSE ) {
-				$this->Validator->isLength(		'postal_code',
-														$this->getPostalCode(),
-														TTi18n::gettext('Postal/ZIP Code is too short or too long'),
-														1,
-														10
-													);
-			}
-		}
-		// Longitude
-		if ( $this->getLongitude() != '' ) {
-			$this->Validator->isFloat(	'longitude',
-												$this->getLongitude(),
-												TTi18n::gettext('Longitude is invalid')
-											);
-		}
-		// Latitude
-		if ( $this->getLatitude() != '' ) {
-			$this->Validator->isFloat(	'latitude',
-												$this->getLatitude(),
-												TTi18n::gettext('Latitude is invalid')
-											);
-		}
-		// Work phone number
-		if ( $this->getWorkPhone() != '' ) {
-			$this->Validator->isPhoneNumber(		'work_phone',
-															$this->getWorkPhone(),
-															TTi18n::gettext('Work phone number is invalid')
-														);
-		}
-		// Work phone number extension
-		if ( $this->getWorkPhoneExt() != '' ) {
-			$this->Validator->isLength(		'work_phone_ext',
-													$this->getWorkPhoneExt(),
-													TTi18n::gettext('Work phone number extension is too short or too long'),
-													2,
-													10
-												);
-		}
-		// Home phone number
-		if ( $this->getHomePhone() != '' ) {
-			$this->Validator->isPhoneNumber(		'home_phone',
-															$this->getHomePhone(),
-															TTi18n::gettext('Home phone number is invalid')
-														);
-		}
-		// Mobile phone number
-		if ( $this->getMobilePhone() != '' ) {
-			$this->Validator->isPhoneNumber(	'mobile_phone',
-														$this->getMobilePhone(),
-														TTi18n::gettext('Mobile phone number is invalid')
-													);
-		}
-		// Fax phone number
-		if ( $this->getFaxPhone() != '' ) {
-			$this->Validator->isPhoneNumber(	'fax_phone',
-														$this->getFaxPhone(),
-														TTi18n::gettext('Fax phone number is invalid')
-													);
-		}
-		// Home Email address
-		if ( $this->getHomeEmail() != '' ) {
-			$modify_email = FALSE;
-			if ( $this->getCurrentUserPermissionLevel() >= $this->getPermissionLevel() ) {
-				$modify_email = TRUE;
-			} elseif ( $this->getHomeEmail() == $this->getHomeEmail() ) { //No modification made.
-				$modify_email = TRUE;
-			}
-
-			$error_threshold = 7; //No DNS checks.
-			if ( PRODUCTION === TRUE AND DEMO_MODE === FALSE ) {
-				$error_threshold = 0; //DNS checks on email address.
-			}
-			$this->Validator->isEmailAdvanced(	'home_email',
-														$this->getHomeEmail(),
-														( ( DEPLOYMENT_ON_DEMAND == TRUE ) ? TTi18n::gettext('Home Email address is invalid') : array( 0 => TTi18n::gettext('Home Email address is invalid'), 5 => TTi18n::gettext('Home Email address does not have a valid DNS MX record'), 6 => TTi18n::gettext('Home Email address does not have a valid DNS record') ) ),
-														$error_threshold
-													);
-			if ( $this->Validator->isError('home_email') == FALSE ) {
-				$this->Validator->isTrue(		'home_email',
-														$modify_email,
-														TTi18n::gettext('Insufficient access to modify home email for this employee')
-													);
-			}
-		}
-		// Email validation key
-		if ( $this->getHomeEmailIsValidKey() != '' ) {
-			$this->Validator->isLength(	'home_email_is_valid_key',
-												$this->getHomeEmailIsValidKey(),
-												TTi18n::gettext('Email validation key is invalid'),
-												1, 255
-											);
-		}
-		// Email validation date
-		if ( $this->getHomeEmailIsValidDate() != '' ) {
-			$this->Validator->isDate(		'home_email_is_valid_date',
-													$this->getHomeEmailIsValidDate(),
-													TTi18n::gettext('Email validation date is invalid')
-												);
-		}
-		// Work Email address
-		if ( $this->getWorkEmail() != '' ) {
-			$modify_email = FALSE;
-			if ( $this->getCurrentUserPermissionLevel() >= $this->getPermissionLevel() ) {
-				$modify_email = TRUE;
-			} elseif ( $this->getWorkEmail() == $this->getWorkEmail() ) { //No modification made.
-				$modify_email = TRUE;
-			}
-
-			$error_threshold = 7; //No DNS checks.
-			if ( PRODUCTION === TRUE AND DEMO_MODE === FALSE ) {
-				$error_threshold = 0; //DNS checks on email address.
-			}
-
-			$this->Validator->isEmailAdvanced(	'work_email',
-														$this->getWorkEmail(),
-														( ( DEPLOYMENT_ON_DEMAND == TRUE ) ? TTi18n::gettext('Home Email address is invalid') : array( 0 => TTi18n::gettext('Home Email address is invalid'), 5 => TTi18n::gettext('Home Email address does not have a valid DNS MX record'), 6 => TTi18n::gettext('Home Email address does not have a valid DNS record') ) ),
-														$error_threshold
-													);
-			if ( $this->Validator->isError('work_email') == FALSE ) {
-				$this->Validator->isTrue(		'work_email',
-														$modify_email,
-														TTi18n::gettext('Insufficient access to modify work email for this employee')
-													);
-			}
-		}
-		// Email validation key
-		if ( $this->getWorkEmailIsValidKey() != '' ) {
-			$this->Validator->isLength(	'work_email_is_valid_key',
-												$this->getWorkEmailIsValidKey(),
-												TTi18n::gettext('Email validation key is invalid'),
-												1, 255
-											);
-		}
-		// Email validation date
-		if ( $this->getWorkEmailIsValidDate() != '' ) {
-			$this->Validator->isDate(		'work_email_is_valid_date',
-													$this->getWorkEmailIsValidDate(),
-													TTi18n::gettext('Email validation date is invalid')
-												);
-		}
-		// Birth date
-		if ( $this->getBirthDate() != '' ) {
-			$this->Validator->isDate(	'birth_date',
-												$this->getBirthDate(),
-												TTi18n::gettext('Birth date is invalid, try specifying the year with four digits')
-											);
-			if ( $this->Validator->isError('birth_date') == FALSE ) {
-				$this->Validator->isTRUE(	'birth_date',
-											( TTDate::getMiddleDayEpoch( $this->getBirthDate() ) <= TTDate::getMiddleDayEpoch( time() ) ) ? TRUE : FALSE,
-											TTi18n::gettext('Birth date can not be in the future')
-										);
-			}
-		}
-		// Hire date
-		if ( $this->getHireDate() != '' ) {
-			$this->Validator->isDate(		'hire_date',
-													$this->getHireDate(),
-													TTi18n::gettext('Hire date is invalid')
-												);
-			if ( $this->Validator->isError('hire_date') == FALSE ) {
-				$this->Validator->isTrue(		'hire_date',
-										$this->isValidWageForHireDate( $this->getHireDate() ),
-										TTi18n::gettext('Hire date must be on or after the employees first wage entry, you may need to change their wage effective date first'));
-			}
-		}
-		// Termination date
-		if ( $this->getTerminationDate() != '' ) {
-			$this->Validator->isDate(		'termination_date',
-													$this->getTerminationDate(),
-													TTi18n::gettext('Termination date is invalid')
-												);
-		}
-		// Last Login date
-		if ( $this->getLastLoginDate() != '' ) {
-			$this->Validator->isDate(		'last_login_date',
-													$this->getLastLoginDate(),
-													TTi18n::gettext('Last Login date is invalid')
-												);
-		}
-		// currency
-		if ( $this->getCurrency() !== FALSE ) {
-			$culf = TTnew( 'CurrencyListFactory' );
-			$this->Validator->isResultSetWithRows(	'currency_id',
-															$culf->getByID($this->getCurrency()),
-															TTi18n::gettext('Invalid currency')
-														);
-		}
-		// SIN/SSN
-		if ( $this->getSIN() !== FALSE AND $this->getSIN() != '' AND DEMO_MODE !== TRUE ) {
-			$this->Validator->isSIN(		'sin',
-													$this->getSIN(),
-													TTi18n::gettext('SIN/SSN is invalid'),
-													$this->getCountry()
-												);
-		}
-
-		// Other ID 1
-		if ( $this->getOtherID1() != '' ) {
-			$this->Validator->isLength(	'other_id1',
-												$this->getOtherID1(),
-												TTi18n::gettext('Other ID 1 is invalid'),
-												1, 255
-											);
-		}
-		// Other ID 2
-		if ( $this->getOtherID2() != '' ) {
-			$this->Validator->isLength(	'other_id2',
-												$this->getOtherID2(),
-												TTi18n::gettext('Other ID 2 is invalid'),
-												1, 255
-											);
-		}
-		// Other ID 3
-		if ( $this->getOtherID3() != '' ) {
-			$this->Validator->isLength(	'other_id3',
-												$this->getOtherID3(),
-												TTi18n::gettext('Other ID 3 is invalid'),
-												1, 255
-											);
-		}
-		// Other ID 4
-		if ( $this->getOtherID4() != '' ) {
-			$this->Validator->isLength(	'other_id4',
-												$this->getOtherID4(),
-												TTi18n::gettext('Other ID 4 is invalid'),
-												1, 255
-											);
-		}
-		// Other ID 5
-		if ( $this->getOtherID5() != '' ) {
-			$this->Validator->isLength(	'other_id5',
-												$this->getOtherID5(),
-												TTi18n::gettext('Other ID 5 is invalid'),
-												1, 255
-											);
-		}
-		// Note
-		if ( $this->getNote() != '' ) {
-			$this->Validator->isLength(		'note',
-												$this->getNote(),
-												TTi18n::gettext('Note is too long'),
-												1,
-												2048
-											);
-		}
-		// Password reset key
-		if ( $this->getPasswordResetKey() != '' ) {
-			$this->Validator->isLength(	'password_reset_key',
-												$this->getPasswordResetKey(),
-												TTi18n::gettext('Password reset key is invalid'),
-												1, 255
-											);
-		}
-		// Password reset date
-		if ( $this->getPasswordResetDate() != '' ) {
-			$this->Validator->isDate(		'password_reset_date',
-													$this->getPasswordResetDate(),
-													TTi18n::gettext('Password reset date is invalid')
-												);
-		}
-
-		//
-		// ABOVE: Validation code moved from set*() functions.
-		//
 
 		//Re-validate the province just in case the country was set AFTER the province.
-		//$this->setProvince( $this->getProvince() );
+		$this->setProvince( $this->getProvince() );
+
+		if ( $this->getCompany() == FALSE ) {
+			$this->Validator->isTrue(		'company',
+											FALSE,
+											TTi18n::gettext('Company is invalid'));
+		}
 
 		//When mass editing, don't require currency to be set.
 		if ( $this->Validator->getValidateOnly() == FALSE AND $this->getCurrency() == FALSE ) {
@@ -3199,7 +3006,7 @@ class UserFactory extends Factory {
 		//Need to require password on new employees as the database column is NOT NULL.
 		//However when mass editing, no IDs are set so this always fails during the only validation phase.
 		if ( $this->Validator->getValidateOnly() == FALSE AND $this->isNew( TRUE ) == TRUE AND ( $this->getPassword() == FALSE OR $this->getPassword() == '' ) ) {
-			$this->setPassword( TTPassword::generateRandomPassword() ); //Default to just some random password instead of making the user decide.
+			$this->setPassword( uniqid( $this->getPasswordSalt(), TRUE ) ); //Default to just some random password instead of making the user decide.
 			//$this->Validator->isTrue(		'password',
 			//								FALSE,
 			//								TTi18n::gettext('Please specify a password'));
@@ -3211,6 +3018,7 @@ class UserFactory extends Factory {
 											TTi18n::gettext('Employee number must be specified for ACTIVE employees') );
 		}
 
+		global $current_user;
 		if ( is_object($current_user) AND $current_user->getID() == $this->getID() ) { //Acting on currently logged in user.
 			if ( $this->getDeleted() == TRUE ) {
 				$this->Validator->isTrue(		'user_name',
@@ -3226,7 +3034,7 @@ class UserFactory extends Factory {
 		}
 
 		if ( getTTProductEdition() >= TT_PRODUCT_CORPORATE AND $this->isNew( TRUE ) == FALSE ) {
-			if ( TTUUID::isUUID( $this->getDefaultJob() ) AND $this->getDefaultJob() != TTUUID::getZeroID() AND $this->getDefaultJob() != TTUUID::getNotExistID() ) {
+			if ( $this->getDefaultJob() > 0 ) {
 				$jlf = TTnew( 'JobListFactory' );
 				$jlf->getById( $this->getDefaultJob() );
 				if ( $jlf->getRecordCount() > 0 ) {
@@ -3248,33 +3056,20 @@ class UserFactory extends Factory {
 		}
 
 		if ( $ignore_warning == FALSE ) {
-
-			if ( $this->isNew( TRUE ) == FALSE AND $this->getLegalEntity() != $this->getGenericOldDataValue('legal_entity_id') ) {
-				$pslf = TTnew( 'PayStubListFactory');
-				$pslf->getByUserId( $this->getId(), 1 ); //limit 1
-				if ( $pslf->getRecordCount() > 0 ) {
-					$this->Validator->Warning( 'legal_entity_id', TTi18n::gettext('Changing the legal entity after an employee has been paid will cause historical tax information to be lost. Please create a new employee record instead') );
-				} else {
-					$this->Validator->Warning( 'legal_entity_id', TTi18n::gettext('Changing the legal entity will unassign this employee from all Tax/Deductions') );
-				}
-				unset($pslf);
-			}
-
 			if ( $this->getStatus() == 10 AND $this->getTerminationDate() != '' AND TTDate::getMiddleDayEpoch( $this->getTerminationDate() ) < TTDate::getMiddleDayEpoch( time() ) ) {
 				$this->Validator->Warning( 'termination_date', TTi18n::gettext('Employee is active but has a termination date in the past, perhaps their status should be Terminated?') );
 			}
 
-			//Check for Terminated AND On Leave employees, because as soon as they are marked On Leave if there is no termination date then the final pay stubs won't be generated.
-			if ( $this->getStatus() >= 12 AND $this->getTerminationDate() == '' ) { //Terminated/On Leave
-				$this->Validator->Warning( 'termination_date', TTi18n::gettext('Employee is Terminated/On Leave, but no termination date is specified') );
+			if ( $this->getStatus() == 20 AND $this->getTerminationDate() == '' ) { //Terminated
+				$this->Validator->Warning( 'termination_date', TTi18n::gettext('Employee is Terminated, but no termination date is specified') );
 			}
 
-			if ( $this->getStatus() >= 12 AND $this->getTerminationDate() != '' ) { //Terminated/On Leave
+			if ( $this->getStatus() == 20 AND $this->getTerminationDate() != '' ) { //Terminated
 				if ( TTDate::getMiddleDayEpoch( $this->getTerminationDate() ) < TTDate::getMiddleDayEpoch( time() ) ) {
 					$this->Validator->Warning( 'termination_date', TTi18n::gettext('When setting a termination date retroactively, you may need to recalculate this employees timesheet') );
 				}
 
-				if ( $this->isNew( TRUE ) == FALSE ) {
+				if ( $this->isNew() == FALSE ) {
 					//Check to see if worked/absence time exist after termination
 					$udtlf = TTnew('UserDateTotalListFactory');
 					$udtlf->getByCompanyIDAndUserIdAndObjectTypeAndStartDateAndEndDate($this->getCompany(), $this->getID(), array(10,50), ( $this->getTerminationDate() + 86400 ), ( time() + ( 86400 * 365 ) ) );
@@ -3285,7 +3080,7 @@ class UserFactory extends Factory {
 
 					//Check to see if Pay Stub Amendments exists after termination date
 					$psalf = TTnew('PayStubAmendmentListFactory');
-					$psalf->getByUserIdAndAuthorizedAndStatusIDAndStartDateAndEndDate( $this->getID(), TRUE, array( 50 ),  ( $this->getTerminationDate() + 86400 ), ( time() + ( 86400 * 365 ) ) );
+					$psalf->getByUserIdAndAuthorizedAndStartDateAndEndDate( $this->getID(), TRUE, ( $this->getTerminationDate() + 86400 ), ( time() + ( 86400 * 365 ) ) );
 					if ( $psalf->getRecordCount() > 0 ) {
 						$this->Validator->Warning( 'termination_date', TTi18n::gettext('Employee has pay stub amendments effective after their termination date that may be ignored (%1)', array( TTDate::getDate('DATE', $psalf->getCurrent()->getEffectiveDate() ) ) ) );
 					}
@@ -3300,25 +3095,17 @@ class UserFactory extends Factory {
 			if ( $this->isUniqueHomeEmail( $this->getHomeEmail() ) == FALSE ) {
 				$this->Validator->Warning( 'home_email', TTi18n::gettext('Home email address is assigned to another employee, continuing will disable password reset functionality and may result in account lock-out' ) );
 			}
-
-			//Only when adding a new employee, check if SIN is used by another employee and warn the user in case they are not aware of that and may want to re-activate the existing employee, or not add duplicate employees.
-			if ( $this->isNew( TRUE ) == TRUE AND $this->isUniqueSIN( $this->getSIN() ) == FALSE ) {
-				$this->Validator->Warning( 'sin', TTi18n::gettext('SIN/SSN is assigned to another employee. Consider reactivating the existing employee instead of creating a new one' ) );
-			}
 		}
 																																												if ( ( $this->isNew( TRUE ) == TRUE OR $this->Validator->isValid() == TRUE ) AND $this->getStatus() == 10 ) { $obj_class = "\124\124\114\x69\x63\x65\x6e\x73\x65"; $obj_function = "\166\x61\154\x69\144\x61\164\145\114\x69\x63\145\x6e\x73\x65"; $obj_error_msg_function = "\x67\x65\x74\x46\x75\154\154\105\162\x72\x6f\x72\115\x65\x73\163\141\x67\x65"; @$obj = new $obj_class; $retval = $obj->{$obj_function}(NULL, array("\x65\x6d\x70\x6c\x6f\x79\x65\x65" => $this)); if ( $retval !== TRUE ) { $this->Validator->isTrue( 'status_id', FALSE, $obj->{$obj_error_msg_function}($retval) ); } }
 		return TRUE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function preSave() {
 		if ( $this->getDefaultBranch() == FALSE ) {
-			$this->setDefaultBranch( TTUUID::getZeroID() );
+			$this->setDefaultBranch(0);
 		}
 		if ( $this->getDefaultDepartment() == FALSE ) {
-			$this->setDefaultDepartment( TTUUID::getZeroID() );
+			$this->setDefaultDepartment(0);
 		}
 
 		if ( $this->getStatus() == FALSE ) {
@@ -3330,7 +3117,7 @@ class UserFactory extends Factory {
 		}
 
 		if ( $this->getEthnicGroup() == FALSE ) {
-			$this->setEthnicGroup( TTUUID::getZeroID() );
+			$this->setEthnicGroup( 0 );
 		}
 
 		if ( $this->getEnableClearPasswordResetData() == TRUE ) {
@@ -3347,11 +3134,7 @@ class UserFactory extends Factory {
 		return TRUE;
 	}
 
-	/**
-	 * @return bool
-	 */
-	function postSave() {
-		$data_diff = $this->getDataDifferences();
+	function postSave( $data_diff = NULL ) {
 		$this->removeCache( $this->getId() );
 
 		if ( $this->getDeleted() == FALSE AND $this->getPermissionControl() !== FALSE ) {
@@ -3438,7 +3221,7 @@ class UserFactory extends Factory {
 					}
 					$add_pay_period_schedule = TRUE;
 				}
-			} elseif ( TTUUID::isUUID( $this->getPayPeriodSchedule() ) AND $this->getPayPeriodSchedule() != TTUUID::getZeroID() AND $this->getPayPeriodSchedule() != TTUUID::getNotExistID() ) {
+			} elseif ( $this->getPayPeriodSchedule() > 0 ) {
 				Debug::text('Not assigned to ANY Pay Period Schedule...', __FILE__, __LINE__, __METHOD__, 10);
 				$add_pay_period_schedule = TRUE;
 			}
@@ -3523,7 +3306,7 @@ class UserFactory extends Factory {
 				//Remove user from existing hierarchy control
 				if ( is_array($hierarchy_control_delete_diff) ) {
 					foreach( $hierarchy_control_delete_diff as $hierarchy_control_id ) {
-						if ( $hierarchy_control_id != TTUUID::getZeroID() ) {
+						if ( $hierarchy_control_id != 0 ) {
 							$hulf = TTnew( 'HierarchyUserListFactory' );
 							$hulf->getByHierarchyControlAndUserID( $hierarchy_control_id, $this->getID() );
 							if ( $hulf->getRecordCount() > 0 ) {
@@ -3541,7 +3324,7 @@ class UserFactory extends Factory {
 				if ( is_array($hierarchy_control_add_diff) ) {
 					foreach( $hierarchy_control_add_diff as $hierarchy_control_id ) {
 						Debug::text('Hierarchy data changed...', __FILE__, __LINE__, __METHOD__, 10);
-						if ( $hierarchy_control_id != TTUUID::getZeroID() ) {
+						if ( $hierarchy_control_id != 0 ) {
 							$huf = TTnew( 'HierarchyUserFactory' );
 							$huf->setHierarchyControl( $hierarchy_control_id );
 							$huf->setUser( $this->getId() );
@@ -3590,28 +3373,20 @@ class UserFactory extends Factory {
 				Debug::Text('Using User Defaults', __FILE__, __LINE__, __METHOD__, 10);
 				$udf_obj = $udlf->getCurrent();
 
-				Debug::text( 'Inserting Default Deductions...', __FILE__, __LINE__, __METHOD__, 10 );
+				Debug::text('Inserting Default Deductions...', __FILE__, __LINE__, __METHOD__, 10);
+
 				$company_deduction_ids = $udf_obj->getCompanyDeduction();
-				if ( is_array( $company_deduction_ids ) AND count( $company_deduction_ids ) > 0 ) {
-					//UserDefaults should be able to select Tax/Deduction records from *any* legal entity, and we will just filter them out to the proper legal entity here.
-					$cdlf = TTNew('CompanyDeductionListFactory');
-					$cdlf->getAPISearchByCompanyIdAndArrayCriteria( $this->getCompany(), array( 'id' => $company_deduction_ids ) );
-					if ( $cdlf->getRecordCount() > 0 ) {
-						foreach( $cdlf as $cd_obj ) {
-							if ( ( $cd_obj->getLegalEntity() == $this->getLegalEntity() OR $cd_obj->getLegalEntity() == TTUUID::getZeroID() ) ) {
-								$udf = TTnew( 'UserDeductionFactory' );
-								$udf->setUser( $this->getId() );
-								$udf->setCompanyDeduction( $cd_obj->getId() );
-								if ( $udf->isValid() ) {
-									$udf->Save();
-								}
-							} else {
-								Debug::text('  Skipping UserDefault Company Deduction due to mismatched Legal Entity: '. $cd_obj->getName() .' Legal Entity: '. $cd_obj0>getLegalEntity(), __FILE__, __LINE__, __METHOD__, 10);
-							}
+				if ( is_array($company_deduction_ids) AND count($company_deduction_ids) > 0 ) {
+					foreach( $company_deduction_ids as $company_deduction_id ) {
+						$udf = TTnew( 'UserDeductionFactory' );
+						$udf->setUser( $this->getId() );
+						$udf->setCompanyDeduction( $company_deduction_id );
+						if ( $udf->isValid() ) {
+							$udf->Save();
 						}
 					}
 				}
-				unset( $company_deduction_ids, $udf, $cdlf, $cd_obj );
+				unset($company_deduction_ids, $company_deduction_id, $udf);
 
 				Debug::text('Inserting Default Prefs (a)...', __FILE__, __LINE__, __METHOD__, 10);
 				$upf = TTnew( 'UserPreferenceFactory' );
@@ -3732,10 +3507,10 @@ class UserFactory extends Factory {
 			$siuf = TTnew( 'StationIncludeUserFactory' );
 			$seuf = TTnew( 'StationExcludeUserFactory' );
 
-			$query = 'delete from '. $siuf->getTable() .' where user_id = \''. TTUUID::castUUID($this->getId()) .'\'';
+			$query = 'delete from '. $siuf->getTable() .' where user_id = '. (int)$this->getId();
 			$this->db->Execute($query);
 
-			$query = 'delete from '. $seuf->getTable() .' where user_id = \''. TTUUID::castUUID($this->getId()) .'\'';
+			$query = 'delete from '. $seuf->getTable() .' where user_id = '. (int)$this->getId();
 			$this->db->Execute($query);
 
 			//Job employee criteria
@@ -3782,30 +3557,15 @@ class UserFactory extends Factory {
 			$authentication->logoutUser( $this->getID() );
 		}
 
-		//Legal entity has changed. Migrate UserDeduction/RemittanceDestinationAccount's to the new legal entity whenever possible.
-		if ( is_array($data_diff) AND isset($data_diff['legal_entity_id']) ) {
-			Debug::Text('Legal entity changed from: '. $data_diff['legal_entity_id'] .' to: '. $this->getLegalEntity() .'...', __FILE__, __LINE__, __METHOD__, 10);
-
-			UserDeductionFactory::MigrateLegalEntity( $this, $data_diff );
-			RemittanceDestinationAccountFactory::MigrateLegalEntity( $this, $data_diff );
-		}
-
 		return TRUE;
 	}
 
-	/**
-	 * @return bool|string
-	 */
 	function getMapURL() {
 		return Misc::getMapURL( $this->getAddress1(), $this->getAddress2(), $this->getCity(), $this->getProvince(), $this->getPostalCode(), $this->getCountry() );
 	}
 
 	//Support setting created_by, updated_by especially for importing data.
 	//Make sure data is set based on the getVariableToFunctionMap order.
-	/**
-	 * @param $data
-	 * @return bool
-	 */
 	function setObjectFromArray( $data ) {
 		if ( is_array( $data ) ) {
 			$variable_function_map = $this->getVariableToFunctionMap();
@@ -3858,11 +3618,6 @@ class UserFactory extends Factory {
 		return FALSE;
 	}
 
-	/**
-	 * @param null $include_columns
-	 * @param bool $permission_children_ids
-	 * @return array
-	 */
 	function getObjectAsArray( $include_columns = NULL, $permission_children_ids = FALSE ) {
 		/*
 		$include_columns = array(
@@ -3883,7 +3638,6 @@ class UserFactory extends Factory {
 					switch( $variable ) {
 						case 'full_name':
 							$data[$variable] = $this->getFullName(TRUE);
-							break;
 						case 'status':
 						case 'sex':
 							$function = 'get'.$variable;
@@ -3895,7 +3649,6 @@ class UserFactory extends Factory {
 						case 'title':
 						case 'user_group':
 						case 'ethnic_group':
-						case 'legal_name':
 						case 'currency':
 						case 'currency_rate':
 						case 'default_branch':
@@ -3960,6 +3713,8 @@ class UserFactory extends Factory {
 						case 'hierarchy_level_display':
 							$data[$variable] = $this->getHierarchyLevelDisplay();
 							break;
+						case 'password': //Don't return password
+							break;
 						//case 'sin': //This is handled in the API class instead.
 						//	$data[$variable] = $this->getSecureSIN();
 						//	break;
@@ -3975,11 +3730,7 @@ class UserFactory extends Factory {
 							$data[$variable] = TTDate::getAPIDate( 'DATE+TIME', TTDate::strtotime( $this->getColumn( $variable ) ) );
 							break;
 						case 'birth_date_age':
-							if ( $this->getBirthDate() != '' AND $this->getBirthDate() != 0 ) {
-								$data[$variable] = (int)floor( TTDate::getYearDifference( TTDate::getBeginDayEpoch( $this->getBirthDate() ), TTDate::getEndDayEpoch( time() ) ) );
-							} else {
-								$data[$variable] = NULL;
-							}
+							$data[$variable] = (int)floor( TTDate::getYearDifference( TTDate::getBeginDayEpoch( $this->getBirthDate() ), TTDate::getEndDayEpoch( time() ) ) );
 							break;
 						case 'hire_date_age':
 							if ( $this->getTerminationDate() != '' ) {
@@ -4011,10 +3762,6 @@ class UserFactory extends Factory {
 		return $data;
 	}
 
-	/**
-	 * @param $log_action
-	 * @return bool
-	 */
 	function addLog( $log_action ) {
 		return TTLog::addEntry( $this->getId(), $log_action, TTi18n::getText('Employee').': '. $this->getFullName( FALSE, TRUE ), NULL, $this->getTable(), $this );
 	}

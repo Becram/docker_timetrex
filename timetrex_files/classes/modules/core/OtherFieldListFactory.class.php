@@ -1,7 +1,7 @@
 <?php
 /*********************************************************************************
  * TimeTrex is a Workforce Management program developed by
- * TimeTrex Software Inc. Copyright (C) 2003 - 2018 TimeTrex Software Inc.
+ * TimeTrex Software Inc. Copyright (C) 2003 - 2017 TimeTrex Software Inc.
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Affero General Public License version 3 as published by
@@ -40,14 +40,7 @@
  */
 class OtherFieldListFactory extends OtherFieldFactory implements IteratorAggregate {
 
-	/**
-	 * @param int $limit Limit the number of records returned
-	 * @param int $page Page number of records to return for pagination
-	 * @param array $where Additional SQL WHERE clause in format of array( $column => $filter, ... ). ie: array( 'id' => 1, ... )
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return $this
-	 */
-	function getAll( $limit = NULL, $page = NULL, $where = NULL, $order = NULL) {
+	function getAll($limit = NULL, $page = NULL, $where = NULL, $order = NULL) {
 		$query = '
 					select	*
 					from	'. $this->getTable() .'
@@ -60,19 +53,13 @@ class OtherFieldListFactory extends OtherFieldFactory implements IteratorAggrega
 		return $this;
 	}
 
-	/**
-	 * @param string $id UUID
-	 * @param array $where Additional SQL WHERE clause in format of array( $column => $filter, ... ). ie: array( 'id' => 1, ... )
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return bool|OtherFieldListFactory
-	 */
-	function getById( $id, $where = NULL, $order = NULL) {
+	function getById($id, $where = NULL, $order = NULL) {
 		if ( $id == '') {
 			return FALSE;
 		}
 
 		$ph = array(
-					'id' => TTUUID::castUUID($id),
+					'id' => (int)$id,
 					);
 
 
@@ -89,21 +76,13 @@ class OtherFieldListFactory extends OtherFieldFactory implements IteratorAggrega
 		return $this;
 	}
 
-	/**
-	 * @param string $id UUID
-	 * @param int $limit Limit the number of records returned
-	 * @param int $page Page number of records to return for pagination
-	 * @param array $where Additional SQL WHERE clause in format of array( $column => $filter, ... ). ie: array( 'id' => 1, ... )
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return bool|OtherFieldListFactory
-	 */
-	function getByCompanyId( $id, $limit = NULL, $page = NULL, $where = NULL, $order = NULL) {
+	function getByCompanyId($id, $limit = NULL, $page = NULL, $where = NULL, $order = NULL) {
 		if ( $id == '' ) {
 			return FALSE;
 		}
 
 		$ph = array(
-					'id' => TTUUID::castUUID($id),
+					'id' => (int)$id,
 					);
 
 
@@ -120,16 +99,7 @@ class OtherFieldListFactory extends OtherFieldFactory implements IteratorAggrega
 		return $this;
 	}
 
-	/**
-	 * @param string $id UUID
-	 * @param int $type_id
-	 * @param int $limit Limit the number of records returned
-	 * @param int $page Page number of records to return for pagination
-	 * @param array $where Additional SQL WHERE clause in format of array( $column => $filter, ... ). ie: array( 'id' => 1, ... )
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return bool|OtherFieldListFactory
-	 */
-	function getByCompanyIdAndTypeID( $id, $type_id, $limit = NULL, $page = NULL, $where = NULL, $order = NULL) {
+	function getByCompanyIdAndTypeID($id, $type_id, $limit = NULL, $page = NULL, $where = NULL, $order = NULL) {
 		if ( $id == '' ) {
 			return FALSE;
 		}
@@ -139,7 +109,7 @@ class OtherFieldListFactory extends OtherFieldFactory implements IteratorAggrega
 		}
 
 		$ph = array(
-					'id' => TTUUID::castUUID($id),
+					'id' => (int)$id,
 					//'type_id' => (int)$type_id,
 					);
 
@@ -157,13 +127,7 @@ class OtherFieldListFactory extends OtherFieldFactory implements IteratorAggrega
 		return $this;
 	}
 
-	/**
-	 * @param string $id UUID
-	 * @param string $company_id UUID
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return bool|OtherFieldListFactory
-	 */
-	function getByIdAndCompanyId( $id, $company_id, $order = NULL) {
+	function getByIdAndCompanyId($id, $company_id, $order = NULL) {
 		if ( $id == '' ) {
 			return FALSE;
 		}
@@ -173,8 +137,8 @@ class OtherFieldListFactory extends OtherFieldFactory implements IteratorAggrega
 		}
 
 		$ph = array(
-					'company_id' => TTUUID::castUUID($company_id),
-					'id' => TTUUID::castUUID($id),
+					'company_id' => (int)$company_id,
+					'id' => (int)$id,
 					);
 
 		$query = '
@@ -191,14 +155,7 @@ class OtherFieldListFactory extends OtherFieldFactory implements IteratorAggrega
 		return $this;
 	}
 
-	/**
-	 * @param string $id UUID
-	 * @param int $type_id
-	 * @param null $key_prefix
-	 * @param null $name_prefix
-	 * @return array|bool
-	 */
-	function getByCompanyIdAndTypeIDArray( $id, $type_id, $key_prefix = NULL, $name_prefix = NULL ) {
+	function getByCompanyIdAndTypeIDArray($id, $type_id, $key_prefix = NULL, $name_prefix = NULL ) {
 		$oflf = new OtherFieldListFactory();
 		$oflf->getByCompanyIdAndTypeID( $id, $type_id, NULL, NULL, NULL, NULL );
 		if ( $oflf->getRecordCount() > 0 ) {
@@ -264,18 +221,7 @@ class OtherFieldListFactory extends OtherFieldFactory implements IteratorAggrega
 		return FALSE;
 	}
 
-	/**
-	 * @param string $company_id UUID
-	 * @param int $type_id
-	 * @param int $date EPOCH
-	 * @param array $valid_ids
-	 * @param int $limit Limit the number of records returned
-	 * @param int $page Page number of records to return for pagination
-	 * @param array $where Additional SQL WHERE clause in format of array( $column => $filter, ... ). ie: array( 'id' => 1, ... )
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return bool|OtherFieldListFactory
-	 */
-	function getByCompanyIDAndTypeAndDateAndValidIDs( $company_id, $type_id, $date = NULL, $valid_ids = array(), $limit = NULL, $page = NULL, $where = NULL, $order = NULL) {
+	function getByCompanyIDAndTypeAndDateAndValidIDs($company_id, $type_id, $date = NULL, $valid_ids = array(), $limit = NULL, $page = NULL, $where = NULL, $order = NULL) {
 		if ( $company_id == '') {
 			return FALSE;
 		}
@@ -296,7 +242,7 @@ class OtherFieldListFactory extends OtherFieldFactory implements IteratorAggrega
 		}
 
 		$ph = array(
-					'company_id' => TTUUID::castUUID($company_id),
+					'company_id' => (int)$company_id,
 					'type_id' => (int)$type_id,
 					);
 
@@ -319,7 +265,7 @@ class OtherFieldListFactory extends OtherFieldFactory implements IteratorAggrega
 		}
 
 		if ( isset($valid_ids) AND is_array($valid_ids) AND count($valid_ids) > 0 ) {
-			$query	.=	' OR a.id in ('. $this->getListSQL( $valid_ids, $ph, 'uuid') .') ';
+			$query	.=	' OR a.id in ('. $this->getListSQL( $valid_ids, $ph, 'int' ) .') ';
 		}
 
 		$query .= '	)
@@ -333,14 +279,7 @@ class OtherFieldListFactory extends OtherFieldFactory implements IteratorAggrega
 		return $this;
 	}
 
-	/**
-	 * @param string $company_id UUID
-	 * @param int $date EPOCH
-	 * @param array $where Additional SQL WHERE clause in format of array( $column => $filter, ... ). ie: array( 'id' => 1, ... )
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return bool
-	 */
-	function getIsModifiedByCompanyIdAndDate( $company_id, $date, $where = NULL, $order = NULL) {
+	function getIsModifiedByCompanyIdAndDate($company_id, $date, $where = NULL, $order = NULL) {
 		if ( $company_id == '') {
 			return FALSE;
 		}
@@ -350,7 +289,7 @@ class OtherFieldListFactory extends OtherFieldFactory implements IteratorAggrega
 		}
 
 		$ph = array(
-					'company_id' => TTUUID::castUUID($company_id),
+					'company_id' => (int)$company_id,
 					'created_date' => $date,
 					'updated_date' => $date,
 					'deleted_date' => $date,
@@ -378,15 +317,6 @@ class OtherFieldListFactory extends OtherFieldFactory implements IteratorAggrega
 		return FALSE;
 	}
 
-	/**
-	 * @param string $company_id UUID
-	 * @param $filter_data
-	 * @param int $limit Limit the number of records returned
-	 * @param int $page Page number of records to return for pagination
-	 * @param array $where Additional SQL WHERE clause in format of array( $column => $filter, ... ). ie: array( 'id' => 1, ... )
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return bool|OtherFieldListFactory
-	 */
 	function getAPISearchByCompanyIdAndArrayCriteria( $company_id, $filter_data, $limit = NULL, $page = NULL, $where = NULL, $order = NULL ) {
 		if ( $company_id == '') {
 			return FALSE;
@@ -422,7 +352,7 @@ class OtherFieldListFactory extends OtherFieldFactory implements IteratorAggrega
 		$uf = new UserFactory();
 
 		$ph = array(
-					'company_id' => TTUUID::castUUID($company_id),
+					'company_id' => (int)$company_id,
 					);
 
 		$query = '
@@ -438,9 +368,9 @@ class OtherFieldListFactory extends OtherFieldFactory implements IteratorAggrega
 						LEFT JOIN '. $uf->getTable() .' as z ON ( a.updated_by = z.id AND z.deleted = 0 )
 					where	a.company_id = ?';
 
-		$query .= ( isset($filter_data['permission_children_ids']) ) ? $this->getWhereClauseSQL( 'a.created_by', $filter_data['permission_children_ids'], 'uuid_list', $ph ) : NULL;
-		$query .= ( isset($filter_data['id']) ) ? $this->getWhereClauseSQL( 'a.id', $filter_data['id'], 'uuid_list', $ph ) : NULL;
-		$query .= ( isset($filter_data['exclude_id']) ) ? $this->getWhereClauseSQL( 'a.id', $filter_data['exclude_id'], 'not_uuid_list', $ph ) : NULL;
+		$query .= ( isset($filter_data['permission_children_ids']) ) ? $this->getWhereClauseSQL( 'a.created_by', $filter_data['permission_children_ids'], 'numeric_list', $ph ) : NULL;
+		$query .= ( isset($filter_data['id']) ) ? $this->getWhereClauseSQL( 'a.id', $filter_data['id'], 'numeric_list', $ph ) : NULL;
+		$query .= ( isset($filter_data['exclude_id']) ) ? $this->getWhereClauseSQL( 'a.id', $filter_data['exclude_id'], 'not_numeric_list', $ph ) : NULL;
 
 		$query .= ( isset($filter_data['type_id']) ) ? $this->getWhereClauseSQL( 'a.type_id', $filter_data['type_id'], 'numeric_list', $ph ) : NULL;
 

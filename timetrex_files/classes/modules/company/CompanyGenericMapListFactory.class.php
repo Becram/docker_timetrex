@@ -1,7 +1,7 @@
 <?php
 /*********************************************************************************
  * TimeTrex is a Workforce Management program developed by
- * TimeTrex Software Inc. Copyright (C) 2003 - 2018 TimeTrex Software Inc.
+ * TimeTrex Software Inc. Copyright (C) 2003 - 2017 TimeTrex Software Inc.
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Affero General Public License version 3 as published by
@@ -40,14 +40,7 @@
  */
 class CompanyGenericMapListFactory extends CompanyGenericMapFactory implements IteratorAggregate {
 
-	/**
-	 * @param int $limit Limit the number of records returned
-	 * @param int $page Page number of records to return for pagination
-	 * @param array $where Additional SQL WHERE clause in format of array( $column => $filter, ... ). ie: array( 'id' => 1, ... )
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return $this
-	 */
-	function getAll( $limit = NULL, $page = NULL, $where = NULL, $order = NULL) {
+	function getAll($limit = NULL, $page = NULL, $where = NULL, $order = NULL) {
 		$query = '
 					select	*
 					from	'. $this->getTable();
@@ -59,19 +52,13 @@ class CompanyGenericMapListFactory extends CompanyGenericMapFactory implements I
 		return $this;
 	}
 
-	/**
-	 * @param string $id UUID
-	 * @param array $where Additional SQL WHERE clause in format of array( $column => $filter, ... ). ie: array( 'id' => 1, ... )
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return bool|CompanyGenericMapListFactory
-	 */
-	function getById( $id, $where = NULL, $order = NULL) {
+	function getById($id, $where = NULL, $order = NULL) {
 		if ( $id == '') {
 			return FALSE;
 		}
 
 		$ph = array(
-					'id' => TTUUID::castUUID($id),
+					'id' => (int)$id,
 					);
 
 
@@ -88,19 +75,13 @@ class CompanyGenericMapListFactory extends CompanyGenericMapFactory implements I
 		return $this;
 	}
 
-	/**
-	 * @param string $id UUID
-	 * @param array $where Additional SQL WHERE clause in format of array( $column => $filter, ... ). ie: array( 'id' => 1, ... )
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return bool|CompanyGenericMapListFactory
-	 */
-	function getByCompanyId( $id, $where = NULL, $order = NULL) {
+	function getByCompanyId($id, $where = NULL, $order = NULL) {
 		if ( $id == '') {
 			return FALSE;
 		}
 
 		$ph = array(
-					'id' => TTUUID::castUUID($id),
+					'id' => (int)$id,
 					);
 
 
@@ -117,14 +98,7 @@ class CompanyGenericMapListFactory extends CompanyGenericMapFactory implements I
 		return $this;
 	}
 
-	/**
-	 * @param string $company_id UUID
-	 * @param string $id UUID
-	 * @param array $where Additional SQL WHERE clause in format of array( $column => $filter, ... ). ie: array( 'id' => 1, ... )
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return bool|CompanyGenericMapListFactory
-	 */
-	function getByCompanyIDAndObjectType( $company_id, $id, $where = NULL, $order = NULL) {
+	function getByCompanyIDAndObjectType($company_id, $id, $where = NULL, $order = NULL) {
 		if ( $company_id == '') {
 			return FALSE;
 		}
@@ -134,7 +108,7 @@ class CompanyGenericMapListFactory extends CompanyGenericMapFactory implements I
 		}
 
 		$ph = array(
-						'company_id' => TTUUID::castUUID($company_id)
+						'company_id' => (int)$company_id
 					);
 
 		$query = '
@@ -151,15 +125,7 @@ class CompanyGenericMapListFactory extends CompanyGenericMapFactory implements I
 		return $this;
 	}
 
-	/**
-	 * @param string $company_id UUID
-	 * @param int $object_type_id
-	 * @param string $id UUID
-	 * @param array $where Additional SQL WHERE clause in format of array( $column => $filter, ... ). ie: array( 'id' => 1, ... )
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return bool|CompanyGenericMapListFactory
-	 */
-	function getByCompanyIDAndObjectTypeAndObjectID( $company_id, $object_type_id, $id, $where = NULL, $order = NULL) {
+	function getByCompanyIDAndObjectTypeAndObjectID($company_id, $object_type_id, $id, $where = NULL, $order = NULL) {
 		if ( $company_id == '') {
 			return FALSE;
 		}
@@ -174,11 +140,11 @@ class CompanyGenericMapListFactory extends CompanyGenericMapFactory implements I
 
 		$cache_id = md5( $company_id . serialize($object_type_id) . serialize($id) );
 		//Debug::Text('Cache ID: '. $cache_id .' Company ID: '. $company_id .' Object Type: '. $object_type_id .' ID: '. $id, __FILE__, __LINE__, __METHOD__, 10);
-
+		
 		$this->rs = $this->getCache( $cache_id );
 		if ( $this->rs === FALSE ) {
 			$ph = array(
-							'company_id' => TTUUID::castUUID($company_id)
+							'company_id' => (int)$company_id
 						);
 
 
@@ -187,7 +153,7 @@ class CompanyGenericMapListFactory extends CompanyGenericMapFactory implements I
 						from	'. $this->getTable() .' as a
 						where	a.company_id = ?
 							AND a.object_type_id in ('. $this->getListSQL( $object_type_id, $ph, 'int' ) .')
-							AND a.object_id in ('. $this->getListSQL( $id, $ph, 'uuid' ) .')
+							AND a.object_id in ('. $this->getListSQL( $id, $ph, 'int' ) .')
 						';
 			$query .= $this->getWhereSQL( $where );
 			$query .= $this->getSortSQL( $order );
@@ -200,15 +166,7 @@ class CompanyGenericMapListFactory extends CompanyGenericMapFactory implements I
 		return $this;
 	}
 
-	/**
-	 * @param string $company_id UUID
-	 * @param int $object_type_id
-	 * @param string $id UUID
-	 * @param array $where Additional SQL WHERE clause in format of array( $column => $filter, ... ). ie: array( 'id' => 1, ... )
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return bool|CompanyGenericMapListFactory
-	 */
-	function getByCompanyIDAndObjectTypeAndMapID( $company_id, $object_type_id, $id, $where = NULL, $order = NULL) {
+	function getByCompanyIDAndObjectTypeAndMapID($company_id, $object_type_id, $id, $where = NULL, $order = NULL) {
 		if ( $company_id == '') {
 			return FALSE;
 		}
@@ -222,7 +180,7 @@ class CompanyGenericMapListFactory extends CompanyGenericMapFactory implements I
 		}
 
 		$ph = array(
-						'company_id' => TTUUID::castUUID($company_id)
+						'company_id' => (int)$company_id
 					);
 
 		$query = '
@@ -230,7 +188,7 @@ class CompanyGenericMapListFactory extends CompanyGenericMapFactory implements I
 					from	'. $this->getTable() .' as a
 					where	a.company_id = ?
 						AND a.object_type_id in ('. $this->getListSQL( $object_type_id, $ph, 'int' ) .')
-						AND a.map_id in ('. $this->getListSQL( $id, $ph, 'uuid' ) .')
+						AND a.map_id in ('. $this->getListSQL( $id, $ph, 'int' ) .')
 					';
 		$query .= $this->getWhereSQL( $where );
 		$query .= $this->getSortSQL( $order );
@@ -239,16 +197,7 @@ class CompanyGenericMapListFactory extends CompanyGenericMapFactory implements I
 		return $this;
 	}
 
-	/**
-	 * @param string $company_id UUID
-	 * @param int $object_type_id
-	 * @param string $id UUID
-	 * @param string $map_id UUID
-	 * @param array $where Additional SQL WHERE clause in format of array( $column => $filter, ... ). ie: array( 'id' => 1, ... )
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return bool|CompanyGenericMapListFactory
-	 */
-	function getByCompanyIDAndObjectTypeAndObjectIDAndMapID( $company_id, $object_type_id, $id, $map_id, $where = NULL, $order = NULL) {
+	function getByCompanyIDAndObjectTypeAndObjectIDAndMapID($company_id, $object_type_id, $id, $map_id, $where = NULL, $order = NULL) {
 		if ( $company_id == '') {
 			return FALSE;
 		}
@@ -262,7 +211,7 @@ class CompanyGenericMapListFactory extends CompanyGenericMapFactory implements I
 		}
 
 		$ph = array(
-						'company_id' => TTUUID::castUUID($company_id)
+						'company_id' => (int)$company_id
 					);
 
 		$query = '
@@ -270,8 +219,8 @@ class CompanyGenericMapListFactory extends CompanyGenericMapFactory implements I
 					from	'. $this->getTable() .' as a
 					where	a.company_id = ?
 						AND a.object_type_id in ('. $this->getListSQL( $object_type_id, $ph, 'int' ) .')
-						AND a.object_id in ('. $this->getListSQL( $id, $ph, 'uuid' ) .')
-						AND a.map_id in ('. $this->getListSQL( $map_id, $ph, 'uuid' ) .')
+						AND a.object_id in ('. $this->getListSQL( $id, $ph, 'int' ) .')
+						AND a.map_id in ('. $this->getListSQL( $map_id, $ph, 'int' ) .')
 					';
 		$query .= $this->getWhereSQL( $where );
 		$query .= $this->getSortSQL( $order );
@@ -281,16 +230,7 @@ class CompanyGenericMapListFactory extends CompanyGenericMapFactory implements I
 		return $this;
 	}
 
-	/**
-	 * @param string $company_id UUID
-	 * @param int $object_type_id
-	 * @param string $id UUID
-	 * @param string $map_id UUID
-	 * @param array $where Additional SQL WHERE clause in format of array( $column => $filter, ... ). ie: array( 'id' => 1, ... )
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return bool|CompanyGenericMapListFactory
-	 */
-	function getByCompanyIDAndObjectTypeAndObjectIDAndNotMapID( $company_id, $object_type_id, $id, $map_id, $where = NULL, $order = NULL) {
+	function getByCompanyIDAndObjectTypeAndObjectIDAndNotMapID($company_id, $object_type_id, $id, $map_id, $where = NULL, $order = NULL) {
 		if ( $company_id == '') {
 			return FALSE;
 		}
@@ -304,7 +244,7 @@ class CompanyGenericMapListFactory extends CompanyGenericMapFactory implements I
 		}
 
 		$ph = array(
-						'company_id' => TTUUID::castUUID($company_id)
+						'company_id' => (int)$company_id
 					);
 
 		$query = '
@@ -312,8 +252,8 @@ class CompanyGenericMapListFactory extends CompanyGenericMapFactory implements I
 					from	'. $this->getTable() .' as a
 					where	a.company_id = ?
 						AND a.object_type_id in ('. $this->getListSQL( $object_type_id, $ph, 'int' ) .')
-						AND a.object_id in ('. $this->getListSQL( $id, $ph, 'uuid' ) .')
-						AND a.map_id not in ('. $this->getListSQL( $map_id, $ph, 'uuid' ) .')
+						AND a.object_id in ('. $this->getListSQL( $id, $ph, 'int' ) .')
+						AND a.map_id not in ('. $this->getListSQL( $map_id, $ph, 'int' ) .')
 					';
 		$query .= $this->getWhereSQL( $where );
 		$query .= $this->getSortSQL( $order );
@@ -323,13 +263,7 @@ class CompanyGenericMapListFactory extends CompanyGenericMapFactory implements I
 		return $this;
 	}
 
-	/**
-	 * @param string $id UUID
-	 * @param array $where Additional SQL WHERE clause in format of array( $column => $filter, ... ). ie: array( 'id' => 1, ... )
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return bool|CompanyGenericMapListFactory
-	 */
-	function getByObjectType( $id, $where = NULL, $order = NULL) {
+	function getByObjectType($id, $where = NULL, $order = NULL) {
 		if ( $id == '') {
 			return FALSE;
 		}
@@ -349,14 +283,7 @@ class CompanyGenericMapListFactory extends CompanyGenericMapFactory implements I
 		return $this;
 	}
 
-	/**
-	 * @param int $object_type_id
-	 * @param string $id UUID
-	 * @param array $where Additional SQL WHERE clause in format of array( $column => $filter, ... ). ie: array( 'id' => 1, ... )
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return bool|CompanyGenericMapListFactory
-	 */
-	function getByObjectTypeAndObjectID( $object_type_id, $id, $where = NULL, $order = NULL) {
+	function getByObjectTypeAndObjectID($object_type_id, $id, $where = NULL, $order = NULL) {
 		if ( $object_type_id == '') {
 			return FALSE;
 		}
@@ -371,7 +298,7 @@ class CompanyGenericMapListFactory extends CompanyGenericMapFactory implements I
 					select	a.*
 					from	'. $this->getTable() .' as a
 					where	a.object_type_id in ('.	 $this->getListSQL( $object_type_id, $ph, 'int' ) .')
-						AND a.object_id in ('.	$this->getListSQL( $id, $ph, 'uuid' ) .')
+						AND a.object_id in ('.	$this->getListSQL( $id, $ph, 'int' ) .')
 					';
 		$query .= $this->getWhereSQL( $where );
 		$query .= $this->getSortSQL( $order );
@@ -381,10 +308,6 @@ class CompanyGenericMapListFactory extends CompanyGenericMapFactory implements I
 		return $this;
 	}
 
-	/**
-	 * @param $lf
-	 * @return array|bool
-	 */
 	function getArrayByListFactory( $lf ) {
 		if ( !is_object($lf) ) {
 			return FALSE;
@@ -400,13 +323,7 @@ class CompanyGenericMapListFactory extends CompanyGenericMapFactory implements I
 
 		return FALSE;
 	}
-
-	/**
-	 * @param string $company_id UUID
-	 * @param int $object_type_id
-	 * @param string $object_id UUID
-	 * @return array|bool
-	 */
+	
 	static function getArrayByCompanyIDAndObjectTypeIDAndObjectID( $company_id, $object_type_id, $object_id ) {
 		$cgmlf = new CompanyGenericMapListFactory();
 		return $cgmlf->getArrayByListFactory( $cgmlf->getByCompanyIDAndObjectTypeAndObjectID( $company_id, $object_type_id, $object_id ) );

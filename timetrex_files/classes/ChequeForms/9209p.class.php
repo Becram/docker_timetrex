@@ -1,7 +1,7 @@
 <?php
 /*********************************************************************************
  * TimeTrex is a Workforce Management program developed by
- * TimeTrex Software Inc. Copyright (C) 2003 - 2018 TimeTrex Software Inc.
+ * TimeTrex Software Inc. Copyright (C) 2003 - 2017 TimeTrex Software Inc.
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Affero General Public License version 3 as published by
@@ -44,192 +44,201 @@ class ChequeForms_9209P extends ChequeForms_Base {
 
 	public function getTemplateSchema( $name = NULL ) {
 		$template_schema = array(
-								//Initialize page1, replace date label on template.
 
-								// date label
-								array(
-									'page' => 1,
-									'template_page' => 1,
-									'value' => TTi18n::gettext('Date').': ',
-									'coordinates' => array(
-												'x' => 167,
-												'y' => 15,
-												'h' => 10,
-												'w' => 10,
-												'halign' => 'C',
-									),
-									'font' => array(
-												'size' => 10,
-												'type' => ''
-									)
-								),
 
-								// Full mailing address.
-								'full_address' => array(
+                                //Initialize page1, replace date label on template.
+
+                                // date label
+                                array(
+                                    'page' => 1,
+                                    'template_page' => 1,
+                                    'value' => TTi18n::gettext('Date').': ',
+                                    'coordinates' => array(
+                                                'x' => 172,
+                                                'y' => 20,
+                                                'h' => 10,
+                                                'w' => 10,
+                                                'halign' => 'C',
+                                    ),
+                                    'font' => array(
+                                                'size' => 10,
+                                                'type' => ''
+                                    )
+                                ),
+
+								// full name
+								'full_name' => array(
 										'coordinates' => array(
-												'x' => 20,
-												'y' => 46,
-												'h' => 20,
-												'w' => 100,
-												'halign' => 'L',
-										),
-										'font' => array(
-												'size' => 10,
-												'type' => ''
-										),
-										'multicell' => TRUE,
-								),
-
-								// amount words
-								'amount_words' => array(
-										'function' => array('filterAmountWords', 'drawNormal'),
-										'coordinates' => array(
-														'x' => 25,
-														'y' => 28,
-														'h' => 10,
-														'w' => 100,
-														'halign' => 'L',
-													),
+                                                        'x' => 25,
+                                                        'y' => 52,
+                                                        'h' => 5,
+                                                        'w' => 100,
+                                                        'halign' => 'L',
+												    ),
 										'font' => array(
 														'size' => 10,
-														'type' => ''
-													)
+                                                        'type' => ''
+                                                    )
 								),
-								// amount cents
-								'amount_cents' => array(
-										'function' => array('filterAmountCents', 'drawNormal'),
-										'coordinates' => array(
-														'x' => 125,
-														'y' => 28,
-														'h' => 10,
-														'w' => 15,
-														'halign' => 'L',
-													),
-										'font' => array(
-														'size' => 10,
-														'type' => ''
-													)
-								),
+                                // address
+                                'address' => array(
+                                        'function' => array('filterAddress', 'drawNormal'),
+                                        'coordinates' => array(
+                                                        'x' => 25,
+                                                        'y' => 57,
+                                                        'h' => 5,
+                                                        'w' => 100,
+                                                        'halign' => 'L',
+                                                    ),
+                                        'font' => array(
+                                                        'size' => 10,
+                                                        'type' => ''
+                                                    ),
+                                ),
+                                // province
+                                'province' => array(
+                                        'function' => array('filterProvince', 'drawNormal'),
+                                        'coordinates' => array(
+                                                        'x' => 25,
+                                                        'y' => 62,
+                                                        'h' => 5,
+                                                        'w' => 100,
+                                                        'halign' => 'L',
+                                                    ),
+                                        'font' => array(
+                                                        'size' => 10,
+                                                        'type' => ''
+                                                    ),
 
-								// date
-								'date' => array(
-										'function' => array('filterDate', 'drawNormal'),
-										'coordinates' => array(
-														'x' => 177,
-														'y' => 15,
-														'h' => 10,
-														'w' => 25,
-														'halign' => 'C',
-													),
-										'font' => array(
+                                ),
+                                // amount words
+                                'amount_words' => array(
+                                        'function' => array('filterAmountWords', 'drawNormal'),
+                                        'coordinates' => array(
+                                                        'x' => 25,
+                                                        'y' => 37,
+                                                        'h' => 10,
+                                                        'w' => 100,
+                                                        'halign' => 'L',
+                                                    ),
+                                        'font' => array(
 														'size' => 10,
-														'type' => ''
-													)
-								),
+                                                        'type' => ''
+                                                    )
+                                ),
+                                // amount cents
+                                'amount_cents' => array(
+                                        'function' => array('filterAmountCents', 'drawNormal'),
+                                        'coordinates' => array(
+                                                        'x' => 125,
+                                                        'y' => 37,
+                                                        'h' => 10,
+                                                        'w' => 15,
+                                                        'halign' => 'L',
+                                                    ),
+                                        'font' => array(
+                                                        'size' => 10,
+                                                        'type' => ''
+                                                    )
+                                ),
+
+                                // date
+                                'date' => array(
+                                        'function' => array('filterDate', 'drawNormal'),
+                                        'coordinates' => array(
+                                                        'x' => 182,
+                                                        'y' => 20,
+                                                        'h' => 10,
+                                                        'w' => 25,
+                                                        'halign' => 'C',
+                                                    ),
+                                        'font' => array(
+                                                        'size' => 10,
+                                                        'type' => ''
+                                                    )
+                                ),
 
 								//date format label
-								array(
-									'function' => array('getDisplayDateFormat', 'drawNormal'),
-									'coordinates' => array(
-												'x' => 177,
-												'y' => 17.5,
-												'h' => 10,
-												'w' => 25,
-												'halign' => 'C',
-									),
-									'font' => array(
-												'size' => 6,
-												'type' => ''
-									)
-								),
+                                array(
+                                    'function' => array('getDisplayDateFormat', 'drawNormal'),
+                                    'coordinates' => array(
+                                                'x' => 182,
+                                                'y' => 22.5,
+                                                'h' => 10,
+                                                'w' => 25,
+                                                'halign' => 'C',
+                                    ),
+                                    'font' => array(
+                                                'size' => 6,
+                                                'type' => ''
+                                    )
+                                ),
 
-								'alignment_grid' => array( //Print alignment grid around the dollar amount, as it usually needs most fine tuning.
-														   'function' => array('drawAlignmentGrid'),
-														   'coordinates' => array(
-																   'x' => 150,
-																   'y' => 10,
-																   'h' => 36,
-																   'w' => 52,
-														   ),
-								),
-
-								// amount padded
-								'amount_padded' => array(
-										'function' => array('filterAmountPadded', 'drawNormal'),
-										'coordinates' => array(
-														'x' => 167,
-														'y' => 28,
-														'h' => 10,
-														'w' => 35,
-														'halign' => 'C',
-													),
-										'font' => array(
-														'size' => 10,
-														'type' => ''
-													)
-								),
-
-								// Signature
-								'signature' => array(
-										'function' => array('drawImage'),
-										'coordinates' => array(
-												'x' => 150,
-												'y' => 52,
-												'h' => 13,
-												'w' => 50,
-										),
-								),
-
-								// left column
-								'stub_left_column' => array(
-										'function' => 'drawPiecemeal',
-										'coordinates' => array(
-															array(
-																'x' => 15,
-																'y' => 94,
-																'h' => 75,
-																'w' => 92,
-																'halign' => 'L',
-															),
-															array(
-																'x' => 15,
-																'y' => 182,
-																'h' => 75,
-																'w' => 92,
-																'halign' => 'L',
-															),
-													),
-										'font' => array(
-														'size' => 10,
-														'type' => ''
-													),
-										'multicell' => TRUE,
-								),
-								// right column
-								'stub_right_column' => array(
-										'function' => 'drawPiecemeal',
-										'coordinates' => array(
-															array(
-																'x' => 107,
-																'y' => 94,
-																'h' => 75,
-																'w' => 91,
-																'halign' => 'R',
-															),
-															array(
-																'x' => 107,
-																'y' => 182,
-																'h' => 75,
-																'w' => 91,
-																'halign' => 'R',
-															),
-													),
-										'font' => array(
-														'size' => 10,
-														'type' => '',
-													),
-										'multicell' => TRUE,
-								),
+                                // amount padded
+                                'amount_padded' => array(
+                                        'function' => array('filterAmountPadded', 'drawNormal'),
+                                        'coordinates' => array(
+                                                        'x' => 172,
+                                                        'y' => 37,
+                                                        'h' => 10,
+                                                        'w' => 35,
+                                                        'halign' => 'C',
+                                                    ),
+                                        'font' => array(
+                                                        'size' => 10,
+                                                        'type' => ''
+                                                    )
+                                ),
+                                // left column
+                                'stub_left_column' => array(
+                                        'function' => 'drawPiecemeal',
+                                        'coordinates' => array(
+                                                            array(
+                                                                'x' => 15,
+                                                                'y' => 105,
+                                                                'h' => 100,
+                                                                'w' => 96,
+                                                                'halign' => 'L',
+                                                            ),
+                                                            array(
+                                                                'x' => 15,
+                                                                'y' => 205,
+                                                                'h' => 100,
+                                                                'w' => 96,
+                                                                'halign' => 'L',
+                                                            ),
+                                                    ),
+                                        'font' => array(
+                                                        'size' => 10,
+                                                        'type' => ''
+                                                    ),
+                                        'multicell' => TRUE,
+                                ),
+                                // right column
+                                'stub_right_column' => array(
+                                        'function' => 'drawPiecemeal',
+                                        'coordinates' => array(
+                                                            array(
+                                                                'x' => 111,
+                                                                'y' => 105,
+                                                                'h' => 100,
+                                                                'w' => 96,
+                                                                'halign' => 'R',
+                                                            ),
+                                                            array(
+                                                                'x' => 111,
+                                                                'y' => 205,
+                                                                'h' => 100,
+                                                                'w' => 96,
+                                                                'halign' => 'R',
+                                                            ),
+                                                    ),
+                                        'font' => array(
+                                                        'size' => 10,
+                                                        'type' => '',
+                                                    ),
+                                        'multicell' => TRUE,
+                                ),
 
 					);
 
@@ -239,5 +248,7 @@ class ChequeForms_9209P extends ChequeForms_Base {
 			return $template_schema;
 		}
 	}
+
+
 }
 ?>

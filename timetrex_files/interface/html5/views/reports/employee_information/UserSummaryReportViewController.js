@@ -1,14 +1,15 @@
 UserSummaryReportViewController = ReportBaseViewController.extend( {
 
-	_required_files: ['APIUserSummaryReport','APICurrency'],
-
-	initReport: function( options ) {
+	initialize: function( options ) {
+		this.__super( 'initialize', options );
 		this.script_name = 'UserSummaryReport';
 		this.viewId = 'UserSummaryReport';
 		this.context_menu_name = $.i18n._( 'Employee Information' );
 		this.navigation_label = $.i18n._( 'Saved Report' ) +':';
 		this.view_file = 'UserSummaryReportView.html';
 		this.api = new (APIFactory.getAPIClass( 'APIUserSummaryReport' ))();
+		this.buildContextMenu();
+
 	},
 
 	buildContextMenuModels: function() {
@@ -110,15 +111,13 @@ UserSummaryReportViewController = ReportBaseViewController.extend( {
 
 		switch ( id ) {
 			case ContextMenuIconName.view:
-				ProgressBar.showOverlay();
 				this.onViewClick();
 				break;
 			case ContextMenuIconName.view_html:
-				ProgressBar.showOverlay();
+
 				this.onViewClick('html');
 				break;
 			case ContextMenuIconName.view_html_new_window:
-				ProgressBar.showOverlay();
 				this.onViewClick('html', true);
 				break;
 			case ContextMenuIconName.export_excel:

@@ -14,10 +14,8 @@ InstallWizardController = BaseWizardController.extend( {
 
 	edit_view_error_ui_dic: {},
 
-	_required_files: ['APIInstall'],
-
-	init: function( options ) {
-		//this._super('initialize', options );
+	initialize: function( options ) {
+		this._super( 'initialize', options );
 		this.title_1 = $( this.el ).find( '.title-1' );
 		this.steps = 5;
 		this.script_name = 'wizard_install';
@@ -350,7 +348,7 @@ InstallWizardController = BaseWizardController.extend( {
 						step_title_htm = step_title_htm
 						+ '<p style="background-color: #FFFF00">'
 						+ $.i18n._( 'For installation support, please contact ' )
-						+ '<a href="https://www.timetrex.com/contact-us" target="_blank">' + $.i18n._( 'TimeTrex support' ) + '</a>';
+						+ '<a href="https://www.timetrex.com/contactus.php" target="_blank">' + $.i18n._( 'TimeTrex support' ) + '</a>';
 					} else if ( stepData.tt_product_edition == 10 ) {
 
 						step_title_htm = step_title_htm
@@ -358,7 +356,7 @@ InstallWizardController = BaseWizardController.extend( {
 						+ $.i18n._( 'For installation support, please join our community ' )
 						+ '<a href="https://forums.timetrex.com" target="_blank">' + $.i18n._( 'forums' ) + '</a>'
 						+ $.i18n._( ' or contact a TimeTrex support expert for ' )
-						+ '<a href="https://www.timetrex.com/setup-support" target="_blank">' + $.i18n._( 'Implementation Support Services' ) + '</a></p>';
+						+ '<a href="https://www.timetrex.com/setup_support.php" target="_blank">' + $.i18n._( 'Implementation Support Services' ) + '</a></p>';
 					}
 
 				}
@@ -396,6 +394,7 @@ InstallWizardController = BaseWizardController.extend( {
 				var requirements_column2 = requirements.find( '.second-column' );
 				requirements_column2.empty();
 				if ( stepData.check_all_requirements == 0 ) {
+
 					requirements_column2.html( $.i18n._( 'All System Requirements have been met successfully' ) + '!' );
 					requirements_column2.addClass( 'all-ok' );
 				} else {
@@ -403,7 +402,7 @@ InstallWizardController = BaseWizardController.extend( {
 					requirements_column2.removeClass( 'all-ok' );
 					form_item_input = Global.loadWidgetByName( FormItemType.TEXT );
 					form_item_input.TText( {field: 'database_engine'} );
-					this.addEditFieldToColumn( $.i18n._( 'PostgreSQL Enabled' ), form_item_input, requirements_column2, '', null, true, true );
+					this.addEditFieldToColumn( $.i18n._( 'Database Engine' ), form_item_input, requirements_column2, '', null, true, true );
 
 					form_item_input = Global.loadWidgetByName( FormItemType.TEXT );
 					form_item_input.TText( {field: 'bcmath'} );
@@ -466,10 +465,6 @@ InstallWizardController = BaseWizardController.extend( {
 					form_item_input = Global.loadWidgetByName( FormItemType.TEXT );
 					form_item_input.TText( {field: 'safe_mode'} );
 					this.addEditFieldToColumn( $.i18n._( 'Safe Mode Turned Off' ), form_item_input, requirements_column2, '', null, true, true );
-
-					form_item_input = Global.loadWidgetByName( FormItemType.TEXT );
-					form_item_input.TText( {field: 'disabled_functions'} );
-					this.addEditFieldToColumn( $.i18n._( 'PHP DISABLE_FUNCTIONS' ), form_item_input, requirements_column2, '', null, true, true );
 
 					form_item_input = Global.loadWidgetByName( FormItemType.TEXT );
 					form_item_input.TText( {field: 'allow_fopen_url'} );
@@ -1340,11 +1335,11 @@ InstallWizardController = BaseWizardController.extend( {
 							if ( stepData[key] == 0 ) {
 								widget.html( $.i18n._( 'OK' ) );
 							} else if ( stepData[key] == 1 ) {
-								widget.html($.i18n._('Not Installed. (PGSQL extension must be enabled)'));
-								widget.addClass('dataError');
-							} else if ( stepData[key] == 2 ) {
-								widget.html( $.i18n._( 'MySQL is not supported. (Database type must be "postgres" in timetrex.ini.php)' ) );
+								widget.html( $.i18n._( 'Invalid, PGSQL or MySQLi PHP extensions are required' ) );
 								widget.addClass( 'dataError' );
+							} else if ( stepData[key] == 2 ) {
+								widget.html( $.i18n._( 'Unsupported, upgrade to MySQLi PHP extension instead.' ) );
+								widget.addClass( 'dataWarning' );
 							}
 							break;
 						case 'bcmath':
@@ -1475,14 +1470,6 @@ InstallWizardController = BaseWizardController.extend( {
 								widget.html( $.i18n._( 'OK' ) );
 							} else if ( stepData[key] == 1 ) {
 								widget.html( $.i18n._( 'Safe Mode is On. (Please disable it in php.ini)' ) );
-								widget.addClass( 'dataError' );
-							}
-							break;
-						case 'disabled_functions':
-							if ( stepData[key].check_disabled_functions == 0 ) {
-								widget.html( $.i18n._( 'OK' ) );
-							} else if ( stepData[key].check_disabled_functions == 1 ) {
-								widget.html( $.i18n._( 'Critical functions disabled: '+ stepData[key].disabled_function_list +'. (Please enable them in php.ini)' ) );
 								widget.addClass( 'dataError' );
 							}
 							break;

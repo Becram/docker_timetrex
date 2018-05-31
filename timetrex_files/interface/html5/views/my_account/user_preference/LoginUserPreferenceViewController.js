@@ -1,8 +1,5 @@
 LoginUserPreferenceViewController = BaseViewController.extend( {
 
-
-	_required_files: ['APIUserPreference', 'APIDate', 'APICurrentUser', 'APIUserPreference' ],
-
 	language_array: null,
 	date_format_array: null,
 
@@ -22,9 +19,9 @@ LoginUserPreferenceViewController = BaseViewController.extend( {
 
 	user_preference_api: null,
 
-	init: function( options ) {
+	initialize: function( options ) {
 
-		//this._super('initialize', options );
+		this._super( 'initialize', options );
 
 		this.permission_id = 'user_preference';
 		this.viewId = 'LoginUserPreference';
@@ -207,7 +204,7 @@ LoginUserPreferenceViewController = BaseViewController.extend( {
 
 	onStatusChange: function() {
 
-		if ( this.current_edit_record.schedule_icalendar_type_id == 0 ) {
+		if ( this.current_edit_record.schedule_icalendar_type_id === 0 ) {
 			this.detachElement( 'calendar_url' );
 			this.detachElement( 'schedule_icalendar_alarm1_working' );
 			this.detachElement( 'schedule_icalendar_alarm2_working' );
@@ -308,7 +305,7 @@ LoginUserPreferenceViewController = BaseViewController.extend( {
 					var result_data = result.getResult();
 					if ( result_data === true ) {
 						$this.refresh_id = $this.current_edit_record.id;
-					} else if ( TTUUID.isUUID( result_data ) && result_data != TTUUID.zero_id && result_data != TTUUID.not_exist_id ) {
+					} else if ( result_data > 0 ) {
 						$this.refresh_id = result_data
 					}
 

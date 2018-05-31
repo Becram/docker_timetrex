@@ -1,7 +1,7 @@
 <?php
 /*********************************************************************************
  * TimeTrex is a Workforce Management program developed by
- * TimeTrex Software Inc. Copyright (C) 2003 - 2018 TimeTrex Software Inc.
+ * TimeTrex Software Inc. Copyright (C) 2003 - 2017 TimeTrex Software Inc.
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Affero General Public License version 3 as published by
@@ -401,8 +401,8 @@ class GovernmentForms_Base {
 	}
 
 	//Draw all digits before the decimal in the first location, and after the decimal in the second location.
-	function drawSplitDecimalFloat( $value, $schema ) {
-		if ( $value != 0 OR isset($schema['draw_zero_value']) AND $schema['draw_zero_value'] == TRUE ) {
+	function drawSplitDecimalFloat( $value, $schema) {
+		if ( $value != 0 ) {
 			$this->Draw( $this->getBeforeDecimal( $value ), $this->getSchemaSpecificCoordinates( $schema, 0 ) );
 			$this->Draw( $this->getAfterDecimal( $value ), $this->getSchemaSpecificCoordinates( $schema, 1 ) );
 		}
@@ -433,7 +433,7 @@ class GovernmentForms_Base {
                 }
             }
         }
-
+		
         return TRUE;
     }
 
@@ -551,6 +551,7 @@ class GovernmentForms_Base {
                         'y' => $y,
                         'h' => $h,
                         'w' => $w,
+
                     );
 
                     $schema['coordinates'] = array_merge( $schema['coordinates'], $coordinates );

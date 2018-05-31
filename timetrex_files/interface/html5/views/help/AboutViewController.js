@@ -1,16 +1,12 @@
 AboutViewController = BaseViewController.extend( {
 
-	_required_files: ['APIAbout'],
-
 	date_api: null,
 
 	employeeActive: [],
 
-	_required_files: ['TImage','TImageBrowser','APIAbout', 'APIDate' ],
+	initialize: function( options ) {
 
-	init: function( options ) {
-
-		//this._super('initialize', options );
+		this._super( 'initialize', options );
 		this.viewId = 'About';
 		this.script_name = 'AboutView';
 		this.context_menu_name = $.i18n._( 'About' );
@@ -400,18 +396,18 @@ AboutViewController = BaseViewController.extend( {
 		form_item_input.SeparatedBox( {label: $.i18n._( 'License Information' )} );
 		this.addEditFieldToColumn( null, form_item_input, tab_about_column1, '', null, true, false, 'license_info' );
 
-		if ( LocalCacheData.productEditionId > 10 && APIGlobal.pre_login_data.primary_company_id == LocalCacheData.getCurrentCompany().id ) {
-			// Upload License
-			form_item_input = Global.loadWidgetByName( FormItemType.IMAGE_BROWSER);
-			this.file_browser = form_item_input.TImageBrowser( {
-				field: 'license_browser',
-				name: 'filedata',
-				accept_filter: '*',
-				changeHandler: function( a ) {
-					$this.uploadLicense( this );
-				}
-			} );
-		}
+		// Upload License
+		form_item_input = Global.loadWidgetByName( FormItemType.FILE_BROWSER );
+
+		this.file_browser = form_item_input.TImageBrowser( {
+			field: 'license_browser',
+			name: 'filedata',
+			accept_filter: '*',
+			changeHandler: function( a ) {
+				$this.uploadLicense( this );
+			}
+		} );
+
 		this.addEditFieldToColumn( $.i18n._( 'Upload License' ), form_item_input, tab_about_column1, '', null, true );
 
 		// Product

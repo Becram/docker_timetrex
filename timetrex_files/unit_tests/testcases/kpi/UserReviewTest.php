@@ -1,7 +1,7 @@
 <?php
 /*********************************************************************************
  * TimeTrex is a Workforce Management program developed by
- * TimeTrex Software Inc. Copyright (C) 2003 - 2018 TimeTrex Software Inc.
+ * TimeTrex Software Inc. Copyright (C) 2003 - 2017 TimeTrex Software Inc.
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Affero General Public License version 3 as published by
@@ -57,7 +57,6 @@ class UserReviewTest extends PHPUnit_Framework_TestCase {
 		$dd->setEnableQuickPunch( FALSE ); //Helps prevent duplicate punch IDs and validation failures.
 		$dd->setUserNamePostFix( '_'.uniqid( NULL, TRUE ) ); //Needs to be super random to prevent conflicts and random failing tests.
 		$this->company_id = $dd->createCompany();
-		$this->legal_entity_id = $dd->createLegalEntity( $this->company_id, 10 );
 		Debug::text('Company ID: '. $this->company_id, __FILE__, __LINE__, __METHOD__, 10);
 
 		//$dd->createPermissionGroups( $this->company_id, 40 ); //Administrator only.
@@ -66,7 +65,7 @@ class UserReviewTest extends PHPUnit_Framework_TestCase {
 
 		$dd->createUserWageGroups( $this->company_id );
 
-		$this->user_id = $dd->createUser( $this->company_id, $this->legal_entity_id, 100 );
+		$this->user_id = $dd->createUser( $this->company_id, 100 );
 
 		$this->branch_ids[] = $dd->createBranch( $this->company_id, 10 );
 		$this->branch_ids[] = $dd->createBranch( $this->company_id, 20 );
@@ -277,8 +276,8 @@ class UserReviewTest extends PHPUnit_Framework_TestCase {
 		$this->assertEquals( $kpi_arr[0]['minimum_rate'], 1 );
 		$this->assertEquals( $kpi_arr[0]['maximum_rate'], 10 );
 
-		$user_ids[] = $dd->createUser( $this->company_id, $this->legal_entity_id, 10 );
-		$user_ids[] = $dd->createUser( $this->company_id, $this->legal_entity_id, 11 );
+		$user_ids[] = $dd->createUser( $this->company_id, 10 );
+		$user_ids[] = $dd->createUser( $this->company_id, 11 );
 
 		$user_review_control_id = $this->createUserReviewControl( $user_ids[0], $user_ids[1] );
 		if ( $user_review_control_id != '' ) {
@@ -337,8 +336,8 @@ class UserReviewTest extends PHPUnit_Framework_TestCase {
 		$kpi_group_id = $this->createKPIGroup( $this->company_id, 40, 0 );
 		$kpi_id = $this->createKPI( $this->company_id, 60, 60, $kpi_group_id );
 
-		$user_ids[] = $dd->createUser( $this->company_id, $this->legal_entity_id, 14 );
-		$user_ids[] = $dd->createUser( $this->company_id, $this->legal_entity_id, 16 );
+		$user_ids[] = $dd->createUser( $this->company_id, 14 );
+		$user_ids[] = $dd->createUser( $this->company_id, 16 );
 
 		$user_review_control_id = $this->createUserReviewControl( $user_ids[0], $user_ids[1] );
 		if ( $user_review_control_id != '' ) {
@@ -405,8 +404,8 @@ class UserReviewTest extends PHPUnit_Framework_TestCase {
 		$this->assertEquals( $kpi_arr[0]['minimum_rate'], FALSE );
 		$this->assertEquals( $kpi_arr[0]['maximum_rate'], FALSE );
 
-		$user_ids[] = $dd->createUser( $this->company_id, $this->legal_entity_id, 17 );
-		$user_ids[] = $dd->createUser( $this->company_id, $this->legal_entity_id, 19 );
+		$user_ids[] = $dd->createUser( $this->company_id, 17 );
+		$user_ids[] = $dd->createUser( $this->company_id, 19 );
 
 		$user_review_control_id = $this->createUserReviewControl( $user_ids[0], $user_ids[1] );
 		if ( $user_review_control_id != '' ) {
@@ -442,8 +441,8 @@ class UserReviewTest extends PHPUnit_Framework_TestCase {
 		$this->assertEquals( $kpi_arr[0]['minimum_rate'], FALSE );
 		$this->assertEquals( $kpi_arr[0]['maximum_rate'], FALSE );
 
-		$user_ids[] = $dd->createUser( $this->company_id, $this->legal_entity_id, 12 );
-		$user_ids[] = $dd->createUser( $this->company_id, $this->legal_entity_id, 13 );
+		$user_ids[] = $dd->createUser( $this->company_id, 12 );
+		$user_ids[] = $dd->createUser( $this->company_id, 13 );
 
 		$user_review_control_id = $this->createUserReviewControl( $user_ids[0], $user_ids[1] );
 
@@ -465,10 +464,9 @@ class UserReviewTest extends PHPUnit_Framework_TestCase {
 		$this->assertEquals( $kpi_arr[0]['rating'], FALSE );
 
 		unset( $kpi_arr, $user_ids, $user_review_control_id, $urf );
-
-		// Edit
-		$klf = TTnew( 'KPIListFactory' );
-		$kf = $klf->getById( $kpi_id )->getCurrent();
+		// edit
+		$kf = TTnew( 'KPIFactory' );
+		$kf->setId( $kpi_id );
 		$kf->setType(10);
 		$kf->setMinimumRate( 10 );
 		$kf->setMaximumRate( 100 );
@@ -481,8 +479,8 @@ class UserReviewTest extends PHPUnit_Framework_TestCase {
 		$this->assertEquals( $kpi_arr[0]['minimum_rate'], 10 );
 		$this->assertEquals( $kpi_arr[0]['maximum_rate'], 100 );
 
-		$user_ids[] = $dd->createUser( $this->company_id, $this->legal_entity_id, 14 );
-		$user_ids[] = $dd->createUser( $this->company_id, $this->legal_entity_id, 16 );
+		$user_ids[] = $dd->createUser( $this->company_id, 14 );
+		$user_ids[] = $dd->createUser( $this->company_id, 16 );
 
 		$user_review_control_id = $this->createUserReviewControl( $user_ids[0], $user_ids[1] );
 		if ( $user_review_control_id != '' ) {
@@ -523,10 +521,10 @@ class UserReviewTest extends PHPUnit_Framework_TestCase {
 		// Create another KPI( Text Type )
 		$kpi_ids[30] = $this->createKPI( $this->company_id, 70, 70, $kpi_group_ids[1] );
 		// Create reviews
-		$user_ids[] = $dd->createUser( $this->company_id, $this->legal_entity_id, 12 );
-		$user_ids[] = $dd->createUser( $this->company_id, $this->legal_entity_id, 13 );
-		$user_ids[] = $dd->createUser( $this->company_id, $this->legal_entity_id, 14 );
-		$user_ids[] = $dd->createUser( $this->company_id, $this->legal_entity_id, 15 );
+		$user_ids[] = $dd->createUser( $this->company_id, 12 );
+		$user_ids[] = $dd->createUser( $this->company_id, 13 );
+		$user_ids[] = $dd->createUser( $this->company_id, 14 );
+		$user_ids[] = $dd->createUser( $this->company_id, 15 );
 
 
 		foreach( $kpi_ids as $type => $kpi_id ) {

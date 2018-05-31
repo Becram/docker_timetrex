@@ -1,8 +1,6 @@
 TimeSheetAuthorizationViewController = BaseViewController.extend( {
 	el: '#timesheet_authorization_view_container',
 
-	_required_files: ['APIPayPeriodTimeSheetVerify', 'APIPayPeriod', 'APITimeSheet', 'APIException','APIRequest', 'APIMessageControl', 'APIAuthorization'],
-
 	type_array: null,
 	hierarchy_level_array: null,
 
@@ -13,8 +11,8 @@ TimeSheetAuthorizationViewController = BaseViewController.extend( {
 	authorization_api: null,
 
 	request_api: null,
-	init: function( options ) {
-		//this._super('initialize', options );
+	initialize: function( options ) {
+		this._super( 'initialize', options );
 		this.edit_view_tpl = 'TimeSheetAuthorizationEditView.html';
 		this.permission_id = 'punch';
 		this.viewId = 'TimeSheetAuthorization';
@@ -60,7 +58,7 @@ TimeSheetAuthorizationViewController = BaseViewController.extend( {
 	},
 
 	search: function( set_default_menu, page_action, page_number, callBack ) {
-		this.refresh_id = null;
+		this.refresh_id = 0;
 		this._super( 'search', set_default_menu, page_action, page_number, callBack )
 	},
 
@@ -68,7 +66,7 @@ TimeSheetAuthorizationViewController = BaseViewController.extend( {
 		var len = result_data.length;
 		for ( var i = 0; i < len; i++ ) {
 			var item = result_data[i];
-			if ( item.id == TTUUID.not_exist_id ) {
+			if ( item.id == -1 ) {
 				item.id = item.user_id + '_' + item.pay_period_id;
 			}
 			//item.id = item.user_id + '_' + item.pay_period_id;
@@ -86,7 +84,7 @@ TimeSheetAuthorizationViewController = BaseViewController.extend( {
 			if ( index >= 0 ) {
 				return id.split( '_' )[index];
 			}
-			return TTUUID.not_exist_id;
+			return -1;
 		} else {
 			return id;
 		}
@@ -287,7 +285,7 @@ TimeSheetAuthorizationViewController = BaseViewController.extend( {
 			context_btn.addClass( 'invisible-image' );
 		}
 
-		if ( grid_selected_length === 1 && this.editOwnerOrChildPermissionValidate( pId ) && this.parseToRecordId( this.getGridSelectIdArray()[0] ) !== TTUUID.not_exist_id ) {
+		if ( grid_selected_length === 1 && this.editOwnerOrChildPermissionValidate( pId ) && this.parseToRecordId( this.getGridSelectIdArray()[0] ) !== -1 ) {
 			context_btn.removeClass( 'disable-image' );
 		} else {
 			context_btn.addClass( 'disable-image' );
@@ -298,7 +296,7 @@ TimeSheetAuthorizationViewController = BaseViewController.extend( {
 		if ( !this.editPermissionValidate( pId ) || this.edit_only_mode ) {
 			context_btn.addClass( 'invisible-image' );
 		}
-		if ( !this.is_viewing || !this.editOwnerOrChildPermissionValidate( pId ) || this.parseToRecordId( this.current_edit_record.id ) === TTUUID.not_exist_id ) {
+		if ( !this.is_viewing || !this.editOwnerOrChildPermissionValidate( pId ) || this.parseToRecordId( this.current_edit_record.id ) === -1 ) {
 			context_btn.addClass( 'disable-image' );
 		}
 	},
@@ -401,7 +399,7 @@ TimeSheetAuthorizationViewController = BaseViewController.extend( {
 					this.setDefaultMenuViewIcon( context_btn, grid_selected_length, 'schedule' );
 					break;
 				case ContextMenuIconName.edit_employee:
-					this.setDefaultMenuViewIcon( context_btn, grid_selected_length, 'user' );
+					this.setDefaultMenuEditIcon( context_btn, grid_selected_length, 'user' );
 					break;
 				case ContextMenuIconName.authorization_expense:
 					this.setDefaultMenuAuthorizationExpenseIcon( context_btn, grid_selected_length );
@@ -686,8 +684,8 @@ TimeSheetAuthorizationViewController = BaseViewController.extend( {
 		var $this = this;
 		var filter = {};
 		filter.authorized = true;
-		if ( this.parseToRecordId( $this.current_edit_record.id ) == TTUUID.not_exist_id ) {
-			filter.object_id = TTUUID.not_exist_id;
+		if ( this.parseToRecordId( $this.current_edit_record.id ) == -1 ) {
+			filter.object_id = -1;
 			filter.user_id = $this.current_edit_record.user_id;
 			filter.pay_period_id = $this.current_edit_record.pay_period_id;
 		} else {
@@ -755,7 +753,7 @@ TimeSheetAuthorizationViewController = BaseViewController.extend( {
 				}
 
 			}
-			TTPromise.resolve('base', 'onCancelClick');
+
 		}
 
 	},
@@ -766,8 +764,8 @@ TimeSheetAuthorizationViewController = BaseViewController.extend( {
 		var filter = {};
 
 		filter.authorized = false;
-		if ( this.parseToRecordId( $this.current_edit_record.id ) == TTUUID.not_exist_id ) {
-			filter.object_id = TTUUID.not_exist_id;
+		if ( this.parseToRecordId( $this.current_edit_record.id ) == -1 ) {
+			filter.object_id = -1;
 			filter.user_id = $this.current_edit_record.user_id;
 			filter.pay_period_id = $this.current_edit_record.pay_period_id;
 		} else {
@@ -841,7 +839,7 @@ TimeSheetAuthorizationViewController = BaseViewController.extend( {
 		}
 
 		filter.filter_data = {};
-		if ( this.parseToRecordId( selectedId ) != TTUUID.not_exist_id ) {
+		if ( this.parseToRecordId( selectedId ) != -1 ) {
 			filter.filter_data.id = [selectedId];
 		} else {
 			filter.filter_data.user_id = this.parseToRecordId( selectedId, 0 );
@@ -1011,6 +1009,12 @@ TimeSheetAuthorizationViewController = BaseViewController.extend( {
 				form_item_type: FormItemType.AWESOME_BOX
 			} )
 		];
+	},
+
+	openEditView: function() {
+
+		this.initEditViewUI( this.viewId, this.edit_view_tpl );
+
 	},
 
 	onEditClick: function( editId, noRefreshUI ) {
@@ -1286,7 +1290,6 @@ TimeSheetAuthorizationViewController = BaseViewController.extend( {
 	},
 
 	initExceptionSummary: function() {
-
 		var $this = this;
 		if ( !this.api_exception ) {
 			this.api_exception = new (APIFactory.getAPIClass( 'APIException' ))();
@@ -1298,9 +1301,6 @@ TimeSheetAuthorizationViewController = BaseViewController.extend( {
 		this.api_exception.getOptions( 'columns', {
 			onResult: function( columns_result ) {
 				var columns_result_data = columns_result.getResult();
-				if ( Global.isSet( $this.current_edit_record ) == false ) {
-					return false;
-				}
 				var args = {
 					filter_data: {
 						user_id: $this.current_edit_record.user_id,
@@ -1341,7 +1341,7 @@ TimeSheetAuthorizationViewController = BaseViewController.extend( {
 						}
 						$this.buildExceptionGrid( column_info_array );
 						var result_data = result.getResult();
-						if ( !Global.isArray( result_data ) && TTUUID.isUUID($this.refresh_id) == false ) {
+						if ( !Global.isArray( result_data ) && !($this.refresh_id > 0) ) {
 							$this.showExceptionGridNoResultCover();
 						} else {
 							$this.removeExceptionGridNoResultCover();
@@ -1479,10 +1479,6 @@ TimeSheetAuthorizationViewController = BaseViewController.extend( {
 	initTimeSheetSummary: function() {
 		var $this = this;
 
-		if ( Global.isSet( this.current_edit_record ) == false ) {
-			return false;
-		}
-
 		this.accumulated_total_grid_source_map = {};
 		if ( !this.api_timesheet ) {
 			this.api_timesheet = new (APIFactory.getAPIClass( 'APITimeSheet' ))();
@@ -1491,11 +1487,6 @@ TimeSheetAuthorizationViewController = BaseViewController.extend( {
 		$this.buildAccumulatedTotalGrid();
 		this.api_timesheet.getTimeSheetData( this.current_edit_record.user_id, this.current_edit_record.start_date, {
 			onResult: function( result ) {
-
-				if ( Global.isSet( $this.current_edit_record ) == false ) {
-					return false;
-				}
-
 				$this.full_timesheet_data = result.getResult();
 				$this.pay_period_data = $this.full_timesheet_data.pay_period_data;
 				$this.timesheet_verify_data = $this.full_timesheet_data.timesheet_verify_data;

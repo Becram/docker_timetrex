@@ -1,7 +1,7 @@
 <?php
 /*********************************************************************************
  * TimeTrex is a Workforce Management program developed by
- * TimeTrex Software Inc. Copyright (C) 2003 - 2018 TimeTrex Software Inc.
+ * TimeTrex Software Inc. Copyright (C) 2003 - 2017 TimeTrex Software Inc.
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Affero General Public License version 3 as published by
@@ -45,11 +45,6 @@ class RecurringHolidayFactory extends Factory {
 	protected $company_obj = NULL;
 
 
-	/**
-	 * @param $name
-	 * @param null $parent
-	 * @return array|null
-	 */
 	function _getFactoryOptions( $name, $parent = NULL ) {
 
 		$retval = NULL;
@@ -134,10 +129,6 @@ class RecurringHolidayFactory extends Factory {
 		return $retval;
 	}
 
-	/**
-	 * @param $data
-	 * @return array
-	 */
 	function _getVariableToFunctionMap( $data ) {
 		$variable_function_map = array(
 										'id' => 'ID',
@@ -158,9 +149,6 @@ class RecurringHolidayFactory extends Factory {
 		return $variable_function_map;
 	}
 
-	/**
-	 * @return null
-	 */
 	function getCompanyObject() {
 		if ( is_object($this->company_obj) ) {
 			return $this->company_obj;
@@ -172,83 +160,111 @@ class RecurringHolidayFactory extends Factory {
 		}
 	}
 
-	/**
-	 * @return bool|mixed
-	 */
 	function getCompany() {
-		return $this->getGenericDataValue( 'company_id' );
+		if ( isset($this->data['company_id']) ) {
+			return (int)$this->data['company_id'];
+		}
+
+		return FALSE;
+	}
+	function setCompany($id) {
+		$id = trim($id);
+
+		Debug::Text('Company ID: '. $id, __FILE__, __LINE__, __METHOD__, 10);
+		$clf = TTnew( 'CompanyListFactory' );
+
+		if ( $this->Validator->isResultSetWithRows(	'company',
+													$clf->getByID($id),
+													TTi18n::gettext('Company is invalid')
+													) ) {
+
+			$this->data['company_id'] = $id;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @param string $value UUID
-	 * @return bool
-	 */
-	function setCompany( $value) {
-		$value = TTUUID::castUUID( $value );
-		Debug::Text('Company ID: '. $value, __FILE__, __LINE__, __METHOD__, 10);
-		return $this->setGenericDataValue( 'company_id', $value );
-	}
-
-	/**
-	 * @return bool|mixed
-	 */
 	function getSpecialDay() {
-		return $this->getGenericDataValue( 'special_day' );
-	}
+		if ( isset($this->data['special_day']) ) {
+			return $this->data['special_day'];
+		}
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setSpecialDay( $value) {
+		return FALSE;
+	}
+	function setSpecialDay($value) {
 		$value = trim($value);
-		return $this->setGenericDataValue( 'special_day', $value );
+
+		if ( $this->Validator->inArrayKey(	'special_day',
+											$value,
+											TTi18n::gettext('Incorrect Special Day'),
+											$this->getOptions('special_day')) ) {
+
+			$this->data['special_day'] = $value;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @return bool|int
-	 */
 	function getType() {
-		return $this->getGenericDataValue( 'type_id' );
+		if ( isset($this->data['type_id']) ) {
+			return (int)$this->data['type_id'];
+		}
+
+		return FALSE;
+	}
+	function setType($value) {
+		$value = trim($value);
+
+		if ( $this->Validator->inArrayKey(	'type',
+											$value,
+											TTi18n::gettext('Incorrect Type'),
+											$this->getOptions('type')) ) {
+
+			$this->data['type_id'] = $value;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setType( $value) {
-		$value = (int)trim($value);
-		return $this->setGenericDataValue( 'type_id', $value );
-	}
-
-	/**
-	 * @return bool|int
-	 */
 	function getPivotDayDirection() {
-		return $this->getGenericDataValue( 'pivot_day_direction_id' );
+		if ( isset($this->data['pivot_day_direction_id']) ) {
+			return (int)$this->data['pivot_day_direction_id'];
+		}
+
+		return FALSE;
+	}
+	function setPivotDayDirection($value) {
+		$value = trim($value);
+
+		if (	$value == 0
+				OR
+				$this->Validator->inArrayKey(	'pivot_day_direction',
+											$value,
+											TTi18n::gettext('Incorrect Pivot Day Direction'),
+											$this->getOptions('pivot_day_direction')) ) {
+
+			$this->data['pivot_day_direction_id'] = $value;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setPivotDayDirection( $value) {
-		$value = (int)trim($value);
-		return $this->setGenericDataValue( 'pivot_day_direction_id', $value );
-	}
-
-	/**
-	 * @param $name
-	 * @return bool
-	 */
-	function isUniqueName( $name) {
+	function isUniqueName($name) {
 		$name = trim($name);
 		if ( $name == '' ) {
 			return FALSE;
 		}
 
 		$ph = array(
-					'company_id' => TTUUID::castUUID($this->getCompany()),
+					'company_id' => (int)$this->getCompany(),
 					'name' => TTi18n::strtolower($name),
 					);
 
@@ -266,120 +282,157 @@ class RecurringHolidayFactory extends Factory {
 
 		return FALSE;
 	}
-
-	/**
-	 * @return bool|mixed
-	 */
 	function getName() {
-		return $this->getGenericDataValue( 'name' );
+		if ( isset($this->data['name']) ) {
+			return $this->data['name'];
+		}
+
+		return FALSE;
+	}
+	function setName($name) {
+		$name = trim($name);
+		if (	$this->Validator->isLength(	'name',
+											$name,
+											TTi18n::gettext('Name is invalid'),
+											2, 50)
+					AND
+						$this->Validator->isTrue(		'name',
+														$this->isUniqueName($name),
+														TTi18n::gettext('Name is already in use'))
+
+						) {
+
+			$this->data['name'] = $name;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setName( $value) {
-		$value = trim($value);
-		return $this->setGenericDataValue( 'name', $value );
-	}
-
-	/**
-	 * @return bool|int
-	 */
 	function getWeekInterval() {
-		return (int)$this->getGenericDataValue( 'week_interval' );
-	}
-
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setWeekInterval( $value) {
-		$value = trim($value);
-		if	( empty($value) ) {
-			$value = 0;
+		if ( isset($this->data['week_interval']) ) {
+			return (int)$this->data['week_interval'];
 		}
-		return $this->setGenericDataValue( 'week_interval', $value );
+
+		return FALSE;
+	}
+	function setWeekInterval($int) {
+		$int = trim($int);
+
+		if	( empty($int) ) {
+			$int = 0;
+		}
+
+		if	(	$this->Validator->isNumeric(		'week_interval',
+													$int,
+													TTi18n::gettext('Incorrect Week Interval')) ) {
+			$this->data['week_interval'] = $int;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @return bool|int
-	 */
 	function getDayOfWeek() {
-		return (int)$this->getGenericDataValue( 'day_of_week' );
-	}
-
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setDayOfWeek( $value) {
-		$value = trim($value);
-		if	( $value == '' ) {
-			$value = 0;
+		if ( isset($this->data['day_of_week']) ) {
+			return (int)$this->data['day_of_week'];
 		}
-		return $this->setGenericDataValue( 'day_of_week', $value );
+
+		return FALSE;
+	}
+	function setDayOfWeek($int) {
+		$int = trim($int);
+
+		if	( $int == '' ) {
+			$int = 0;
+		}
+
+		if	(	$this->Validator->isNumeric(		'day_of_week',
+													$int,
+													TTi18n::gettext('Incorrect Day Of Week')) ) {
+			$this->data['day_of_week'] = $int;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
 
-	/**
-	 * @return bool|int
-	 */
 	function getDayOfMonth() {
-		return (int)$this->getGenericDataValue( 'day_of_month' );
-	}
-
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setDayOfMonth( $value) {
-		$value = trim($value);
-		if	( empty($value) ) {
-			$value = 0;
+		if ( isset($this->data['day_of_month']) ) {
+			return (int)$this->data['day_of_month'];
 		}
-		return $this->setGenericDataValue( 'day_of_month', $value );
+
+		return FALSE;
+	}
+	function setDayOfMonth($int) {
+		$int = trim($int);
+
+		if	( empty($int) ) {
+			$int = 0;
+		}
+
+		if	(	$this->Validator->isNumeric(		'day_of_month',
+													$int,
+													TTi18n::gettext('Incorrect Day Of Month')) ) {
+			$this->data['day_of_month'] = $int;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @return bool|int
-	 */
 	function getMonth() {
-		return (int)$this->getGenericDataValue( 'month_int' );
-	}
-
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setMonth( $value) {
-		$value = trim($value);
-		if	( empty($value) ) {
-			$value = 0;
+		if ( isset($this->data['month_int']) ) {
+			return (int)$this->data['month_int'];
 		}
-		return $this->setGenericDataValue( 'month_int', $value );
+
+		return FALSE;
+	}
+	function setMonth($int) {
+		$int = trim($int);
+
+		if	( empty($int) ) {
+			$int = 0;
+		}
+
+		if	(	$this->Validator->isNumeric(		'month',
+													$int,
+													TTi18n::gettext('Incorrect Month')) ) {
+			$this->data['month_int'] = $int;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @return bool|int
-	 */
 	function getAlwaysOnWeekDay() {
-		return (int)$this->getGenericDataValue( 'always_week_day_id' );
+		if ( isset($this->data['always_week_day_id']) ) {
+			return (int)$this->data['always_week_day_id'];
+		}
+		return FALSE;
+	}
+	function setAlwaysOnWeekDay($int) {
+		$int = (int)$int;
+
+		if ( $this->Validator->inArrayKey(	'always_week_day_id',
+											$int,
+											TTi18n::gettext('Incorrect always on week day adjustment'),
+											$this->getOptions('always_week_day') ) ) {
+
+			$this->data['always_week_day_id'] = $int;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setAlwaysOnWeekDay( $value) {
-		$value = (int)$value;
-		return $this->setGenericDataValue( 'always_week_day_id', $value );
-	}
-
-	/**
-	 * @param bool $epoch
-	 * @return bool|false|int
-	 */
 	function getNextDate( $epoch = FALSE ) {
 		if ( $epoch == '' ) {
 			$epoch = TTDate::getTime();
@@ -502,128 +555,18 @@ class RecurringHolidayFactory extends Factory {
 		return $holiday_epoch;
 	}
 
-	/**
-	 * @param bool $ignore_warning
-	 * @return bool
-	 */
 	function Validate( $ignore_warning = TRUE ) {
-		//
-		// BELOW: Validation code moved from set*() functions.
-		//
-
-		// Company
-		$clf = TTnew( 'CompanyListFactory' );
-		$this->Validator->isResultSetWithRows(	'company',
-														$clf->getByID($this->getCompany()),
-														TTi18n::gettext('Company is invalid')
-													);
-
-		// Name
-		if ( $this->getName() !== FALSE ) {
-			$this->Validator->isLength( 'name',
-										$this->getName(),
-										TTi18n::gettext( 'Name is invalid' ),
-										2, 50
-			);
-			if ( $this->Validator->isError( 'name' ) == FALSE ) {
-				$this->Validator->isTrue( 'name',
-										  $this->isUniqueName( $this->getName() ),
-										  TTi18n::gettext( 'Name is already in use' )
-				);
-			}
-		}
-
-		// Special Day
-		$this->Validator->inArrayKey( 'special_day',
-									  $this->getSpecialDay(),
-									  TTi18n::gettext( 'Incorrect Special Day' ),
-									  $this->getOptions( 'special_day' )
-		);
-
-		// Type
-		if ( $this->getType() !== FALSE ) {
-			$this->Validator->inArrayKey( 'type',
-										  $this->getType(),
-										  TTi18n::gettext( 'Incorrect Type' ),
-										  $this->getOptions( 'type' )
-			);
-		}
-
-//			10 => TTi18n::gettext('Static'),
-//										20 => TTi18n::gettext('Dynamic: Week Interval'),
-//										30 => TTi18n::gettext('Dynamic: Pivot Day')
-
-
-		if ( in_array( $this->getType(), array( 20 ) ) ) { //20=Dynamic: Week Interval
-			// Week Interval
-			$this->Validator->isNumeric( 'week_interval',
-										 $this->getWeekInterval(),
-										 TTi18n::gettext( 'Incorrect Week Interval' )
-			);
-
-			// Day Of Week
-			$this->Validator->isNumeric( 'day_of_week',
-										 $this->getDayOfWeek(),
-										 TTi18n::gettext( 'Incorrect Day Of Week' )
-			);
-		}
-
-		// Pivot Day Direction
-		if ( in_array( $this->getType(), array( 30 ) ) AND $this->getPivotDayDirection() !== FALSE ) { //30=Dynamic: Pivot Day
-			$this->Validator->inArrayKey( 'pivot_day_direction',
-										  $this->getPivotDayDirection(),
-										  TTi18n::gettext( 'Incorrect Pivot Day Direction' ),
-										  $this->getOptions( 'pivot_day_direction' )
-			);
-		}
-
-		if ( in_array( $this->getType(), array( 10, 30 ) ) ) { //10=Static, 30=Dynamic: Pivot Day
-			// Day Of Month
-			$this->Validator->isNumeric( 'day_of_month',
-										 $this->getDayOfMonth(),
-										 TTi18n::gettext( 'Incorrect Day Of Month' )
-			);
-
-		}
-
-
-		// Month
-		$this->Validator->isNumeric( 'month',
-									 $this->getMonth(),
-									 TTi18n::gettext( 'Incorrect Month' )
-		);
-
-		// Always on week day adjustment
-		$this->Validator->inArrayKey( 'always_week_day_id',
-									  $this->getAlwaysOnWeekDay(),
-									  TTi18n::gettext( 'Incorrect always on week day adjustment' ),
-									  $this->getOptions( 'always_week_day' )
-		);
-		//
-		// ABOVE: Validation code moved from set*() functions.
-		//
-
 		return TRUE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function preSave() {
 		return TRUE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function postSave() {
 		return TRUE;
 	}
 
-	/**
-	 * @param $data
-	 * @return bool
-	 */
 	function setObjectFromArray( $data ) {
 		if ( is_array( $data ) ) {
 			$variable_function_map = $this->getVariableToFunctionMap();
@@ -649,10 +592,6 @@ class RecurringHolidayFactory extends Factory {
 		return FALSE;
 	}
 
-	/**
-	 * @param null $include_columns
-	 * @return array
-	 */
 	function getObjectAsArray( $include_columns = NULL ) {
 		$data = array();
 		$variable_function_map = $this->getVariableToFunctionMap();
@@ -689,10 +628,6 @@ class RecurringHolidayFactory extends Factory {
 		return $data;
 	}
 
-	/**
-	 * @param $log_action
-	 * @return bool
-	 */
 	function addLog( $log_action ) {
 		return TTLog::addEntry( $this->getId(), $log_action, TTi18n::getText('Recurring Holiday'), NULL, $this->getTable(), $this );
 	}

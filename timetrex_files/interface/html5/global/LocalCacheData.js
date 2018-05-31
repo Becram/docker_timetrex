@@ -104,20 +104,20 @@ LocalCacheData.domain_name = '';
 
 LocalCacheData.fullUrlParameterStr = '';
 
-LocalCacheData.PayrollRemittanceAgencyEventWizard = null;
-
 LocalCacheData.setLocalCache = function( key, val, format ) {
 	if ( LocalCacheData.isSupportHTML5LocalCache ) {
+
 		if ( format === 'JSON' ) {
+
 			sessionStorage.setItem( key, JSON.stringify( val ) );
 		} else {
 			sessionStorage.setItem( key, val );
 		}
+
 	}
 
 	LocalCacheData[key] = val;
 };
-
 /**
  * BUG#2066
  * JavaScript was reporting: TypeError: Cannot read property 'product_edition_id' of null
@@ -134,14 +134,12 @@ LocalCacheData.getRequiredLocalCache = function( key, format ) {
 		//  Second is that a required local cache item is not yet loaded because most of the required data isn't set yet.
 		//  In the second case we need to fail gracefully to show the error and stack trace on the console.
 		try {
-			//This code is duplicated in RibbonViewController.doLogout() but that class can't be called here or reloads will throw a bunch of extra errors.
-			Global.clearSessionCookie();
-			LocalCacheData.current_open_view_id = ''; //#1528  -  Logout icon not working.
-			LocalCacheData.setLoginUser(null);
-			LocalCacheData.setCurrentCompany(null);
-			sessionStorage.clear();
-			Global.sendErrorReport( 'ERROR: Unable to get required local cache data: '+ key );
-			window.location.reload();
+			Global.sendErrorReport( 'ERROR: Unable to get required local cache data: '+ key, window.location, '', '', '' );
+			TAlertManager.showConfirmAlert($.i18n._('Local cache has expired. Click Yes to reload.'), $.i18n._('ERROR'), function(choice) {
+				if ( choice ) {
+					window.location.reload();
+				}
+			} );
 		} catch ( e ) {
 			// Early page loads won't have Global or TAlertManager
 			console.debug('ERROR: Unable to get required local cache data: '+ key);
@@ -151,27 +149,7 @@ LocalCacheData.getRequiredLocalCache = function( key, format ) {
 				window.location.reload();
 			}
 		}
-
-		// try {
-		// 	Global.sendErrorReport( 'ERROR: Unable to get required local cache data: '+ key, window.location, '', '', '' );
-		// 	TAlertManager.showConfirmAlert($.i18n._('Local cache has expired. Click Yes to reload.'), $.i18n._('ERROR'), function(choice) {
-		// 		if ( choice ) {
-		// 			window.location.reload();
-		// 		}
-		// 	} );
-		// } catch ( e ) {
-		// 	// Early page loads won't have Global or TAlertManager
-		// 	console.debug('ERROR: Unable to get required local cache data: '+ key);
-		// 	console.debug('ERROR: Unable to report error to server: '+ key);
-		// 	console.debug(e.stack);
-		// 	if ( confirm('Local cache has expired. Click OK to reload.') ) {
-		// 		window.location.reload();
-		// 	}
-		// }
-
-		return;
 	}
-
 	return result;
 };
 
@@ -356,8 +334,8 @@ LocalCacheData.cleanNecessaryCache =  function() {
 	//JS load Optimize
 	if ( LocalCacheData.loadViewRequiredJSReady ) {
 		if ( typeof ALayoutCache !== 'undefined' ) {
-		ALayoutCache.layout_dic = {};
-	}
+			ALayoutCache.layout_dic = {};
+		}
 	}
 	LocalCacheData.view_layout_cache = {};
 	LocalCacheData.result_cache = {};

@@ -15,10 +15,10 @@
 		var default_height = 42;
 		var enabled = true;
 
-		this.setEnabled = function( val ) {
+		this.setEnable = function( val ) {
 			enabled = val;
 
-			var btn = this.find( '.browser-form input' );
+			var btn = this.find( '.browser-form' );
 
 			if ( !val ) {
 				btn.attr( 'disabled', true );
@@ -41,16 +41,6 @@
 
 		this.getField = function() {
 			return field;
-		};
-
-		this.setEnableDelete = function(val) {
-			var image = $this.find( '.image' );
-			if ( !val ) {
-				image.removeAttr( 'enable-delete' );
-				return;
-			} else {
-				image.attr('enable-delete', 1);
-			}
 		};
 
 		this.getValue = function() {
@@ -168,12 +158,6 @@
 			if ( Global.isSet( o.changeHandler ) ) {
 
 				$this.bind( 'imageChange', o.changeHandler );
-			}
-			if ( Global.isSet( o.deleteImageHandler ) ) {
-				this.find( '.file-browser' ).on('deleteClick', function(){
-					o.deleteImageHandler();
-				});
-
 			}
 
 			browser.bind( 'change', function() {

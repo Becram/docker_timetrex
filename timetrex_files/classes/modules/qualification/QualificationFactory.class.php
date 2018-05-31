@@ -1,7 +1,7 @@
 <?php
 /*********************************************************************************
  * TimeTrex is a Workforce Management program developed by
- * TimeTrex Software Inc. Copyright (C) 2003 - 2018 TimeTrex Software Inc.
+ * TimeTrex Software Inc. Copyright (C) 2003 - 2017 TimeTrex Software Inc.
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Affero General Public License version 3 as published by
@@ -45,11 +45,6 @@ class QualificationFactory extends Factory {
 	protected $company_obj = NULL;
 	protected $tmp_data = NULL;
 
-	/**
-	 * @param $name
-	 * @param null $parent
-	 * @return array|null
-	 */
 	function _getFactoryOptions( $name, $parent = NULL ) {
 
 		$retval = NULL;
@@ -120,10 +115,6 @@ class QualificationFactory extends Factory {
 		return $retval;
 	}
 
-	/**
-	 * @param $data
-	 * @return array
-	 */
 	function _getVariableToFunctionMap( $data ) {
 		$variable_function_map = array(
 										'id' => 'ID',
@@ -147,14 +138,6 @@ class QualificationFactory extends Factory {
 		return $variable_function_map;
 	}
 
-	/**
-	 * @param string $company_id UUID
-	 * @param int $type_id
-	 * @param $name
-	 * @param int $source_type_id
-	 * @param int $visibility_type_id
-	 * @return bool
-	 */
 	static function getOrCreateQualification( $company_id, $type_id, $name, $source_type_id = 20, $visibility_type_id = 20 ) {
 		$qlf = new QualificationListFactory();
 		$qlf->getByCompanyIdAndTypeIdAndName( $company_id, $type_id, $name );
@@ -179,102 +162,130 @@ class QualificationFactory extends Factory {
 		return FALSE;
 	}
 
-	/**
-	 * @return bool|int
-	 */
 	function getType() {
-		return $this->getGenericDataValue( 'type_id' );
+		if ( isset($this->data['type_id']) ) {
+			return (int)$this->data['type_id'];
+		}
+		return FALSE;
 	}
 
-	/**
-	 * @param int $type_id
-	 * @return bool
-	 */
-	function setType( $value) {
-		$value = (int)trim($value);
-		return $this->setGenericDataValue( 'type_id', $value );
+	function setType($type_id) {
+		$type_id = trim($type_id);
+
+		if (  $this->Validator->inArrayKey(	'type_id',
+											$type_id,
+											TTi18n::gettext('Type is invalid'),
+											$this->getOptions('type')) ) {
+			$this->data['type_id'] = $type_id;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @return bool|int
-	 */
 	function getSourceType() {
-		return $this->getGenericDataValue( 'source_type_id' );
+		if ( isset($this->data['source_type_id']) ) {
+			return (int)$this->data['source_type_id'];
+		}
+		return FALSE;
 	}
 
-	/**
-	 * @param int $source_type_id
-	 * @return bool
-	 */
-	function setSourceType( $value) {
-		$value = (int)trim($value);
-		return $this->setGenericDataValue( 'source_type_id', $value );
+	function setSourceType($source_type_id) {
+		$source_type_id = trim($source_type_id);
+
+		if (  $this->Validator->inArrayKey(	'source_type_id',
+											$source_type_id,
+											TTi18n::gettext('Source Type is invalid'),
+											$this->getOptions('source_type')) ) {
+											$this->data['source_type_id'] = $source_type_id;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @return bool|int
-	 */
 	function getVisibilityType() {
-		return $this->getGenericDataValue( 'visibility_type_id' );
+		if ( isset($this->data['visibility_type_id']) ) {
+			return (int)$this->data['visibility_type_id'];
+		}
+		return FALSE;
 	}
 
-	/**
-	 * @param int $type_id
-	 * @return bool
-	 */
-	function setVisibilityType( $value) {
-		$value = (int)trim($value);
-		return $this->setGenericDataValue( 'visibility_type_id', $value );
+	function setVisibilityType($type_id) {
+		$type_id = trim($type_id);
+
+		if (  $this->Validator->inArrayKey(	'visibility_type_id',
+											   $type_id,
+											   TTi18n::gettext('Visibility Type is invalid'),
+											   $this->getOptions('visibility_type')) ) {
+			$this->data['visibility_type_id'] = $type_id;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function getCompanyObject() {
 		return $this->getGenericObject( 'CompanyListFactory', $this->getCompany(), 'company_obj' );
 	}
 
 
-	/**
-	 * @return bool|mixed
-	 */
 	function getCompany() {
-		return $this->getGenericDataValue( 'company_id' );
-	}
+		if ( isset($this->data['company_id']) ) {
+			return (int)$this->data['company_id'];
+		}
 
-	/**
-	 * @param string $id UUID
-	 * @return bool
-	 */
-	function setCompany( $value) {
-		$value = TTUUID::castUUID( $value );
-		return $this->setGenericDataValue( 'company_id', $value );
+		return FALSE;
 	}
+	function setCompany($id) {
+		$id = trim($id);
 
-	/**
-	 * @return bool|mixed
-	 */
+		$clf = TTnew( 'CompanyListFactory' );
+
+		if ( $id == 0
+				OR $this->Validator->isResultSetWithRows(	'company_id',
+															$clf->getByID($id),
+															TTi18n::gettext('Company is invalid')
+															) ) {
+			$this->data['company_id'] = $id;
+
+			return TRUE;
+		}
+
+		return FALSE;
+	}
 	function getGroup() {
-		return $this->getGenericDataValue( 'group_id' );
+		if ( isset($this->data['group_id']) ) {
+			return (int)$this->data['group_id'];
+		}
+
+		return FALSE;
+	}
+	function setGroup($id) {
+		$id = (int)trim($id);
+
+		Debug::Text('Group ID: '. $id, __FILE__, __LINE__, __METHOD__, 10);
+		$qglf = TTnew( 'QualificationGroupListFactory' );
+		if (	$id == 0
+				OR
+				$this->Validator->isResultSetWithRows(	'group_id',
+														$qglf->getByID($id),
+														TTi18n::gettext('Group is invalid')
+													) ) {
+
+			$this->data['group_id'] = $id;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @param string $id UUID
-	 * @return bool
-	 */
-	function setGroup( $value) {
-		$value = TTUUID::castUUID( $value );
 
-		Debug::Text('Group ID: '. $value, __FILE__, __LINE__, __METHOD__, 10);
-		return $this->setGenericDataValue( 'group_id', $value );
-	}
-
-
-	/**
-	 * @param $name
-	 * @return bool
-	 */
-	function isUniqueName( $name) {
+	function isUniqueName($name) {
 		if ( $this->getCompany() == FALSE ) {
 			return FALSE;
 		}
@@ -285,7 +296,7 @@ class QualificationFactory extends Factory {
 		}
 
 		$ph = array(
-					'company_id' => TTUUID::castUUID($this->getCompany()),
+					'company_id' => (int)$this->getCompany(),
 					'name' => TTi18n::strtolower($name),
 					);
 
@@ -308,39 +319,28 @@ class QualificationFactory extends Factory {
 
 	}
 
-	/**
-	 * @return bool|mixed
-	 */
 	function getName() {
-		return $this->getGenericDataValue( 'name' );
+		if ( isset($this->data['name']) ) {
+			return $this->data['name'];
+		}
+
+		return FALSE;
 	}
+	function setName($name) {
+		$name = trim($name);
 
-	/**
-	 * @param $name
-	 * @return bool
-	 */
-	function setName( $value) {
-		$value = trim($value);
-		$this->setNameMetaphone( $value );
-		return $this->setGenericDataValue( 'name', $value );
-	}
+		if	(	$this->Validator->isLength( 'name',
+											$name,
+											TTi18n::gettext('Qualification name is invalid'),
+											1 )
+				AND
+				$this->Validator->isTrue(	'name',
+										$this->isUniqueName($name),
+										TTi18n::gettext('Qualification name already exists')) ) {
 
-	/**
-	 * @return bool|mixed
-	 */
-	function getNameMetaphone() {
-		return $this->getGenericDataValue( 'name_metaphone' );
-	}
+			$this->data['name'] = $name;
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setNameMetaphone( $value) {
-		$value = metaphone( trim($value) );
-
-		if	( $value != '' ) {
-			$this->setGenericDataValue( 'name_metaphone', $value );
+			$this->setNameMetaphone( $name );
 
 			return TRUE;
 		}
@@ -348,136 +348,78 @@ class QualificationFactory extends Factory {
 		return FALSE;
 	}
 
-	/**
-	 * @return bool|mixed
-	 */
-	function getDescription() {
-		return $this->getGenericDataValue( 'description' );
+	function getNameMetaphone() {
+		if ( isset($this->data['name_metaphone']) ) {
+			return $this->data['name_metaphone'];
+		}
+
+		return FALSE;
 	}
+	function setNameMetaphone($value) {
+		$value = metaphone( trim($value) );
 
+		if	( $value != '' ) {
+			$this->data['name_metaphone'] = $value;
 
-	/**
-	 * @param $description
-	 * @return bool
-	 */
-	function setDescription( $value) {
-		$value = trim($value);
-		return $this->setGenericDataValue( 'description', $value );
-	}
-
-
-	/**
-	 * @return bool|string
-	 */
-	function getTag() {
-		//Check to see if any temporary data is set for the tags, if not, make a call to the database instead.
-		//postSave() needs to get the tmp_data.
-		$value = $this->getGenericTempDataValue( 'tags' );
-		if ( $value !== FALSE ) {
-			return $value;
-		} elseif ( TTUUID::isUUID( $this->getCompany() ) AND $this->getCompany() != TTUUID::getZeroID() AND $this->getCompany() != TTUUID::getNotExistID()
-				AND TTUUID::isUUID( $this->getID() ) AND $this->getID() != TTUUID::getZeroID() AND $this->getID() != TTUUID::getNotExistID() ) {
-			return CompanyGenericTagMapListFactory::getStringByCompanyIDAndObjectTypeIDAndObjectID( $this->getCompany(), 250, $this->getID() );
+			return TRUE;
 		}
 
 		return FALSE;
 	}
 
-	/**
-	 * @param $tags
-	 * @return bool
-	 */
-	function setTag( $value ) {
-		$value = trim($value);
-		//Save the tags in temporary memory to be committed in postSave()
-		return $this->setGenericTempDataValue( 'tags', $value );
+	function getDescription() {
+		if ( isset($this->data['description']) ) {
+			return $this->data['description'];
+		}
+		return FALSE;
 	}
 
 
-	/**
-	 * @param bool $ignore_warning
-	 * @return bool
-	 */
-	function Validate( $ignore_warning = TRUE ) {
-		//
-		// BELOW: Validation code moved from set*() functions.
-		//
-		// Type
-		if ( $this->getType() !== FALSE ) {
-			$this->Validator->inArrayKey(	'type_id',
-												$this->getType(),
-												TTi18n::gettext('Type is invalid'),
-												$this->getOptions('type')
-											);
-		}
-		// Source Type
-		if ( $this->getSourceType() !== FALSE ) {
-			$this->Validator->inArrayKey(	'source_type_id',
-												$this->getSourceType(),
-												TTi18n::gettext('Source Type is invalid'),
-												$this->getOptions('source_type')
-											);
-		}
+	function setDescription($description) {
+		$description = trim($description);
 
-		// Visibility Type
-		if ( $this->getVisibilityType() !== FALSE ) {
-			$this->Validator->inArrayKey(	'visibility_type_id',
-												$this->getVisibilityType(),
-												TTi18n::gettext('Visibility Type is invalid'),
-												$this->getOptions('visibility_type')
-											);
-		}
-		// Company
-		if ( $this->getCompany() != TTUUID::getZeroID() ) {
-			$clf = TTnew( 'CompanyListFactory' );
-			$this->Validator->isResultSetWithRows(	'company_id',
-														$clf->getByID($this->getCompany()),
-														TTi18n::gettext('Company is invalid')
-													);
-		}
-		// Group
-		if ( $this->getGroup() !== FALSE AND $this->getGroup() != TTUUID::getZeroID() ) {
-			$qglf = TTnew( 'QualificationGroupListFactory' );
-			$this->Validator->isResultSetWithRows(	'group_id',
-														$qglf->getByID($this->getGroup()),
-														TTi18n::gettext('Group is invalid')
-													);
-		}
-		// Qualification name
-		if ( $this->getName() !== FALSE ) {
-			$this->Validator->isLength( 'name',
-												$this->getName(),
-												TTi18n::gettext('Qualification name is too short or too long'),
-												1,
-												255
-											);
-			if ( $this->Validator->isError('name') == FALSE ) {
-				$this->Validator->isTrue(	'name',
-												$this->isUniqueName($this->getName()),
-												TTi18n::gettext('Qualification name already exists')
-											);
-			}
-		}
-		// Description
-		if ( $this->getDescription() != '' ) {
-			$this->Validator->isLength( 'description',
-											$this->getDescription(),
+		if (	$description == ''
+				OR
+				$this->Validator->isLength( 'description',
+											$description,
 											TTi18n::gettext('Description is invalid'),
-											2, 255
-										);
+											2, 255 )  ) {
+				$this->data['description'] = $description;
+
+				return	TRUE;
 		}
 
-		//
-		// ABOVE: Validation code moved from set*() functions.
-		//
+		return FALSE;
+	}
+
+
+	function getTag() {
+		//Check to see if any temporary data is set for the tags, if not, make a call to the database instead.
+		//postSave() needs to get the tmp_data.
+		if ( isset($this->tmp_data['tags']) ) {
+			return $this->tmp_data['tags'];
+		} elseif ( $this->getCompany() > 0 AND $this->getID() > 0 ) {
+			return CompanyGenericTagMapListFactory::getStringByCompanyIDAndObjectTypeIDAndObjectID( $this->getCompany(), 250, $this->getID() );
+		}
+
+		return FALSE;
+	}
+	function setTag( $tags ) {
+		$tags = trim($tags);
+
+		//Save the tags in temporary memory to be committed in postSave()
+		$this->tmp_data['tags'] = $tags;
+
+		return TRUE;
+	}
+
+
+	function Validate( $ignore_warning = TRUE ) {
 		//$this->setProvince( $this->getProvince() ); //Not sure why this was there, but it causes duplicate errors if the province is incorrect.
 
 		return TRUE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function preSave() {
 		if ( $this->getVisibilityType() == FALSE ) {
 			$this->setVisibilityType( 10 ); //Internal Only
@@ -490,9 +432,6 @@ class QualificationFactory extends Factory {
 		return TRUE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function postSave() {
 
 		$this->removeCache( $this->getId() );
@@ -512,19 +451,19 @@ class QualificationFactory extends Factory {
 			$lg = TTnew( 'UserLanguageFactory' );
 			$mf = TTnew( 'UserMembershipFactory' );
 
-			$query = 'update '. $sf->getTable() .' set qualification_id = \''. TTUUID::getZeroID() .'\' where qualification_id = \''. TTUUID::castUUID($this->getId()) .'\'';
+			$query = 'update '. $sf->getTable() .' set qualification_id = 0 where qualification_id = '. (int)$this->getId();
 			$this->db->Execute($query);
 
-			$query = 'update '. $ef->getTable() .' set qualification_id = \''. TTUUID::getZeroID() .'\' where qualification_id = \''. TTUUID::castUUID($this->getId()) .'\'';
+			$query = 'update '. $ef->getTable() .' set qualification_id = 0 where qualification_id = '. (int)$this->getId();
 			$this->db->Execute($query);
 
-			$query = 'update '. $lf->getTable() .' set qualification_id = \''. TTUUID::getZeroID() .'\' where qualification_id = \''. TTUUID::castUUID($this->getId()) .'\'';
+			$query = 'update '. $lf->getTable() .' set qualification_id = 0 where qualification_id = '. (int)$this->getId();
 			$this->db->Execute($query);
 
-			$query = 'update '. $lg->getTable() .' set qualification_id = \''. TTUUID::getZeroID() .'\' where qualification_id = \''. TTUUID::castUUID($this->getId()) .'\'';
+			$query = 'update '. $lg->getTable() .' set qualification_id = 0 where qualification_id = '. (int)$this->getId();
 			$this->db->Execute($query);
 
-			$query = 'update '. $mf->getTable() .' set qualification_id = \''. TTUUID::getZeroID() .'\' where qualification_id = \''. TTUUID::castUUID($this->getId()) .'\'';
+			$query = 'update '. $mf->getTable() .' set qualification_id = 0 where qualification_id = '. (int)$this->getId();
 			$this->db->Execute($query);
 			//Job employee criteria
 		}
@@ -532,10 +471,6 @@ class QualificationFactory extends Factory {
 		return TRUE;
 	}
 
-	/**
-	 * @param $data
-	 * @return bool
-	 */
 	function setObjectFromArray( $data ) {
 		if ( is_array( $data ) ) {
 			$variable_function_map = $this->getVariableToFunctionMap();
@@ -561,11 +496,6 @@ class QualificationFactory extends Factory {
 		return FALSE;
 	}
 
-	/**
-	 * @param null $include_columns
-	 * @param bool $permission_children_ids
-	 * @return array
-	 */
 	function getObjectAsArray( $include_columns = NULL, $permission_children_ids = FALSE   ) {
 		$data = array();
 		$variable_function_map = $this->getVariableToFunctionMap();
@@ -615,10 +545,6 @@ class QualificationFactory extends Factory {
 		return $data;
 	}
 
-	/**
-	 * @param $log_action
-	 * @return bool
-	 */
 	function addLog( $log_action ) {
 		return TTLog::addEntry( $this->getId(), $log_action, TTi18n::getText('Qualification') .': '. $this->getName(), NULL, $this->getTable(), $this );
 	}

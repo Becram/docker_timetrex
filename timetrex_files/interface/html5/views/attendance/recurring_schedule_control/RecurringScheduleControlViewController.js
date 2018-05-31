@@ -1,7 +1,6 @@
 RecurringScheduleControlViewController = BaseViewController.extend( {
 	el: '#recurring_schedule_control_view_container',
 
-	_required_files: ['APIRecurringScheduleControl', 'APIUserGroup', 'APIRecurringScheduleTemplateControl', 'APIUserTitle', 'APIBranch', 'APIDepartment'],
 	user_status_array: null,
 
 	user_group_array: null,
@@ -9,8 +8,8 @@ RecurringScheduleControlViewController = BaseViewController.extend( {
 
 	user_group_api: null,
 
-	init: function( options ) {
-		//this._super('initialize', options );
+	initialize: function( options ) {
+		this._super( 'initialize', options );
 		this.edit_view_tpl = 'RecurringScheduleControlEditView.html';
 		this.permission_id = 'recurring_schedule';
 		this.viewId = 'RecurringScheduleControl';
@@ -167,7 +166,7 @@ RecurringScheduleControlViewController = BaseViewController.extend( {
 
 				},
 				added_items: [
-					{value: TTUUID.zero_id, label: Global.open_item}
+					{value: 0, label: Global.open_item}
 				]
 
 			} );
@@ -883,7 +882,7 @@ RecurringScheduleControlViewController = BaseViewController.extend( {
 
 					temp_filter = {};
 					temp_filter.filter_data = {};
-					temp_filter.filter_data.id = [ this.parseToRecordId( selected_item.id ) ];
+					temp_filter.filter_data.id = [selected_item.id];
 
 					this.api['get' + this.api.key_name]( temp_filter, {
 						onResult: function( result ) {

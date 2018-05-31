@@ -1,11 +1,5 @@
 RequestViewController = RequestViewCommonController.extend( {
 	el: '#request_view_container',
-
-	_required_files: {
-		10:[ 'APIRequest', 'APIMessageControl', 'APIAuthorization', 'APISchedulePolicy', 'APISchedule', 'APIAbsencePolicy', 'APISchedulePolicy', 'APIBranch', 'APIDepartment'],
-		15:[ 'APIRequestSchedule'],
-		20:[ 'APIJob', 'APIJobItem']
-	},
 	type_array: null,
 	status_array: null,
 
@@ -15,8 +9,8 @@ RequestViewController = RequestViewCommonController.extend( {
 	messages: null,
 
 
-	init: function( options ) {
-        //this._super('initialize', options);
+	initialize: function( options ) {
+        this._super('initialize', options);
         this.edit_view_tpl = 'RequestEditView.html';
         this.permission_id = 'request';
         this.viewId = 'Request';
@@ -804,7 +798,7 @@ RequestViewController = RequestViewCommonController.extend( {
 					this.setEditMenuDeleteAndNextIcon( context_btn );
 					break;
 				case ContextMenuIconName.send:
-					this.setEditMenuSaveIcon( context_btn );
+					this.setEditMenuSendIcon( context_btn );
 					break;
 				case ContextMenuIconName.cancel:
 					break;
@@ -875,6 +869,21 @@ RequestViewController = RequestViewCommonController.extend( {
 		}
 	},
 
+	setEditMenuSendIcon: function( context_btn, pId ) {
+		if ( ((pId && !this.addPermissionValidate( pId )) || this.edit_only_mode) && !this.is_add ) {
+			context_btn.addClass( 'invisible-image' );
+		}
+
+		if ( !this.is_edit ) {
+			context_btn.addClass( 'disable-image' );
+		}
+
+		if ( this.is_add ) {
+			context_btn.removeClass( 'disable-image' );
+		}
+
+	},
+
 	 onTypeChanged: function(arg) {
 		if ( this.current_edit_record && LocalCacheData.getCurrentCompany().product_edition_id > 10 && PermissionManager.validate( 'request', 'add_advanced' ) && (this.current_edit_record.type_id == 30 || this.current_edit_record.type_id == 40) ) { //schedule adjustment || absence selected
 
@@ -927,7 +936,7 @@ RequestViewController = RequestViewCommonController.extend( {
 				this.api_request_schedule.getRequestScheduleDefaultData(filter, {onResult: function(res){
 
 					data = res.getResult();
-					data.request_schedule_status_id = data.status_id;
+					data.request_schedule_status_id = data.status_id
 					data.date_stamp = data.start_date;
 
 					//force = true is required to set the current_edit_record and populate edit_view_ui_dic
@@ -950,10 +959,12 @@ RequestViewController = RequestViewCommonController.extend( {
 
 	onAvailableBalanceChange: function() {
 		if ( LocalCacheData.getCurrentCompany().product_edition_id > 10 && PermissionManager.validate( 'request', 'add_advanced' ) ) {
-			if ( this.edit_view_ui_dic && this.edit_view_ui_dic.absence_policy_id && this.edit_view_ui_dic.absence_policy_id.getValue() != 0 ) {
+			if (this.edit_view_ui_dic.absence_policy_id.getValue() != 0) {
 				this.getAvailableBalance();
-			} else if ( this.edit_view_ui_dic && this.edit_view_ui_dic.available_balance ) {
-				this.edit_view_ui_dic.available_balance.parents('.edit-view-form-item-div').hide();
+			} else {
+				if (this.edit_view_ui_dic.available_balance) {
+					this.edit_view_ui_dic.available_balance.parents('.edit-view-form-item-div').hide();
+				}
 			}
 		}
 	},
@@ -1033,7 +1044,7 @@ RequestViewController = RequestViewCommonController.extend( {
 	},
 
 	search: function( set_default_menu, page_action, page_number, callBack ) {
-		this.refresh_id = null;
+		this.refresh_id = 0;
 		this._super( 'search', set_default_menu, page_action, page_number, callBack )
 	},
 

@@ -1,7 +1,7 @@
 <?php
 /*********************************************************************************
  * TimeTrex is a Workforce Management program developed by
- * TimeTrex Software Inc. Copyright (C) 2003 - 2018 TimeTrex Software Inc.
+ * TimeTrex Software Inc. Copyright (C) 2003 - 2017 TimeTrex Software Inc.
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Affero General Public License version 3 as published by
@@ -43,11 +43,6 @@ class PayStubEntryAccountFactory extends Factory {
 	protected $pk_sequence_name = 'pay_stub_entry_account_id_seq'; //PK Sequence name
 
 
-	/**
-	 * @param $name
-	 * @param null $parent
-	 * @return array|null
-	 */
 	function _getFactoryOptions( $name, $parent = NULL ) {
 
 		$retval = NULL;
@@ -117,8 +112,6 @@ class PayStubEntryAccountFactory extends Factory {
 								'type',
 								'name',
 								'ps_order',
-								'debit_account',
-								'credit_account'
 								);
 				break;
 			case 'unique_columns': //Columns that are unique, and disabled for mass editing.
@@ -138,10 +131,6 @@ class PayStubEntryAccountFactory extends Factory {
 		return $retval;
 	}
 
-	/**
-	 * @param $data
-	 * @return array
-	 */
 	function _getVariableToFunctionMap( $data ) {
 			$variable_function_map = array(
 											'id' => 'ID',
@@ -162,44 +151,53 @@ class PayStubEntryAccountFactory extends Factory {
 			return $variable_function_map;
 	}
 
-	/**
-	 * @return bool|mixed
-	 */
 	function getCompany() {
-		return $this->getGenericDataValue( 'company_id' );
+		if ( isset($this->data['company_id']) ) {
+			return (int)$this->data['company_id'];
+		}
+
+		return FALSE;
+	}
+	function setCompany($id) {
+		$id = trim($id);
+
+		Debug::Text('Company ID: '. $id, __FILE__, __LINE__, __METHOD__, 10);
+		$clf = TTnew( 'CompanyListFactory' );
+
+		if ( $this->Validator->isResultSetWithRows(	'company',
+													$clf->getByID($id),
+													TTi18n::gettext('Company is invalid')
+													) ) {
+
+			$this->data['company_id'] = $id;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @param string $value UUID
-	 * @return bool
-	 */
-	function setCompany( $value) {
-		$value = TTUUID::castUUID( $value );
-		Debug::Text('Company ID: '. $value, __FILE__, __LINE__, __METHOD__, 10);
-		return $this->setGenericDataValue( 'company_id', $value );
-	}
-
-	/**
-	 * @return int
-	 */
 	function getStatus() {
-		return $this->getGenericDataValue( 'status_id' );
+		return (int)$this->data['status_id'];
 	}
+	function setStatus($status) {
+		$status = trim($status);
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setStatus( $value) {
-		$value = (int)trim($value);
-		return $this->setGenericDataValue( 'status_id', $value );
+		if ( $this->Validator->inArrayKey(	'status',
+											$status,
+											TTi18n::gettext('Incorrect Status'),
+											$this->getOptions('status')) ) {
+
+			$this->data['status_id'] = $status;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
 	//Returns the order in which accounts should be calculated
 	//given a circular dependency scenario
-	/**
-	 * @return bool
-	 */
 	function getTypeCalculationOrder() {
 		if ( $this->getType() !== FALSE ) {
 			$order_arr = $this->getOptions('type_calculation_order');
@@ -212,11 +210,7 @@ class PayStubEntryAccountFactory extends Factory {
 		return FALSE;
 	}
 
-	/**
-	 * @param string $id UUID
-	 * @return bool
-	 */
-	function isInUse( $id) {
+	function isInUse($id) {
 		$pslf = new PayStubListFactory();
 		$pself = new PayStubEntryListFactory();
 		$psalf = new PayStubAmendmentListFactory();
@@ -248,10 +242,6 @@ class PayStubEntryAccountFactory extends Factory {
 		return TRUE;
 	}
 
-	/**
-	 * @param string $id UUID
-	 * @return bool
-	 */
 	function getCurrentType( $id ) {
 		$psealf = TTNew('PayStubEntryAccountListFactory');
 		$psealf->getByIdAndCompanyId( $id, $this->getCompany() );
@@ -264,34 +254,46 @@ class PayStubEntryAccountFactory extends Factory {
 		return FALSE;
 	}
 
-	/**
-	 * @return bool|int
-	 */
 	function getType() {
-		return $this->getGenericDataValue( 'type_id' );
+		if ( isset($this->data['type_id']) ) {
+			return (int)$this->data['type_id'];
+		}
+
+		return FALSE;
+	}
+	function setType($type) {
+		$type = (int)trim($type);
+
+		if ( $this->Validator->inArrayKey(	'type_id',
+											$type,
+											TTi18n::gettext('Incorrect Type'),
+											$this->getOptions('type'))
+			) {
+
+			Debug::Text('Type: '. $type .' isNew: '. (int)$this->isNew(), __FILE__, __LINE__, __METHOD__, 10);
+			if ( $this->isNew() == FALSE AND $this->getCurrentType( $this->getId() ) != $type AND $this->isInUse( $this->getId() ) == TRUE ) {
+				$this->Validator->isTrue(	'type_id',
+											FALSE,
+											TTi18n::gettext('Type cannot be modified when Pay Stub Account is in use')
+										);
+			} else {
+				$this->data['type_id'] = $type;
+			}
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setType( $value) {
-		$value = (int)trim($value);
-		return $this->setGenericDataValue( 'type_id', $value );
-	}
-
-	/**
-	 * @param $name
-	 * @return bool
-	 */
-	function isUniqueName( $name) {
+	function isUniqueName($name) {
 		$name = trim($name);
 		if ( $name == '' ) {
 			return FALSE;
 		}
 
 		$ph = array(
-					'company_id' => TTUUID::castUUID($this->getCompany()),
+					'company_id' => (int)$this->getCompany(),
 					'type_id' => (int)$this->getType(),
 					'name' => TTi18n::strtolower($name),
 					);
@@ -310,227 +312,177 @@ class PayStubEntryAccountFactory extends Factory {
 
 		return FALSE;
 	}
-
-	/**
-	 * @return bool|string
-	 */
 	function getName() {
-		if ( $this->getGenericDataValue( 'name' ) !== FALSE ) {
+		if ( isset($this->data['name']) ) {
 			/*I18n:	apply gettext in the result of this function
 					to be use in the getByIdArray() function in
 					the PayStubEntryAccountListFactory.class.php
 					file.
 			*/
-			return TTi18n::gettext($this->getGenericDataValue( 'name' ));
+			return TTi18n::gettext($this->data['name']);
+		}
+
+		return FALSE;
+	}
+	function setName($value) {
+		$value = trim($value);
+
+		if	(
+				$this->Validator->isLength(		'name',
+												$value,
+												TTi18n::gettext('Name is too short or too long'),
+												2,
+												100)
+				AND
+				$this->Validator->isTrue(				'name',
+														$this->isUniqueName($value),
+														TTi18n::gettext('Name is already in use')
+													)
+													) {
+
+			$this->data['name'] = $value;
+
+			return TRUE;
 		}
 
 		return FALSE;
 	}
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setName( $value) {
-		$value = trim($value);
-		return $this->setGenericDataValue( 'name', $value );
-	}
-
-	/**
-	 * @return bool|mixed
-	 */
 	function getOrder() {
-		return $this->getGenericDataValue( 'ps_order' );
-	}
+		if ( isset($this->data['ps_order']) ) {
+			return $this->data['ps_order'];
+		}
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setOrder( $value) {
+		return FALSE;
+	}
+	function setOrder($value) {
 		$value = trim($value);
-		return $this->setGenericDataValue( 'ps_order', $value );
+
+		if ( $this->Validator->isNumeric(		'ps_order',
+												$value,
+												TTi18n::gettext('Invalid Order')
+										) ) {
+
+
+			$this->data['ps_order'] = $value;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @return bool|mixed
-	 */
 	function getDebitAccount() {
-		return $this->getGenericDataValue( 'debit_account' );
-	}
+		if ( isset($this->data['debit_account']) ) {
+			return $this->data['debit_account'];
+		}
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setDebitAccount( $value) {
+		return FALSE;
+	}
+	function setDebitAccount($value) {
 		$value = trim($value);
-		return $this->setGenericDataValue( 'debit_account', $value );
+
+		if	(	$value == ''
+				OR
+				$this->Validator->isLength(		'debit_account',
+												$value,
+												TTi18n::gettext('Invalid Debit Account'),
+												2,
+												250) ) {
+
+			$this->data['debit_account'] = $value;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @return bool|mixed
-	 */
 	function getCreditAccount() {
-		return $this->getGenericDataValue( 'credit_account' );
-	}
+		if ( isset($this->data['credit_account']) ) {
+			return $this->data['credit_account'];
+		}
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setCreditAccount( $value) {
+		return FALSE;
+	}
+	function setCreditAccount($value) {
 		$value = trim($value);
-		return $this->setGenericDataValue( 'credit_account', $value );
+
+		if	(	$value == ''
+				OR
+				$this->Validator->isLength(		'credit_account',
+												$value,
+												TTi18n::gettext('Invalid Credit Account'),
+												2,
+												250) ) {
+
+			$this->data['credit_account'] = $value;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @return bool|mixed
-	 */
 	function getAccrual() {
-		return $this->getGenericDataValue( 'accrual_pay_stub_entry_account_id' );
-	}
+		if ( isset($this->data['accrual_pay_stub_entry_account_id']) ) {
+			return (int)$this->data['accrual_pay_stub_entry_account_id'];
+		}
 
-	/**
-	 * @param string $value UUID
-	 * @return bool
-	 */
-	function setAccrual( $value) {
-		$value = TTUUID::castUUID( $value );
-		Debug::Text('ID: '. $value, __FILE__, __LINE__, __METHOD__, 10);
-		return $this->setGenericDataValue( 'accrual_pay_stub_entry_account_id', $value );
+		return FALSE;
 	}
+	function setAccrual($id) {
+		$id = trim($id);
 
-	/**
-	 * @return bool|int
-	 */
+		Debug::Text('ID: '. $id, __FILE__, __LINE__, __METHOD__, 10);
+		$psealf = TTnew( 'PayStubEntryAccountListFactory' );
+		$psealf->getByID($id);
+		if ( $psealf->getRecordCount() > 0 ) {
+			if ( $psealf->getCurrent()->getType() != 50 ) {
+				//Reset Result set so an error occurs.
+				$psealf = TTnew( 'PayStubEntryAccountListFactory' );
+			}
+		}
+
+		if (
+				( $id == '' OR $id == 0 )
+				OR
+				$this->Validator->isResultSetWithRows(	'accrual_pay_stub_entry_account_id',
+														$psealf,
+														TTi18n::gettext('Accrual Account is invalid')
+													) ) {
+
+			$this->data['accrual_pay_stub_entry_account_id'] = $id;
+
+			return TRUE;
+		}
+
+		return FALSE;
+	}
 	function getAccrualType() {
-		return $this->getGenericDataValue( 'accrual_type_id' );
+		if ( isset($this->data['accrual_type_id']) ) {
+			return (int)$this->data['accrual_type_id'];
+		}
+
+		return FALSE;
+	}
+	function setAccrualType($type) {
+		$type = (int)trim($type);
+
+		if ( $this->Validator->inArrayKey(	'accrual_type_id',
+											$type,
+											TTi18n::gettext('Incorrect Accrual Type'),
+											$this->getOptions('accrual_type')) ) {
+
+			$this->data['accrual_type_id'] = $type;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setAccrualType( $value) {
-		$value = (int)trim($value);
-		return $this->setGenericDataValue( 'accrual_type_id', $value );
-	}
-
-	/**
-	 * @param bool $ignore_warning
-	 * @return bool
-	 */
 	function Validate( $ignore_warning = TRUE ) {
-		//
-		// BELOW: Validation code moved from set*() functions.
-		//
-		// Company
-		$clf = TTnew( 'CompanyListFactory' );
-		$this->Validator->isResultSetWithRows(	'company',
-														$clf->getByID($this->getCompany()),
-														TTi18n::gettext('Company is invalid')
-													);
-		// Status
-		if ( $this->getStatus() !== FALSE ) {
-			$this->Validator->inArrayKey(	'status',
-													$this->getStatus(),
-													TTi18n::gettext('Incorrect Status'),
-													$this->getOptions('status')
-												);
-		}
-		// Type
-		if ( $this->getType() !== FALSE ) {
-			$this->Validator->inArrayKey(	'type_id',
-													$this->getType(),
-													TTi18n::gettext('Incorrect Type'),
-													$this->getOptions('type')
-												);
-			if ( $this->Validator->isError('type_id') == FALSE ) {
-				Debug::Text('Type: '. $this->getType() .' isNew: '. (int)$this->isNew(), __FILE__, __LINE__, __METHOD__, 10);
-				if ( $this->isNew() == FALSE AND $this->getCurrentType( $this->getId() ) != $this->getType() AND $this->isInUse( $this->getId() ) == TRUE ) {
-					$this->Validator->isTrue(	'type_id',
-													FALSE,
-													TTi18n::gettext('Type cannot be modified when Pay Stub Account is in use')
-												);
-				}
-			}
-		}
-		// Name
-		if ( $this->getName() !== FALSE ) {
-			$this->Validator->isLength(		'name',
-													$this->getName(),
-													TTi18n::gettext('Name is too short or too long'),
-													2,
-													100
-												);
-			if ( $this->Validator->isError('name') == FALSE ) {
-				$this->Validator->isTrue(				'name',
-																$this->isUniqueName($this->getName()),
-																TTi18n::gettext('Name is already in use')
-															);
-			}
-		}
-		// Order
-		if ( $this->Validator->getValidateOnly() == FALSE AND $this->getOrder() == '' ) {
-			$this->Validator->isTRUE(		'ps_order',
-												FALSE,
-												TTi18n::gettext('Order must be specified')
-			);
-
-		}
-		if ( $this->getOrder() != '' AND $this->Validator->isError('ps_order') == FALSE ) {
-			$this->Validator->isNumeric(		'ps_order',
-														$this->getOrder(),
-														TTi18n::gettext('Invalid Order')
-													);
-		}
-		// Debit Account
-		if ( $this->getDebitAccount() != '' ) {
-			$this->Validator->isLength(		'debit_account',
-													$this->getDebitAccount(),
-													TTi18n::gettext('Invalid Debit Account'),
-													2,
-													250
-												);
-		}
-		// Credit Account
-		if ( $this->getCreditAccount() != '' ) {
-			$this->Validator->isLength(		'credit_account',
-													$this->getCreditAccount(),
-													TTi18n::gettext('Invalid Credit Account'),
-													2,
-													250
-												);
-		}
-		// Accrual Account
-		if ( $this->getAccrual() !== FALSE AND $this->getAccrual() != TTUUID::getZeroID() ) {
-			$psealf = TTnew( 'PayStubEntryAccountListFactory' );
-			$psealf->getByID($this->getAccrual());
-			if ( $psealf->getRecordCount() > 0 ) {
-				if ( $psealf->getCurrent()->getType() != 50 ) {
-					//Reset Result set so an error occurs.
-					$psealf = TTnew( 'PayStubEntryAccountListFactory' );
-				}
-			}
-			$this->Validator->isResultSetWithRows(	'accrual_pay_stub_entry_account_id',
-															$psealf,
-															TTi18n::gettext('Accrual Account is invalid')
-														);
-		}
-		// Accrual Type
-		if ( $this->getAccrualType() !== FALSE ) {
-			$this->Validator->inArrayKey(	'accrual_type_id',
-													$this->getAccrualType(),
-													TTi18n::gettext('Incorrect Accrual Type'),
-													$this->getOptions('accrual_type')
-												);
-		}
-
-		//
-		// ABOVE: Validation code moved from set*() functions.
-		//
-
 		if ( $this->getType() == 50 ) {
 			//If the PSE account is an accrual, it can't link to one as well.
 			$this->setAccrual(NULL);
@@ -544,81 +496,59 @@ class PayStubEntryAccountFactory extends Factory {
 												);
 		}
 
-		if ( $this->getDeleted() == TRUE ) {
-			//Check to make sure nothing else references this policy, so we can be sure its okay to delete it.
-			// The isInUse() check in preSave() already looks for pay stubs, pay stub amendments, and if those exist it should never get here.
-			$pclf = TTnew( 'PayCodeListFactory' );
-			$pclf->getByCompanyIdAndPayStubEntryAccountID( $this->getCompany(), $this->getId(), 1 );
-			if ( $pclf->getRecordCount() > 0 ) {
-				$this->Validator->isTRUE( 'in_use',
-										  FALSE,
-										  TTi18n::gettext( 'This policy is currently in use' ) . ' ' . TTi18n::gettext( 'by pay codes' ) );
-			}
-
-			$cdlf = TTnew( 'CompanyDeductionListFactory' );
-			$cdlf->getByCompanyIdAndPayStubEntryAccountId( $this->getCompany(), $this->getId(), 1 );
-			if ( $cdlf->getRecordCount() > 0 ) {
-				$this->Validator->isTRUE( 'in_use',
-										  FALSE,
-										  TTi18n::gettext( 'This policy is currently in use' ) . ' ' . TTi18n::gettext( 'by Tax/Deductions' ) );
-			}
-		}
-
 		//Make sure PS order is correct, in that types can't be separated by total or accrual accounts.
-		if ( $this->getDeleted() == FALSE AND $this->getOrder() != '' AND $this->Validator->isError('ps_order') == FALSE ) {
-			$pseallf = TTnew( 'PayStubEntryAccountLinkListFactory' );
-			$pseallf->getByCompanyId( $this->getCompany() );
-			if ( $pseallf->getRecordCount() > 0 ) {
-				$pseal_obj = $pseallf->getCurrent();
+		$pseallf = TTnew( 'PayStubEntryAccountLinkListFactory' );
+		$pseallf->getByCompanyId( $this->getCompany() );
+		if ( $pseallf->getRecordCount() > 0 ) {
+			$pseal_obj = $pseallf->getCurrent();
 
-				$psea_map = array();
-				$psealf = TTnew( 'PayStubEntryAccountListFactory' );
-				$psealf->getByCompanyIdAndTypeId( $this->getCompany(), 40 );
-				if ( $psealf->getRecordCount() > 0 ) {
-					foreach ( $psealf as $psea_obj ) {
-						$psea_map[ $psea_obj->getId() ] = $psea_obj->getOrder();
+			$psea_map = array();
+			$psealf = TTnew( 'PayStubEntryAccountListFactory' );
+			$psealf->getByCompanyIdAndTypeId( $this->getCompany(), 40 );
+			if ( $psealf->getRecordCount() > 0 ) {
+				foreach( $psealf as $psea_obj ) {
+					$psea_map[$psea_obj->getId()] = $psea_obj->getOrder();
+				}
+				unset($psea_obj);
+			}
+
+			switch( $this->getType() ) {
+				case 10: //Earning
+					//Greater the 0, less then Total Gross Account
+					if ( isset($psea_map[$pseal_obj->getTotalGross()]) ) {
+						$min_ps_order = 0;
+						$max_ps_order = $psea_map[$pseal_obj->getTotalGross()];
 					}
-					unset( $psea_obj );
-				}
+					break;
+				case 20: //EE Deduction
+					//Greater then Total Gross Account, less then Total Employee Deduction
+					if ( isset($psea_map[$pseal_obj->getTotalGross()]) AND isset($psea_map[$pseal_obj->getTotalEmployeeDeduction()]) ) {
+						$min_ps_order = $psea_map[$pseal_obj->getTotalGross()];
+						$max_ps_order = $psea_map[$pseal_obj->getTotalEmployeeDeduction()];
+					}
+					break;
+				case 30: //ER Deduction
+					//Greater then Net Pay Account, less then Total Employer Deduction
+					if ( isset($psea_map[$pseal_obj->getTotalNetPay()]) AND isset($psea_map[$pseal_obj->getTotalEmployerDeduction()]) ) {
+						$min_ps_order = $psea_map[$pseal_obj->getTotalNetPay()];
+						$max_ps_order = $psea_map[$pseal_obj->getTotalEmployerDeduction()];
+					}
+					break;
+				case 50: //Accrual
+				case 80: //Misc
+					//Greater then Total Employer Deduction
+					if ( isset($psea_map[$pseal_obj->getTotalEmployerDeduction()]) ) {
+						$min_ps_order = $psea_map[$pseal_obj->getTotalEmployerDeduction()];
+						$max_ps_order = 10001;
+					}
+					break;
+			}
 
-				switch ( $this->getType() ) {
-					case 10: //Earning
-						//Greater the 0, less then Total Gross Account
-						if ( isset( $psea_map[ $pseal_obj->getTotalGross() ] ) ) {
-							$min_ps_order = 0;
-							$max_ps_order = $psea_map[ $pseal_obj->getTotalGross() ];
-						}
-						break;
-					case 20: //EE Deduction
-						//Greater then Total Gross Account, less then Total Employee Deduction
-						if ( isset( $psea_map[ $pseal_obj->getTotalGross() ] ) AND isset( $psea_map[ $pseal_obj->getTotalEmployeeDeduction() ] ) ) {
-							$min_ps_order = $psea_map[ $pseal_obj->getTotalGross() ];
-							$max_ps_order = $psea_map[ $pseal_obj->getTotalEmployeeDeduction() ];
-						}
-						break;
-					case 30: //ER Deduction
-						//Greater then Net Pay Account, less then Total Employer Deduction
-						if ( isset( $psea_map[ $pseal_obj->getTotalNetPay() ] ) AND isset( $psea_map[ $pseal_obj->getTotalEmployerDeduction() ] ) ) {
-							$min_ps_order = $psea_map[ $pseal_obj->getTotalNetPay() ];
-							$max_ps_order = $psea_map[ $pseal_obj->getTotalEmployerDeduction() ];
-						}
-						break;
-					case 50: //Accrual
-					case 80: //Misc
-						//Greater then Total Employer Deduction
-						if ( isset( $psea_map[ $pseal_obj->getTotalEmployerDeduction() ] ) ) {
-							$min_ps_order = $psea_map[ $pseal_obj->getTotalEmployerDeduction() ];
-							$max_ps_order = 10001;
-						}
-						break;
-				}
-
-				if ( isset( $min_ps_order ) AND isset( $max_ps_order ) AND ( $this->getOrder() <= $min_ps_order OR $this->getOrder() >= $max_ps_order ) ) {
-					Debug::text( 'PS Order... Min: ' . $min_ps_order . ' Max: ' . $max_ps_order, __FILE__, __LINE__, __METHOD__, 10 );
-					$this->Validator->isTrue( 'ps_order',
-											  FALSE,
-											  TTi18n::gettext( 'Order is invalid for this type of account, it must be between' ) . ' ' . ( $min_ps_order + 1 ) . ' ' . TTi18n::gettext( 'and' ) . ' ' . ( $max_ps_order - 1 ) );
-				}
+			if ( isset($min_ps_order) AND isset($max_ps_order) AND ( $this->getOrder() <= $min_ps_order OR $this->getOrder() >= $max_ps_order ) ) {
+				Debug::text('PS Order... Min: '. $min_ps_order .' Max: '. $max_ps_order, __FILE__, __LINE__, __METHOD__, 10);
+				$this->Validator->isTrue(				'ps_order',
+														FALSE,
+														TTi18n::gettext('Order is invalid for this type of account, it must be between'). ' '. ($min_ps_order + 1) . ' ' . TTi18n::gettext('and') . ' ' . ($max_ps_order - 1) );
 			}
 		}
 
@@ -626,18 +556,11 @@ class PayStubEntryAccountFactory extends Factory {
 
 	}
 
-	/**
-	 * @param string $company_id UUID
-	 * @param string $src_ids UUID
-	 * @param string $dst_id UUID
-	 * @param int $effective_date EPOCH
-	 * @return bool
-	 */
 	function migrate( $company_id, $src_ids, $dst_id, $effective_date ) {
-		$dst_id = TTUUID::castUUID($dst_id);
+		$dst_id = (int)$dst_id;
 		$src_ids = array_unique( (array)$src_ids );
 
-		if ( empty($dst_id) OR $dst_id == TTUUID::getZeroID() ) {
+		if ( empty($dst_id) ) {
 			return FALSE;
 		}
 
@@ -715,12 +638,8 @@ class PayStubEntryAccountFactory extends Factory {
 	}
 
 
-	/**
-	 * @return bool
-	 */
 	function preSave() {
 		if ( $this->getDeleted() == TRUE ) {
-			//Validate() checks for pay codes, Tax/Deductions etc...
 			Debug::text('Attempting to delete PSE Account', __FILE__, __LINE__, __METHOD__, 10);
 			if ( $this->isInUse( $this->getId() ) ) {
 				Debug::text('PSE Account is in use by Pay Stubs... Disabling instead.', __FILE__, __LINE__, __METHOD__, 10);
@@ -743,10 +662,6 @@ class PayStubEntryAccountFactory extends Factory {
 		$this->removeCache( $this->getId() );
 	}
 
-	/**
-	 * @param $data
-	 * @return bool
-	 */
 	function setObjectFromArray( $data ) {
 		if ( is_array( $data ) ) {
 			$variable_function_map = $this->getVariableToFunctionMap();
@@ -772,10 +687,6 @@ class PayStubEntryAccountFactory extends Factory {
 		return FALSE;
 	}
 
-	/**
-	 * @param null $include_columns
-	 * @return array
-	 */
 	function getObjectAsArray( $include_columns = NULL ) {
 		$variable_function_map = $this->getVariableToFunctionMap();
 		$data = array();
@@ -811,10 +722,6 @@ class PayStubEntryAccountFactory extends Factory {
 		return $data;
 	}
 
-	/**
-	 * @param $log_action
-	 * @return bool
-	 */
 	function addLog( $log_action ) {
 		return TTLog::addEntry( $this->getId(), $log_action, TTi18n::getText('Pay Stub Account'), NULL, $this->getTable(), $this );
 	}

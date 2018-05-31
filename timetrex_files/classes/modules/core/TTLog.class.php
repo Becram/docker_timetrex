@@ -1,7 +1,7 @@
 <?php
 /*********************************************************************************
  * TimeTrex is a Workforce Management program developed by
- * TimeTrex Software Inc. Copyright (C) 2003 - 2018 TimeTrex Software Inc.
+ * TimeTrex Software Inc. Copyright (C) 2003 - 2017 TimeTrex Software Inc.
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Affero General Public License version 3 as published by
@@ -39,15 +39,6 @@
  * @package Core
  */
 class TTLog {
-	/**
-	 * @param string $object_id UUID
-	 * @param int $action_id
-	 * @param $description
-	 * @param string $user_id UUID
-	 * @param $table
-	 * @param null $object
-	 * @return bool
-	 */
 	static function addEntry( $object_id, $action_id, $description, $user_id, $table, $object = NULL ) {
 		global $config_vars;
 
@@ -55,7 +46,7 @@ class TTLog {
 			return TRUE;
 		}
 
-		if ( $object_id == ''  ) {
+		if ( !is_numeric($object_id) ) {
 			return FALSE;
 		}
 
@@ -69,7 +60,7 @@ class TTLog {
 				Debug::text('User Class: '. get_class( $current_user ) .' Full Name: '. $current_user->getFullName(), __FILE__, __LINE__, __METHOD__, 10);
 				$user_id = $current_user->getId();
 			} else {
-				$user_id = TTUUID::getZeroID();
+				$user_id = 0;
 			}
 		}
 
@@ -82,7 +73,7 @@ class TTLog {
 		$lf->setObject( $object_id );
 		$lf->setAction( $action_id );
 		$lf->setTableName( $table );
-		$lf->setUser( TTUUID::castUUID($user_id) );
+		$lf->setUser( (int)$user_id );
 		$lf->setDescription( $description );
 		$lf->setDate( time() );
 
@@ -99,7 +90,7 @@ class TTLog {
 				$ldf = TTnew( 'LogDetailFactory' );
 				$ldf->addLogDetail( $action_id, $insert_id, $object );
 			} else {
-				Debug::text('LogDetail Disabled... Object ID: '. $object_id .' Action ID: '. $action_id .' Table: '. $table .' Description: '. $description.' User ID: '. $user_id, __FILE__, __LINE__, __METHOD__, 10);
+				Debug::text('LogDetail Disabled... Object ID: '. $object_id .' Action ID: '. $action_id .' Table: '. $table .' Description: '. $description, __FILE__, __LINE__, __METHOD__, 10);
 				//Debug::text('LogDetail Disabled... Config: '. (int)$config_vars['other']['disable_audit_log_detail'] .' Function: '. (int)$object->getEnableSystemLogDetail(), __FILE__, __LINE__, __METHOD__, 10);
 			}
 

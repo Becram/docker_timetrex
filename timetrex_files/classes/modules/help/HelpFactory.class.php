@@ -1,7 +1,7 @@
 <?php
 /*********************************************************************************
  * TimeTrex is a Workforce Management program developed by
- * TimeTrex Software Inc. Copyright (C) 2003 - 2018 TimeTrex Software Inc.
+ * TimeTrex Software Inc. Copyright (C) 2003 - 2017 TimeTrex Software Inc.
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Affero General Public License version 3 as published by
@@ -43,13 +43,8 @@ class HelpFactory extends Factory {
 	protected $pk_sequence_name = 'help_id_seq'; //PK Sequence name
 
 
-	/**
-	 * @param $name
-	 * @param null $parent
-	 * @return array|null
-	 */
 	function _getFactoryOptions( $name, $parent = NULL ) {
-
+	
 		$retval = NULL;
 		switch( $name ) {
 			case 'type':
@@ -72,160 +67,124 @@ class HelpFactory extends Factory {
 	}
 
 
-	/**
-	 * @return int
-	 */
 	function getType() {
-		return (int)$this->getGenericDataValue( 'type_id' );
+		return (int)$this->data['type_id'];
 	}
-
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setType( $value) {
-		$value = trim($value);
-
-		$key = Option::getByValue($value, $this->getOptions('type') );
+	function setType($type) {
+		$type = trim($type);
+		
+		$key = Option::getByValue($type, $this->getOptions('type') );
 		if ($key !== FALSE) {
-			$value = $key;
+			$type = $key;	
 		}
-
-		Debug::Text('bType: '. $value, __FILE__, __LINE__, __METHOD__, 10);
-		return $this->setGenericDataValue( 'type_id', $value );
+		
+		Debug::Text('bType: '. $type, __FILE__, __LINE__, __METHOD__, 10);
+		if ( $this->Validator->inArrayKey(	'type',
+											$type,
+											TTi18n::gettext('Incorrect Type'),
+											$this->getOptions('type')) ) {
+			
+			$this->data['type_id'] = $type;
+			
+			return FALSE;
+		}
+		
+		return FALSE;
 	}
 
-	/**
-	 * @return int
-	 */
 	function getStatus() {
-		return (int)$this->getGenericDataValue( 'status_id' );
+		return (int)$this->data['status_id'];
 	}
-
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setStatus( $value) {
-		$value = trim($value);
-
-		$key = Option::getByValue($value, $this->getOptions('status') );
+	function setStatus($status) {
+		$status = trim($status);
+		
+		$key = Option::getByValue($status, $this->getOptions('status') );
 		if ($key !== FALSE) {
-			$value = $key;
+			$status = $key;	
 		}
-		return $this->setGenericDataValue( 'status_id', $value );
+		
+		if ( $this->Validator->inArrayKey(	'status',
+											$status,
+											TTi18n::gettext('Incorrect Status'),
+											$this->getOptions('status')) ) {
+			
+			$this->data['status_id'] = $status;
+			
+			return FALSE;
+		}
+		
+		return FALSE;
 	}
 
-	/**
-	 * @return mixed
-	 */
 	function getHeading() {
-		return $this->getGenericDataValue( 'heading' );
+		return $this->data['heading'];
 	}
-
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setHeading( $value) {
+	function setHeading($value) {
 		$value = trim($value);
-		return $this->setGenericDataValue( 'heading', $value );
+
+		if (	$value == NULL
+				OR
+				$this->Validator->isLength(	'heading',
+											$value,
+											TTi18n::gettext('Incorrect Heading length'),
+											2, 255) ) {
+
+			$this->data['heading'] = $value;
+
+			return FALSE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @return mixed
-	 */
 	function getBody() {
-		return $this->getGenericDataValue( 'body' );
+		return $this->data['body'];
 	}
-
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setBody( $value) {
+	function setBody($value) {
 		$value = trim($value);
-		return $this->setGenericDataValue( 'body', $value );
+
+		if (	$value == NULL
+				OR
+				$this->Validator->isLength(	'body',
+											$value,
+											TTi18n::gettext('Incorrect Body length'),
+											2, 2048) ) {
+
+			$this->data['body'] = $value;
+
+			return FALSE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @return mixed
-	 */
 	function getKeywords() {
-		return $this->getGenericDataValue( 'keywords' );
+		return $this->data['keywords'];
 	}
-
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setKeywords( $value) {
+	function setKeywords($value) {
 		$value = trim($value);
-		return $this->setGenericDataValue( 'keywords', $value );
+
+		if (	$value == NULL
+				OR
+				$this->Validator->isLength(	'keywords',
+											$value,
+											TTi18n::gettext('Incorrect Keywords length'),
+											2, 1024) ) {
+
+			$this->data['keywords'] = $value;
+
+			return FALSE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function getPrivate() {
-		return $this->fromBool( $this->getGenericDataValue( 'private' ) );
+		return $this->fromBool( $this->data['private'] );
 	}
+	function setPrivate($bool) {
+		$this->data['private'] = $this->toBool($bool);
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setPrivate( $value) {
-		return $this->setGenericDataValue( 'private', $this->toBool($value) );
-	}
-
-	/**
-	 * @return bool
-	 */
-	function Validate() {
-		//
-		// BELOW: Validation code moved from set*() functions.
-		//
-		// Type
-		$this->Validator->inArrayKey(	'type',
-												$this->getType(),
-												TTi18n::gettext('Incorrect Type'),
-												$this->getOptions('type')
-											);
-		// Status
-		$this->Validator->inArrayKey(	'status',
-												$this->getStatus(),
-												TTi18n::gettext('Incorrect Status'),
-												$this->getOptions('status')
-											);
-		// Heading length
-		if ( $this->getHeading() != NULL ) {
-			$this->Validator->isLength(	'heading',
-												$this->getHeading(),
-												TTi18n::gettext('Incorrect Heading length'),
-												2, 255
-											);
-		}
-		// Body
-		if ( $this->getBody() != NULL ) {
-			$this->Validator->isLength(	'body',
-												$this->getBody(),
-												TTi18n::gettext('Incorrect Body length'),
-												2, 2048
-											);
-		}
-		// Keywords
-		if ( $this->getKeywords() != NULL ) {
-			$this->Validator->isLength(	'keywords',
-												$this->getKeywords(),
-												TTi18n::gettext('Incorrect Keywords length'),
-												2, 1024
-											);
-		}
-
-		//
-		// ABOVE: Validation code moved from set*() functions.
-		//
 		return TRUE;
 	}
 

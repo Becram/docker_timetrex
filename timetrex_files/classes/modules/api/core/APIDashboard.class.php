@@ -1,7 +1,7 @@
 <?php
 /*********************************************************************************
  * TimeTrex is a Workforce Management program developed by
- * TimeTrex Software Inc. Copyright (C) 2003 - 2018 TimeTrex Software Inc.
+ * TimeTrex Software Inc. Copyright (C) 2003 - 2017 TimeTrex Software Inc.
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Affero General Public License version 3 as published by
@@ -41,9 +41,6 @@
 class APIDashboard extends APIFactory {
 	protected $main_class = FALSE;
 
-	/**
-	 * APIDashboard constructor.
-	 */
 	public function __construct() {
 		parent::__construct(); //Make sure parent constructor is always called.
 
@@ -52,14 +49,11 @@ class APIDashboard extends APIFactory {
 
 	/**
 	 * Get all possible dashlets
-	 * @param bool $name
-	 * @param null $parent
-	 * @return bool|array
+	 * @return array
 	 */
 	function getOptions( $name = FALSE, $parent = NULL) {
 		$product_edition = $this->getCurrentCompanyObject()->getProductEdition();
 
-		$retarr = array();
 		switch ( $name ) {
 			case 'dashlets':
 				$retarr = array();
@@ -355,7 +349,6 @@ class APIDashboard extends APIFactory {
 	 * Create filter base on user generic data
 	 * @param string $view_name the view name
 	 * @param array $user_generic_data user generic data
-	 * @param $rows_per_page
 	 * @return array
 	 */
 	function buildFilterParameters( $view_name, $user_generic_data, $rows_per_page ) {
@@ -406,7 +399,7 @@ class APIDashboard extends APIFactory {
 			if ( !isset($parameters['filter_data']) ) {
 				$parameters['filter_data'] = array();
 			}
-			$parameters['filter_data']['parent_id'] = array( TTUUID::getZeroID() );
+			$parameters['filter_data']['parent_id'] = array(0);
 			if ( !isset($parameters['filter_data']['hierarchy_level']) ) {
 				$parameters['filter_data']['hierarchy_level'] = 1;
 			}
@@ -424,19 +417,12 @@ class APIDashboard extends APIFactory {
 		return $parameters;
 	}
 
-	/**
-	 * @param $display_columns
-	 * @param $rows_per_page
-	 * @return array
-	 */
 	function buildDefaultDashletParameters( $display_columns, $rows_per_page ) {
 		$parameters = array();
 		$parameters['filter_columns'] = array();
 		$parameters['filter_columns']['id'] = TRUE;
-		if ( is_array($display_columns) ) {
-			for ($i = 0; $i < count($display_columns); $i++) {
-				$parameters['filter_columns'][$display_columns[$i]] = TRUE;
-			}
+		for ($i = 0; $i < count($display_columns); $i++) {
+			$parameters['filter_columns'][$display_columns[$i]] = TRUE;
 		}
 		$parameters['filter_items_per_page'] = $rows_per_page;
 
@@ -446,9 +432,8 @@ class APIDashboard extends APIFactory {
 	/**
 	 * Get data for specific datalet
 	 * @param string $name name of dashlet
-	 * @param bool $data
+	 * @param array $params parameters for returning dashlet data
 	 * @return array
-	 * @internal param array $params parameters for returning dashlet data
 	 */
 	function getDashletData( $name, $data = FALSE ) {
 		$name = strtolower($name);
@@ -839,7 +824,7 @@ class APIDashboard extends APIFactory {
 						}
 
 						$augd = TTNew('APIUserGenericData');
-						$retval = $this->stripReturnHandler($augd->getUserGenericData(array('filter_data' => array('id' => TTUUID::castUUID($data['user_generic_data_id'])))));
+						$retval = $this->stripReturnHandler($augd->getUserGenericData(array('filter_data' => array('id' => (int)$data['user_generic_data_id']))));
 						if ( is_array($retval) AND count($retval) == 1 ) {
 							if ( isset($retval[0]['data']) ) {
 								$user_generic_data = $retval[0]['data'];
@@ -886,9 +871,6 @@ class APIDashboard extends APIFactory {
 		return $this->returnHandler(FALSE);
 	}
 
-	/**
-	 * @return array
-	 */
 	function getDefaultDashlets() {
 		$parameters = FALSE;
 
@@ -964,12 +946,7 @@ class APIDashboard extends APIFactory {
 		}
 	}
 
-	/**
-	 * @param $type
-	 * @param $name
-	 * @return array
-	 */
-	function createDefaultDashletData( $type, $name) {
+	function createDefaultDashletData($type, $name) {
 		$result = array(
 						'script' => 'global_dashboard',
 						'is_default' => FALSE,
@@ -984,9 +961,6 @@ class APIDashboard extends APIFactory {
 		return $result;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function removeAllDashlets() {
 		return TRUE;
 	}

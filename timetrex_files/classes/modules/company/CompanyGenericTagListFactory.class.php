@@ -1,7 +1,7 @@
 <?php
 /*********************************************************************************
  * TimeTrex is a Workforce Management program developed by
- * TimeTrex Software Inc. Copyright (C) 2003 - 2018 TimeTrex Software Inc.
+ * TimeTrex Software Inc. Copyright (C) 2003 - 2017 TimeTrex Software Inc.
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Affero General Public License version 3 as published by
@@ -40,14 +40,7 @@
  */
 class CompanyGenericTagListFactory extends CompanyGenericTagFactory implements IteratorAggregate {
 
-	/**
-	 * @param int $limit Limit the number of records returned
-	 * @param int $page Page number of records to return for pagination
-	 * @param array $where Additional SQL WHERE clause in format of array( $column => $filter, ... ). ie: array( 'id' => 1, ... )
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return $this
-	 */
-	function getAll( $limit = NULL, $page = NULL, $where = NULL, $order = NULL) {
+	function getAll($limit = NULL, $page = NULL, $where = NULL, $order = NULL) {
 		$query = '
 					select	*
 					from	'. $this->getTable() .'
@@ -60,13 +53,7 @@ class CompanyGenericTagListFactory extends CompanyGenericTagFactory implements I
 		return $this;
 	}
 
-	/**
-	 * @param string $id UUID
-	 * @param array $where Additional SQL WHERE clause in format of array( $column => $filter, ... ). ie: array( 'id' => 1, ... )
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return bool|CompanyGenericTagListFactory
-	 */
-	function getById( $id, $where = NULL, $order = NULL) {
+	function getById($id, $where = NULL, $order = NULL) {
 		if ( $id == '') {
 			return FALSE;
 		}
@@ -74,7 +61,7 @@ class CompanyGenericTagListFactory extends CompanyGenericTagFactory implements I
 		$this->rs = $this->getCache($id);
 		if ( $this->rs === FALSE ) {
 			$ph = array(
-						'id' => TTUUID::castUUID($id),
+						'id' => (int)$id,
 						);
 
 			$query = '
@@ -93,15 +80,7 @@ class CompanyGenericTagListFactory extends CompanyGenericTagFactory implements I
 		return $this;
 	}
 
-	/**
-	 * @param string $id UUID
-	 * @param int $limit Limit the number of records returned
-	 * @param int $page Page number of records to return for pagination
-	 * @param array $where Additional SQL WHERE clause in format of array( $column => $filter, ... ). ie: array( 'id' => 1, ... )
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return bool|CompanyGenericTagListFactory
-	 */
-	function getByCompanyId( $id, $limit = NULL, $page = NULL, $where = NULL, $order = NULL) {
+	function getByCompanyId($id, $limit = NULL, $page = NULL, $where = NULL, $order = NULL) {
 		if ( $id == '') {
 			return FALSE;
 		}
@@ -114,7 +93,7 @@ class CompanyGenericTagListFactory extends CompanyGenericTagFactory implements I
 		}
 
 		$ph = array(
-					'id' => TTUUID::castUUID($id),
+					'id' => (int)$id,
 					);
 
 
@@ -131,13 +110,7 @@ class CompanyGenericTagListFactory extends CompanyGenericTagFactory implements I
 		return $this;
 	}
 
-	/**
-	 * @param string $company_id UUID
-	 * @param int $object_type_id
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return bool|CompanyGenericTagListFactory
-	 */
-	function getByCompanyIdAndObjectType( $company_id, $object_type_id, $order = NULL) {
+	function getByCompanyIdAndObjectType($company_id, $object_type_id, $order = NULL) {
 		if ( $company_id == '' ) {
 			return FALSE;
 		}
@@ -146,7 +119,7 @@ class CompanyGenericTagListFactory extends CompanyGenericTagFactory implements I
 		}
 
 		$ph = array(
-					'company_id' => TTUUID::castUUID($company_id),
+					'company_id' => (int)$company_id,
 					'object_type_id' => (int)$object_type_id,
 					);
 
@@ -163,14 +136,7 @@ class CompanyGenericTagListFactory extends CompanyGenericTagFactory implements I
 		return $this;
 	}
 
-	/**
-	 * @param string $company_id UUID
-	 * @param int $object_type_id
-	 * @param $tags
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return bool|CompanyGenericTagListFactory
-	 */
-	function getByCompanyIdAndObjectTypeAndTags( $company_id, $object_type_id, $tags, $order = NULL) {
+	function getByCompanyIdAndObjectTypeAndTags($company_id, $object_type_id, $tags, $order = NULL) {
 		if ( $company_id == '' ) {
 			return FALSE;
 		}
@@ -179,7 +145,7 @@ class CompanyGenericTagListFactory extends CompanyGenericTagFactory implements I
 		}
 
 		$ph = array(
-					'company_id' => TTUUID::castUUID($company_id),
+					'company_id' => (int)$company_id,
 					'object_type_id' => (int)$object_type_id,
 					);
 
@@ -206,7 +172,7 @@ class CompanyGenericTagListFactory extends CompanyGenericTagFactory implements I
 		}
 
 		$ph = array(
-					'company_id' => TTUUID::castUUID($company_id),
+					'company_id' => (int)$company_id,
 					'object_type_id' => (int)$object_type_id,
 					);
 
@@ -226,13 +192,7 @@ class CompanyGenericTagListFactory extends CompanyGenericTagFactory implements I
 		return $this;
 	}
 */
-	/**
-	 * @param string $id UUID
-	 * @param string $company_id UUID
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return bool|CompanyGenericTagListFactory
-	 */
-	function getByIdAndCompanyId( $id, $company_id, $order = NULL) {
+	function getByIdAndCompanyId($id, $company_id, $order = NULL) {
 		if ( $id == '' ) {
 			return FALSE;
 		}
@@ -242,8 +202,8 @@ class CompanyGenericTagListFactory extends CompanyGenericTagFactory implements I
 		}
 
 		$ph = array(
-					'company_id' => TTUUID::castUUID($company_id),
-					'id' => TTUUID::castUUID($id),
+					'company_id' => (int)$company_id,
+					'id' => (int)$id,
 					);
 
 		$query = '
@@ -259,13 +219,7 @@ class CompanyGenericTagListFactory extends CompanyGenericTagFactory implements I
 		return $this;
 	}
 
-	/**
-	 * @param string $company_id UUID
-	 * @param bool $include_blank
-	 * @param bool $include_disabled
-	 * @return mixed
-	 */
-	function getByCompanyIdArray( $company_id, $include_blank = TRUE, $include_disabled = TRUE ) {
+	function getByCompanyIdArray($company_id, $include_blank = TRUE, $include_disabled = TRUE ) {
 
 		$blf = new CompanyGenericListFactory();
 		$blf->getByCompanyId($company_id);
@@ -273,19 +227,14 @@ class CompanyGenericTagListFactory extends CompanyGenericTagFactory implements I
 		return $blf->getArrayByListFactory( $blf, $include_blank, $include_disabled );
 	}
 
-	/**
-	 * @param $lf
-	 * @param bool $include_blank
-	 * @return array|bool
-	 */
-	function getArrayByListFactory( $lf, $include_blank = TRUE) {
+	function getArrayByListFactory($lf, $include_blank = TRUE) {
 		if ( !is_object($lf) ) {
 			return FALSE;
 		}
-
+		
 		$list = array();
 		if ( $include_blank == TRUE ) {
-			$list[TTUUID::getZeroID()] = '--';
+			$list[0] = '--';
 		}
 
 		foreach ($lf as $obj) {
@@ -299,14 +248,7 @@ class CompanyGenericTagListFactory extends CompanyGenericTagFactory implements I
 		return FALSE;
 	}
 
-	/**
-	 * @param string $company_id UUID
-	 * @param int $date EPOCH
-	 * @param array $where Additional SQL WHERE clause in format of array( $column => $filter, ... ). ie: array( 'id' => 1, ... )
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return bool
-	 */
-	function getIsModifiedByCompanyIdAndDate( $company_id, $date, $where = NULL, $order = NULL) {
+	function getIsModifiedByCompanyIdAndDate($company_id, $date, $where = NULL, $order = NULL) {
 		if ( $company_id == '') {
 			return FALSE;
 		}
@@ -316,7 +258,7 @@ class CompanyGenericTagListFactory extends CompanyGenericTagFactory implements I
 		}
 
 		$ph = array(
-					'company_id' => TTUUID::castUUID($company_id),
+					'company_id' => (int)$company_id,
 					'created_date' => $date,
 					'updated_date' => $date,
 					);
@@ -344,15 +286,6 @@ class CompanyGenericTagListFactory extends CompanyGenericTagFactory implements I
 		return FALSE;
 	}
 
-	/**
-	 * @param string $company_id UUID
-	 * @param $filter_data
-	 * @param int $limit Limit the number of records returned
-	 * @param int $page Page number of records to return for pagination
-	 * @param array $where Additional SQL WHERE clause in format of array( $column => $filter, ... ). ie: array( 'id' => 1, ... )
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return bool|CompanyGenericTagListFactory
-	 */
 	function getAPISearchByCompanyIdAndArrayCriteria( $company_id, $filter_data, $limit = NULL, $page = NULL, $where = NULL, $order = NULL ) {
 		if ( $company_id == '') {
 			return FALSE;
@@ -386,7 +319,7 @@ class CompanyGenericTagListFactory extends CompanyGenericTagFactory implements I
 		$uf = new UserFactory();
 
 		$ph = array(
-					'company_id' => TTUUID::castUUID($company_id),
+					'company_id' => (int)$company_id,
 					);
 
 		$query = '
@@ -402,9 +335,9 @@ class CompanyGenericTagListFactory extends CompanyGenericTagFactory implements I
 						LEFT JOIN '. $uf->getTable() .' as z ON ( a.updated_by = z.id AND z.deleted = 0 )
 					where	a.company_id = ?';
 
-		$query .= ( isset($filter_data['permission_children_ids']) ) ? $this->getWhereClauseSQL( 'a.created_by', $filter_data['permission_children_ids'], 'uuid_list', $ph ) : NULL;
-		$query .= ( isset($filter_data['id']) ) ? $this->getWhereClauseSQL( 'a.id', $filter_data['id'], 'uuid_list', $ph ) : NULL;
-		$query .= ( isset($filter_data['exclude_id']) ) ? $this->getWhereClauseSQL( 'a.id', $filter_data['exclude_id'], 'not_uuid_list', $ph ) : NULL;
+		$query .= ( isset($filter_data['permission_children_ids']) ) ? $this->getWhereClauseSQL( 'a.created_by', $filter_data['permission_children_ids'], 'numeric_list', $ph ) : NULL;
+		$query .= ( isset($filter_data['id']) ) ? $this->getWhereClauseSQL( 'a.id', $filter_data['id'], 'numeric_list', $ph ) : NULL;
+		$query .= ( isset($filter_data['exclude_id']) ) ? $this->getWhereClauseSQL( 'a.id', $filter_data['exclude_id'], 'not_numeric_list', $ph ) : NULL;
 
 		$query .= ( isset($filter_data['object_type_id']) ) ? $this->getWhereClauseSQL( 'a.object_type_id', $filter_data['object_type_id'], 'numeric_list', $ph ) : NULL;
 		$query .= ( isset($filter_data['name']) ) ? $this->getWhereClauseSQL( 'a.name', $filter_data['name'], 'text_metaphone', $ph ) : NULL;

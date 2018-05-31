@@ -1,7 +1,7 @@
 <?php
 /*********************************************************************************
  * TimeTrex is a Workforce Management program developed by
- * TimeTrex Software Inc. Copyright (C) 2003 - 2018 TimeTrex Software Inc.
+ * TimeTrex Software Inc. Copyright (C) 2003 - 2017 TimeTrex Software Inc.
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Affero General Public License version 3 as published by
@@ -59,8 +59,6 @@ if ( $argc < 2 OR in_array ($argv[1], array('--help', '-help', '-h', '-?') ) ) {
 	$help_output .= "    -f (Force creating data even if DEMO_MODE is not enabled. *NOT RECOMMENDED*)\n";
 	$help_output .= "    -s [Numeric USER NAME suffix, ie: '100' to create user names like: 'demoadmin100']\n";
 	$help_output .= "    -n [Number of random users to create above 25]\n";
-	$help_output .= "    -date [Static date to base all other dates on]\n";
-	$help_output .= "    -skip [Skip objects, ie: schedule,punch,invoice,expense,document,hr]\n";
 
 	echo $help_output;
 } else {
@@ -76,56 +74,27 @@ if ( $argc < 2 OR in_array ($argv[1], array('--help', '-help', '-h', '-?') ) ) {
 		$data['random_users'] = 0;
 	}
 
-	if ( in_array('-date', $argv) ) {
-		$data['date'] = trim($argv[(array_search('-date', $argv) + 1)]);
-	} else {
-		$data['date'] = time();
-	}
-
 	if ( in_array('-f', $argv) ) {
 		$data['force'] = TRUE;
 	} else {
 		$data['force'] = FALSE;
 	}
 
-	if ( in_array('-skip', $argv) ) {
-		$skip = explode(',', trim($argv[( array_search('-skip', $argv) + 1)]) );
-	} else {
-		$skip = array();
-	}
-
 	$config_vars['other']['demo_mode'] = TRUE;
 	$config_vars['other']['enable_plugins'] = FALSE; //Disable plugins as they shouldn't be needed and likely just cause problems.
-	$config_vars['other']['disable_audit_log'] = TRUE; //Disable audit logging during initial creation of data to help speed things up.
-	$config_vars['other']['disable_audit_log_detail'] = TRUE; //Disable audit logging during initial creation of data to help speed things up.
 
 	if ( DEMO_MODE == TRUE OR $data['force'] === TRUE ) {
 		SystemSettingListFactory::setSystemSetting( 'system_version', APPLICATION_VERSION );
 		SystemSettingListFactory::setSystemSetting( 'tax_engine_version', '1.1.0' );
 		SystemSettingListFactory::setSystemSetting( 'tax_data_version', date('Ymd') );
-
+		
 		Debug::Text('Generating DEMO Data...', __FILE__, __LINE__, __METHOD__, 10);
 		echo "UserName suffix: ". $data['suffix'] ." Max Random Users: ". $data['random_users'] ."<br>\n";
 		sleep(1);
 
 		$dd = new DemoData();
-		$dd->setDate( TTDate::getMiddleDayEpoch( TTDate::strtotime($data['date']) ) ); //Always use middle day epoch so its consistent across runs on the same day.
 		$dd->setMaxRandomUsers( $data['random_users'] );
 		$dd->setUserNamePostFix( $data['suffix'] );
-
-		if ( is_array($skip) ) {
-			foreach($skip as $skip_object) {
-				if ( isset($dd->create_data[$skip_object]) ) {
-					Debug::Text('  Skipping Object: '. $skip_object, __FILE__, __LINE__, __METHOD__, 10);
-					echo "  Skipping Object: ". $skip_object ."\n";
-					$dd->create_data[$skip_object] = FALSE;
-				}
-			}
-		}
-		flush();
-		ob_flush();
-		sleep(5);
-
 		$dd->generateData();
 		Debug::Text('Done Generating DEMO Data!', __FILE__, __LINE__, __METHOD__, 10);
 	} else {

@@ -1,7 +1,7 @@
 <?php
 /*********************************************************************************
  * TimeTrex is a Workforce Management program developed by
- * TimeTrex Software Inc. Copyright (C) 2003 - 2018 TimeTrex Software Inc.
+ * TimeTrex Software Inc. Copyright (C) 2003 - 2017 TimeTrex Software Inc.
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Affero General Public License version 3 as published by
@@ -50,9 +50,6 @@ class ScheduleSummaryReport extends Report {
 										'pdf_schedule_print'
 									);
 
-	/**
-	 * ScheduleSummaryReport constructor.
-	 */
 	function __construct() {
 		$this->title = TTi18n::getText('Schedule Summary Report');
 		$this->file_name = 'schedule_summary_report';
@@ -62,11 +59,6 @@ class ScheduleSummaryReport extends Report {
 		return TRUE;
 	}
 
-	/**
-	 * @param string $user_id UUID
-	 * @param string $company_id UUID
-	 * @return bool
-	 */
 	protected function _checkPermissions( $user_id, $company_id ) {
 		if ( $this->getPermissionObject()->Check('report', 'enabled', $user_id, $company_id )
 				AND $this->getPermissionObject()->Check('report', 'view_schedule_summary', $user_id, $company_id ) ) { //Piggyback on timesheet summary permissions.
@@ -94,11 +86,6 @@ class ScheduleSummaryReport extends Report {
 		return FALSE;
 	}
 
-	/**
-	 * @param $name
-	 * @param null $params
-	 * @return array|bool|mixed|null
-	 */
 	protected function _getOptions( $name, $params = NULL ) {
 		$retval = NULL;
 		switch( $name ) {
@@ -117,7 +104,7 @@ class ScheduleSummaryReport extends Report {
 										//Static Columns - Aggregate functions can't be used on these.
 										'-1000-template' => TTi18n::gettext('Template'),
 										'-1010-time_period' => TTi18n::gettext('Time Period'),
-										'-2000-legal_entity_id' => TTi18n::gettext('Legal Entity'),
+
 										'-2010-user_status_id' => TTi18n::gettext('Employee Status'),
 										'-2020-user_group_id' => TTi18n::gettext('Employee Group'),
 										'-2030-user_title_id' => TTi18n::gettext('Employee Title'),
@@ -675,11 +662,6 @@ class ScheduleSummaryReport extends Report {
 	}
 
 	//Get raw data for report
-
-	/**
-	 * @param null $format
-	 * @return bool
-	 */
 	function _getData( $format = NULL ) {
 		$this->tmp_data = array('schedule' => array(), 'user' => array(), 'total_shift' => array() );
 
@@ -697,7 +679,7 @@ class ScheduleSummaryReport extends Report {
 
 		//If we don't have permissions to view open shifts, exclude user_id = 0;
 		if ( $this->getPermissionObject()->Check('schedule', 'view_open') == FALSE ) {
-			$filter_data['exclude_user_id'] = array( TTUUID::getZeroID() );
+			$filter_data['exclude_user_id'] = array(0);
 		}
 
 		if ( strpos( $format, 'schedule' ) === FALSE ) { //Avoid running these queries when printing out the schedule.
@@ -807,7 +789,7 @@ class ScheduleSummaryReport extends Report {
 		}
 
 		//Add OPEN user to the list so it can printed on schedules.
-		$this->tmp_data['user'][TTUUID::getZeroID()] = $this->form_data['user'][TTUUID::getZeroID()] = array(
+		$this->tmp_data['user'][0] = $this->form_data['user'][0] = array(
 										'first_name' => TTi18n::getText('OPEN'),
 										'last_name' => '',
 										);
@@ -818,15 +800,11 @@ class ScheduleSummaryReport extends Report {
 	}
 
 	//PreProcess data such as calculating additional columns from raw data etc...
-
-	/**
-	 * @return bool
-	 */
 	function _preProcess() {
 		$this->getProgressBarObject()->start( $this->getAMFMessageID(), count($this->tmp_data['schedule']), NULL, TTi18n::getText('Pre-Processing Data...') );
 
 		//Merge time data with user data
-		//$key = 0;
+		$key = 0;
 		if ( isset($this->tmp_data['schedule']) ) {
 			foreach( $this->tmp_data['schedule'] as $user_id => $level_1 ) {
 				if ( isset($this->tmp_data['user'][$user_id]) ) {
@@ -839,7 +817,7 @@ class ScheduleSummaryReport extends Report {
 						$this->data[] = array_merge( $row, $this->tmp_data['user'][$user_id], $date_columns, $processed_data );
 
 						$this->getProgressBarObject()->set( $this->getAMFMessageID(), $key );
-						//$key++;
+						$key++;
 					}
 				}
 			}
@@ -851,15 +829,6 @@ class ScheduleSummaryReport extends Report {
 		return TRUE;
 	}
 
-	/**
-	 * @param null $branch
-	 * @param null $department
-	 * @param null $job
-	 * @param null $job_item
-	 * @param null $user
-	 * @param bool $new_page
-	 * @return bool
-	 */
 	function scheduleHeader( $branch = NULL, $department = NULL, $job = NULL, $job_item = NULL, $user = NULL, $new_page = TRUE ) {
 
 		$this->pdf->SetFont($this->config['other']['default_font'], 'B', $this->_pdf_fontSize(16) );
@@ -878,29 +847,29 @@ class ScheduleSummaryReport extends Report {
 		$this->pdf->SetFont($this->config['other']['default_font'], 'B', $this->_pdf_fontSize(16) );
 
 		$label = array();
-		if ( $branch !== 0 AND $branch != '' ) { //This is a name, not a INT or UUID.
+		if ( $branch !== 0 AND $branch != '' ) {
 			$label[] = TTi18n::getText('Branch').': '. $branch;
 		}
-		if ( $department !== 0 AND $department != '' ) { //This is a name, not a INT or UUID.
+		if ( $department !== 0 AND $department != '' ) {
 			$label[] = TTi18n::getText('Department').': '. $department;
 		} else {
-			if ( $branch !== 0 AND $branch != '' ) { //This is a name, not a INT or UUID.
+			if ( $branch !== 0 AND $branch != '' ) {
 				$label[] = TTi18n::getText('Department').': N/A';
 			}
 		}
 
-		if ( $job !== 0 AND $job != '' ) { //This is a name, not a INT or UUID.
+		if ( $job !== 0 AND $job != '' ) {
 			$label[] = TTi18n::getText('Job').': '. $job;
 		}
-		if ( $job_item !== 0 AND $job_item != '' ) { //This is a name, not a INT or UUID.
+		if ( $job_item !== 0 AND $job_item != '' ) {
 			$label[] = TTi18n::getText('Task').': '. $job_item;
 		} else {
-			if ( $job !== 0 AND $job != '' ) { //This is a name, not a INT or UUID.
+			if ( $job !== 0 AND $job != '' ) {
 				$label[] = TTi18n::getText('Task').': N/A';
 			}
 		}
 
-		if ( $user !== 0 AND $user != '' ) { //This is a name, not a INT or UUID.
+		if ( $user !== 0 AND $user != '' ) {
 			$label[] = TTi18n::getText('Employee').': '. $user;
 		}
 
@@ -921,9 +890,6 @@ class ScheduleSummaryReport extends Report {
 		return TRUE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function scheduleFooter() {
 		$margins = $this->pdf->getMargins();
 
@@ -960,9 +926,6 @@ class ScheduleSummaryReport extends Report {
 		return TRUE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function scheduleNoData() {
 		$this->pdf->AddPage();
 		$this->pdf->Ln(50);
@@ -974,9 +937,6 @@ class ScheduleSummaryReport extends Report {
 		return TRUE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function scheduleAddPage() {
 		$this->scheduleFooterWeek();
 		$this->scheduleFooter();
@@ -984,11 +944,6 @@ class ScheduleSummaryReport extends Report {
 		return TRUE;
 	}
 
-	/**
-	 * @param $height
-	 * @param bool $add_page
-	 * @return bool
-	 */
 	function scheduleCheckPageBreak( $height, $add_page = TRUE ) {
 		$margins = $this->pdf->getMargins();
 
@@ -1001,12 +956,6 @@ class ScheduleSummaryReport extends Report {
 		return FALSE;
 	}
 
-	/**
-	 * @param $start_week_day
-	 * @param array $column_widths
-	 * @param $format
-	 * @return bool
-	 */
 	function scheduleDayOfWeekNameHeader( $start_week_day, $column_widths, $format ) {
 		if ( isset($column_widths['day']) ) {
 			$this->pdf->SetFont($this->config['other']['default_font'], 'B', $this->_pdf_fontSize(8) );
@@ -1030,13 +979,6 @@ class ScheduleSummaryReport extends Report {
 		return FALSE;
 	}
 
-	/**
-	 * @param $calendar_array
-	 * @param array $column_widths
-	 * @param $format
-	 * @param bool $new_page
-	 * @return bool
-	 */
 	function scheduleWeekHeader( $calendar_array, $column_widths, $format, $new_page = FALSE ) {
 		if ( is_array($calendar_array) AND isset($column_widths['day']) ) {
 			$this->pdf->setFillColor(220, 220, 220);
@@ -1069,15 +1011,6 @@ class ScheduleSummaryReport extends Report {
 		return FALSE;
 	}
 
-	/**
-	 * @param $schedule_data
-	 * @param $calendar_array
-	 * @param $start_week_day
-	 * @param array $column_widths
-	 * @param $format
-	 * @param int $row
-	 * @return bool
-	 */
 	function scheduleUserWeek( $schedule_data, $calendar_array, $start_week_day, $column_widths, $format, $row = 0 ) {
 		if ( is_array($calendar_array) AND isset($column_widths['day']) AND is_array($schedule_data) AND count($schedule_data) > 0 ) {
 			if ( ($row % 2) == 0 ) {
@@ -1183,20 +1116,21 @@ class ScheduleSummaryReport extends Report {
 						$lines_per_day = 0;
 						if ( isset($schedule_data[$date_stamp]) ) {
 							$lines_per_day += count($schedule_data[$date_stamp]);
-							$unique_branch = ( $unique_branch + array_flip( array_keys( $schedule_data[$date_stamp] ) ) ); //Don't use array_merge here, as it breaks due to integer keys not being overwritten but combined/added.
 							foreach( $schedule_data[$date_stamp] as $branch => $level_2 ) {
+								$unique_branch[$branch] = TRUE;
 
 								$lines_per_day += count($level_2);
-								$unique_department = ( $unique_department + array_flip( array_keys( $level_2 ) ) );
 								foreach( $level_2 as $department => $level_3 ) {
+									$unique_department[$department] = TRUE;
 
 									$lines_per_day += count($level_3);
-									$unique_job = ( $unique_job + array_flip( array_keys( $level_3 ) ) );
 									foreach( $level_3 as $job => $level_4 ) {
+										$unique_job[$job] = TRUE;
 
 										$lines_per_day += count($level_4);
-										$unique_job_item = ( $unique_job_item + array_flip( array_keys( $level_4 ) ) );
 										foreach( $level_4 as $job_item => $level_5 ) {
+											$unique_job_item[$job_item] = TRUE;
+
 											$lines_per_day += count($level_5);
 											if ( $user_id == FALSE AND isset($level_5[0]['user_id']) ) {
 												$user_id = $level_5[0]['user_id'];
@@ -1264,7 +1198,7 @@ class ScheduleSummaryReport extends Report {
 					}
 
 					if ( $s > 0 ) {
-						//$schedule_key = key($schedule_data);
+						$schedule_key = key($schedule_data);
 
 						if ( isset($this->form_data['user'][$user_id]) ) {
 							$user_data = $this->form_data['user'][$user_id];
@@ -1300,14 +1234,14 @@ class ScheduleSummaryReport extends Report {
 								$x = 0;
 								if ( isset($schedule_data[$date_stamp]) ) {
 									foreach( $schedule_data[$date_stamp] as $branch => $level_2 ) {
-										if ( $branch !== 0 AND ( $multiple_branches == TRUE OR $branch != $level_5[0]['default_branch'] ) ) { //Branch is a name, NOT a UUID! Don't display the employees default branch to save space.
+										if ( $branch !== 0 AND ( $multiple_branches == TRUE OR $branch != $level_5[0]['default_branch'] ) ) { //Don't display the employees default branch to save space.
 											$this->pdf->setFillColor(215, 215, 215);
 											$this->pdf->SetFont($this->config['other']['default_font'], 'B', $this->_pdf_fontSize(8) );
 											$this->pdf->Cell($column_widths['day'], $row_height, $branch, 'LR', 2, 'C', TRUE, NULL, 1);
 											$x++;
 										}
 										foreach( $level_2 as $department => $level_3 ) {
-											if ( $department !== 0 AND ( $multiple_departments == TRUE OR $department != $level_5[0]['default_department'] ) ) { //Department is a name, NOT a UUID!  Don't display the employees default branch to save space.
+											if ( $department !== 0 AND ( $multiple_departments == TRUE OR $department != $level_5[0]['default_department'] ) ) { //Don't display the employees default branch to save space.
 												$this->pdf->setFillColor(230, 230, 230);
 												$this->pdf->SetFont($this->config['other']['default_font'], 'B', $this->_pdf_fontSize(8) );
 												$this->pdf->Cell($column_widths['day'], $row_height, $department, 'LR', 2, 'C', TRUE, NULL, 1);
@@ -1374,9 +1308,6 @@ class ScheduleSummaryReport extends Report {
 		return FALSE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function scheduleFooterWeek() {
 		$week_width = ($this->pdf->getPageWidth() - $this->config['other']['left_margin']);
 		$this->pdf->Line( $this->pdf->getX(), $this->pdf->getY(), $week_width, $this->pdf->getY() );
@@ -1384,10 +1315,6 @@ class ScheduleSummaryReport extends Report {
 		return TRUE;
 	}
 
-	/**
-	 * @param $format
-	 * @return bool|string
-	 */
 	function _outputPDFSchedule( $format ) {
 		Debug::Text(' Format: '. $format, __FILE__, __LINE__, __METHOD__, 10);
 
@@ -1423,7 +1350,7 @@ class ScheduleSummaryReport extends Report {
 
 		//If we don't have permissions to view open shifts, exclude user_id = 0;
 		if ( $this->getPermissionObject()->Check('schedule', 'view_open') == FALSE ) {
-			$filter_data['exclude_id'] = array( TTUUID::getZeroID() );
+			$filter_data['exclude_id'] = array(0);
 		}
 
 		$raw_schedule_shifts = $sf->getScheduleArray( $filter_data );
@@ -1587,7 +1514,7 @@ class ScheduleSummaryReport extends Report {
 											$i++;
 										}
 										unset($calendar_day);
-										$this->scheduleFooterWeek();
+										$this->scheduleFooterWeek( $column_widths );
 										$x++;
 									}
 								}
@@ -1642,7 +1569,7 @@ class ScheduleSummaryReport extends Report {
 								$s = 0;
 								//Handle page break.
 								if ( $this->scheduleCheckPageBreak( $this->_pdf_scaleSize(5), TRUE ) == TRUE ) {
-									$this->scheduleFooterWeek();
+									$this->scheduleFooterWeek( $column_widths );
 									$this->scheduleHeader();
 									$this->scheduleDayOfWeekNameHeader( $start_week_day, $column_widths, $format );
 									$this->scheduleWeekHeader( $calendar_week_array, $column_widths, $format, TRUE );
@@ -1660,7 +1587,7 @@ class ScheduleSummaryReport extends Report {
 								$key++;
 							}
 
-							$this->scheduleFooterWeek();
+							$this->scheduleFooterWeek( $column_widths );
 						}
 
 						$i++;
@@ -1687,7 +1614,7 @@ class ScheduleSummaryReport extends Report {
 							$this->pdf->AddPage( $this->config['other']['page_orientation'], 'LETTER' );
 
 							$split_name = explode( '_', $user_full_name );
-							$this->scheduleHeader( NULL, NULL, NULL, NULL, $split_name[1] .' '. $split_name[0] );
+							$this->scheduleHeader( NULL, NULL, $split_name[1] .' '. $split_name[0] );
 							unset($split_name);
 
 							$this->scheduleDayOfWeekNameHeader( $start_week_day, $column_widths, $format );
@@ -1729,7 +1656,7 @@ class ScheduleSummaryReport extends Report {
 								$i++;
 							}
 
-							$this->scheduleFooterWeek();
+							$this->scheduleFooterWeek( $column_widths );
 							$this->scheduleFooter();
 						}
 					} else {
@@ -1749,10 +1676,6 @@ class ScheduleSummaryReport extends Report {
 		return FALSE;
 	}
 
-	/**
-	 * @param null $format
-	 * @return array|bool|string
-	 */
 	function _output( $format = NULL ) {
 		//Individual Schedules
 		//Group - Combined (all branch/department combined together)

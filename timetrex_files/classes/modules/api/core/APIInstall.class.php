@@ -1,7 +1,7 @@
 <?php
 /*********************************************************************************
  * TimeTrex is a Workforce Management program developed by
- * TimeTrex Software Inc. Copyright (C) 2003 - 2018 TimeTrex Software Inc.
+ * TimeTrex Software Inc. Copyright (C) 2003 - 2017 TimeTrex Software Inc.
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Affero General Public License version 3 as published by
@@ -41,18 +41,12 @@
 class APIInstall extends APIFactory {
 	protected $main_class = 'Install';
 
-	/**
-	 * APIInstall constructor.
-	 */
 	public function __construct() {
 		parent::__construct(); //Make sure parent constructor is always called.
 
 		return TRUE;
 	}
 
-	/**
-	 * @return array|bool
-	 */
 	function getLicense() {
 		$install_obj = new Install();
 
@@ -77,10 +71,6 @@ class APIInstall extends APIFactory {
 
 	}
 
-	/**
-	 * @param int $external_installer
-	 * @return array|bool
-	 */
 	function getRequirements( $external_installer = 0 ) {
 		$install_obj = new Install();
 		$retval = array();
@@ -129,7 +119,7 @@ class APIInstall extends APIFactory {
 				$retval['soap'] = $install_obj->checkSOAP();
 				$retval['gd'] = $install_obj->checkGD();
 				$retval['json'] = $install_obj->checkJSON();
-				//$retval['mcrypt'] = $install_obj->checkMCRYPT();
+				$retval['mcrypt'] = $install_obj->checkMCRYPT();
 				$retval['simplexml'] = $install_obj->checkSimpleXML();
 				$retval['curl'] = $install_obj->checkCURL();
 				$retval['zip'] = $install_obj->checkZIP();
@@ -137,7 +127,6 @@ class APIInstall extends APIFactory {
 				$retval['mail'] = $install_obj->checkMAIL();
 				$retval['pear'] = $install_obj->checkPEAR();
 				$retval['safe_mode'] = $install_obj->checkPHPSafeMode();
-				$retval['disabled_functions'] = array( 'check_disabled_functions' => $install_obj->checkPHPDisabledFunctions(), 'disabled_function_list' => $install_obj->getCriticalDisabledFunctionList() );
 				$retval['allow_fopen_url'] = $install_obj->checkPHPAllowURLFopen();
 				$retval['magic_quotes'] = $install_obj->checkPHPMagicQuotesGPC();
 				$retval['disk_space'] = $install_obj->checkDiskSpace();
@@ -167,6 +156,7 @@ class APIInstall extends APIFactory {
 
 				$retval['cache_dir'] = array(
 					'check_writable_cache_directory' => $install_obj->checkWritableCacheDirectory(),
+					'check_safe_cache_directory' => $install_obj->checkSafeCacheDirectory(),
 					'cache_dir' => $install_obj->config_vars['cache']['dir']
 				);
 				$retval['safe_cache_dir'] = array(
@@ -186,7 +176,7 @@ class APIInstall extends APIFactory {
 				);
 
 				$retval['log_dir'] = array(
-					'check_writable_log_directory' => $install_obj->checkWritableLogDirectory(),
+					'check_safe_log_directory' => $install_obj->checkSafeLogDirectory(),
 					'log_path' => $install_obj->config_vars['path']['log'],
 				);
 				$retval['safe_log_dir'] = array(
@@ -203,13 +193,12 @@ class APIInstall extends APIFactory {
 
 				$extended_error_messages = $install_obj->getExtendedErrorMessage();
 
-				if ( is_array($extended_error_messages) AND count( $extended_error_messages ) > 0 ) {
+				if ( count( $extended_error_messages ) > 0 ) {
 					$retval['extended_error_messages'] = $extended_error_messages;
 				} else {
 					$retval['extended_error_messages'] = array();
 				}
 
-				Debug::Arr( $retval, 'Retval: ', __FILE__, __LINE__, __METHOD__, 10);
 				return $this->returnHandler( $retval );
 			}
 		}
@@ -217,10 +206,6 @@ class APIInstall extends APIFactory {
 		return $this->returnHandler( FALSE );
 	}
 
-	/**
-	 * @param $data
-	 * @return array|bool
-	 */
 	function testConnection( $data ) {
 		$install_obj = new Install();
 
@@ -294,9 +279,6 @@ class APIInstall extends APIFactory {
 		return $this->returnHandler( FALSE );
 	}
 
-	/**
-	 * @return array|bool
-	 */
 	function getDatabaseConfig() {
 
 		global $config_vars;
@@ -337,10 +319,6 @@ class APIInstall extends APIFactory {
 		return $this->returnHandler( FALSE );
 	}
 
-	/**
-	 * @param $data
-	 * @return array|bool
-	 */
 	function createDatabase( $data ) {
 		global $config_vars;
 		$install_obj = new Install();
@@ -389,7 +367,7 @@ class APIInstall extends APIFactory {
 			}
 
 			//Make sure InnoDB engine exists on MySQL
-			//if ( $install_obj->getDatabaseType() != 'mysql' OR ( $install_obj->getDatabaseType() == 'mysql' AND $install_obj->checkDatabaseEngine() == TRUE ) ) {
+			if ( $install_obj->getDatabaseType() != 'mysql' OR ( $install_obj->getDatabaseType() == 'mysql' AND $install_obj->checkDatabaseEngine() == TRUE ) ) {
 				//Check again to make sure database exists.
 				$install_obj->setNewDatabaseConnection($data['final_type'], $host, $tmp_user_name, $tmp_password, $data['database_name']);
 				if ( $install_obj->checkDatabaseExists($data['database_name']) == TRUE ) {
@@ -410,10 +388,10 @@ class APIInstall extends APIFactory {
 				} else {
 					Debug::Text('zDatabase does not exist.', __FILE__, __LINE__, __METHOD__, 10);
 				}
-//			} else {
-//				$database_engine = FALSE;
-//				Debug::Text('MySQL does not support InnoDB storage engine!', __FILE__, __LINE__, __METHOD__, 10);
-//			}
+			} else {
+				$database_engine = FALSE;
+				Debug::Text('MySQL does not support InnoDB storage engine!', __FILE__, __LINE__, __METHOD__, 10);
+			}
 
 			$test_connection = NULL;
 			$test_priv_connection = NULL;
@@ -447,9 +425,6 @@ class APIInstall extends APIFactory {
 		return $this->returnHandler( FALSE );
 	}
 
-	/**
-	 * @return array|bool
-	 */
 	function getDatabaseSchema() {
 		global $db, $config_vars;
 		$install_obj = new Install();
@@ -489,10 +464,6 @@ class APIInstall extends APIFactory {
 		return $this->returnHandler( FALSE );
 	}
 
-	/**
-	 * @param int $external_installer
-	 * @return array|bool
-	 */
 	function setDatabaseSchema( $external_installer = 0 ) {
 		ignore_user_abort(TRUE);
 		ini_set( 'max_execution_time', 0 );
@@ -562,9 +533,6 @@ class APIInstall extends APIFactory {
 		return $this->returnHandler( FALSE );
 	}
 
-	/**
-	 * @return array|bool
-	 */
 	function postUpgrade() {
 		global $cache;
 		$install_obj = new Install();
@@ -589,10 +557,6 @@ class APIInstall extends APIFactory {
 		return $this->returnHandler( FALSE );
 	}
 
-	/**
-	 * @param $upgrade
-	 * @return array|bool
-	 */
 	function installDone( $upgrade ) {
 		global $cache;
 
@@ -636,21 +600,13 @@ class APIInstall extends APIFactory {
 
 	}
 
-	/**
-	 * @param $data
-	 * @param int $external_installer
-	 * @return array|bool
-	 */
 	function setSystemSettings( $data, $external_installer = 0 ) {
 		$install_obj = new Install();
 		if ( $install_obj->isInstallMode() == TRUE ) {
-			//
-			//InstallSchema_1000A->postInstall() now sets the registration key and UUID seed.
-			//
 
 			//Set salt if it isn't already.
 			$tmp_config_data = array();
-			$tmp_config_data['other']['salt'] = md5( uniqid( NULL, TRUE ) );
+			$tmp_config_data['other']['salt'] = md5( uniqid() );
 
 			if ( isset($data['base_url']) AND $data['base_url'] != '' ) {
 				$tmp_config_data['path']['base_url'] = $data['base_url'];
@@ -683,6 +639,9 @@ class APIInstall extends APIFactory {
 				SystemSettingFactory::setSystemSetting( 'anonymous_update_notify', 0 );
 			}
 
+			$ttsc = new TimeTrexSoapClient();
+			$ttsc->saveRegistrationKey();
+
 //			$handle = fopen('http://www.timetrex.com/'.URLBuilder::getURL( array('v' => $install_obj->getFullApplicationVersion(), 'page' => 'system_setting', 'update_notify' => (int)$data['update_notify'], 'anonymous_update_notify' => (int)$data['anonymous_update_notify']), 'pre_install.php'), "r");
 //			fclose($handle);
 
@@ -692,9 +651,6 @@ class APIInstall extends APIFactory {
 		return $this->returnHandler( FALSE );
 	}
 
-	/**
-	 * @return array|bool
-	 */
 	function getSystemSettings() {
 		global $config_vars;
 		$install_obj = new Install();
@@ -716,10 +672,6 @@ class APIInstall extends APIFactory {
 		return $this->returnHandler( FALSE );
 	}
 
-	/**
-	 * @param string $company_id UUID
-	 * @return array|bool
-	 */
 	function getCompany( $company_id = NULL ) {
 		$install_obj = new Install();
 		if ( $install_obj->isInstallMode() == TRUE  ) {
@@ -727,7 +679,7 @@ class APIInstall extends APIFactory {
 			$clf = TTnew( 'CompanyListFactory' );
 
 			$company_data = array();
-			if ( isset( $company_id ) AND $company_id != '' ) {
+			if ( isset( $company_id ) AND (int)$company_id > 0 ) {
 				$clf->getByCompanyId( $company_id );
 				if (  $clf->getRecordCount() == 1 ) {
 					$cf = $clf->getCurrent();
@@ -765,10 +717,6 @@ class APIInstall extends APIFactory {
 		return $this->returnHandler( FALSE );
 	}
 
-	/**
-	 * @param $company_data
-	 * @return array|bool
-	 */
 	function setCompany( $company_data ) {
 		if ( !is_array( $company_data ) ) {
 			return $this->returnHandler( FALSE );
@@ -778,7 +726,7 @@ class APIInstall extends APIFactory {
 		if ( $install_obj->isInstallMode() == TRUE ) {
 			$cf = TTnew( 'CompanyFactory' );
 			$clf = TTnew( 'CompanyListFactory' );
-			if ( isset( $company_data['company_id'] ) AND $company_data['company_id'] != ''  ) {
+			if ( isset( $company_data['company_id'] ) AND (int)$company_data['company_id'] > 0  ) {
 				$clf->getById( $company_data['company_id'] );
 				if ( $clf->getRecordCount() == 1 ) {
 					$cf = $clf->getCurrent();
@@ -798,7 +746,6 @@ class APIInstall extends APIFactory {
 			$cf->setPostalCode($company_data['postal_code']);
 			$cf->setWorkPhone($company_data['work_phone']);
 
-			$cf->setEnableAddLegalEntity( TRUE );
 			$cf->setEnableAddCurrency( TRUE );
 			$cf->setEnableAddPermissionGroupPreset( TRUE );
 			$cf->setEnableAddUserDefaultPreset( TRUE );
@@ -827,20 +774,15 @@ class APIInstall extends APIFactory {
 		return $this->returnHandler( FALSE );
 	}
 
-	/**
-	 * @param string $company_id UUID
-	 * @param string $user_id UUID
-	 * @return array|bool
-	 */
 	function getUser( $company_id, $user_id ) {
 		$install_obj = new Install();
 		if ( $install_obj->isInstallMode() == TRUE ) {
 			$user_data = array();
-			if ( isset($company_id) AND $company_id != '' ) {
+			if ( isset($company_id) AND (int)$company_id > 0 ) {
 				$user_data['company_id'] = $company_id;
 			}
 
-			if ( isset($user_id) AND $user_id != '' ) {
+			if ( isset($user_id) AND (int)$user_id > 0 ) {
 				$ulf = TTnew('UserListFactory');
 				$ulf->getById( $user_id );
 				if ( $ulf->getRecordCount() == 1 ) {
@@ -863,17 +805,12 @@ class APIInstall extends APIFactory {
 		return $this->returnHandler( FALSE );
 	}
 
-	/**
-	 * @param $user_data
-	 * @param int $external_installer
-	 * @return array|bool
-	 */
 	function setUser( $user_data, $external_installer = 0 ) {
 		$install_obj = new Install();
 		if ( $install_obj->isInstallMode() == TRUE ) {
 			$uf = TTnew( 'UserFactory' );
 			$ulf = TTnew( 'UserListFactory' );
-			if ( isset( $user_data['user_id'] ) AND $user_data['user_id'] != ''  ) {
+			if ( isset( $user_data['user_id'] ) AND (int)$user_data['user_id'] > 0  ) {
 				$ulf->getByIdAndCompanyId( $user_data['user_id'], $user_data['company_id'] );
 				if ( $ulf->getRecordCount() == 1 ) {
 					$uf = $ulf->getCurrent();
@@ -881,17 +818,8 @@ class APIInstall extends APIFactory {
 			} else {
 				$uf->setId( $uf->getNextInsertId() ); //Because password encryption requires the user_id, we need to get it first when creating a new employee.
 			}
-
-			//Grab first legal entity associated with this company.
-			$lef = TTnew('LegalEntityListFactory');
-			$lef->getByCompanyId( $user_data['company_id'] );
-			if ( $lef->getRecordCount() > 0 ) {
-				$le_obj = $lef->getCurrent();
-			}
-
 			$uf->StartTransaction();
 			$uf->setCompany( $user_data['company_id'] );
-			$uf->setLegalEntity( $le_obj->getId() );
 			$uf->setStatus( 10 );
 			$uf->setUserName($user_data['user_name']);
 			if ( !empty($user_data['password']) AND $user_data['password'] == $user_data['password2'] ) {
@@ -974,10 +902,6 @@ class APIInstall extends APIFactory {
 		return $this->returnHandler( FALSE );
 	}
 
-	/**
-	 * @param $country
-	 * @return array|bool
-	 */
 	function getProvinceOptions( $country ) {
 		Debug::Arr($country, 'aCountry: ', __FILE__, __LINE__, __METHOD__, 10);
 
@@ -1013,10 +937,6 @@ class APIInstall extends APIFactory {
 		return $this->returnHandler( $retarr );
 	}
 
-	/**
-	 * @param null $data
-	 * @return array|bool
-	 */
 	function getMaintenanceJobs( $data = NULL ) {
 		$install_obj = new Install();
 

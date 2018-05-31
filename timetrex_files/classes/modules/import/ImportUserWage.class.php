@@ -1,7 +1,7 @@
 <?php
 /*********************************************************************************
  * TimeTrex is a Workforce Management program developed by
- * TimeTrex Software Inc. Copyright (C) 2003 - 2018 TimeTrex Software Inc.
+ * TimeTrex Software Inc. Copyright (C) 2003 - 2017 TimeTrex Software Inc.
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Affero General Public License version 3 as published by
@@ -45,11 +45,6 @@ class ImportUserWage extends Import {
 
 	public $wage_group_options = FALSE;
 
-	/**
-	 * @param $name
-	 * @param null $parent
-	 * @return array|bool|null
-	 */
 	function _getFactoryOptions( $name, $parent = NULL ) {
 
 		$retval = NULL;
@@ -72,6 +67,7 @@ class ImportUserWage extends Import {
 								);
 				break;
 			case 'parse_hint':
+			case 'parse_hint':
 				$upf = TTnew('UserPreferenceFactory');
 
 				$retval = array(
@@ -85,11 +81,6 @@ class ImportUserWage extends Import {
 	}
 
 
-	/**
-	 * @param $row_number
-	 * @param $raw_row
-	 * @return mixed
-	 */
 	function _preParseRow( $row_number, $raw_row ) {
 		$user_id = $this->getUserIdByRowData( $raw_row ); //Try to get user_id of row so we set default effective_date to the employees hire_date.
 		$user_wage_default_data = $this->getObject()->stripReturnHandler( $this->getObject()->getUserWageDefaultData( $user_id ) );
@@ -100,11 +91,6 @@ class ImportUserWage extends Import {
 		return $retval;
 	}
 
-	/**
-	 * @param $row_number
-	 * @param $raw_row
-	 * @return mixed
-	 */
 	function _postParseRow( $row_number, $raw_row ) {
 		$raw_row['user_id'] = $this->getUserIdByRowData( $raw_row );
 		if ( $raw_row['user_id'] == FALSE ) {
@@ -115,10 +101,6 @@ class ImportUserWage extends Import {
 		return $raw_row;
 	}
 
-	/**
-	 * @param int $validate_only EPOCH
-	 * @return mixed
-	 */
 	function _import( $validate_only ) {
 		return $this->getObject()->setUserWage( $this->getParsedData(), $validate_only );
 	}
@@ -126,9 +108,6 @@ class ImportUserWage extends Import {
 	//
 	// Generic parser functions.
 	//
-	/**
-	 * @return bool
-	 */
 	function getWageGroupOptions() {
 		//Get job titles
 		$wglf = TTNew('WageGroupListFactory');
@@ -138,16 +117,9 @@ class ImportUserWage extends Import {
 
 		return TRUE;
 	}
-
-	/**
-	 * @param $input
-	 * @param null $default_value
-	 * @param null $parse_hint
-	 * @return array|bool|int|mixed
-	 */
 	function parse_wage_group( $input, $default_value = NULL, $parse_hint = NULL ) {
 		if ( trim($input) == '' OR trim(strtolower($input)) == 'default' ) {
-			return TTUUID::getZeroID(); //Default Wage Group
+			return 0; //Default Wage Group
 		}
 
 		if ( !is_array( $this->wage_group_options ) ) {
@@ -163,13 +135,6 @@ class ImportUserWage extends Import {
 	}
 
 
-	/**
-	 * @param $input
-	 * @param null $default_value
-	 * @param null $parse_hint
-	 * @param null $raw_row
-	 * @return bool|false|int
-	 */
 	function parse_effective_date( $input, $default_value = NULL, $parse_hint = NULL, $raw_row = NULL ) {
 		if ( isset($parse_hint) AND $parse_hint != '' ) {
 			TTDate::setDateFormat( $parse_hint );
@@ -179,13 +144,6 @@ class ImportUserWage extends Import {
 		}
 	}
 
-	/**
-	 * @param $input
-	 * @param null $default_value
-	 * @param null $parse_hint
-	 * @param null $raw_row
-	 * @return array|bool|int|mixed
-	 */
 	function parse_type( $input, $default_value = NULL, $parse_hint = NULL, $raw_row = NULL ) {
 		$uwf = TTnew('UserWageFactory');
 		$options = Misc::trimSortPrefix( $uwf->getOptions( 'type' ) );
@@ -217,13 +175,6 @@ class ImportUserWage extends Import {
 		return $retval;
 	}
 
-	/**
-	 * @param $input
-	 * @param null $default_value
-	 * @param null $parse_hint
-	 * @param null $raw_row
-	 * @return bool|float|int|number|string
-	 */
 	function parse_weekly_time( $input, $default_value = NULL, $parse_hint = NULL, $raw_row = NULL ) {
 		if ( isset($parse_hint) AND $parse_hint != '' ) {
 			TTDate::setTimeUnitFormat( $parse_hint );
@@ -234,13 +185,6 @@ class ImportUserWage extends Import {
 		return $retval;
 	}
 
-	/**
-	 * @param $input
-	 * @param null $default_value
-	 * @param null $parse_hint
-	 * @param null $raw_row
-	 * @return mixed
-	 */
 	function parse_wage( $input, $default_value = NULL, $parse_hint = NULL, $raw_row = NULL ) {
 		$val = new Validator();
 		$retval = $val->stripNonFloat($input);

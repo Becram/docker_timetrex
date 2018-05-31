@@ -1,7 +1,7 @@
 <?php
 /*********************************************************************************
  * TimeTrex is a Workforce Management program developed by
- * TimeTrex Software Inc. Copyright (C) 2003 - 2018 TimeTrex Software Inc.
+ * TimeTrex Software Inc. Copyright (C) 2003 - 2017 TimeTrex Software Inc.
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Affero General Public License version 3 as published by
@@ -60,10 +60,6 @@ class PunchControlFactory extends Factory {
 	protected $plf = NULL;
 	protected $is_total_time_calculated = FALSE;
 
-	/**
-	 * @param $data
-	 * @return array
-	 */
 	function _getVariableToFunctionMap( $data ) {
 			$variable_function_map = array(
 											'id' => 'ID',
@@ -91,23 +87,14 @@ class PunchControlFactory extends Factory {
 			return $variable_function_map;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function getUserObject() {
 		return $this->getGenericObject( 'UserListFactory', $this->getUser(), 'user_obj' );
 	}
 
-	/**
-	 * @return bool
-	 */
 	function getPayPeriodObject() {
 		return $this->getGenericObject( 'PayPeriodListFactory', $this->getPayPeriod(), 'pay_period_obj' );
 	}
 
-	/**
-	 * @return null|object
-	 */
 	function getPLFByPunchControlID() {
 		if ( $this->plf == NULL AND $this->getID() != FALSE ) {
 			$this->plf = TTnew( 'PunchListFactory' );
@@ -117,14 +104,11 @@ class PunchControlFactory extends Factory {
 		return $this->plf;
 	}
 
-	/**
-	 * @return bool|null
-	 */
 	function getPayPeriodScheduleObject() {
 		if ( is_object($this->pay_period_schedule_obj) ) {
 			return $this->pay_period_schedule_obj;
 		} else {
-			if ( TTUUID::isUUID( $this->getUser() ) AND $this->getUser() != TTUUID::getZeroID() AND $this->getUser() != TTUUID::getNotExistID() ) {
+			if ( $this->getUser() > 0 ) {
 				$ppslf = TTnew( 'PayPeriodScheduleListFactory' );
 				$ppslf->getByUserId( $this->getUser() );
 				if ( $ppslf->getRecordCount() == 1 ) {
@@ -137,12 +121,8 @@ class PunchControlFactory extends Factory {
 		}
 	}
 
-	/**
-	 * @return null
-	 */
 	function getShiftData() {
-		if ( $this->shift_data == NULL AND is_object( $this->getPunchObject() )
-				AND TTUUID::isUUID( $this->getUser() ) AND $this->getUser() != TTUUID::getZeroID() AND $this->getUser() != TTUUID::getNotExistID() ) {
+		if ( $this->shift_data == NULL AND is_object( $this->getPunchObject() ) AND $this->getUser() > 0 ) {
 			if ( is_object( $this->getPayPeriodScheduleObject() ) ) {
 				$this->shift_data = $this->getPayPeriodScheduleObject()->getShiftData( NULL, $this->getUser(), $this->getPunchObject()->getTimeStamp(), 'nearest_shift', $this );
 			} else {
@@ -153,23 +133,14 @@ class PunchControlFactory extends Factory {
 		return $this->shift_data;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function getJobObject() {
 		return $this->getGenericObject( 'JobListFactory', $this->getJob(), 'job_obj' );
 	}
 
-	/**
-	 * @return bool
-	 */
 	function getJobItemObject() {
 		return $this->getGenericObject( 'JobItemListFactory', $this->getJobItem(), 'job_item_obj' );
 	}
 
-	/**
-	 * @return bool|null
-	 */
 	function getPunchObject() {
 		if ( is_object($this->punch_obj) ) {
 			return $this->punch_obj;
@@ -177,12 +148,7 @@ class PunchControlFactory extends Factory {
 
 		return FALSE;
 	}
-
-	/**
-	 * @param object $obj
-	 * @return bool
-	 */
-	function setPunchObject( $obj ) {
+	function setPunchObject($obj) {
 		if ( is_object($obj) ) {
 			$this->punch_obj = $obj;
 
@@ -190,7 +156,7 @@ class PunchControlFactory extends Factory {
 			if ( $obj->getUser() != FALSE AND $obj->getUser() != $this->getUser() ) {
 				$this->setUser( $obj->getUser() );
 			}
-			if ( $obj->getTimeStamp() != FALSE AND ( $this->getDateStamp() == FALSE OR TTDate::getMiddleDayEpoch( $obj->getTimeStamp() ) != TTDate::getMiddleDayEpoch( $this->getDateStamp() ) ) ) {
+			if ( $obj->getTimeStamp() != FALSE AND TTDate::getMiddleDayEpoch( $obj->getTimeStamp() ) != TTDate::getMiddleDayEpoch( $this->getDateStamp() ) ) {
 				$this->setDateStamp( $obj->getTimeStamp() );
 			}
 
@@ -200,90 +166,108 @@ class PunchControlFactory extends Factory {
 		return FALSE;
 	}
 
-	/**
-	 * @return bool|mixed
-	 */
 	function getUser() {
-		return $this->getGenericDataValue( 'user_id' );
-	}
-
-	/**
-	 * @param string $id UUID
-	 * @return bool
-	 */
-	function setUser( $value) {
-		$value = TTUUID::castUUID( $value );
-		//Need to be able to support user_id=0 for open shifts. But this can cause problems with importing punches with user_id=0.
-		return $this->setGenericDataValue( 'user_id', $value );
-	}
-
-	/**
-	 * @return bool|mixed
-	 */
-	function getPayPeriod() {
-		return $this->getGenericDataValue( 'pay_period_id' );
-	}
-
-	/**
-	 * @param string $id UUID
-	 * @return bool
-	 */
-	function setPayPeriod( $value = NULL) {
-		if ( $value == NULL ) {
-			$value = PayPeriodListFactory::findPayPeriod( $this->getUser(), $this->getDateStamp() );
+		if ( isset($this->data['user_id']) ) {
+			return (int)$this->data['user_id'];
 		}
-		$value = TTUUID::castUUID( $value );
+
+		return FALSE;
+	}
+	function setUser($id) {
+		$id = (int)$id;
+
+		$ulf = TTnew( 'UserListFactory' );
+
+		//Need to be able to support user_id=0 for open shifts. But this can cause problems with importing punches with user_id=0.
+		if ( $this->Validator->isResultSetWithRows(	'user',
+															$ulf->getByID($id),
+															TTi18n::gettext('Invalid User')
+															) ) {
+			$this->data['user_id'] = $id;
+
+			return TRUE;
+		}
+
+		return FALSE;
+	}
+
+	function getPayPeriod() {
+		if ( isset($this->data['pay_period_id']) ) {
+			return (int)$this->data['pay_period_id'];
+		}
+
+		return FALSE;
+	}
+	function setPayPeriod($id = NULL) {
+		$id = trim($id);
+
+		if ( $id == NULL ) {
+			$id = (int)PayPeriodListFactory::findPayPeriod( $this->getUser(), $this->getDateStamp() );
+		}
+
+		$pplf = TTnew( 'PayPeriodListFactory' );
+
 		//Allow NULL pay period, incase its an absence or something in the future.
 		//Cron will fill in the pay period later.
-		return $this->setGenericDataValue( 'pay_period_id', $value );
+		if (
+				$id == 0
+				OR
+				$this->Validator->isResultSetWithRows(	'pay_period',
+														$pplf->getByID($id),
+														TTi18n::gettext('Invalid Pay Period')
+														) ) {
+			$this->data['pay_period_id'] = $id;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @param bool $raw
-	 * @return bool|false|int
-	 */
 	function getDateStamp( $raw = FALSE ) {
-		$value = $this->getGenericDataValue( 'date_stamp' );
-		if ( $value !== FALSE ) {
+		if ( isset($this->data['date_stamp']) ) {
 			if ( $raw === TRUE ) {
-				return $value;
+				return $this->data['date_stamp'];
 			} else {
-				return TTDate::getMiddleDayEpoch( TTDate::strtotime( $value ) );
+				return TTDate::getMiddleDayEpoch( TTDate::strtotime( $this->data['date_stamp'] ) );
+			}
+		}
+
+		return FALSE;
+	}
+	function setDateStamp($epoch) {
+		$epoch = (int)$epoch;
+		if ( $epoch > 0 ) {
+			$epoch = TTDate::getMiddleDayEpoch( $epoch );
+		}
+
+		if	(	$this->Validator->isDate(		'date_stamp',
+												$epoch,
+												TTi18n::gettext('Incorrect date').'(a)')
+			) {
+
+			if	( $epoch > 0 ) {
+				if ( $this->getDateStamp() !== $epoch AND $this->getOldDateStamp() != $this->getDateStamp() AND (int)$this->getDateStamp() != 0 ) {
+					//Only set OldDateStamp if its not empty, that way it won't override an already set OldDateStamp that is valid.
+					Debug::Text(' Setting Old DateStamp... Current Old DateStamp: '. (int)$this->getOldDateStamp() .' Current DateStamp: '. (int)$this->getDateStamp(), __FILE__, __LINE__, __METHOD__, 10);
+					$this->setOldDateStamp( $this->getDateStamp() );
+				}
+
+				$this->data['date_stamp'] = $epoch;
+
+				$this->setPayPeriod(); //Force pay period to be set as soon as the date is.
+				return TRUE;
+			} else {
+				$this->Validator->isTRUE(		'date_stamp',
+												FALSE,
+												TTi18n::gettext('Incorrect date').'(b)');
 			}
 		}
 
 		return FALSE;
 	}
 
-	/**
-	 * @param int $epoch EPOCH
-	 * @return bool
-	 */
-	function setDateStamp( $value) {
-		$value = (int)$value;
-		if ( $value > 0 ) {
-			$value = TTDate::getMiddleDayEpoch( $value );
-			if ( $this->getDateStamp() !== $value AND $this->getOldDateStamp() != $this->getDateStamp() AND (int)$this->getDateStamp() != 0 ) {
-				//Only set OldDateStamp if its not empty, that way it won't override an already set OldDateStamp that is valid.
-				Debug::Text(' Setting Old DateStamp... Current Old DateStamp: '. (int)$this->getOldDateStamp() .' Current DateStamp: '. (int)$this->getDateStamp(), __FILE__, __LINE__, __METHOD__, 10);
-				$this->setOldDateStamp( $this->getDateStamp() );
-			}
-		}
-
-		$retval = $this->setGenericDataValue( 'date_stamp', $value );
-
-		if ( $value > 0 ) {
-			$this->setPayPeriod(); //Force pay period to be set as soon as the date is.
-		}
-
-		return $retval;
-	}
-
 	//This must be called after PunchObject() has been set and before isValid() is called.
-
-	/**
-	 * @return bool
-	 */
 	function findUserDate() {
 		/*
 			Issues to consider:
@@ -335,7 +319,7 @@ class PunchControlFactory extends Factory {
 		*/
 
 		//Don't allow user_id=0, that is only used for open scheduled shifts, and sometimes this can sneak through during import.
-		if ( TTUUID::castUUID( $this->getUser() ) == TTUUID::getZeroID() ) {
+		if ( $this->getUser() == 0 ) {
 			Debug::Text('ERROR: User ID is 0!: '. $this->getUser(), __FILE__, __LINE__, __METHOD__, 10);
 			return FALSE;
 		}
@@ -409,187 +393,272 @@ class PunchControlFactory extends Factory {
 		return TRUE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function getOldDateStamp() {
-		return $this->getGenericTempDataValue( 'old_date_stamp' );
+		if ( isset($this->tmp_data['old_date_stamp']) ) {
+			return $this->tmp_data['old_date_stamp'];
+		}
+
+		return FALSE;
+	}
+	function setOldDateStamp($date_stamp) {
+		Debug::Text(' Setting Old DateStamp: '. TTDate::getDate('DATE', $date_stamp ), __FILE__, __LINE__, __METHOD__, 10);
+		$this->tmp_data['old_date_stamp'] = TTDate::getMiddleDayEpoch( $date_stamp );
+
+		return TRUE;
 	}
 
-	/**
-	 * @param int $date_stamp EPOCH
-	 * @return bool
-	 */
-	function setOldDateStamp( $value) {
-		Debug::Text(' Setting Old DateStamp: '. TTDate::getDate('DATE', $value ), __FILE__, __LINE__, __METHOD__, 10);
-		return $this->setGenericTempDataValue( 'old_date_stamp', TTDate::getMiddleDayEpoch( $value ) );
-	}
-
-	/**
-	 * @return bool|mixed
-	 */
 	function getBranch() {
-		return $this->getGenericDataValue( 'branch_id' );
-	}
-
-	/**
-	 * @param string $value UUID
-	 * @return bool
-	 */
-	function setBranch( $value) {
-		$value = TTUUID::castUUID( $value );
-
-		if ( $this->getUser() != '' AND is_object( $this->getUserObject() ) AND $value == TTUUID::getNotExistID() ) { //Find default
-			$value = $this->getUserObject()->getDefaultBranch();
-			Debug::Text( 'Using Default Branch: ' . $value, __FILE__, __LINE__, __METHOD__, 10 );
+		if ( isset($this->data['branch_id']) ) {
+			return (int)$this->data['branch_id'];
 		}
-		return $this->setGenericDataValue( 'branch_id', $value );
+
+		return FALSE;
+	}
+	function setBranch($id) {
+		$id = trim($id);
+
+		if ( $id == FALSE OR $id == 0 OR $id == '' ) {
+			$id = 0;
+		}
+
+		if ( $this->getUser() != '' AND is_object( $this->getUserObject() ) AND $id == -1 ) { //Find default
+			$id = $this->getUserObject()->getDefaultBranch();
+			Debug::Text( 'Using Default Branch: ' . $id, __FILE__, __LINE__, __METHOD__, 10 );
+		}
+
+		$blf = TTnew( 'BranchListFactory' );
+
+		if (  $id == 0
+				OR
+				$this->Validator->isResultSetWithRows(	'branch',
+														$blf->getByID($id),
+														TTi18n::gettext('Branch does not exist')
+														) ) {
+			$this->data['branch_id'] = $id;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @return bool|mixed
-	 */
 	function getDepartment() {
-		return $this->getGenericDataValue( 'department_id' );
-	}
-
-	/**
-	 * @param string $value UUID
-	 * @return bool
-	 */
-	function setDepartment( $value) {
-		$value = TTUUID::castUUID( $value );
-
-		if ( $this->getUser() != '' AND is_object( $this->getUserObject() ) AND $value == TTUUID::getNotExistID() ) { //Find default
-			$value = $this->getUserObject()->getDefaultDepartment();
-			Debug::Text( 'Using Default Department: ' . $value, __FILE__, __LINE__, __METHOD__, 10 );
+		if ( isset($this->data['department_id']) ) {
+			return (int)$this->data['department_id'];
 		}
-		return $this->setGenericDataValue( 'department_id', $value );
+
+		return FALSE;
+	}
+	function setDepartment($id) {
+		$id = trim($id);
+
+		if ( $id == FALSE OR $id == 0 OR $id == '' ) {
+			$id = 0;
+		}
+
+		if ( $this->getUser() != '' AND is_object( $this->getUserObject() ) AND $id == -1 ) { //Find default
+			$id = $this->getUserObject()->getDefaultDepartment();
+			Debug::Text( 'Using Default Department: ' . $id, __FILE__, __LINE__, __METHOD__, 10 );
+		}
+
+		$dlf = TTnew( 'DepartmentListFactory' );
+
+		if (  $id == 0
+				OR
+				$this->Validator->isResultSetWithRows(	'department',
+														$dlf->getByID($id),
+														TTi18n::gettext('Department does not exist')
+														) ) {
+			$this->data['department_id'] = $id;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @return bool|mixed
-	 */
 	function getJob() {
-		return $this->getGenericDataValue( 'job_id' );
+		if ( isset($this->data['job_id']) ) {
+			return (int)$this->data['job_id'];
+		}
+
+		return FALSE;
+	}
+	function setJob($id) {
+		$id = trim($id);
+
+		if ( $id == FALSE OR $id == 0 OR $id == '' ) {
+			$id = 0;
+		}
+
+		if ( getTTProductEdition() >= TT_PRODUCT_CORPORATE ) {
+			$jlf = TTnew( 'JobListFactory' );
+		} else {
+			$id = 0;
+		}
+
+		if ( $this->getUser() != '' AND is_object( $this->getUserObject() ) AND $id == -1 ) { //Find default
+			$id = $this->getUserObject()->getDefaultJob();
+			Debug::Text( 'Using Default Job: ' . $id, __FILE__, __LINE__, __METHOD__, 10 );
+		}
+
+		if (  $id == 0
+				OR
+				$this->Validator->isResultSetWithRows(	'job',
+														$jlf->getByID($id),
+														TTi18n::gettext('Job does not exist')
+														) ) {
+			$this->data['job_id'] = $id;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @param string $value UUID
-	 * @return bool
-	 */
-	function setJob( $value) {
-		$value = TTUUID::castUUID( $value );
-		if ( getTTProductEdition() < TT_PRODUCT_CORPORATE ) {
-			$value = TTUUID::getZeroID();
-		}
-		if ( $this->getUser() != '' AND is_object( $this->getUserObject() ) AND $value == TTUUID::getNotExistID() ) { //Find default
-			$value = $this->getUserObject()->getDefaultJob();
-			Debug::Text( 'Using Default Job: ' . $value, __FILE__, __LINE__, __METHOD__, 10 );
-		}
-		return $this->setGenericDataValue( 'job_id', $value );
-	}
-
-	/**
-	 * @return bool|mixed
-	 */
 	function getJobItem() {
-		return $this->getGenericDataValue( 'job_item_id' );
+		if ( isset($this->data['job_item_id']) ) {
+			return (int)$this->data['job_item_id'];
+		}
+
+		return FALSE;
+	}
+	function setJobItem($id) {
+		$id = trim($id);
+
+		if ( $id == FALSE OR $id == 0 OR $id == '' ) {
+			$id = 0;
+		}
+
+		if ( getTTProductEdition() >= TT_PRODUCT_CORPORATE ) {
+			$jilf = TTnew( 'JobItemListFactory' );
+		} else {
+			$id = 0;
+		}
+
+		if ( $this->getUser() != '' AND is_object( $this->getUserObject() ) AND $id == -1 ) { //Find default
+			$id = $this->getUserObject()->getDefaultJobItem();
+			Debug::Text( 'Using Default Job Item: ' . $id, __FILE__, __LINE__, __METHOD__, 10 );
+		}
+
+		if (  $id == 0
+				OR
+				$this->Validator->isResultSetWithRows(	'job_item',
+														$jilf->getByID($id),
+														TTi18n::gettext('Job Item does not exist')
+														) ) {
+			$this->data['job_item_id'] = $id;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @param string $value UUID
-	 * @return bool
-	 */
-	function setJobItem( $value) {
-		$value = TTUUID::castUUID( $value );
-		if ( getTTProductEdition() < TT_PRODUCT_CORPORATE ) {
-			$value = TTUUID::getZeroID();
-		}
-		if ( $this->getUser() != '' AND is_object( $this->getUserObject() ) AND $value == TTUUID::getNotExistID() ) { //Find default
-			$value = $this->getUserObject()->getDefaultJobItem();
-			Debug::Text( 'Using Default Job Item: ' . $value, __FILE__, __LINE__, __METHOD__, 10 );
-		}
-		return $this->setGenericDataValue( 'job_item_id', $value );
-	}
-
-	/**
-	 * @return bool|float
-	 */
 	function getQuantity() {
-		return $this->getGenericDataValue( 'quantity' );
-	}
-
-	/**
-	 * @param $val
-	 * @return bool
-	 */
-	function setQuantity( $value) {
-		$value = TTi18n::parseFloat( $value );
-		if ( $value == FALSE OR $value == 0 OR $value == '' ) {
-			$value = 0;
+		if ( isset($this->data['quantity']) ) {
+			return (float)$this->data['quantity'];
 		}
 
-		return $this->setGenericDataValue( 'quantity', $value );
+		return FALSE;
+	}
+	function setQuantity($val) {
+		$val = TTi18n::parseFloat( $val );
+
+		if ( $val == FALSE OR $val == 0 OR $val == '' ) {
+			$val = 0;
+		}
+
+		if	(	$val == 0
+				OR
+				$this->Validator->isFloat(			'quantity',
+													$val,
+													TTi18n::gettext('Incorrect quantity')) ) {
+			$this->data['quantity'] = $val;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @return bool|float
-	 */
 	function getBadQuantity() {
-		return $this->getGenericDataValue( 'bad_quantity' );
-	}
-
-	/**
-	 * @param $val
-	 * @return bool
-	 */
-	function setBadQuantity( $value) {
-		$value = TTi18n::parseFloat( $value );
-		if ( $value == FALSE OR $value == 0 OR $value == '' ) {
-			$value = 0;
+		if ( isset($this->data['bad_quantity']) ) {
+			return (float)$this->data['bad_quantity'];
 		}
 
-		return $this->setGenericDataValue( 'bad_quantity', $value );
+		return FALSE;
+	}
+	function setBadQuantity($val) {
+		$val = TTi18n::parseFloat( $val );
+
+		if ( $val == FALSE OR $val == 0 OR $val == '' ) {
+			$val = 0;
+		}
+
+		if	(	$val == 0
+				OR
+				$this->Validator->isFloat(			'bad_quantity',
+													$val,
+													TTi18n::gettext('Incorrect bad quantity')) ) {
+			$this->data['bad_quantity'] = $val;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @return bool|int
-	 */
 	function getTotalTime() {
-		return $this->getGenericDataValue( 'total_time' );
-	}
-
-	/**
-	 * @param $int
-	 * @return bool
-	 */
-	function setTotalTime( $value) {
-		$value = (int)$value;
-		return $this->setGenericDataValue( 'total_time', $value );
-	}
-
-	/**
-	 * @return bool|int
-	 */
-	function getActualTotalTime() {
-		return $this->getGenericDataValue( 'actual_total_time' );
-	}
-
-	/**
-	 * @param $int
-	 * @return bool
-	 */
-	function setActualTotalTime( $value) {
-		$value = (int)$value;
-		if ( $value < 0 ) {
-			$value = 0;
+		if ( isset($this->data['total_time']) ) {
+			return (int)$this->data['total_time'];
 		}
-		return $this->setGenericDataValue( 'actual_total_time', $value );
+		return FALSE;
+	}
+	function setTotalTime($int) {
+		$int = (int)$int;
+
+		if	(	$this->Validator->isNumeric(		'total_time',
+													$int,
+													TTi18n::gettext('Incorrect total time')) ) {
+			$this->data['total_time'] = $int;
+
+			return TRUE;
+		}
+
+		return FALSE;
+	}
+
+	function getActualTotalTime() {
+		if ( isset($this->data['actual_total_time']) ) {
+			return (int)$this->data['actual_total_time'];
+		}
+		return FALSE;
+	}
+	function setActualTotalTime($int) {
+		$int = (int)$int;
+
+		if ( $int < 0 ) {
+			$int = 0;
+		}
+
+		if	(	$this->Validator->isNumeric(		'actual_total_time',
+													$int,
+													TTi18n::gettext('Incorrect actual total time')) ) {
+			$this->data['actual_total_time'] = $int;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 /*
 	function getMealPolicyID() {
-		return $this->getGenericDataValue( 'meal_policy_id' );
+		if ( isset($this->data['meal_policy_id']) ) {
+			return (int)$this->data['meal_policy_id'];
+		}
+
+		return FALSE;
 	}
 	function setMealPolicyID($id) {
 		$id = trim($id);
@@ -607,7 +676,7 @@ class PunchControlFactory extends Factory {
 														TTi18n::gettext('Meal Policy is invalid')
 													) ) {
 
-			$this->setGenericDataValue( 'meal_policy_id', $id );
+			$this->data['meal_policy_id'] = $id;
 
 			return TRUE;
 		}
@@ -615,106 +684,157 @@ class PunchControlFactory extends Factory {
 		return FALSE;
 	}
 */
-	/**
-	 * @return bool|mixed
-	 */
 	function getNote() {
-		return $this->getGenericDataValue( 'note' );
+		if ( isset($this->data['note']) ) {
+			return $this->data['note'];
+		}
+
+		return FALSE;
+	}
+	function setNote($val) {
+		$val = trim($val);
+
+		if	(	$val == ''
+				OR
+				$this->Validator->isLength(		'note',
+												$val,
+												TTi18n::gettext('Note is too long'),
+												0,
+												1024) ) {
+
+			$this->data['note'] = $val;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @param $val
-	 * @return bool
-	 */
-	function setNote( $value) {
-		$value = trim($value);
-		return $this->setGenericDataValue( 'note', $value );
-	}
-
-	/**
-	 * @return bool
-	 */
 	function getOtherID1() {
-		return $this->getGenericDataValue( 'other_id1' );
-	}
+		if ( isset($this->data['other_id1']) ) {
+			return $this->data['other_id1'];
+		}
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setOtherID1( $value) {
+		return FALSE;
+	}
+	function setOtherID1($value) {
 		$value = trim($value);
-		return $this->setGenericDataValue( 'other_id1', $value );
+
+		if (	$value == ''
+				OR
+				$this->Validator->isLength(	'other_id1',
+											$value,
+											TTi18n::gettext('Other ID 1 is invalid'),
+											1, 255) ) {
+
+			$this->data['other_id1'] = $value;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function getOtherID2() {
-		return $this->getGenericDataValue( 'other_id2' );
-	}
+		if ( isset($this->data['other_id2']) ) {
+			return $this->data['other_id2'];
+		}
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setOtherID2( $value) {
+		return FALSE;
+	}
+	function setOtherID2($value) {
 		$value = trim($value);
-		return $this->setGenericDataValue( 'other_id2', $value );
+
+		if (	$value == ''
+				OR
+				$this->Validator->isLength(	'other_id2',
+											$value,
+											TTi18n::gettext('Other ID 2 is invalid'),
+											1, 255) ) {
+
+			$this->data['other_id2'] = $value;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function getOtherID3() {
-		return $this->getGenericDataValue( 'other_id3' );
-	}
+		if ( isset($this->data['other_id3']) ) {
+			return $this->data['other_id3'];
+		}
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setOtherID3( $value) {
+		return FALSE;
+	}
+	function setOtherID3($value) {
 		$value = trim($value);
-		return $this->setGenericDataValue( 'other_id3', $value );
+
+		if (	$value == ''
+				OR
+				$this->Validator->isLength(	'other_id3',
+											$value,
+											TTi18n::gettext('Other ID 3 is invalid'),
+											1, 255) ) {
+
+			$this->data['other_id3'] = $value;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function getOtherID4() {
-		return $this->getGenericDataValue( 'other_id4' );
-	}
+		if ( isset($this->data['other_id4']) ) {
+			return $this->data['other_id4'];
+		}
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setOtherID4( $value) {
+		return FALSE;
+	}
+	function setOtherID4($value) {
 		$value = trim($value);
-		return $this->setGenericDataValue( 'other_id4', $value );
+
+		if (	$value == ''
+				OR
+				$this->Validator->isLength(	'other_id4',
+											$value,
+											TTi18n::gettext('Other ID 4 is invalid'),
+											1, 255) ) {
+
+			$this->data['other_id4'] = $value;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function getOtherID5() {
-		return $this->getGenericDataValue( 'other_id5' );
-	}
+		if ( isset($this->data['other_id5']) ) {
+			return $this->data['other_id5'];
+		}
 
-	/**
-	 * @param $value
-	 * @return bool
-	 */
-	function setOtherID5( $value) {
+		return FALSE;
+	}
+	function setOtherID5($value) {
 		$value = trim($value);
-		return $this->setGenericDataValue( 'other_id5', $value );
+
+		if (	$value == ''
+				OR
+				$this->Validator->isLength(	'other_id5',
+											$value,
+											TTi18n::gettext('Other ID 5 is invalid'),
+											1, 255) ) {
+
+			$this->data['other_id5'] = $value;
+
+			return TRUE;
+		}
+
+		return FALSE;
 	}
 
-	/**
-	 * @param bool $force
-	 * @return bool
-	 */
 	function calcTotalTime( $force = TRUE ) {
 		if ( $force == TRUE OR $this->is_total_time_calculated == FALSE ) {
 			$this->is_total_time_calculated = TRUE;
@@ -776,9 +896,6 @@ class PunchControlFactory extends Factory {
 		return FALSE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function changePreviousPunchType() {
 		Debug::text(' Previous Punch to Lunch/Break...', __FILE__, __LINE__, __METHOD__, 10);
 
@@ -813,7 +930,7 @@ class PunchControlFactory extends Factory {
 								$pcf->setEnableCalcWeeklySystemTotalTime( TRUE );
 								$pcf->setEnableCalcUserDateTotal( TRUE );
 								if ( $pcf->isValid() == TRUE ) {
-									Debug::Text(' Punch Control is valid, saving...', __FILE__, __LINE__, __METHOD__, 10);
+									Debug::Text(' Punch Control is valid, saving...: ', __FILE__, __LINE__, __METHOD__, 10);
 									if ( $pcf->Save( TRUE, TRUE ) == TRUE ) { //Force isNew() lookup.\
 										Debug::text(' Returning TRUE!', __FILE__, __LINE__, __METHOD__, 10);
 										return TRUE;
@@ -854,7 +971,7 @@ class PunchControlFactory extends Factory {
 								$pcf->setEnableCalcWeeklySystemTotalTime( TRUE );
 								$pcf->setEnableCalcUserDateTotal( TRUE );
 								if ( $pcf->isValid() == TRUE ) {
-									Debug::Text(' Punch Control is valid, saving...', __FILE__, __LINE__, __METHOD__, 10);
+									Debug::Text(' Punch Control is valid, saving...: ', __FILE__, __LINE__, __METHOD__, 10);
 									if ( $pcf->Save( TRUE, TRUE ) == TRUE ) { //Force isNew() lookup.\
 										Debug::text(' Returning TRUE!', __FILE__, __LINE__, __METHOD__, 10);
 										return TRUE;
@@ -867,14 +984,11 @@ class PunchControlFactory extends Factory {
 			}
 		}
 
-		Debug::text(' Returning FALSE!', __FILE__, __LINE__, __METHOD__, 10);
+		Debug::text(' Returning false!', __FILE__, __LINE__, __METHOD__, 10);
 
 		return FALSE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function getEnableCalcSystemTotalTime() {
 		if ( isset($this->calc_system_total_time) ) {
 			return $this->calc_system_total_time;
@@ -882,20 +996,12 @@ class PunchControlFactory extends Factory {
 
 		return FALSE;
 	}
-
-	/**
-	 * @param $bool
-	 * @return bool
-	 */
-	function setEnableCalcSystemTotalTime( $bool) {
+	function setEnableCalcSystemTotalTime($bool) {
 		$this->calc_system_total_time = $bool;
 
 		return TRUE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function getEnableCalcWeeklySystemTotalTime() {
 		if ( isset($this->calc_weekly_system_total_time) ) {
 			return $this->calc_weekly_system_total_time;
@@ -903,20 +1009,12 @@ class PunchControlFactory extends Factory {
 
 		return FALSE;
 	}
-
-	/**
-	 * @param $bool
-	 * @return bool
-	 */
-	function setEnableCalcWeeklySystemTotalTime( $bool) {
+	function setEnableCalcWeeklySystemTotalTime($bool) {
 		$this->calc_weekly_system_total_time = $bool;
 
 		return TRUE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function getEnableCalcException() {
 		if ( isset($this->calc_exception) ) {
 			return $this->calc_exception;
@@ -924,20 +1022,12 @@ class PunchControlFactory extends Factory {
 
 		return FALSE;
 	}
-
-	/**
-	 * @param $bool
-	 * @return bool
-	 */
-	function setEnableCalcException( $bool) {
+	function setEnableCalcException($bool) {
 		$this->calc_exception = $bool;
 
 		return TRUE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function getEnablePreMatureException() {
 		if ( isset($this->premature_exception) ) {
 			return $this->premature_exception;
@@ -945,20 +1035,12 @@ class PunchControlFactory extends Factory {
 
 		return FALSE;
 	}
-
-	/**
-	 * @param $bool
-	 * @return bool
-	 */
-	function setEnablePreMatureException( $bool) {
+	function setEnablePreMatureException($bool) {
 		$this->premature_exception = $bool;
 
 		return TRUE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function getEnableCalcUserDateTotal() {
 		if ( isset($this->calc_user_date_total) ) {
 			return $this->calc_user_date_total;
@@ -966,20 +1048,11 @@ class PunchControlFactory extends Factory {
 
 		return FALSE;
 	}
-
-	/**
-	 * @param $bool
-	 * @return bool
-	 */
-	function setEnableCalcUserDateTotal( $bool) {
+	function setEnableCalcUserDateTotal($bool) {
 		$this->calc_user_date_total = $bool;
 
 		return TRUE;
 	}
-
-	/**
-	 * @return bool
-	 */
 	function getEnableCalcUserDateID() {
 		if ( isset($this->calc_user_date_id) ) {
 			return $this->calc_user_date_id;
@@ -987,20 +1060,12 @@ class PunchControlFactory extends Factory {
 
 		return FALSE;
 	}
-
-	/**
-	 * @param $bool
-	 * @return bool
-	 */
-	function setEnableCalcUserDateID( $bool) {
+	function setEnableCalcUserDateID($bool) {
 		$this->calc_user_date_id = $bool;
 
 		return TRUE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function getEnableCalcTotalTime() {
 		if ( isset($this->calc_total_time) ) {
 			return $this->calc_total_time;
@@ -1008,20 +1073,12 @@ class PunchControlFactory extends Factory {
 
 		return FALSE;
 	}
-
-	/**
-	 * @param $bool
-	 * @return bool
-	 */
-	function setEnableCalcTotalTime( $bool) {
+	function setEnableCalcTotalTime($bool) {
 		$this->calc_total_time = $bool;
 
 		return TRUE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function getEnableStrictJobValidation() {
 		if ( isset($this->strict_job_validiation) ) {
 			return $this->strict_job_validiation;
@@ -1029,181 +1086,14 @@ class PunchControlFactory extends Factory {
 
 		return FALSE;
 	}
-
-	/**
-	 * @param $bool
-	 * @return bool
-	 */
-	function setEnableStrictJobValidation( $bool ) {
-		$this->is_valid = FALSE; //Force revalidation when data is changed.
+	function setEnableStrictJobValidation($bool) {
 		$this->strict_job_validiation = $bool;
 
 		return TRUE;
 	}
 
-	/**
-	 * @param bool $ignore_warning
-	 * @return bool
-	 */
 	function Validate( $ignore_warning = TRUE ) {
 		Debug::text('Validating...', __FILE__, __LINE__, __METHOD__, 10);
-
-		//
-		// BELOW: Validation code moved from set*() functions.
-		//
-		// User
-		$ulf = TTnew( 'UserListFactory' );
-		$this->Validator->isResultSetWithRows(	'user',
-														$ulf->getByID($this->getUser()),
-														TTi18n::gettext('Invalid Employee')
-													);
-		// Pay Period
-		if ( $this->getPayPeriod() !== FALSE AND $this->getPayPeriod() != TTUUID::getZeroID() ) {
-			$pplf = TTnew( 'PayPeriodListFactory' );
-			$this->Validator->isResultSetWithRows(	'pay_period',
-														$pplf->getByID($this->getPayPeriod()),
-														TTi18n::gettext('Invalid Pay Period')
-													);
-		}
-
-
-		// Date
-		$this->Validator->isDate(		'date_stamp',
-												$this->getDateStamp(),
-												TTi18n::gettext('Incorrect date').'(a)'
-											);
-		if ( $this->Validator->isError('date_stamp') == FALSE ) {
-			if ( $this->getDateStamp() == '' OR $this->getDateStamp() <= 0 ) {
-				$this->Validator->isTRUE(		'date_stamp',
-													FALSE,
-													TTi18n::gettext('Incorrect date').'(b)');
-			}
-		}
-
-		// Branch
-		if ( $this->getBranch() !== FALSE AND $this->getBranch() != TTUUID::getZeroID() ) {
-			$blf = TTnew( 'BranchListFactory' );
-			$this->Validator->isResultSetWithRows(	'branch',
-														$blf->getByID($this->getBranch()),
-														TTi18n::gettext('Branch does not exist')
-													);
-		}
-		// Department
-		if ( $this->getDepartment() !== FALSE AND $this->getDepartment() != TTUUID::getZeroID() ) {
-			$dlf = TTnew( 'DepartmentListFactory' );
-			$this->Validator->isResultSetWithRows(	'department',
-														$dlf->getByID($this->getDepartment()),
-														TTi18n::gettext('Department does not exist')
-													);
-		}
-
-		if ( getTTProductEdition() >= TT_PRODUCT_CORPORATE ) {
-			// Job
-			if ( $this->getJob() !== FALSE AND $this->getJob() != TTUUID::getZeroID() ) {
-				$jlf = TTnew( 'JobListFactory' );
-				$this->Validator->isResultSetWithRows( 'job',
-													   $jlf->getByID( $this->getJob() ),
-													   TTi18n::gettext( 'Job does not exist' )
-				);
-			}
-			// Job Item
-			if ( $this->getJobItem() !== FALSE AND $this->getJobItem() != TTUUID::getZeroID() ) {
-				$jilf = TTnew( 'JobItemListFactory' );
-				$this->Validator->isResultSetWithRows( 'job_item',
-													   $jilf->getByID( $this->getJobItem() ),
-													   TTi18n::gettext( 'Job Item does not exist' )
-				);
-			}
-			// Quantity
-			if ( $this->getQuantity() != '' ) {
-				$this->Validator->isFloat( 'quantity',
-										   $this->getQuantity(),
-										   TTi18n::gettext( 'Incorrect quantity' )
-				);
-			}
-			// Bad quantity
-			if ( $this->getBadQuantity() != '' ) {
-				$this->Validator->isFloat( 'bad_quantity',
-										   $this->getBadQuantity(),
-										   TTi18n::gettext( 'Incorrect bad quantity' )
-				);
-			}
-		}
-
-		// Total time
-		if ( $this->getTotalTime() !== FALSE ) {
-			$this->Validator->isNumeric(		'total_time',
-													$this->getTotalTime(),
-													TTi18n::gettext('Incorrect total time')
-												);
-		}
-		// Actual total time
-		if ( $this->getActualTotalTime() !== FALSE ) {
-			$this->Validator->isNumeric(		'actual_total_time',
-													$this->getActualTotalTime(),
-													TTi18n::gettext('Incorrect actual total time')
-												);
-		}
-		// Note
-		if ( $this->getNote() != '' ) {
-			$this->Validator->isLength(		'note',
-												$this->getNote(),
-												TTi18n::gettext('Note is too long'),
-												0,
-												1024
-												);
-		}
-		// Other ID 1
-		if ( $this->getOtherID1() != '' ) {
-			$this->Validator->isLength(	'other_id1',
-												$this->getOtherID1(),
-												TTi18n::gettext('Other ID 1 is invalid'),
-												1, 255
-											);
-		}
-		// Other ID 2
-		if ( $this->getOtherID2() != '' ) {
-			$this->Validator->isLength(	'other_id2',
-												$this->getOtherID2(),
-												TTi18n::gettext('Other ID 2 is invalid'),
-												1, 255
-											);
-		}
-		// Other ID 3
-		if ( $this->getOtherID3() != '' ) {
-			$this->Validator->isLength(	'other_id3',
-												$this->getOtherID3(),
-												TTi18n::gettext('Other ID 3 is invalid'),
-												1, 255
-											);
-		}
-		// Other ID 4
-		if ( $this->getOtherID4() != '' ) {
-			$this->Validator->isLength(	'other_id4',
-												$this->getOtherID4(),
-												TTi18n::gettext('Other ID 4 is invalid'),
-												1, 255
-											);
-		}
-		// Other ID 5
-		if ( $this->getOtherID5() != '' ) {
-			$this->Validator->isLength(	'other_id5',
-												$this->getOtherID5(),
-												TTi18n::gettext('Other ID 5 is invalid'),
-												1, 255
-											);
-		}
-
-		//
-		// ABOVE: Validation code moved from set*() functions.
-		//
-
-		//See if the user_id changed, if so prevent it from being saved, as the user_id should never be changed on a punch_control record as it will cause problems with recalculating.
-		if ( $this->getGenericOldDataValue( 'user_id' ) != FALSE AND $this->getUser() != $this->getGenericOldDataValue( 'user_id' ) ) {
-			$this->Validator->isTRUE(	'user_id',
-										 FALSE,
-										 TTi18n::gettext('Punch cannot be assigned to a different employee once created') );
-		}
 
 		//Call this here so getShiftData can get the correct total time, before we call findUserDate.
 		if ( $this->getEnableCalcTotalTime() == TRUE ) {
@@ -1214,6 +1104,12 @@ class PunchControlFactory extends Factory {
 			$this->findUserDate();
 		}
 		Debug::text('DateStamp: '. $this->getDateStamp(), __FILE__, __LINE__, __METHOD__, 10);
+
+		if ( $this->getUser() == FALSE ) {
+			$this->Validator->isTRUE(	'user_id',
+										FALSE,
+										TTi18n::gettext('Employee is invalid') );
+		}
 
 		//Don't check for a valid pay period here, do that in PunchFactory->Validate(), as we need to allow users to delete punches that were created outside pay periods in legacy versions.
 		if ( $this->getDeleted() == FALSE AND $this->getDateStamp() == FALSE ) {
@@ -1389,7 +1285,7 @@ class PunchControlFactory extends Factory {
 		}
 
 		if ( getTTProductEdition() >= TT_PRODUCT_CORPORATE AND $this->getEnableStrictJobValidation() == TRUE ) {
-			if ( TTUUID::isUUID( $this->getJob() ) AND $this->getJob() != TTUUID::getZeroID() AND $this->getJob() != TTUUID::getNotExistID() ) {
+			if ( $this->getJob() > 0 ) {
 				$jlf = TTnew( 'JobListFactory' );
 				$jlf->getById( $this->getJob() );
 				if ( $jlf->getRecordCount() > 0 ) {
@@ -1432,24 +1328,21 @@ class PunchControlFactory extends Factory {
 		return TRUE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function preSave() {
 		if ( $this->getBranch() === FALSE ) {
-			$this->setBranch( TTUUID::getZeroID() );
+			$this->setBranch(0);
 		}
 
 		if ( $this->getDepartment() === FALSE ) {
-			$this->setDepartment( TTUUID::getZeroID() );
+			$this->setDepartment(0);
 		}
 
 		if ( $this->getJob() === FALSE ) {
-			$this->setJob( TTUUID::getZeroID() );
+			$this->setJob(0);
 		}
 
 		if ( $this->getJobItem() === FALSE ) {
-			$this->setJobItem( TTUUID::getZeroID() );
+			$this->setJobItem(0);
 		}
 
 		if ( $this->getQuantity() === FALSE ) {
@@ -1465,10 +1358,8 @@ class PunchControlFactory extends Factory {
 		}
 
 		//Set Job default Job Item if required.
-		if ( getTTProductEdition() >= TT_PRODUCT_CORPORATE
-				AND TTUUID::isUUID( $this->getJob() ) AND $this->getJob() != TTUUID::getZeroID()
-				AND ( $this->getJobItem() == TTUUID::getZeroID() OR $this->getJobItem() == '' ) ) {
-			Debug::text(' Job is set ('. $this->getJob() .'), but no task is... Using default job item...', __FILE__, __LINE__, __METHOD__, 10);
+		if ( $this->getJob() != FALSE AND $this->getJobItem() == '' ) {
+			Debug::text(' Job is set ('.$this->getJob().'), but no task is... Using default job item...', __FILE__, __LINE__, __METHOD__, 10);
 
 			if ( is_object( $this->getJobObject() ) ) {
 				Debug::text(' Default Job Item: '. $this->getJobObject()->getDefaultItem(), __FILE__, __LINE__, __METHOD__, 10);
@@ -1511,9 +1402,6 @@ class PunchControlFactory extends Factory {
 		return TRUE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function calcUserDate() {
 		if ( $this->getEnableCalcUserDateID() == TRUE ) {
 			$date_stamp = TTDate::getMiddleDayEpoch( $this->getDateStamp() ); //preSave should already be called before running this function.
@@ -1643,9 +1531,6 @@ class PunchControlFactory extends Factory {
 		return FALSE;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function calcUserDateTotal() {
 		if ( $this->getEnableCalcUserDateTotal() == TRUE ) {
 			Debug::Text(' Calculating User Date Total...', __FILE__, __LINE__, __METHOD__, 10);
@@ -1658,9 +1543,10 @@ class PunchControlFactory extends Factory {
 				//Add a row to the user date total table, as "worked" hours.
 				//Edit if it already exists and is not set as override.
 				if ( $udtlf->getRecordCount() > 0 ) {
+					Debug::text(' Found Conflicting User Date Total Records, removing them before re-calc', __FILE__, __LINE__, __METHOD__, 10);
 					foreach($udtlf as $udt_obj) {
 						if ( $udt_obj->getOverride() == FALSE ) {
-							Debug::text(' Found Conflicting User Date Total Record, removing it before re-calc: '. $udt_obj->getId(), __FILE__, __LINE__, __METHOD__, 10);
+							Debug::text(' bFound Conflicting User Date Total Records, removing them before re-calc', __FILE__, __LINE__, __METHOD__, 10);
 							$udt_obj->Delete();
 						}
 					}
@@ -1680,7 +1566,7 @@ class PunchControlFactory extends Factory {
 						}
 
 						if ( $udt_obj->getOverride() == FALSE ) {
-							Debug::text(' Found Conflicting User Date Total Records, removing it before re-calc: ID: '. $udt_obj->Delete() .' Date: '. TTDate::getDate('DATE', $udt_obj->getDateStamp() ), __FILE__, __LINE__, __METHOD__, 10);
+							Debug::text(' bFound Conflicting User Date Total Records, removing them before re-calc: Date: '. TTDate::getDate('DATE', $udt_obj->getDateStamp() ), __FILE__, __LINE__, __METHOD__, 10);
 							$udt_obj->Delete();
 						} else {
 							Debug::text(' Found overridden User Date Total Records, not removing...', __FILE__, __LINE__, __METHOD__, 10);
@@ -1692,7 +1578,7 @@ class PunchControlFactory extends Factory {
 					Debug::text(' No Conflicting User Date Total Records, inserting the first one.', __FILE__, __LINE__, __METHOD__, 10);
 					$udtf = TTnew( 'UserDateTotalFactory' );
 				} else {
-					Debug::text(' Updating UserDateTotal row ID: \''. TTUUID::castUUID($udtf->getId()) .'\'', __FILE__, __LINE__, __METHOD__, 10);
+					Debug::text(' Updating UserDateTotal row ID: '. (int)$udtf->getId(), __FILE__, __LINE__, __METHOD__, 10);
 				}
 
 				$udtf->setUser( $this->getUser() );
@@ -1769,16 +1655,6 @@ class PunchControlFactory extends Factory {
 	//$position = -1 (Before), 0 (Overwrite), 1 (After)
 	//$dst_status_id = 10 (In), 20 (Out), this is the status of the row the punch is being dragged too, or the resulting status_id in *most* (not all) cases.
 	//					It is really only needed when using the overwrite position setting, and dragging a punch to a blank cell. Other than that it can be left NULL.
-	/**
-	 * @param string $company_id UUID
-	 * @param string $src_punch_id UUID
-	 * @param string $dst_punch_id UUID
-	 * @param int $dst_status_id ID
-	 * @param int $position
-	 * @param int $action
-	 * @param int $dst_date EPOCH
-	 * @return bool
-	 */
 	static function dragNdropPunch( $company_id, $src_punch_id, $dst_punch_id, $dst_status_id = NULL, $position = 0, $action = 0, $dst_date = NULL ) {
 		/*
 			FIXME: This needs to handle batches to be able to handle all the differnet corner cases.
@@ -1863,7 +1739,7 @@ class PunchControlFactory extends Factory {
 					//Moving punch to a new date.
 					//Copy source punch to proper location by destination punch.
 					$src_punch_obj->setId( FALSE );
-					$src_punch_obj->setPunchControlId( $src_punch_control_obj->getNextInsertId() );
+					$src_punch_obj->setPunchControlId( (int)$src_punch_control_obj->getNextInsertId() );
 					$src_punch_obj->setDeleted(FALSE); //Just in case it was marked deleted by the MOVE action.
 
 					$new_time_stamp = TTDate::getTimeLockedDate($src_punch_obj->getTimeStamp(), ( $dst_date + $dst_date_modifier ) );
@@ -1880,8 +1756,8 @@ class PunchControlFactory extends Factory {
 					if ( $action == 0 ) { //Copy
 						$src_punch_obj->setStation( NULL );
 						$src_punch_obj->setHasImage( FALSE );
-						$src_punch_obj->setLongitude( NULL ); //Make sure we clear out long/lat as the location shouldn't carry across with copies.
-						$src_punch_obj->setLatitude( NULL ); //Make sure we clear out long/lat as the location shouldn't carry across with copies.
+						$src_punch_obj->setLongitude( 0 );
+						$src_punch_obj->setLatitude( 0 );
 					} elseif ( isset($punch_image_data) AND $punch_image_data != '' ) {
 						$src_punch_obj->setImage( $punch_image_data );
 					}
@@ -1982,7 +1858,7 @@ class PunchControlFactory extends Factory {
 						} else {
 							Debug::text('No Need to split destination punch, simply add a new punch/punch_control all on its own.', __FILE__, __LINE__, __METHOD__, 10);
 							//Check to see if the src and dst punches are the same status though.
-							$punch_control_id = $dst_punch_control_obj->getNextInsertId();
+							$punch_control_id = (int)$dst_punch_control_obj->getNextInsertId();
 						}
 
 						//Take the source punch and base our new punch on that.
@@ -2007,8 +1883,8 @@ class PunchControlFactory extends Factory {
 					if ( $action == 0 ) { //Copy
 						$src_punch_obj->setStation( NULL );
 						$src_punch_obj->setHasImage( FALSE );
-						$src_punch_obj->setLongitude( NULL ); //Make sure we clear out long/lat as the location shouldn't carry across with copies.
-						$src_punch_obj->setLatitude( NULL ); //Make sure we clear out long/lat as the location shouldn't carry across with copies.
+						$src_punch_obj->setLongitude( 0 );
+						$src_punch_obj->setLatitude( 0 );
 					} elseif ( isset($punch_image_data) AND $punch_image_data != '' ) {
 						$src_punch_obj->setImage( $punch_image_data );
 					}
@@ -2063,11 +1939,7 @@ class PunchControlFactory extends Factory {
 		return $retval;
 	}
 
-	/**
-	 * When passed a punch_control_id, if it has two punches assigned to it, a new punch_control_id row is created and the punches are split between the two.
-	 * @param string $punch_control_id UUID
-	 * @return bool
-	 */
+	//When passed a punch_control_id, if it has two punches assigned to it, a new punch_control_id row is created and the punches are split between the two.
 	static function splitPunchControl( $punch_control_id ) {
 		$retval = FALSE;
 		if ( $punch_control_id != '' ) {
@@ -2076,7 +1948,7 @@ class PunchControlFactory extends Factory {
 			$plf->getByPunchControlID( $punch_control_id, NULL, array( 'time_stamp' => 'desc' ) ); //Move out punch to new punch_control_id.
 			if ( $plf->getRecordCount() == 2 ) {
 				$pclf = TTnew( 'PunchControlListFactory' );
-				$new_punch_control_id = $pclf->getNextInsertId();
+				$new_punch_control_id = (int)$pclf->getNextInsertId();
 				Debug::text(' Punch Control ID: '. $punch_control_id .' only has two punches assigned, splitting... New Punch Control ID: '. $new_punch_control_id, __FILE__, __LINE__, __METHOD__, 10);
 				$i = 0;
 				foreach( $plf as $p_obj ) {
@@ -2104,9 +1976,7 @@ class PunchControlFactory extends Factory {
 								$pc_obj->setEnableCalcWeeklySystemTotalTime( FALSE ); //Do this for In punch only.
 								$pc_obj->setEnableCalcUserDateTotal( TRUE );
 								$pc_obj->setEnableCalcException( TRUE );
-								if ( $pc_obj->isValid() ) {
-									$retval = $pc_obj->Save( TRUE, TRUE ); //Force isNew() lookup.
-								}
+								$retval = $pc_obj->Save( TRUE, TRUE ); //Force isNew() lookup.
 							}
 						}
 					} else {
@@ -2121,9 +1991,7 @@ class PunchControlFactory extends Factory {
 						$pc_obj->setEnableCalcWeeklySystemTotalTime( TRUE );
 						$pc_obj->setEnableCalcUserDateTotal( TRUE );
 						$pc_obj->setEnableCalcException( TRUE );
-						if ( $pc_obj->isValid() ) {
-							$retval = $pc_obj->Save();
-						}
+						$retval = $pc_obj->Save();
 					}
 
 					$i++;
@@ -2139,9 +2007,6 @@ class PunchControlFactory extends Factory {
 		return $retval;
 	}
 
-	/**
-	 * @return bool
-	 */
 	function postSave() {
 		$this->removeCache( $this->getId() );
 
@@ -2160,10 +2025,6 @@ class PunchControlFactory extends Factory {
 		return TRUE;
 	}
 
-	/**
-	 * @param $data
-	 * @return bool
-	 */
 	function setObjectFromArray( $data ) {
 		if ( is_array( $data ) ) {
 
@@ -2200,11 +2061,6 @@ class PunchControlFactory extends Factory {
 		return FALSE;
 	}
 
-	/**
-	 * @param null $include_columns
-	 * @param bool $permission_children_ids
-	 * @return array
-	 */
 	function getObjectAsArray( $include_columns = NULL, $permission_children_ids = FALSE  ) {
 		$data = array();
 		$variable_function_map = $this->getVariableToFunctionMap();
@@ -2232,10 +2088,6 @@ class PunchControlFactory extends Factory {
 		return $data;
 	}
 
-	/**
-	 * @param $log_action
-	 * @return bool
-	 */
 	function addLog( $log_action ) {
 		return TTLog::addEntry( $this->getId(), $log_action, TTi18n::getText('Punch Control - Employee').': '. UserListFactory::getFullNameById( $this->getUser() ), NULL, $this->getTable(), $this );
 	}

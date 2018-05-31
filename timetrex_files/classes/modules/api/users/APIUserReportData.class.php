@@ -1,7 +1,7 @@
 <?php
 /*********************************************************************************
  * TimeTrex is a Workforce Management program developed by
- * TimeTrex Software Inc. Copyright (C) 2003 - 2018 TimeTrex Software Inc.
+ * TimeTrex Software Inc. Copyright (C) 2003 - 2017 TimeTrex Software Inc.
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Affero General Public License version 3 as published by
@@ -41,9 +41,6 @@
 class APIUserReportData extends APIFactory {
 	protected $main_class = 'UserReportDataFactory';
 
-	/**
-	 * APIUserReportData constructor.
-	 */
 	public function __construct() {
 		parent::__construct(); //Make sure parent constructor is always called.
 
@@ -61,12 +58,6 @@ class APIUserReportData extends APIFactory {
 
 		//Only allow getting report data for currently logged in user.
 		$data['filter_data']['user_id'] = $this->getCurrentUserObject()->getId();
-
-		//This is done so that users can set a saved report on payroll remittance agency event and then other users can run the tax wizard with that same saved report.
-		if ( isset( $data['filter_data']['id'] ) AND $this->getPermissionObject()->Check('pay_stub', 'add' ) AND $this->getPermissionObject()->Check('pay_stub', 'edit' ) ){
-			//FIXME: perhaps add additional checks that the id is specified in a payroll remittance agency event.
-			unset( $data['filter_data']['user_id'] );
-		}
 
 		Debug::Arr($data, 'Getting User Report Data: ', __FILE__, __LINE__, __METHOD__, 10);
 
@@ -90,8 +81,6 @@ class APIUserReportData extends APIFactory {
 	/**
 	 * Set user data for one or more users.
 	 * @param array $data user data
-	 * @param bool $validate_only
-	 * @param bool $ignore_warning
 	 * @return array
 	 */
 	function setUserReportData( $data, $validate_only = FALSE, $ignore_warning = TRUE  ) {
@@ -101,7 +90,7 @@ class APIUserReportData extends APIFactory {
 		$validate_only = (bool)$validate_only;
 		$ignore_warning = (bool)$ignore_warning;
 
-		list( $data, $total_records ) = $this->convertToMultipleRecords( $data );
+		extract( $this->convertToMultipleRecords($data) );
 		Debug::Text('Received data for: '. $total_records .' Users', __FILE__, __LINE__, __METHOD__, 10);
 		Debug::Arr($data, 'Data: ', __FILE__, __LINE__, __METHOD__, 10);
 
@@ -114,7 +103,7 @@ class APIUserReportData extends APIFactory {
 		}
 
 		$validator_stats = array('total_records' => $total_records, 'valid_records' => 0 );
-		$validator = $save_result = $key = FALSE;
+		$validator = $save_result = FALSE;
 		if ( is_array($data) AND $total_records > 0 ) {
 			foreach( $data as $key => $row ) {
 				$row['company_id'] = $this->getCurrentUserObject()->getCompany();
@@ -135,8 +124,7 @@ class APIUserReportData extends APIFactory {
 					$lf->getByUserIdAndId( $row['user_id'], $row['id'] );
 					if ( $lf->getRecordCount() == 1 ) {
 						//Object exists, check edit permissions
-						$lf = $lf->getCurrent(); //Make the current $lf variable the current object, otherwise getDataDifferences() fails to function.
-						$row = array_merge( $lf->getObjectAsArray(), $row );
+						$row = array_merge( $lf->getCurrent()->getObjectAsArray(), $row );
 					} else {
 						//Object doesn't exist.
 						$primary_validator->isTrue( 'id', FALSE, TTi18n::gettext('Edit permission denied, employee does not exist') );
@@ -209,7 +197,7 @@ class APIUserReportData extends APIFactory {
 	function deleteUserReportData( $data ) {
 		Debug::Arr($data, 'DataA: ', __FILE__, __LINE__, __METHOD__, 10);
 
-		if ( !is_array($data) ) {
+		if ( is_numeric($data) ) {
 			$data = array($data);
 		}
 
@@ -221,20 +209,20 @@ class APIUserReportData extends APIFactory {
 		Debug::Arr($data, 'Data: ', __FILE__, __LINE__, __METHOD__, 10);
 
 		$total_records = count($data);
-		$validator = $save_result = $key = FALSE;
+		$validator = $save_result = FALSE;
 		$validator_stats = array('total_records' => $total_records, 'valid_records' => 0 );
 		if ( is_array($data) AND $total_records > 0 ) {
 			foreach( $data as $key => $id ) {
 				$primary_validator = new Validator();
 				$lf = TTnew( 'UserReportDataListFactory' );
 				$lf->StartTransaction();
-				if ( $id != '' ) {
+				if ( is_numeric($id) ) {
 					//Modifying existing object.
 					//Get user object, so we can only modify just changed data for specific records if needed.
 					$lf->getByUserIdAndId( $this->getCurrentUserObject()->getId(), $id );
 					if ( $lf->getRecordCount() == 1 ) {
 						//Object exists
-						Debug::Text('User Report Data Exists, deleting record: '. $id, __FILE__, __LINE__, __METHOD__, 10);
+						Debug::Text('User Report Data Exists, deleting record: ', $id, __FILE__, __LINE__, __METHOD__, 10);
 						$lf = $lf->getCurrent();
 					} else {
 						//Object doesn't exist.
@@ -280,21 +268,21 @@ class APIUserReportData extends APIFactory {
 	 * Share or copy report to other users.
 	 * @param array $user_report_data_ids User Report Data row IDs
 	 * @param array $destination_user_ids User IDs to copy reports to
-	 * @return array|bool
+	 * @return bool
 	 */
 	function shareUserReportData( $user_report_data_ids, $destination_user_ids ) {
-		if ( !is_array($user_report_data_ids) ) {
+		if ( is_numeric($user_report_data_ids) ) {
 			$user_report_data_ids = array($user_report_data_ids);
 		}
 
-		if ( !is_array($destination_user_ids) ) {
+		if ( is_numeric($destination_user_ids) ) {
 			$destination_user_ids = array($destination_user_ids);
 		}
 
 		Debug::Arr($user_report_data_ids, 'User Report Data IDs: ', __FILE__, __LINE__, __METHOD__, 10);
 		Debug::Arr($destination_user_ids, 'Destination User IDs: ', __FILE__, __LINE__, __METHOD__, 10);
 
-		$src_rows = $this->stripReturnHandler( $this->getUserReportData( array('filter_data' => array('id' => $user_report_data_ids ) ) ) );
+		$src_rows = $this->stripReturnHandler( $this->getUserReportData( array('filter_data' => array('id' => $user_report_data_ids ) ), TRUE ) );
 		if ( is_array( $src_rows ) AND count($src_rows) > 0 ) {
 			Debug::Arr($src_rows, 'SRC Rows: ', __FILE__, __LINE__, __METHOD__, 10);
 			$dst_rows = array();
@@ -313,20 +301,11 @@ class APIUserReportData extends APIFactory {
 				//Should we always disable the default setting?
 				//Should we copy any schedules that go along with each saved report? This could cause a lot of issues with mass emails being sent out without intention.
 
-				$urdf = TTnew('UserReportDataFactory');
-
 				//Copy to destination users.
 				if ( is_array($destination_user_ids) ) {
 					foreach( $destination_user_ids as $destination_user_id ) {
 						$dst_rows[$x] = $src_rows[$key];
 						$dst_rows[$x]['user_id'] = $destination_user_id;
-
-						$ulf = TTnew('UserListFactory');
-						$ulf->getByIdAndCompanyId( $destination_user_id, $this->getCurrentUserObject()->getCompany() );
-						if ( $ulf->getRecordCount() == 1 ) {
-							TTLog::addEntry( TTUUID::castUUID( $row['id'] ), 500, TTi18n::getText('Shared report with').': '. $ulf->getCurrent()->getFullName( FALSE, TRUE ), NULL, $urdf->getTable() );
-						}
-
 						$x++;
 					}
 				}

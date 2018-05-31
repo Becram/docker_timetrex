@@ -1,7 +1,7 @@
 <?php
 /*********************************************************************************
  * TimeTrex is a Workforce Management program developed by
- * TimeTrex Software Inc. Copyright (C) 2003 - 2018 TimeTrex Software Inc.
+ * TimeTrex Software Inc. Copyright (C) 2003 - 2017 TimeTrex Software Inc.
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Affero General Public License version 3 as published by
@@ -40,20 +40,12 @@
  */
 class InstallSchema_1064A extends InstallSchema_Base {
 
-	/**
-	 * @return bool
-	 */
 	function preInstall() {
 		Debug::text('preInstall: '. $this->getVersion(), __FILE__, __LINE__, __METHOD__, 9);
 
 		return TRUE;
 	}
 
-	/**
-	 * @param string $pay_code_id UUID
-	 * @param string $contributing_pay_code_policy_id UUID
-	 * @return bool
-	 */
 	function addPayCodeIdToContributingPayCodePolicy( $pay_code_id, $contributing_pay_code_policy_id ) {
 		$cpcplf = TTnew( 'ContributingPayCodePolicyListFactory' );
 		$cpcplf->getById( $contributing_pay_code_policy_id );
@@ -78,10 +70,7 @@ class InstallSchema_1064A extends InstallSchema_Base {
 		Debug::text('ERROR: Unable to assign Pay Code to Contributing Pay Code... Pay Code: '. $pay_code_id .' Contributing Pay Code Policy: '. $contributing_pay_code_policy_id .' Record Count: '. $cpcplf->getRecordCount(), __FILE__, __LINE__, __METHOD__, 9);
 		return FALSE;
 	}
-
-	/**
-	 * @return bool
-	 */
+	
 	function postInstall() {
 		Debug::text('postInstall: '. $this->getVersion(), __FILE__, __LINE__, __METHOD__, 9);
 
@@ -165,7 +154,7 @@ class InstallSchema_1064A extends InstallSchema_Base {
 				$pcf->setName( 'DUMMY (DELETE ME)' ); //Can't change name, as we need to delete this in 1065A schema upgrade.
 				$pcf->setCode( 'DUMMY' ); //Can't change code, as we need to delete this in 1065A schema upgrade.
 				$pcf->setType( 10 ); //Paid
-				$pcf->setPayFormulaPolicy( TTUUID::getZeroID() );
+				$pcf->setPayFormulaPolicy( 0 );
 				$pcf->setPayStubEntryAccountId( (int)CompanyDeductionFactory::getPayStubEntryAccountByCompanyIDAndTypeAndFuzzyName($company_obj->getId(), 10, TTi18n::gettext('Regular Time')) );
 				if ( $pcf->isValid() ) {
 					$dummy_pay_code_id = $pcf->Save();
@@ -455,7 +444,7 @@ class InstallSchema_1064A extends InstallSchema_Base {
 				}
 				unset($cpcpf,$cspf);
 
-
+			
 				//This must go before PayFormulaPolicies are created.
 				$aplf = TTNew('AccrualPolicyListFactory');
 				$aplf->getByCompanyId( $company_obj->getId() );
@@ -487,9 +476,9 @@ class InstallSchema_1064A extends InstallSchema_Base {
 				$pfpf->setName( 'UnPaid (0.0x)' );
 				$pfpf->setPayType( 10 ); //Pay Multiplied By Factor
 				$pfpf->setRate( 0.0 );
-				$pfpf->setWageGroup( TTUUID::getZeroID() );
+				$pfpf->setWageGroup( 0 );
 				$pfpf->setAccrualRate( 1.0 );
-				$pfpf->setAccrualPolicyAccount( TTUUID::getZeroID() );
+				$pfpf->setAccrualPolicyAccount( 0 );
 				if ( $pfpf->isValid() ) {
 					$unpaid_pay_formula_policy_id = $pfpf->Save();
 				}
@@ -501,9 +490,9 @@ class InstallSchema_1064A extends InstallSchema_Base {
 				$pfpf->setName( 'Regular (1.0x)' );
 				$pfpf->setPayType( 10 ); //Pay Multiplied By Factor
 				$pfpf->setRate( 1.0 );
-				$pfpf->setWageGroup( TTUUID::getZeroID() );
+				$pfpf->setWageGroup( 0 );
 				$pfpf->setAccrualRate( 1.0 );
-				$pfpf->setAccrualPolicyAccount( TTUUID::getZeroID() );
+				$pfpf->setAccrualPolicyAccount( 0 );
 				if ( $pfpf->isValid() ) {
 					$regular_pay_formula_policy_id = $pfpf->Save();
 				}
@@ -599,7 +588,7 @@ class InstallSchema_1064A extends InstallSchema_Base {
 							$pcf->setPayStubEntryAccountId( (int)$otp_obj->getColumn('pay_stub_entry_account_id') );
 						} else {
 							Debug::text(' Invalid PayStub Account ID: '. (int)$otp_obj->getColumn('pay_stub_entry_account_id'), __FILE__, __LINE__, __METHOD__, 9);
-							$pcf->setPayStubEntryAccountId( TTUUID::getZeroID() );
+							$pcf->setPayStubEntryAccountId( 0 );
 						}
 						if ( $pcf->isValid() ) {
 							$insert_pay_code_id = $pcf->Save();
@@ -684,7 +673,7 @@ class InstallSchema_1064A extends InstallSchema_Base {
 							$pcf->setPayStubEntryAccountId( (int)$pp_obj->getColumn('pay_stub_entry_account_id') );
 						} else {
 							Debug::text(' Invalid PayStub Account ID: '. (int)$pp_obj->getColumn('pay_stub_entry_account_id'), __FILE__, __LINE__, __METHOD__, 9);
-							$pcf->setPayStubEntryAccountId( TTUUID::getZeroID() );
+							$pcf->setPayStubEntryAccountId( 0 );
 						}
 
 						if ( $pcf->isValid() ) {
@@ -751,7 +740,7 @@ class InstallSchema_1064A extends InstallSchema_Base {
 							$pcf->setPayStubEntryAccountId( (int)$ap_obj->getColumn('pay_stub_entry_account_id') );
 						} else {
 							Debug::text(' Invalid PayStub Account ID: '. (int)$ap_obj->getColumn('pay_stub_entry_account_id'), __FILE__, __LINE__, __METHOD__, 9);
-							$pcf->setPayStubEntryAccountId( TTUUID::getZeroID() );
+							$pcf->setPayStubEntryAccountId( 0 );
 						}
 
 						if ( $pcf->isValid() ) {
@@ -799,7 +788,7 @@ class InstallSchema_1064A extends InstallSchema_Base {
 						//if ( $mp_obj->getType() == 15 ) { //Auto-Add
 						//	$pcf->setPayFormulaPolicy( $regular_pay_formula_policy_id );
 						//} else {
-						//	$pcf->setPayFormulaPolicy( TTUUID::getZeroID() );
+						//	$pcf->setPayFormulaPolicy( 0 );
 						//}
 						if ( $pcf->isValid() ) {
 							$insert_pay_code_id = $pcf->Save();
@@ -840,7 +829,7 @@ class InstallSchema_1064A extends InstallSchema_Base {
 						//if ( $bp_obj->getType() == 15 ) { //Auto-Add
 						//	$pcf->setPayFormulaPolicy( $regular_pay_formula_policy_id );
 						//} else {
-						//	$pcf->setPayFormulaPolicy( TTUUID::getZeroID() );
+						//	$pcf->setPayFormulaPolicy( 0 );
 						//}
 						if ( $pcf->isValid() ) {
 							$insert_pay_code_id = $pcf->Save();
@@ -887,7 +876,7 @@ class InstallSchema_1064A extends InstallSchema_Base {
 						}
 					}
 				}
-
+				
 
 				//Remove addUserDate() from cron
 				//However calcExceptions calculates dates retroactively using UserDate table, so they will always have 0 hour totals.
@@ -986,7 +975,7 @@ class InstallSchema_1064A extends InstallSchema_Base {
 					}
 				}
 
-
+				
 				//Convert schedule policies to Include/Exclude format.
 				$splf = TTNew('SchedulePolicyListFactory');
 				$splf->getByCompanyId( $company_obj->getId() );

@@ -1,7 +1,7 @@
 <?php
 /*********************************************************************************
  * TimeTrex is a Workforce Management program developed by
- * TimeTrex Software Inc. Copyright (C) 2003 - 2018 TimeTrex Software Inc.
+ * TimeTrex Software Inc. Copyright (C) 2003 - 2017 TimeTrex Software Inc.
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Affero General Public License version 3 as published by
@@ -40,14 +40,7 @@
  */
 class CompanySettingListFactory extends CompanySettingFactory implements IteratorAggregate {
 
-	/**
-	 * @param int $limit Limit the number of records returned
-	 * @param int $page Page number of records to return for pagination
-	 * @param array $where Additional SQL WHERE clause in format of array( $column => $filter, ... ). ie: array( 'id' => 1, ... )
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return $this
-	 */
-	function getAll( $limit = NULL, $page = NULL, $where = NULL, $order = NULL) {
+	function getAll($limit = NULL, $page = NULL, $where = NULL, $order = NULL) {
 		$query = '
 					select	*
 					from	'. $this->getTable() .'
@@ -60,19 +53,13 @@ class CompanySettingListFactory extends CompanySettingFactory implements Iterato
 		return $this;
 	}
 
-	/**
-	 * @param string $id UUID
-	 * @param array $where Additional SQL WHERE clause in format of array( $column => $filter, ... ). ie: array( 'id' => 1, ... )
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return bool|CompanySettingListFactory
-	 */
-	function getById( $id, $where = NULL, $order = NULL) {
+	function getById($id, $where = NULL, $order = NULL) {
 		if ( $id == '') {
 			return FALSE;
 		}
 
 		$ph = array(
-					'id' => TTUUID::castUUID($id),
+					'id' => (int)$id, 
 					);
 
 		$query = '
@@ -88,19 +75,13 @@ class CompanySettingListFactory extends CompanySettingFactory implements Iterato
 		return $this;
 	}
 
-	/**
-	 * @param string $id UUID
-	 * @param array $where Additional SQL WHERE clause in format of array( $column => $filter, ... ). ie: array( 'id' => 1, ... )
-	 * @param array $order Sort order passed to SQL in format of array( $column => 'asc', 'name' => 'desc', ... ). ie: array( 'id' => 'asc', 'name' => 'desc', ... )
-	 * @return bool|CompanySettingListFactory
-	 */
-	function getByCompanyId( $id, $where = NULL, $order = NULL) {
+	function getByCompanyId($id, $where = NULL, $order = NULL) {
 		if ( $id == '') {
 			return FALSE;
 		}
 
 		$ph = array(
-					'id' => TTUUID::castUUID($id),
+					'id' => (int)$id, 
 					);
 
 		$query = '
@@ -116,16 +97,11 @@ class CompanySettingListFactory extends CompanySettingFactory implements Iterato
 		return $this;
 	}
 
-	/**
-	 * @param string $company_id UUID
-	 * @param $name
-	 * @return bool|CompanySettingListFactory
-	 */
-	function getByCompanyIdAndName( $company_id, $name) {
+	function getByCompanyIdAndName($company_id, $name) {		
 		if ( $company_id == '' ) {
 			return FALSE;
 		}
-
+		
 		if ( $name == '') {
 			return FALSE;
 		}
@@ -133,8 +109,8 @@ class CompanySettingListFactory extends CompanySettingFactory implements Iterato
 		$cache_id = $company_id.$name;
 
 		$ph = array(
-					'company_id' => TTUUID::castUUID($company_id),
-					'name' => $name,
+					'company_id' => (int)$company_id, 
+					'name' => $name, 
 					);
 
 		$this->rs = $this->getCache($cache_id);

@@ -2,8 +2,6 @@ WageViewController = BaseViewController.extend( {
 
 	el: '#wage_view_container', //Must set el here and can only set string, so events can work
 
-	_required_files: ['APIUserWage', 'APIUserGroup', 'APICurrency', 'APIWageGroup', 'APIBranch', 'APIDepartment', 'APIUserTitle'],
-
 	user_api: null,
 	user_group_api: null,
 	company_api: null,
@@ -21,11 +19,9 @@ WageViewController = BaseViewController.extend( {
 	currency: '',
 	code: '',
 
-	is_mass_adding: false,
+	initialize: function( options ) {
 
-	init: function( options ) {
-
-		//this._super('initialize', options );
+		this._super( 'initialize', options );
 		this.edit_view_tpl = 'WageEditView.html';
 		this.permission_id = 'wage';
 		this.script_name = 'WageView';
@@ -264,11 +260,6 @@ WageViewController = BaseViewController.extend( {
 				this.onTypeChange( true );
 				break;
 			case 'user_id':
-				if ( $.isArray(this.current_edit_record.user_id) && this.current_edit_record.user_id.length > 1 ) {
-					this.is_mass_adding = true;
-				} else {
-					this.is_mass_adding = false;
-				}
 				this.setCurrency();
 				break;
 			case 'wage':
@@ -492,7 +483,7 @@ WageViewController = BaseViewController.extend( {
 					var result_data = result.getResult();
 					if ( result_data === true ) {
 						$this.refresh_id = $this.current_edit_record.id;
-					} else if ( TTUUID.isUUID( result_data ) && result_data != TTUUID.zero_id && result_data != TTUUID.not_exist_id ) {
+					} else if ( result_data > 0 ) {
 						$this.refresh_id = result_data;
 					}
 					$this.search();
@@ -516,7 +507,7 @@ WageViewController = BaseViewController.extend( {
 	setEditMenuSaveAndContinueIcon: function( context_btn, pId ) {
 		this.saveAndContinueValidate( context_btn );
 
-		if ( this.is_mass_adding || !this.current_edit_record ) {
+		if ( !this.current_edit_record || !this.current_edit_record.id ) {
 			context_btn.addClass( 'disable-image' );
 		}
 	},
@@ -586,7 +577,7 @@ WageViewController = BaseViewController.extend( {
 		if ( this.current_edit_record.wage &&
 			this.current_edit_record.weekly_time &&
 			this.current_edit_record.type_id &&
-			this.current_edit_record.type_id != 10 ) {
+			this.current_edit_record.type_id !== 10 ) {
 
 
 			//wwkly_time need value before pasrse to seconds.
@@ -607,7 +598,7 @@ WageViewController = BaseViewController.extend( {
 
 	onTypeChange: function( getRate ) {
 
-		if ( parseInt( this.current_edit_record.type_id ) != 10 ) {
+		if ( parseInt( this.current_edit_record.type_id ) !== 10 ) {
 			this.attachElement( 'weekly_time' );
 			this.attachElement( 'hourly_rate' );
 
@@ -1059,6 +1050,42 @@ WageViewController = BaseViewController.extend( {
 		} else {
 			this.buildContextMenu( true );
 			this.setEditMenu();
+		}
+
+	},
+
+	initSubDocumentView: function() {
+		var $this = this;
+
+		if ( this.sub_document_view_controller ) {
+			this.sub_document_view_controller.buildContextMenu( true );
+			this.sub_document_view_controller.setDefaultMenu();
+			$this.sub_document_view_controller.parent_value = $this.current_edit_record.id;
+			$this.sub_document_view_controller.parent_edit_record = $this.current_edit_record;
+			$this.sub_document_view_controller.initData();
+			return;
+		}
+
+		Global.loadScript( 'views/document/DocumentViewController.js', function() {
+			var tab_attachment = $this.edit_view_tab.find( '#tab_attachment' );
+			var firstColumn = tab_attachment.find( '.first-column-sub-view' );
+			Global.trackView( 'Sub' + 'Document' + 'View' );
+			DocumentViewController.loadSubView( firstColumn, beforeLoadView, afterLoadView );
+
+		} );
+
+		function beforeLoadView() {
+
+		}
+
+		function afterLoadView( subViewController ) {
+			$this.sub_document_view_controller = subViewController;
+			$this.sub_document_view_controller.parent_key = 'object_id';
+			$this.sub_document_view_controller.parent_value = $this.current_edit_record.id;
+			$this.sub_document_view_controller.document_object_type_id = $this.document_object_type_id;
+			$this.sub_document_view_controller.parent_edit_record = $this.current_edit_record;
+			$this.sub_document_view_controller.parent_view_controller = $this;
+			$this.sub_document_view_controller.initData();
 		}
 
 	},

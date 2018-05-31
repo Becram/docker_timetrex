@@ -16,18 +16,15 @@ RequestViewCommonController = BaseViewController.extend( {
 		for ( var i = 0; i < len; i++ ) {
 			var item = data[i];
 
-			if ( item.status_id == 30 ) {
+			if ( item.status_id === 30 ) {
 				$( "tr#" + item.id ).addClass( 'bolder-request' );
 			}
 		}
 	},
 
 	onCancelClick: function( force, cancel_all ) {
-		TTPromise.add('base', 'onCancelClick');
 		var $this = this;
-
-		//#2571 - Unable to get property 'id' of undefined or null reference
-		if ( this.current_edit_record && this.current_edit_record.id ) {
+		if ( this.current_edit_record.id ) {
 			var $record_id = this.current_edit_record.id;
 		}
 
@@ -52,22 +49,22 @@ RequestViewCommonController = BaseViewController.extend( {
 
 			} else {
 				if ( $this.is_edit && $record_id ) {
-					$this.setCurrentEditViewState('view');
+					$this.setCurrentEditViewState('view')
 					$this.onViewClick( $record_id, true );
-					$this.setEditMenu();
 				} else {
 					$this.removeEditView();
 				}
 
 			}
-			TTPromise.resolve('base', 'onCancelClick');
 
 		}
 
 	},
 
-	onCloseIconClick: function(){
-		this.onCancelClick();
+	openEditView: function() {
+		if ( !this.edit_view ) {
+			this.initEditViewUI(this.viewId, this.edit_view_tpl);
+		}
 	},
 
 	buildDataForAPI: function( data ) {
@@ -106,7 +103,7 @@ RequestViewCommonController = BaseViewController.extend( {
 				data_for_api[key] = this.current_edit_record[key];
 			}
 		}
-		//data_for_api['status_id'] = 30; //Manually set pending status -- This is done at the API automatically now.
+		data_for_api['status_id'] = 30; //manually set pending status
 		if ( LocalCacheData.getCurrentCompany().product_edition_id > 10 && PermissionManager.validate( 'request', 'add_advanced' ) && ( this.current_edit_record.type_id == 30 || this.current_edit_record.type_id == 40 )  ) {
 			data_for_api.request_schedule = {0: request_schedule};
 		}
@@ -140,14 +137,13 @@ RequestViewCommonController = BaseViewController.extend( {
 	showAdvancedFields: function() {
 		if (
 			LocalCacheData.getCurrentCompany().product_edition_id > 10 &&
-			( PermissionManager.validate('request', 'add_advanced')
-			|| ( TTUUID.isUUID( this.current_edit_record.request_schedule_id ) && this.current_edit_record.request_schedule_id != TTUUID.zero_id && this.current_edit_record.request_schedule_id != TTUUID.not_exist_id ) )
-			&& ( this.current_edit_record.type_id == 30 || this.current_edit_record.type_id == 40 ) && ( !this.pre_request_schedule || this.is_add )
+			( PermissionManager.validate('request', 'add_advanced') || this.current_edit_record.request_schedule_id > 0 ) &&
+			( this.current_edit_record.type_id == 30 || this.current_edit_record.type_id == 40 ) && ( !this.pre_request_schedule || this.is_add )
 		) {
 			var advanced_field_names = this.getAdvancedFieldNames();
 			if ( this.edit_view_ui_dic ) {
 				for ( var i = 0; i < advanced_field_names.length; i++ ) {
-					if( advanced_field_names[i] == 'absence_policy_id' && this.edit_view_ui_dic.request_schedule_status_id && this.edit_view_ui_dic.request_schedule_status_id.getValue() != 20 ){
+					if( advanced_field_names[i] == 'absence_policy_id' && this.edit_view_ui_dic.request_schedule_status_id.getValue() != 20 ){
 						this.edit_view_ui_dic[advanced_field_names[i]].parents('.edit-view-form-item-div').hide();
 						continue;
 					}
@@ -187,9 +183,7 @@ RequestViewCommonController = BaseViewController.extend( {
 				}
 			}
 		} else{
-			if ( this.edit_view_ui_dic.date_stamp ) {
-				this.edit_view_ui_dic.date_stamp.parents('.edit-view-form-item-div').show();
-			}
+			this.edit_view_ui_dic.date_stamp.parents('.edit-view-form-item-div').show();
 			this.hideAdvancedFields();
 		}
 	},
@@ -248,20 +242,10 @@ RequestViewCommonController = BaseViewController.extend( {
 	getScheduleTotalTime: function() {
 		if ( LocalCacheData.getCurrentCompany().product_edition_id > 10
 			&& ( this.current_edit_record.type_id == 30 || this.current_edit_record.type_id == 40 )
-			&& ( this.viewId != 'Request' || this.is_viewing != true )
-			&& ( this.edit_view_ui_dic && this.edit_view_ui_dic['total_time'] )
-		) {
+			&& ( this.viewId != 'Request' || this.is_viewing != true )) {
 
-			var start_time = false;
-			if  ( this.current_edit_record['start_date']  && this.current_edit_record['start_time'] ) {
-				start_time = this.current_edit_record['start_date'] + ' ' + this.current_edit_record['start_time'];
-			}
-
-			var end_time = false;
-			if ( this.current_edit_record['start_date'] && this.current_edit_record['end_time'] ) {
-				end_time = this.current_edit_record['start_date'] + ' ' + this.current_edit_record['end_time'];
-			}
-
+			var startTime = ( this.current_edit_record['start_date'] ) ? this.current_edit_record['start_date'] + ' ' + this.current_edit_record['start_time'] : ( (this.current_edit_record['start_time']) ? this.current_edit_record['start_time'] : ''  );
+			var endTime = ( this.current_edit_record['start_date'] ) ? this.current_edit_record['start_date'] + ' ' + this.current_edit_record['end_time'] : ( (this.current_edit_record['end_time']) ? this.current_edit_record['end_time'] : '' );
 			var schedulePolicyId = ( this.current_edit_record['schedule_policy_id'] ) ? this.current_edit_record['schedule_policy_id'] : null;
 			var user_id = this.current_edit_record.user_id;
 
@@ -269,9 +253,9 @@ RequestViewCommonController = BaseViewController.extend( {
 				user_id = LocalCacheData.getLoginUser().id;
 			}
 
-			if ( start_time && end_time ) {
+			if ( startTime && endTime ) {
 				var schedule_api = new (APIFactory.getAPIClass('APISchedule'))();
-				this.total_time = schedule_api.getScheduleTotalTime(start_time, end_time, schedulePolicyId, user_id, {async: false}).getResult();
+				this.total_time = schedule_api.getScheduleTotalTime(startTime, endTime, schedulePolicyId, user_id, {async: false}).getResult();
 				this.current_edit_record['total_time'] = this.total_time;
 				var total_time = Global.secondToHHMMSS(this.total_time);
 				this.edit_view_ui_dic['total_time'].setValue(total_time);
@@ -324,13 +308,13 @@ RequestViewCommonController = BaseViewController.extend( {
 	},
 
 	getAvailableBalance: function() {
-		if ( ( this.is_viewing && this.viewId == 'Request' ) || Global.isSet( this.current_edit_record ) == false ) {
+		if ( this.is_viewing && this.viewId == 'Request' ) {
 			return;
 		}
 
 		if ( ( this.viewId != 'Request' || this.is_viewing == false ) &&
 			this.current_edit_record.absence_policy_id &&
-			( PermissionManager.validate('request', 'add_advanced') || ( TTUUID.isUUID( this.current_edit_record.request_schedule_id ) && this.current_edit_record.request_schedule_id != TTUUID.zero_id && this.current_edit_record.request_schedule_id != TTUUID.not_exist_id ) ) &&
+			this.current_edit_record.absence_policy_id > 0 &&
 			LocalCacheData.loginUser.id &&
 			this.current_edit_record.total_time &&
 			this.current_edit_record.total_time != '00:00' &&
@@ -355,20 +339,17 @@ RequestViewCommonController = BaseViewController.extend( {
 					total_time,
 					{
 						onResult: function (result) {
-							if ( $this.edit_view_ui_dic && $this.edit_view_ui_dic.available_balance ) {
-								$this.getBalanceHandler(result, date_stamp);
-								if (result && $this.selected_absence_policy_record) {
-									$this.edit_view_ui_dic.available_balance.parents('.edit-view-form-item-div').show();
-								} else {
-									$this.edit_view_ui_dic.available_balance.parents('.edit-view-form-item-div').hide();
-								}
+							$this.getBalanceHandler(result, date_stamp);
+							if ( result && $this.selected_absence_policy_record ) {
+								$this.edit_view_ui_dic.available_balance.parents('.edit-view-form-item-div').show();
+							} else {
+								$this.edit_view_ui_dic.available_balance.parents('.edit-view-form-item-div').hide();
 							}
 						}
 					}
 				);
 			}
-		// If unset or set to --None--...
-		} else if ( this.current_edit_record.absence_policy_id == false || this.current_edit_record.absence_policy_id == TTUUID.zero_id ) {
+		} else if ( this.current_edit_record.absence_policy_id == 0 ) {
 			if ( this.edit_view_ui_dic.available_balance ) {
 				this.edit_view_ui_dic.available_balance.parents('.edit-view-form-item-div').hide();
 			}
@@ -444,11 +425,6 @@ RequestViewCommonController = BaseViewController.extend( {
 	},
 
 	onViewClick: function( editId, clear_edit_view ) {
-		if (clear_edit_view) {
-			this.clearEditView();
-			this.onViewClick(editId);
-			return;
-		}
 		var $this = this;
 		this.setCurrentEditViewState( 'view' );
 		this.openEditView(); //Make sure that this isn't in a callback or it causes navigation dropdown problems.
@@ -471,6 +447,10 @@ RequestViewCommonController = BaseViewController.extend( {
 		filter.filter_data.id = [selectedId];
 		this.api['get' + this.api.key_name]( filter, {
 			onResult: function( result ) {
+				if (clear_edit_view) {
+					//Clear the edit view without removing it.
+					$this.clearEditView();
+				}
 				var result_data = result.getResult();
 				if ( !result_data ) {
 					result_data = [];
@@ -486,7 +466,7 @@ RequestViewCommonController = BaseViewController.extend( {
 					return;
 				}
 
-				if ( Global.isSet($this.current_edit_record.start_date) && $this.edit_view_tab ) {
+				if ( Global.isSet($this.current_edit_record.start_date) ) {
 					$this.edit_view_tab.find( '#tab_request' ).find( '.third-column' ).show();
 				}
 
@@ -562,8 +542,6 @@ RequestViewCommonController = BaseViewController.extend( {
 		this.initEditView();
 		//Clear last sent message body value.
 		this.edit_view_ui_dic.body.setValue('');
-		//ensure send button is available
-		this.setEditMenu();
 	},
 
 	buildViewUI: function() {
@@ -609,7 +587,7 @@ RequestViewCommonController = BaseViewController.extend( {
 		this.addEditFieldToColumn($.i18n._('Date'), form_item_input, tab_request_column1);
 
 		if ( LocalCacheData.getCurrentCompany().product_edition_id > 10 ) {
-
+			
 			//Working Status
 			var form_item_input = Global.loadWidgetByName(FormItemType.COMBO_BOX);
 			form_item_input.TComboBox({field: 'request_schedule_status_id', set_empty: false});
