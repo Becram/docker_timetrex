@@ -2,8 +2,8 @@ ReportViewWizardController = BaseWizardController.extend( {
 
 	el: '.wizard-bg',
 
-	initialize: function( options ) {
-		this._super( 'initialize', options );
+	init: function( options ) {
+		//this._super('initialize', options );
 		this.title = $.i18n._( 'Report View' );
 		this.steps = 1;
 		this.current_step = 1;
@@ -19,9 +19,9 @@ ReportViewWizardController = BaseWizardController.extend( {
 		this.stepsWidgetDic[this.current_step] = {};
 		switch ( this.current_step ) {
 			case 1:
-				this.content_div.children().eq( 0 )[0].contentDocument.open();
-				this.content_div.children().eq( 0 )[0].contentDocument.writeln( this.default_data );
-				this.content_div.children().eq( 0 )[0].contentDocument.close();
+				this.content_div.children().eq( 0 )[0].contentWindow.document.open();
+				this.content_div.children().eq( 0 )[0].contentWindow.document.writeln( this.default_data );
+				this.content_div.children().eq( 0 )[0].contentWindow.document.close();
 				break;
 		}
 	},

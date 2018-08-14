@@ -1,7 +1,7 @@
 <?php
 /*********************************************************************************
  * TimeTrex is a Workforce Management program developed by
- * TimeTrex Software Inc. Copyright (C) 2003 - 2017 TimeTrex Software Inc.
+ * TimeTrex Software Inc. Copyright (C) 2003 - 2018 TimeTrex Software Inc.
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Affero General Public License version 3 as published by
@@ -88,7 +88,7 @@ if ( $clf->getRecordCount() > 0 ) {
 			//
 			$rsclf->getByCompanyIdAndStartDateAndEndDate( $c_obj->getId(), $initial_start_date, $initial_end_date );
 			if ( $rsclf->getRecordCount() > 0 ) {
-				Debug::text('Recurring Schedule Control List Record Count: '. $rsclf->getRecordCount(), __FILE__, __LINE__, __METHOD__, 10);
+				Debug::text('CRON: Recurring Schedule Control List Record Count: '. $rsclf->getRecordCount(), __FILE__, __LINE__, __METHOD__, 10);
 				foreach( $rsclf as $rsc_obj ) {
 					$rsclf->StartTransaction(); // Wrap each individual schedule in its own transaction instead.
 
@@ -98,20 +98,20 @@ if ( $clf->getRecordCount() > 0 ) {
 					$rstc_obj = $rsc_obj->getRecurringScheduleTemplateControlObject();
 					if ( is_object( $rstc_obj ) ) {
 						Debug::text('Recurring Schedule Template Control last updated by: '. $rstc_obj->getUpdatedBy(), __FILE__, __LINE__, __METHOD__, 10);
-						if ( $rstc_obj->getUpdatedBy() > 0 ) {
+						if ( TTUUID::isUUID( $rstc_obj->getUpdatedBy() ) AND $rstc_obj->getUpdatedBy() != TTUUID::getZeroID() ) {
 							$ulf = TTnew( 'UserListFactory' );
 							$ulf->getById( $rstc_obj->getUpdatedBy() );
-							if ( $ulf->getRecordCount() > 0 ) {
-									$ulf->getCurrent()->getUserPreferenceObject()->setTimeZonePreferences();
-							} else {
-									//Use system timezone.
-									TTDate::setTimeZone();
+							if ( $ulf->getRecordCount() == 1 ) {
+								$ulf->getCurrent()->getUserPreferenceObject()->setTimeZonePreferences();
 							}
-						} else {
-							//Use system timezone.
-							TTDate::setTimeZone();
 						}
 					}
+
+					//Default to system timezone if no other timezone is specified.
+					if ( !isset($ulf) OR ( isset($ulf) AND $ulf->getRecordCount() != 1 ) ) {
+						TTDate::setTimeZone(); //Use system timezone.
+					}
+					unset($ulf);
 
 					//Make sure its always at least the display weeks based on the end of the current week.
 					$maximum_end_date = ( ( TTDate::getEndWeekEpoch($current_epoch) + 1 ) + ( $rsc_obj->getDisplayWeeks() * ( 86400 * 7 ) ) - 1 );
@@ -122,10 +122,10 @@ if ( $clf->getRecordCount() > 0 ) {
 
 					$rsf = TTnew('RecurringScheduleFactory');
 					$rslf = TTNew('RecurringScheduleListFactory');
-					
+
 					//Clear out recurring schedules for anything older than 1 week.
 					$rsf->clearRecurringSchedulesFromRecurringScheduleControl( $rsc_obj->getID(), ( $current_epoch - (86400 * 720) ), TTDate::getEndWeekEpoch( ( TTDate::getBeginWeekEpoch( $current_epoch ) - ( 86400 * 8 ) ) ) );
-					
+
 					//Grab the earliest last day of the recurring schedule, so we can start from there and add the next week.
 					//We actually want to get the last day of each recurring schedule, and just add to that. Rather then rebuilding the entire schedule.
 					//$minimum_start_date = TTDate::getBeginDayEpoch( ( TTDate::getMiddleDayEpoch( $rslf->getMinimumStartTimeByRecurringScheduleControlID( $rsc_obj->getID() ) + 86400 ) ) );
@@ -144,7 +144,7 @@ if ( $clf->getRecordCount() > 0 ) {
 					}
 					$new_week_end_date = TTDate::getEndWeekEpoch( $new_week_start_date );
 					Debug::text('  Start Date: '. TTDate::getDate('DATE+TIME', $new_week_start_date ) .' End Date: '. TTDate::getDate('DATE+TIME', $new_week_end_date ) .' Maximum End Date: '. TTDate::getDate('DATE+TIME', $maximum_end_date ), __FILE__, __LINE__, __METHOD__, 10);
-					
+
 					if ( $new_week_end_date <= $maximum_end_date ) {
 						//Add new schedules for the upcoming week.
 						//$rsf->clearRecurringSchedulesFromRecurringScheduleControl( $rsc_obj->getID(), $new_week_start_date, $new_week_end_date );

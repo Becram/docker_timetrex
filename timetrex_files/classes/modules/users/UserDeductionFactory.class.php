@@ -1,7 +1,7 @@
 <?php
 /*********************************************************************************
  * TimeTrex is a Workforce Management program developed by
- * TimeTrex Software Inc. Copyright (C) 2003 - 2017 TimeTrex Software Inc.
+ * TimeTrex Software Inc. Copyright (C) 2003 - 2018 TimeTrex Software Inc.
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Affero General Public License version 3 as published by
@@ -47,6 +47,11 @@ class UserDeductionFactory extends Factory {
 	var $company_deduction_obj = NULL;
 	var $pay_stub_entry_account_link_obj = NULL;
 
+	/**
+	 * @param $name
+	 * @param null $parent
+	 * @return array|null
+	 */
 	function _getFactoryOptions( $name, $parent = NULL ) {
 
 		$retval = NULL;
@@ -91,6 +96,10 @@ class UserDeductionFactory extends Factory {
 		return $retval;
 	}
 
+	/**
+	 * @param $data
+	 * @return array
+	 */
 	function _getVariableToFunctionMap( $data ) {
 		$variable_function_map = array(
 										'id' => 'ID',
@@ -108,6 +117,10 @@ class UserDeductionFactory extends Factory {
 
 										'first_name' => FALSE,
 										'last_name' => FALSE,
+										'middle_name' => FALSE,
+										'user_status_id' => FALSE,
+										'user_status' => FALSE,
+										'full_name' => FALSE,
 
 										'length_of_service_date' => 'LengthOfServiceDate',
 										'start_date' => 'StartDate',
@@ -129,15 +142,25 @@ class UserDeductionFactory extends Factory {
 		return $variable_function_map;
 	}
 
+	/**
+	 * @return bool
+	 */
 	function getUserObject() {
 		return $this->getGenericObject( 'UserListFactory', $this->getUser(), 'user_obj' );
 	}
 
+	/**
+	 * @return bool
+	 */
 	function getCompanyDeductionObject() {
 		return $this->getGenericObject( 'CompanyDeductionListFactory', $this->getCompanyDeduction(), 'company_deduction_obj' );
 	}
 
 	//Do not replace this with getGenericObject() as it uses the CompanyID not the ID itself.
+
+	/**
+	 * @return bool|null
+	 */
 	function getPayStubEntryAccountLinkObject() {
 		if ( is_object($this->pay_stub_entry_account_link_obj) ) {
 			return $this->pay_stub_entry_account_link_obj;
@@ -153,34 +176,30 @@ class UserDeductionFactory extends Factory {
 		}
 	}
 
+	/**
+	 * @return bool|mixed
+	 */
 	function getUser() {
-		if ( isset($this->data['user_id']) ) {
-			return (int)$this->data['user_id'];
-		}
-
-		return FALSE;
-	}
-	function setUser($id) {
-		$id = trim($id);
-
-		$ulf = TTnew( 'UserListFactory' );
-
-		if ( $this->Validator->isResultSetWithRows(	'user',
-															$ulf->getByID($id),
-															TTi18n::gettext('Invalid User')
-															) ) {
-			$this->data['user_id'] = $id;
-
-			return TRUE;
-		}
-
-		return FALSE;
+		return $this->getGenericDataValue( 'user_id' );
 	}
 
-	function isUniqueCompanyDeduction($deduction_id) {
+	/**
+	 * @param string $value UUID
+	 * @return bool
+	 */
+	function setUser( $value ) {
+		$value = TTUUID::castUUID( $value );
+		return $this->setGenericDataValue( 'user_id', $value );
+	}
+
+	/**
+	 * @param string $deduction_id UUID
+	 * @return bool
+	 */
+	function isUniqueCompanyDeduction( $deduction_id) {
 		$ph = array(
-					'user_id' => (int)$this->getUser(),
-					'deduction_id' => (int)$deduction_id,
+					'user_id' => TTUUID::castUUID($this->getUser()),
+					'deduction_id' => TTUUID::castUUID($deduction_id),
 					);
 
 		$query = 'select id from '. $this->getTable() .' where user_id = ? AND company_deduction_id = ? AND deleted = 0';
@@ -197,43 +216,36 @@ class UserDeductionFactory extends Factory {
 
 		return FALSE;
 	}
+
+	/**
+	 * @return bool|mixed
+	 */
 	function getCompanyDeduction() {
-		if ( isset($this->data['company_deduction_id']) ) {
-			return (int)$this->data['company_deduction_id'];
-		}
-
-		return FALSE;
-	}
-	function setCompanyDeduction($id) {
-		$id = trim($id);
-
-		Debug::Text('ID: '. $id, __FILE__, __LINE__, __METHOD__, 10);
-		$cdlf = TTnew( 'CompanyDeductionListFactory' );
-
-		if (	(
-					$id != 0
-					OR
-					$this->Validator->isResultSetWithRows(	'company_deduction',
-															$cdlf->getByID($id),
-															TTi18n::gettext('Tax/Deduction is invalid')
-														)
-				) ) {
-
-			$this->data['company_deduction_id'] = $id;
-
-			return TRUE;
-		}
-
-		return FALSE;
+		return $this->getGenericDataValue( 'company_deduction_id' );
 	}
 
+	/**
+	 * @param string $value UUID
+	 * @return bool
+	 */
+	function setCompanyDeduction( $value ) {
+		$value = TTUUID::castUUID( $value );
+		Debug::Text('ID: '. $value, __FILE__, __LINE__, __METHOD__, 10);
+		return $this->setGenericDataValue( 'company_deduction_id', $value );
+	}
+
+	/**
+	 * @param bool $raw
+	 * @return bool|int|mixed
+	 */
 	function getLengthOfServiceDate( $raw = FALSE ) {
 		$retval = FALSE;
-		if ( isset($this->data['length_of_service_date']) ) {
+		$value  = $this->getGenericDataValue( 'length_of_service_date' );
+		if ( $value !== FALSE ) {
 			if ( $raw === TRUE ) {
-				$retval = $this->data['length_of_service_date'];
+				$retval = $value;
 			} else {
-				$retval = TTDate::strtotime( $this->data['length_of_service_date'] );
+				$retval = TTDate::strtotime( $value );
 			}
 		}
 
@@ -247,35 +259,31 @@ class UserDeductionFactory extends Factory {
 			return $retval;
 		}
 	}
-	function setLengthOfServiceDate($epoch) {
-		if ( $epoch != '' ) {
-			$epoch = TTDate::getBeginDayEpoch( trim($epoch) );
+
+	/**
+	 * @param int $value EPOCH
+	 * @return bool
+	 */
+	function setLengthOfServiceDate( $value ) {
+		if ( $value != '' ) {
+			$value = TTDate::getBeginDayEpoch( trim($value) );
 		}
-
-		Debug::Arr($epoch, 'Length of Service Date: '. TTDate::getDate('DATE+TIME', $epoch ), __FILE__, __LINE__, __METHOD__, 10);
-
-		if	(	$epoch == ''
-				OR
-				$this->Validator->isDate(		'length_of_service_date',
-												$epoch,
-												TTi18n::gettext('Incorrect Length Of Service Date'))
-			) {
-
-			$this->data['length_of_service_date'] = $epoch;
-
-			return TRUE;
-		}
-
-		return FALSE;
+		Debug::Arr($value, 'Length of Service Date: '. TTDate::getDate('DATE+TIME', $value ), __FILE__, __LINE__, __METHOD__, 10);
+		return $this->setGenericDataValue( 'length_of_service_date', $value );
 	}
 
+	/**
+	 * @param bool $raw
+	 * @return bool|int|mixed
+	 */
 	function getStartDate( $raw = FALSE ) {
+		$value = $this->getGenericDataValue( 'start_date' );
 		$retval = FALSE;
-		if ( isset($this->data['start_date']) ) {
+		if ( $value !== FALSE ) {
 			if ( $raw === TRUE ) {
-				$retval = $this->data['start_date'];
+				$retval = $value;
 			} else {
-				$retval = TTDate::strtotime( $this->data['start_date'] );
+				$retval = TTDate::strtotime( $value );
 			}
 		}
 
@@ -289,35 +297,31 @@ class UserDeductionFactory extends Factory {
 			return $retval;
 		}
 	}
-	function setStartDate($epoch) {
-		if ( $epoch != '' ) {
-			$epoch = TTDate::getBeginDayEpoch( trim($epoch) );
+
+	/**
+	 * @param int $value EPOCH
+	 * @return bool
+	 */
+	function setStartDate( $value ) {
+		if ( $value != '' ) {
+			$value = TTDate::getBeginDayEpoch( trim($value) );
 		}
-
-		Debug::Arr($epoch, 'Start Date: '. TTDate::getDate('DATE+TIME', $epoch ), __FILE__, __LINE__, __METHOD__, 10);
-
-		if	(	$epoch == ''
-				OR
-				$this->Validator->isDate(		'start_date',
-												$epoch,
-												TTi18n::gettext('Incorrect Start Date'))
-			) {
-
-			$this->data['start_date'] = $epoch;
-
-			return TRUE;
-		}
-
-		return FALSE;
+		Debug::Arr($value, 'Start Date: '. TTDate::getDate('DATE+TIME', $value ), __FILE__, __LINE__, __METHOD__, 10);
+		return $this->setGenericDataValue( 'start_date', $value );
 	}
 
+	/**
+	 * @param bool $raw
+	 * @return bool|int|mixed
+	 */
 	function getEndDate( $raw = FALSE ) {
 		$retval = FALSE;
-		if ( isset($this->data['end_date']) ) {
+		$value = $this->getGenericDataValue( 'end_date' );
+		if ( $value !== FALSE ) {
 			if ( $raw === TRUE ) {
-				$retval = $this->data['end_date'];
+				$retval = $value;
 			} else {
-				$retval = TTDate::strtotime( $this->data['end_date'] );
+				$retval = TTDate::strtotime( $value );
 			}
 		}
 
@@ -331,289 +335,185 @@ class UserDeductionFactory extends Factory {
 			return $retval;
 		}
 	}
-	function setEndDate($epoch) {
-		if ( $epoch != '' ) {
-			$epoch = TTDate::getBeginDayEpoch( trim($epoch) );
+
+	/**
+	 * @param int $value EPOCH
+	 * @return bool
+	 */
+	function setEndDate( $value ) {
+		if ( $value != '' ) {
+			$value = TTDate::getBeginDayEpoch( trim($value) );
 		}
-
-		Debug::Arr($epoch, 'End Date: '. TTDate::getDate('DATE+TIME', $epoch ), __FILE__, __LINE__, __METHOD__, 10);
-
-		if	(	$epoch == ''
-				OR
-				$this->Validator->isDate(		'end_date',
-												$epoch,
-												TTi18n::gettext('Incorrect End Date'))
-			) {
-
-			$this->data['end_date'] = $epoch;
-
-			return TRUE;
-		}
-
-		return FALSE;
+		Debug::Arr($value, 'End Date: '. TTDate::getDate('DATE+TIME', $value ), __FILE__, __LINE__, __METHOD__, 10);
+		return $this->setGenericDataValue( 'end_date', $value );
 	}
 
+	/**
+	 * @return bool
+	 */
 	function getUserValue1() {
-		if ( isset($this->data['user_value1']) ) {
-			return $this->data['user_value1'];
-		}
-
-		return FALSE;
+		return $this->getGenericDataValue( 'user_value1' );
 	}
-	function setUserValue1($value) {
+
+	/**
+	 * @param $value
+	 * @return bool
+	 */
+	function setUserValue1( $value ) {
 		$value = trim($value);
-
-		if	(	$value == ''
-				OR
-				$this->Validator->isLength(		'user_value1',
-												$value,
-												TTi18n::gettext('User Value 1 is too short or too long'),
-												1,
-												20) ) {
-
-			$this->data['user_value1'] = $value;
-
-			return TRUE;
-		}
-
-		return FALSE;
+		return $this->setGenericDataValue( 'user_value1', $value );
 	}
 
+	/**
+	 * @return bool
+	 */
 	function getUserValue2() {
-		if ( isset($this->data['user_value2']) ) {
-			return $this->data['user_value2'];
-		}
-
-		return FALSE;
+		return $this->getGenericDataValue( 'user_value2' );
 	}
-	function setUserValue2($value) {
+
+	/**
+	 * @param $value
+	 * @return bool
+	 */
+	function setUserValue2( $value) {
 		$value = trim($value);
-
-		if	(	$value == ''
-				OR
-				$this->Validator->isLength(		'user_value2',
-												$value,
-												TTi18n::gettext('User Value 2 is too short or too long'),
-												1,
-												20) ) {
-
-			$this->data['user_value2'] = $value;
-
-			return TRUE;
-		}
-
-		return FALSE;
+		return $this->setGenericDataValue( 'user_value2', $value );
 	}
 
+	/**
+	 * @return bool
+	 */
 	function getUserValue3() {
-		if ( isset($this->data['user_value3']) ) {
-			return $this->data['user_value3'];
-		}
-
-		return FALSE;
+		return $this->getGenericDataValue( 'user_value3' );
 	}
-	function setUserValue3($value) {
+
+	/**
+	 * @param $value
+	 * @return bool
+	 */
+	function setUserValue3( $value) {
 		$value = trim($value);
-
-		if	(	$value == ''
-				OR
-				$this->Validator->isLength(		'user_value3',
-												$value,
-												TTi18n::gettext('User Value 3 is too short or too long'),
-												1,
-												20) ) {
-
-			$this->data['user_value3'] = $value;
-
-			return TRUE;
-		}
-
-		return FALSE;
+		return $this->setGenericDataValue( 'user_value3', $value );
 	}
 
+	/**
+	 * @return bool
+	 */
 	function getUserValue4() {
-		if ( isset($this->data['user_value4']) ) {
-			return $this->data['user_value4'];
-		}
-
-		return FALSE;
+		return $this->getGenericDataValue( 'user_value4' );
 	}
-	function setUserValue4($value) {
+
+	/**
+	 * @param $value
+	 * @return bool
+	 */
+	function setUserValue4( $value) {
 		$value = trim($value);
-
-		if	(	$value == ''
-				OR
-				$this->Validator->isLength(		'user_value4',
-												$value,
-												TTi18n::gettext('User Value 4 is too short or too long'),
-												1,
-												20) ) {
-
-			$this->data['user_value4'] = $value;
-
-			return TRUE;
-		}
-
-		return FALSE;
+		return $this->setGenericDataValue( 'user_value4', $value );
 	}
 
+	/**
+	 * @return bool
+	 */
 	function getUserValue5() {
-		if ( isset($this->data['user_value5']) ) {
-			return $this->data['user_value5'];
-		}
-
-		return FALSE;
+		return $this->getGenericDataValue( 'user_value5' );
 	}
-	function setUserValue5($value) {
+
+	/**
+	 * @param $value
+	 * @return bool
+	 */
+	function setUserValue5( $value) {
 		$value = trim($value);
-
-		if	(	$value == ''
-				OR
-				$this->Validator->isLength(		'user_value5',
-												$value,
-												TTi18n::gettext('User Value 5 is too short or too long'),
-												1,
-												20) ) {
-
-			$this->data['user_value5'] = $value;
-
-			return TRUE;
-		}
-
-		return FALSE;
+		return $this->setGenericDataValue( 'user_value5', $value );
 	}
 
+	/**
+	 * @return bool
+	 */
 	function getUserValue6() {
-		if ( isset($this->data['user_value6']) ) {
-			return $this->data['user_value6'];
-		}
-
-		return FALSE;
+		return $this->getGenericDataValue( 'user_value6' );
 	}
-	function setUserValue6($value) {
+
+	/**
+	 * @param $value
+	 * @return bool
+	 */
+	function setUserValue6( $value) {
 		$value = trim($value);
-
-		if	(	$value == ''
-				OR
-				$this->Validator->isLength(		'user_value6',
-												$value,
-												TTi18n::gettext('User Value 6 is too short or too long'),
-												1,
-												20) ) {
-
-			$this->data['user_value6'] = $value;
-
-			return TRUE;
-		}
-
-		return FALSE;
+		return $this->setGenericDataValue( 'user_value6', $value );
 	}
 
+	/**
+	 * @return bool
+	 */
 	function getUserValue7() {
-		if ( isset($this->data['user_value7']) ) {
-			return $this->data['user_value7'];
-		}
-
-		return FALSE;
+		return $this->getGenericDataValue( 'user_value7' );
 	}
-	function setUserValue7($value) {
+
+	/**
+	 * @param $value
+	 * @return bool
+	 */
+	function setUserValue7( $value) {
 		$value = trim($value);
-
-		if	(	$value == ''
-				OR
-				$this->Validator->isLength(		'user_value7',
-												$value,
-												TTi18n::gettext('User Value 7 is too short or too long'),
-												1,
-												20) ) {
-
-			$this->data['user_value7'] = $value;
-
-			return TRUE;
-		}
-
-		return FALSE;
+		return $this->setGenericDataValue( 'user_value7', $value );
 	}
 
+	/**
+	 * @return bool
+	 */
 	function getUserValue8() {
-		if ( isset($this->data['user_value8']) ) {
-			return $this->data['user_value8'];
-		}
-
-		return FALSE;
+		return $this->getGenericDataValue( 'user_value8' );
 	}
-	function setUserValue8($value) {
+
+	/**
+	 * @param $value
+	 * @return bool
+	 */
+	function setUserValue8( $value) {
 		$value = trim($value);
-
-		if	(	$value == ''
-				OR
-				$this->Validator->isLength(		'user_value8',
-												$value,
-												TTi18n::gettext('User Value 8 is too short or too long'),
-												1,
-												20) ) {
-
-			$this->data['user_value8'] = $value;
-
-			return TRUE;
-		}
-
-		return FALSE;
+		return $this->setGenericDataValue( 'user_value8', $value );
 	}
 
+	/**
+	 * @return bool
+	 */
 	function getUserValue9() {
-		if ( isset($this->data['user_value9']) ) {
-			return $this->data['user_value9'];
-		}
-
-		return FALSE;
+		return $this->getGenericDataValue( 'user_value9' );
 	}
-	function setUserValue9($value) {
+
+	/**
+	 * @param $value
+	 * @return bool
+	 */
+	function setUserValue9( $value) {
 		$value = trim($value);
-
-		if	(	$value == ''
-				OR
-				$this->Validator->isLength(		'user_value9',
-												$value,
-												TTi18n::gettext('User Value 9 is too short or too long'),
-												1,
-												20) ) {
-
-			$this->data['user_value9'] = $value;
-
-			return TRUE;
-		}
-
-		return FALSE;
+		return $this->setGenericDataValue( 'user_value9', $value );
 	}
 
+	/**
+	 * @return bool
+	 */
 	function getUserValue10() {
-		if ( isset($this->data['user_value10']) ) {
-			return $this->data['user_value10'];
-		}
-
-		return FALSE;
+		return $this->getGenericDataValue( 'user_value10' );
 	}
-	function setUserValue10($value) {
+
+	/**
+	 * @param $value
+	 * @return bool
+	 */
+	function setUserValue10( $value) {
 		$value = trim($value);
-
-		if	(	$value == ''
-				OR
-				$this->Validator->isLength(		'user_value10',
-												$value,
-												TTi18n::gettext('User Value 10 is too short or too long'),
-												1,
-												20) ) {
-
-			$this->data['user_value10'] = $value;
-
-			return TRUE;
-		}
-
-		return FALSE;
+		return $this->setGenericDataValue( 'user_value10', $value );
 	}
 
 	//Primarily used to display marital status/allowances/claim amounts on pay stubs.
+
+	/**
+	 * @param bool $transaction_date
+	 * @return bool|string
+	 */
 	function getDescription( $transaction_date = FALSE ) {
 		$retval = FALSE;
 
@@ -724,6 +624,13 @@ class UserDeductionFactory extends Factory {
 						case 'la':
 							$retval = $province_label.' - '. TTI18n::getText('Filing Status', $province_label ).': '. Option::getByKey( $user_value3, $cd_obj->getOptions('state_la_filing_status') ) .' '. TTI18n::getText('Dependents') .': '. (int)$user_value2 .' '. TTI18n::getText('Exemptions') .': '. (int)$user_value1;
 							break;
+						case 'or':
+							$retval = $province_label.' - '. TTI18n::getText('Filing Status', $province_label ).': '. Option::getByKey( $user_value1, $cd_obj->getOptions('state_filing_status') ) .' '. TTI18n::getText('Allowances') .': '. (int)$user_value2;
+							//As of 01-Jan-2017, Oregon law ( ORS 652.610 ) requires 'the name and business registry number or business identification number of the employer'; displayed on pay stubs.
+							if ( is_object( $cd_obj->getPayrollRemittanceAgencyObject() ) AND $cd_obj->getPayrollRemittanceAgencyObject()->getPrimaryIdentification() != '' ) {
+								$retval .= ' [#'. $cd_obj->getPayrollRemittanceAgencyObject()->getPrimaryIdentification() .']';
+							}
+							break;
 						default:
 							$retval = $province_label.' - '. TTI18n::getText('Filing Status', $province_label ).': '. Option::getByKey( $user_value1, $cd_obj->getOptions('state_filing_status') ) .' '. TTI18n::getText('Allowances') .': '. (int)$user_value2;
 							break;
@@ -735,6 +642,14 @@ class UserDeductionFactory extends Factory {
 		return $retval;
 	}
 
+	/**
+	 * @param string $user_id UUID
+	 * @param object $pay_stub_obj
+	 * @param object $pay_period_obj
+	 * @param int $formula_type_id
+	 * @param int $payroll_run_id
+	 * @return int|string
+	 */
 	function getDeductionAmount( $user_id, $pay_stub_obj, $pay_period_obj, $formula_type_id = 10, $payroll_run_id = 1 ) {
 		if ( $user_id == '' ) {
 			Debug::Text('Missing User ID: ', __FILE__, __LINE__, __METHOD__, 10);
@@ -761,10 +676,18 @@ class UserDeductionFactory extends Factory {
 
 		//Need to use pay stub dates rather than pay period dates for this, because if you are in the first pay period of 2016 (Transaction: 01-Jan) and
 		//you need to run a out-of-cycle bonus to be paid by 24-Dec, it will think its the 1st pay stub of the year when its really the last. This causes taxes to be incorrect.
-		//$current_pay_period = $pay_period_obj->getPayPeriodScheduleObject()->getCurrentPayPeriodNumber( $pay_period_obj->getTransactionDate(), $pay_period_obj->getEndDate() );
 		$current_pay_period = $pay_period_obj->getPayPeriodScheduleObject()->getCurrentPayPeriodNumber( $pay_stub_obj->getTransactionDate(), $pay_stub_obj->getEndDate() );
 		if ( $current_pay_period <= 0 ) {
 			$current_pay_period = 1;
+		}
+
+		$hire_adjusted_annual_pay_periods = $pay_period_obj->getPayPeriodScheduleObject()->getHireAdjustedAnnualPayPeriods( $pay_stub_obj->getTransactionDate(), $this->getUserObject()->getHireDate() );
+		if ( $hire_adjusted_annual_pay_periods <= 0 ) {
+			$hire_adjusted_annual_pay_periods = 1;
+		}
+		$hire_adjusted_current_pay_period = $pay_period_obj->getPayPeriodScheduleObject()->getHireAdjustedCurrentPayPeriodNumber( $pay_stub_obj->getTransactionDate(), $pay_stub_obj->getEndDate(), $this->getUserObject()->getHireDate() );
+		if ( $hire_adjusted_current_pay_period <= 0 ) {
+			$hire_adjusted_current_pay_period = 1;
 		}
 
 		if ( !is_object($cd_obj) ) {
@@ -901,6 +824,7 @@ class UserDeductionFactory extends Factory {
 				$target_ytd_amount = $this->Validator->stripNonFloat( $target_ytd_amount );
 
 				Debug::Text('Percent: '. $percent .' Target Amount: '. $target_amount .' YTD Amount: '. $target_ytd_amount, __FILE__, __LINE__, __METHOD__, 10);
+				$retval = 0;
 				if ( $percent != 0 ) {
 					$amount = $cd_obj->getCalculationPayStubAmount( $pay_stub_obj );
 
@@ -923,11 +847,7 @@ class UserDeductionFactory extends Factory {
 						} else {
 							$retval = $filtered_amount;
 						}
-					} else {
-						$retval = 0;
 					}
-				} else {
-					$retval = 0;
 				}
 
 				if ( $percent >= 0 AND $retval < 0 ) {
@@ -1222,24 +1142,15 @@ class UserDeductionFactory extends Factory {
 
 				$retval = 0;
 				if ( $fixed_amount != 0 ) {
-					$amount = $cd_obj->getCalculationPayStubAmount( $pay_stub_obj );
-					Debug::Text('Amount: '. $amount, __FILE__, __LINE__, __METHOD__, 10);
-					if ( $amount !== $target_amount ) {
-						if ( abs($fixed_amount) < abs(bcsub($amount, $target_amount)) ) {
-							//Use full fixed amount
-							Debug::Text('Not within reach of target, use full fixed amount...', __FILE__, __LINE__, __METHOD__, 10);
-							$retval = $fixed_amount;
-						} else {
-							Debug::Text('Within reach of target, use partial fixed amount...', __FILE__, __LINE__, __METHOD__, 10);
-							//Use partial fixed_amount
-							$retval = bcadd( abs($amount), $target_amount);
-						}
-					}
+					$ytd_amount = $cd_obj->getCalculationPayStubAmount( $pay_stub_obj );
+
+					$ytd_amount_remaining = Misc::getAmountDifferenceUpToLimit( $ytd_amount, $target_amount );
+					Debug::Text('  YTD Amount: '. $ytd_amount .' YTD Remaining Amount: '. $ytd_amount_remaining, __FILE__, __LINE__, __METHOD__, 10);
+
+					$retval = Misc::getAmountUpToLimit( $ytd_amount_remaining, $fixed_amount );
 				}
 
-				$retval = abs($retval);
-
-				unset($fixed_amount, $amount);
+				unset($fixed_amount, $target_amount, $ytd_amount, $ytd_amount_remaining);
 
 				break;
 			case 69: // Custom Formulas
@@ -1662,6 +1573,8 @@ class UserDeductionFactory extends Factory {
 				$pd_obj->setDate( $pay_stub_obj->getTransactionDate() );
 				$pd_obj->setAnnualPayPeriods( $annual_pay_periods );
 				$pd_obj->setCurrentPayPeriod( $current_pay_period );
+				$pd_obj->setHireAdjustedAnnualPayPeriods( $hire_adjusted_annual_pay_periods );
+				$pd_obj->setHireAdjustedCurrentPayPeriod( $hire_adjusted_current_pay_period );
 				$pd_obj->setCurrentPayrollRunID( $payroll_run_id );
 				$pd_obj->setFormulaType( $formula_type_id );
 
@@ -1705,16 +1618,15 @@ class UserDeductionFactory extends Factory {
 				$pd_obj->setDate( $pay_stub_obj->getTransactionDate() );
 				$pd_obj->setAnnualPayPeriods( $annual_pay_periods );
 				$pd_obj->setCurrentPayPeriod( $current_pay_period );
+				$pd_obj->setHireAdjustedAnnualPayPeriods( $hire_adjusted_annual_pay_periods );
+				$pd_obj->setHireAdjustedCurrentPayPeriod( $hire_adjusted_current_pay_period );
 				$pd_obj->setCurrentPayrollRunID( $payroll_run_id );
 				$pd_obj->setFormulaType( $formula_type_id );
 
 				$pd_obj->setEnableCPPAndEIDeduction(TRUE);
 
-				if ( $this->getPayStubEntryAccountLinkObject()->getEmployeeCPP() != '' ) {
-					Debug::Text('Found Employee CPP account link!: ', __FILE__, __LINE__, __METHOD__, 10);
-
-					$pd_obj->setYearToDateCPPContribution( $cd_obj->getPayStubEntryAccountYTDAmount( $pay_stub_obj ) );
-				}
+				//Used to check $this->getPayStubEntryAccountLinkObject()->getEmployeeCPP() here, but that function has been deprecated to better support multiple legal entities.
+				$pd_obj->setYearToDateCPPContribution( $cd_obj->getPayStubEntryAccountYTDAmount( $pay_stub_obj ) );
 
 				$pd_obj->setGrossPayPeriodIncome( $amount );
 
@@ -1737,16 +1649,15 @@ class UserDeductionFactory extends Factory {
 				$pd_obj->setDate( $pay_stub_obj->getTransactionDate() );
 				$pd_obj->setAnnualPayPeriods( $annual_pay_periods );
 				$pd_obj->setCurrentPayPeriod( $current_pay_period );
+				$pd_obj->setHireAdjustedAnnualPayPeriods( $hire_adjusted_annual_pay_periods );
+				$pd_obj->setHireAdjustedCurrentPayPeriod( $hire_adjusted_current_pay_period );
 				$pd_obj->setCurrentPayrollRunID( $payroll_run_id );
 				$pd_obj->setFormulaType( $formula_type_id );
 
 				$pd_obj->setEnableCPPAndEIDeduction(TRUE);
 
-				if ( $this->getPayStubEntryAccountLinkObject()->getEmployeeEI() != '' ) {
-					Debug::Text('Found Employee EI account link!: ', __FILE__, __LINE__, __METHOD__, 10);
-
-					$pd_obj->setYearToDateEIContribution( $cd_obj->getPayStubEntryAccountYTDAmount( $pay_stub_obj ) );
-				}
+				//Used to check $this->getPayStubEntryAccountLinkObject()->getEmployeeEI() here, but that function has been deprecated to better support multiple legal entities.
+				$pd_obj->setYearToDateEIContribution(  $cd_obj->getPayStubEntryAccountYTDAmount( $pay_stub_obj ) );
 
 				$pd_obj->setGrossPayPeriodIncome( $amount );
 
@@ -1784,6 +1695,8 @@ class UserDeductionFactory extends Factory {
 				$pd_obj->setDate( $pay_stub_obj->getTransactionDate() );
 				$pd_obj->setAnnualPayPeriods( $annual_pay_periods );
 				$pd_obj->setCurrentPayPeriod( $current_pay_period );
+				$pd_obj->setHireAdjustedAnnualPayPeriods( $hire_adjusted_annual_pay_periods );
+				$pd_obj->setHireAdjustedCurrentPayPeriod( $hire_adjusted_current_pay_period );
 				$pd_obj->setCurrentPayrollRunID( $payroll_run_id );
 				$pd_obj->setFormulaType( $formula_type_id );
 
@@ -1800,17 +1713,20 @@ class UserDeductionFactory extends Factory {
 				if ( $this->getCompanyDeductionObject()->getCountry() == 'CA' ) {
 					//CA
 					$pd_obj->setFederalTotalClaimAmount( $user_value1 );
-
 					$pd_obj->setEnableCPPAndEIDeduction(TRUE);
 
-					if ( $this->getPayStubEntryAccountLinkObject()->getEmployeeCPP() != '' ) {
+					$cdlf = TTnew('CompanyDeductionListFactory');
+					$cdlf->getByCompanyIdAndLegalEntityIdAndCalculationIdAndStatusId( $this->getCompanyDeductionObject()->getCompany(), $this->getCompanyDeductionObject()->getLegalEntity(), 90, 10); //90=CPP, 10=Enabled
+					if ( $cdlf->getRecordCount() == 1 ) {
+						$cd_obj = $cdlf->getCurrent();
 						Debug::Text('Found Employee CPP account link!: ', __FILE__, __LINE__, __METHOD__, 10);
 
 						//Check to see if CPP was calculated on the CURRENT pay stub, if not assume they are CPP exempt.
 						//Single this calculation formula doesn't know directly if the user was CPP exempt or not, we have to assume it by
 						//the calculate CPP on the current pay stub. However if the CPP calculation is done AFTER this, it may mistakenly assume they are exempt.
 						//Make sure we handle the maximum CPP contribution cases properly as well.
-						$current_cpp = $pay_stub_obj->getSumByEntriesArrayAndTypeIDAndPayStubAccountID( 'current', NULL, $this->getPayStubEntryAccountLinkObject()->getEmployeeCPP() );
+						//$current_cpp = $pay_stub_obj->getSumByEntriesArrayAndTypeIDAndPayStubAccountID( 'current', NULL, $this->getPayStubEntryAccountLinkObject()->getEmployeeCPP() );
+						$current_cpp = $pay_stub_obj->getSumByEntriesArrayAndTypeIDAndPayStubAccountID( 'current', NULL, $cd_obj->getPayStubEntryAccount() );
 						if ( isset($current_cpp['amount']) AND $current_cpp['amount'] == 0 ) {
 							Debug::Text('Current CPP: '. $current_cpp['amount'] .' Setting CPP exempt in Federal Income Tax calculation...', __FILE__, __LINE__, __METHOD__, 10);
 							$pd_obj->setCPPExempt( TRUE );
@@ -1818,19 +1734,23 @@ class UserDeductionFactory extends Factory {
 							$pd_obj->setEmployeeCPPForPayPeriod( $current_cpp['amount'] ); //Make sure we pass in the amount that was calculated, as it may have different include/exclude accounts than this.
 						}
 
-						$ytd_cpp_arr = $pay_stub_obj->getSumByEntriesArrayAndTypeIDAndPayStubAccountID( 'previous', NULL, $this->getPayStubEntryAccountLinkObject()->getEmployeeCPP() );
+						//$ytd_cpp_arr = $pay_stub_obj->getSumByEntriesArrayAndTypeIDAndPayStubAccountID( 'previous', NULL, $this->getPayStubEntryAccountLinkObject()->getEmployeeCPP() );
+						$ytd_cpp_arr = $pay_stub_obj->getSumByEntriesArrayAndTypeIDAndPayStubAccountID( 'previous', NULL, $cd_obj->getPayStubEntryAccount() );
 
 						Debug::text('YTD CPP Contribution: '. $ytd_cpp_arr['ytd_amount'], __FILE__, __LINE__, __METHOD__, 10);
 
 						$pd_obj->setYearToDateCPPContribution( $ytd_cpp_arr['ytd_amount'] );
-						unset($ytd_cpp_arr, $current_cpp );
+						unset($ytd_cpp_arr, $current_cpp, $cd_obj );
 					}
 
-					if ( $this->getPayStubEntryAccountLinkObject()->getEmployeeEI() != '' ) {
+					$cdlf->getByCompanyIdAndLegalEntityIdAndCalculationIdAndStatusId( $this->getCompanyDeductionObject()->getCompany(), $this->getCompanyDeductionObject()->getLegalEntity(), 91, 10); //91=EI, 10=Enabled
+					if ( $cdlf->getRecordCount() == 1 ) {
+						$cd_obj = $cdlf->getCurrent();
 						Debug::Text('Found Employee EI account link!: ', __FILE__, __LINE__, __METHOD__, 10);
 
 						//See comment above regarding CPP exempt.
-						$current_ei = $pay_stub_obj->getSumByEntriesArrayAndTypeIDAndPayStubAccountID( 'current', NULL, $this->getPayStubEntryAccountLinkObject()->getEmployeeEI() );
+						//$current_ei = $pay_stub_obj->getSumByEntriesArrayAndTypeIDAndPayStubAccountID( 'current', NULL, $this->getPayStubEntryAccountLinkObject()->getEmployeeEI() );
+						$current_ei = $pay_stub_obj->getSumByEntriesArrayAndTypeIDAndPayStubAccountID( 'current', NULL, $cd_obj->getPayStubEntryAccount() );
 						if ( isset($current_ei['amount']) AND $current_ei['amount'] == 0 ) {
 							Debug::Text('Current EI: '. $current_ei['amount'] .' Setting EI exempt in Federal Income Tax calculation...', __FILE__, __LINE__, __METHOD__, 10);
 							$pd_obj->setEIExempt( TRUE );
@@ -1838,13 +1758,15 @@ class UserDeductionFactory extends Factory {
 							$pd_obj->setEmployeeEIForPayPeriod( $current_ei['amount'] ); //Make sure we pass in the amount that was calculated, as it may have different include/exclude accounts than this.
 						}
 
-						$ytd_ei_arr = $pay_stub_obj->getSumByEntriesArrayAndTypeIDAndPayStubAccountID( 'previous', NULL, $this->getPayStubEntryAccountLinkObject()->getEmployeeEI() );
+						//$ytd_ei_arr = $pay_stub_obj->getSumByEntriesArrayAndTypeIDAndPayStubAccountID( 'previous', NULL, $this->getPayStubEntryAccountLinkObject()->getEmployeeEI() );
+						$ytd_ei_arr = $pay_stub_obj->getSumByEntriesArrayAndTypeIDAndPayStubAccountID( 'previous', NULL, $cd_obj->getPayStubEntryAccount() );
 
 						Debug::text('YTD EI Contribution: '. $ytd_ei_arr['ytd_amount'], __FILE__, __LINE__, __METHOD__, 10);
 
 						$pd_obj->setYearToDateEIContribution( $ytd_ei_arr['ytd_amount'] );
-						unset($ytd_ei_arr, $current_ei);
+						unset($ytd_ei_arr, $current_ei, $cd_obj );
 					}
+					unset( $cdlf );
 				} elseif ( $this->getCompanyDeductionObject()->getCountry() == 'US' ) {
 					//US
 					$pd_obj->setFederalFilingStatus( $user_value1 );
@@ -1896,6 +1818,8 @@ class UserDeductionFactory extends Factory {
 				$pd_obj->setDate( $pay_stub_obj->getTransactionDate() );
 				$pd_obj->setAnnualPayPeriods( $annual_pay_periods );
 				$pd_obj->setCurrentPayPeriod( $current_pay_period );
+				$pd_obj->setHireAdjustedAnnualPayPeriods( $hire_adjusted_annual_pay_periods );
+				$pd_obj->setHireAdjustedCurrentPayPeriod( $hire_adjusted_current_pay_period );
 				$pd_obj->setCurrentPayrollRunID( $payroll_run_id );
 				$pd_obj->setFormulaType( $formula_type_id );
 
@@ -1915,14 +1839,18 @@ class UserDeductionFactory extends Factory {
 
 					$pd_obj->setEnableCPPAndEIDeduction(TRUE);
 
-					if ( $this->getPayStubEntryAccountLinkObject()->getEmployeeCPP() != '' ) {
+					$cdlf = TTnew('CompanyDeductionListFactory');
+					$cdlf->getByCompanyIdAndLegalEntityIdAndCalculationIdAndStatusId( $this->getCompanyDeductionObject()->getCompany(), $this->getCompanyDeductionObject()->getLegalEntity(), 90, 10); //90=CPP, 10=Enabled
+					if ( $cdlf->getRecordCount() == 1 ) {
+						$cd_obj = $cdlf->getCurrent();
 						Debug::Text('Found Employee CPP account link!: ', __FILE__, __LINE__, __METHOD__, 10);
 
 						//Check to see if CPP was calculated on the CURRENT pay stub, if not assume they are CPP exempt.
 						//Single this calculation formula doesn't know directly if the user was CPP exempt or not, we have to assume it by
 						//the calculate CPP on the current pay stub. However if the CPP calculation is done AFTER this, it may mistakenly assume they are exempt.
 						//Make sure we handle the maximum CPP contribution cases properly as well.
-						$current_cpp = $pay_stub_obj->getSumByEntriesArrayAndTypeIDAndPayStubAccountID( 'current', NULL, $this->getPayStubEntryAccountLinkObject()->getEmployeeCPP() );
+						//$current_cpp = $pay_stub_obj->getSumByEntriesArrayAndTypeIDAndPayStubAccountID( 'current', NULL, $this->getPayStubEntryAccountLinkObject()->getEmployeeCPP() );
+						$current_cpp = $pay_stub_obj->getSumByEntriesArrayAndTypeIDAndPayStubAccountID( 'current', NULL, $cd_obj->getPayStubEntryAccount() );
 						if ( isset($current_cpp['amount']) AND $current_cpp['amount'] == 0 ) {
 							Debug::Text('Current CPP: '. $current_cpp['amount'] .' Setting CPP exempt in Provincial Income Tax calculation...', __FILE__, __LINE__, __METHOD__, 10);
 							$pd_obj->setCPPExempt( TRUE );
@@ -1930,19 +1858,23 @@ class UserDeductionFactory extends Factory {
 							$pd_obj->setEmployeeCPPForPayPeriod( $current_cpp['amount'] ); //Make sure we pass in the amount that was calculated, as it may have different include/exclude accounts than this.
 						}
 
-						$ytd_cpp_arr = $pay_stub_obj->getSumByEntriesArrayAndTypeIDAndPayStubAccountID( 'previous', NULL, $this->getPayStubEntryAccountLinkObject()->getEmployeeCPP() );
+						//$ytd_cpp_arr = $pay_stub_obj->getSumByEntriesArrayAndTypeIDAndPayStubAccountID( 'previous', NULL, $this->getPayStubEntryAccountLinkObject()->getEmployeeCPP() );
+						$ytd_cpp_arr = $pay_stub_obj->getSumByEntriesArrayAndTypeIDAndPayStubAccountID( 'previous', NULL, $cd_obj->getPayStubEntryAccount() );
 
 						Debug::text('YTD CPP Contribution: '. $ytd_cpp_arr['ytd_amount'], __FILE__, __LINE__, __METHOD__, 10);
 
 						$pd_obj->setYearToDateCPPContribution( $ytd_cpp_arr['ytd_amount'] );
-						unset($ytd_cpp_arr, $current_cpp);
+						unset( $ytd_cpp_arr, $current_cpp, $cd_obj );
 					}
 
-					if ( $this->getPayStubEntryAccountLinkObject()->getEmployeeEI() != '' ) {
+					$cdlf->getByCompanyIdAndLegalEntityIdAndCalculationIdAndStatusId( $this->getCompanyDeductionObject()->getCompany(), $this->getCompanyDeductionObject()->getLegalEntity(), 91, 10); //91=EI, 10=Enabled
+					if ( $cdlf->getRecordCount() == 1 ) {
+						$cd_obj = $cdlf->getCurrent();
 						Debug::Text('Found Employee EI account link!: ', __FILE__, __LINE__, __METHOD__, 10);
 
 						//See comment above regarding CPP exempt.
-						$current_ei = $pay_stub_obj->getSumByEntriesArrayAndTypeIDAndPayStubAccountID( 'current', NULL, $this->getPayStubEntryAccountLinkObject()->getEmployeeEI() );
+						//$current_ei = $pay_stub_obj->getSumByEntriesArrayAndTypeIDAndPayStubAccountID( 'current', NULL, $this->getPayStubEntryAccountLinkObject()->getEmployeeEI() );
+						$current_ei = $pay_stub_obj->getSumByEntriesArrayAndTypeIDAndPayStubAccountID( 'current', NULL, $cd_obj->getPayStubEntryAccount() );
 						if ( isset($current_ei['amount']) AND $current_ei['amount'] == 0 ) {
 							Debug::Text('Current EI: '. $current_ei['amount'] .' Setting EI exempt in Provincial Income Tax calculation...', __FILE__, __LINE__, __METHOD__, 10);
 							$pd_obj->setEIExempt( TRUE );
@@ -1950,13 +1882,15 @@ class UserDeductionFactory extends Factory {
 							$pd_obj->setEmployeeEIForPayPeriod( $current_ei['amount'] ); //Make sure we pass in the amount that was calculated, as it may have different include/exclude accounts than this.
 						}
 
-						$ytd_ei_arr = $pay_stub_obj->getSumByEntriesArrayAndTypeIDAndPayStubAccountID( 'previous', NULL, $this->getPayStubEntryAccountLinkObject()->getEmployeeEI() );
+						//$ytd_ei_arr = $pay_stub_obj->getSumByEntriesArrayAndTypeIDAndPayStubAccountID( 'previous', NULL, $this->getPayStubEntryAccountLinkObject()->getEmployeeEI() );
+						$ytd_ei_arr = $pay_stub_obj->getSumByEntriesArrayAndTypeIDAndPayStubAccountID( 'previous', NULL, $cd_obj->getPayStubEntryAccount() );
 
 						Debug::text('YTD EI Contribution: '. $ytd_ei_arr['ytd_amount'], __FILE__, __LINE__, __METHOD__, 10);
 
 						$pd_obj->setYearToDateEIContribution( $ytd_ei_arr['ytd_amount'] );
-						unset($ytd_ei_arr, $current_ei);
+						unset( $ytd_ei_arr, $current_ei, $cd_obj );
 					}
+					unset( $cdlf );
 
 					$retval = $pd_obj->getProvincialPayPeriodDeductions();
 				} elseif ( $this->getCompanyDeductionObject()->getCountry() == 'US' ) {
@@ -2042,6 +1976,8 @@ class UserDeductionFactory extends Factory {
 				$pd_obj->setDate( $pay_stub_obj->getTransactionDate() );
 				$pd_obj->setAnnualPayPeriods( $annual_pay_periods );
 				$pd_obj->setCurrentPayPeriod( $current_pay_period );
+				$pd_obj->setHireAdjustedAnnualPayPeriods( $hire_adjusted_annual_pay_periods );
+				$pd_obj->setHireAdjustedCurrentPayPeriod( $hire_adjusted_current_pay_period );
 				$pd_obj->setCurrentPayrollRunID( $payroll_run_id );
 				$pd_obj->setFormulaType( $formula_type_id );
 
@@ -2080,6 +2016,9 @@ class UserDeductionFactory extends Factory {
 	//Returns the maximum taxable wages for any given calculation formula.
 	//Returns FALSE for no maximum.
 	//Primary used in TaxSummary (Generic) report.
+	/**
+	 * @return bool|mixed
+	 */
 	function getMaximumPayStubEntryAccountAmount() {
 		$retval = FALSE;
 
@@ -2118,7 +2057,10 @@ class UserDeductionFactory extends Factory {
 		return $retval;
 	}
 
-	//Returns the percent rate when specified.
+	/**
+	 * Returns the percent rate when specified.
+	 * @return bool|mixed
+	 */
 	function getRate() {
 		$retval = FALSE;
 
@@ -2142,14 +2084,232 @@ class UserDeductionFactory extends Factory {
 		return $retval;
 	}
 
+	/**
+	 * Migrates UserDeductions as best as it possibly can for an employee when switching legal entities.
+	 * @param $user_obj object
+	 * @param $data_diff array
+	 */
+	static function MigrateLegalEntity( $user_obj, $data_diff ) {
+		//Get all CompanyDeduction records assigned to the new legal entity so we can quickly loop over them multiple times if needed.
+
+		/** @var CompanyDeductionListFactory $cdlf */
+		$cdlf = TTnew( 'CompanyDeductionListFactory' );
+
+		$cdlf->StartTransaction();
+
+		$cdlf->getByCompanyIdAndLegalEntityId( $user_obj->getCompany(), $user_obj->getLegalEntity() );
+
+		/** @var UserDeductionListFactory $udlf */
+		$udlf = TTnew( 'UserDeductionListFactory' );
+		$udlf->getByCompanyIdAndUserId( $user_obj->getCompany(), $user_obj->getId() );
+		if ( $udlf->getRecordCount() > 0 ) {
+			Debug::text('Legal Entity changed. Trying to match all tax/deduction data to new entity for user: '. $user_obj->getId(), __FILE__, __LINE__, __METHOD__, 10);
+			/** @var UserDeductionFactory $ud_obj */
+			foreach( $udlf as $ud_obj ) {
+				$matched_company_deduction_id = array();
+
+				$cd_obj = $ud_obj->getCompanyDeductionObject();
+
+				if ( is_object( $cd_obj ) AND $cd_obj->getLegalEntity() == TTUUID::getZeroId() ) {
+					Debug::text('  Skipping due to no legal entity assigned: '. $cd_obj->getName() .'('. $cd_obj->getId() .')', __FILE__, __LINE__, __METHOD__, 10);
+					continue;
+				}
+
+				if ( is_object( $cd_obj ) AND $cd_obj->getLegalEntity() == $user_obj->getGenericOldDataValue('legal_entity_id') ) { //Only convert records assigned to the old legal entity. Skip records not assigned to any legal entity.
+					//Search for matching CompanyDeduction reocrd to try to re-assign them to.
+					//  Must Match: Calculate Type, Legal Entity -> User Legal Entity, Pay Stub Account
+					if ( $cdlf->getRecordCount() > 0 ) {
+						foreach( $cdlf as $tmp_cd_obj ) {
+							if ( $cd_obj->getCalculation() == $tmp_cd_obj->getCalculation()
+									AND $tmp_cd_obj->getLegalEntity() == $user_obj->getLegalEntity()
+									AND $cd_obj->getPayStubEntryAccount() == $tmp_cd_obj->getPayStubEntryAccount()
+								) {
+								Debug::text('  Match Found! Company Deduction: Old: '. $cd_obj->getName() .'('. $cd_obj->getId() .') New: '. $tmp_cd_obj->getName() .'('. $tmp_cd_obj->getId() .')', __FILE__, __LINE__, __METHOD__, 10);
+								$matched_company_deduction_id[] = $tmp_cd_obj->getId(); //Use an array, if more than exactly one match, we can't migrate date to it.
+							} else {
+								Debug::text('  NOT a Match... Company Deduction: Old: '. $cd_obj->getName() .'('. $cd_obj->getId() .') New: '. $tmp_cd_obj->getName() .'('. $tmp_cd_obj->getId() .')', __FILE__, __LINE__, __METHOD__, 10);
+							}
+						}
+						unset($tmp_cd_obj);
+					}
+				}
+
+				if ( count( $matched_company_deduction_id ) == 1 ) {
+					//Create new UserDeduction record so the audit log shows the employee being removed from one CompanyDeduction record and assigned to another.
+					$tmp_ud_obj = clone $ud_obj;
+					$tmp_ud_obj->setId( FALSE );
+					$tmp_ud_obj->setCompanyDeduction( $matched_company_deduction_id[0] );
+					if ( $tmp_ud_obj->isValid() ) {
+						$tmp_ud_obj->Save();
+					}
+					unset($tmp_ud_obj);
+				} else {
+					Debug::text('  No Match Found ('. count( $matched_company_deduction_id ) .')! Unassigning user from: '. $cd_obj->getName() .'('. $cd_obj->getId() .')', __FILE__, __LINE__, __METHOD__, 10);
+				}
+
+				$ud_obj->setDeleted( TRUE );
+				if ( $ud_obj->isValid() ) {
+					$ud_obj->Save();
+				} else {
+					Debug::text('  ERROR! Validation failed when reassigning CompanyDeduction records... Company Deduction: '. $cd_obj->getName() .'('. $cd_obj->getId() .')', __FILE__, __LINE__, __METHOD__, 10);
+				}
+
+			}
+		}
+
+		$cdlf->CommitTransaction();
+
+		unset( $udlf, $ud_obj, $cd_obj, $cdlf, $matched_company_deduction_id );
+
+		return TRUE;
+	}
+
+	/**
+	 * @param bool $ignore_warning
+	 * @return bool
+	 */
 	function Validate( $ignore_warning = TRUE ) {
+		//
+		// BELOW: Validation code moved from set*() functions.
+		//
+		// User
+		$ulf = TTnew( 'UserListFactory' );
+		$this->Validator->isResultSetWithRows(	'user',
+														$ulf->getByID($this->getUser()),
+														TTi18n::gettext('Invalid Employee')
+													);
+		// Tax/Deduction
+		if ( $this->getCompanyDeduction() == TTUUID::getZeroID() ) {
+			$cdlf = TTnew( 'CompanyDeductionListFactory' );
+			$this->Validator->isResultSetWithRows(	'company_deduction',
+															$cdlf->getByID($this->getCompanyDeduction()),
+															TTi18n::gettext('Tax/Deduction is invalid')
+														);
+		}
+		// Length Of Service Date
+		if ( $this->getLengthOfServiceDate() != '' ) {
+			$this->Validator->isDate(		'length_of_service_date',
+													$this->getLengthOfServiceDate(),
+													TTi18n::gettext('Incorrect Length Of Service Date')
+												);
+		}
+		// Start Date
+		if ( $this->getStartDate() != '' ) {
+			$this->Validator->isDate(		'start_date',
+													$this->getStartDate(),
+													TTi18n::gettext('Incorrect Start Date')
+												);
+		}
+		// End Date
+		if ( $this->getEndDate() != '' ) {
+			$this->Validator->isDate(		'end_date',
+													$this->getEndDate(),
+													TTi18n::gettext('Incorrect End Date')
+												);
+		}
+		// User Value 1
+		if ( $this->getUserValue1() != '' ) {
+			$this->Validator->isLength(		'user_value1',
+													$this->getUserValue1(),
+													TTi18n::gettext('User Value 1 is too short or too long'),
+													1,
+													20
+												);
+		}
+		// User Value 2
+		if ( $this->getUserValue2() != '' ) {
+			$this->Validator->isLength(		'user_value2',
+													$this->getUserValue2(),
+													TTi18n::gettext('User Value 2 is too short or too long'),
+													1,
+													20
+												);
+		}
+		// User Value 3
+		if ( $this->getUserValue3() != '' ) {
+			$this->Validator->isLength(		'user_value3',
+													$this->getUserValue3(),
+													TTi18n::gettext('User Value 3 is too short or too long'),
+													1,
+													20
+												);
+		}
+		// User Value 4
+		if ( $this->getUserValue4() != '' ) {
+			$this->Validator->isLength(		'user_value4',
+													$this->getUserValue4(),
+													TTi18n::gettext('User Value 4 is too short or too long'),
+													1,
+													20
+												);
+		}
+		// User Value 5
+		if ( $this->getUserValue5() != '' ) {
+			$this->Validator->isLength(		'user_value5',
+													$this->getUserValue5(),
+													TTi18n::gettext('User Value 5 is too short or too long'),
+													1,
+													20
+												);
+		}
+		// User Value 6
+		if ( $this->getUserValue6() != '' ) {
+			$this->Validator->isLength(		'user_value6',
+													$this->getUserValue6(),
+													TTi18n::gettext('User Value 6 is too short or too long'),
+													1,
+													20
+												);
+		}
+		// User Value 7
+		if ( $this->getUserValue7() != '' ) {
+			$this->Validator->isLength(		'user_value7',
+													$this->getUserValue7(),
+													TTi18n::gettext('User Value 7 is too short or too long'),
+													1,
+													20
+												);
+		}
+		// User Value 8
+		if ( $this->getUserValue8() != '' ) {
+			$this->Validator->isLength(		'user_value8',
+													$this->getUserValue8(),
+													TTi18n::gettext('User Value 8 is too short or too long'),
+													1,
+													20
+												);
+		}
+		// User Value 9
+		if ( $this->getUserValue9() != '' ) {
+			$this->Validator->isLength(		'user_value9',
+													$this->getUserValue9(),
+													TTi18n::gettext('User Value 9 is too short or too long'),
+													1,
+													20
+												);
+		}
+		// User Value 10
+		if ( $this->getUserValue10() != '' ) {
+			$this->Validator->isLength(		'user_value10',
+													$this->getUserValue10(),
+													TTi18n::gettext('User Value 10 is too short or too long'),
+													1,
+													20
+												);
+		}
+		//
+		// ABOVE: Validation code moved from set*() functions.
+		//
 		if ( $this->getUser() == FALSE ) {
 			$this->Validator->isTrue(		'user',
 											FALSE,
 											TTi18n::gettext('Employee not specified'));
 		}
 
-		if ( $this->getDeleted() == FALSE AND $this->getCompanyDeduction() > 0 AND is_object( $this->getCompanyDeductionObject() ) ) {
+		if ( TTUUID::isUUID( $this->getUser() )
+				AND $this->getDeleted() == FALSE
+				AND TTUUID::isUUID( $this->getCompanyDeduction() )
+				AND is_object( $this->getCompanyDeductionObject() ) ) {
 			$this->Validator->isTrue(				'company_deduction',
 													$this->isUniqueCompanyDeduction( $this->getCompanyDeduction() ),
 													TTi18n::gettext('Tax/Deduction is already assigned to employee').': '. $this->getCompanyDeductionObject()->getName()
@@ -2159,6 +2319,9 @@ class UserDeductionFactory extends Factory {
 		return TRUE;
 	}
 
+	/**
+	 * @return bool
+	 */
 	function preSave() {
 		//If the length of service date matches the current hire date, make it blank so we always default to the hire date in case it changes later.
 		if ( is_object( $this->getUserObject() ) AND TTDate::getMiddleDayEpoch( $this->getLengthOfServiceDate() ) == TTDate::getMiddleDayEpoch( $this->getUserObject()->getHireDate() ) ) {
@@ -2177,12 +2340,19 @@ class UserDeductionFactory extends Factory {
 		return TRUE;
 	}
 
+	/**
+	 * @return bool
+	 */
 	function postSave() {
 		$this->removeCache( $this->getId() );
 
 		return TRUE;
 	}
 
+	/**
+	 * @param $data
+	 * @return bool
+	 */
 	function setObjectFromArray( $data ) {
 		if ( is_array( $data ) ) {
 			$variable_function_map = $this->getVariableToFunctionMap();
@@ -2215,6 +2385,10 @@ class UserDeductionFactory extends Factory {
 		return FALSE;
 	}
 
+	/**
+	 * @param null $include_columns
+	 * @return array
+	 */
 	function getObjectAsArray( $include_columns = NULL ) {
 		$data = array();
 		$variable_function_map = $this->getVariableToFunctionMap();
@@ -2234,7 +2408,16 @@ class UserDeductionFactory extends Factory {
 						//User columns.
 						case 'first_name':
 						case 'last_name':
+						case 'middle_name':
+						case 'user_status_id':
 							$data[$variable] = $this->getColumn( $variable );
+							break;
+						case 'user_status':
+							$uf = TTnew( 'UserFactory' );
+							$data[$variable] = Option::getByKey( $this->getColumn( $variable.'_id' ), $uf->getOptions( 'status' ) );
+							break;
+						case 'full_name':
+							$data[$variable] = Misc::getFullName(  $this->getColumn( 'first_name' ), $this->getColumn( 'middle_name' ), $this->getColumn( 'last_name' ), TRUE, TRUE );
 							break;
 						//CompanyDeduction columns.
 						case 'type':
@@ -2261,6 +2444,10 @@ class UserDeductionFactory extends Factory {
 		return $data;
 	}
 
+	/**
+	 * @param $log_action
+	 * @return bool
+	 */
 	function addLog( $log_action ) {
 		$obj = $this->getUserObject();
 		if ( is_object($obj) ) {

@@ -1,7 +1,7 @@
 <?php
 /*********************************************************************************
  * TimeTrex is a Workforce Management program developed by
- * TimeTrex Software Inc. Copyright (C) 2003 - 2017 TimeTrex Software Inc.
+ * TimeTrex Software Inc. Copyright (C) 2003 - 2018 TimeTrex Software Inc.
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Affero General Public License version 3 as published by
@@ -51,6 +51,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		$dd->setEnableQuickPunch( FALSE ); //Helps prevent duplicate punch IDs and validation failures.
 		$dd->setUserNamePostFix( '_'.uniqid( NULL, TRUE ) ); //Needs to be super random to prevent conflicts and random failing tests.
 		$this->company_id = $dd->createCompany();
+		$this->legal_entity_id = $dd->createLegalEntity( $this->company_id, 10 );
 		Debug::text('Company ID: '. $this->company_id, __FILE__, __LINE__, __METHOD__, 10);
 
 		//$dd->createPermissionGroups( $this->company_id, 40 ); //Administrator only.
@@ -66,7 +67,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		$dd->createUserWageGroups( $this->company_id );
 		$this->user_wage_groups = $dd->user_wage_groups;
 
-		$this->user_id = $dd->createUser( $this->company_id, 100 );
+		$this->user_id = $dd->createUser( $this->company_id, $this->legal_entity_id, 100 );
 
 		$this->createPayPeriodSchedule();
 		$this->createPayPeriods();
@@ -596,8 +597,6 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 			foreach($udtlf as $udt_obj) {
 				//Debug::Text('Date: '. TTDate::getDate('DATE+TIME', $udt_obj->getDateStamp() ), __FILE__, __LINE__, __METHOD__, 10);
 
-				$type_and_policy_id = $udt_obj->getObjectType().(int)$udt_obj->getPayCode();
-
 				$date_totals[$udt_obj->getDateStamp()][] = array(
 												//'date_stamp' => $udt_obj->getColumn('user_date_stamp'),
 												'date_stamp' => $udt_obj->getDateStamp(),
@@ -611,8 +610,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 												'object_type_id' => $udt_obj->getObjectType(),
 												'pay_code_id' => $udt_obj->getPayCode(),
 
-												'type_and_policy_id' => $type_and_policy_id,
-												'branch_id' => (int)$udt_obj->getBranch(),
+												'branch_id' => TTUUID::castUUID( $udt_obj->getBranch() ),
 												'department_id' => $udt_obj->getDepartment(),
 												'total_time' => $udt_obj->getTotalTime(),
 												'name' => $udt_obj->getName(),
@@ -1058,6 +1056,23 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 				$otpf->setBranch( array( $this->branch_ids[0] ) );
 				break;
 
+			case 1250: //Differential
+				$otpf->setName( 'Weekly (>40hrs) [B1]' );
+				$otpf->setType( 20 );
+				$otpf->setTriggerTime( (3600 * 40) );
+
+				$otpf->setBranchSelectionType( 20 );
+				$otpf->setBranch( array( $this->branch_ids[0] ) );
+				break;
+			case 1251: //Differential
+				$otpf->setName( 'Weekly (>40hrs) [B2]' );
+				$otpf->setType( 20 );
+				$otpf->setTriggerTime( (3600 * 40) );
+
+				$otpf->setBranchSelectionType( 20 );
+				$otpf->setBranch( array( $this->branch_ids[1] ) );
+				break;
+
 			case 1300: //Differential
 				$otpf->setName( 'BiWeekly (>80hrs) [B2]' );
 				$otpf->setType( 30 );
@@ -1273,7 +1288,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (7 * 3600) );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['hourly_rate'], 0 );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['hourly_rate_with_burden'], 0 );
@@ -1347,7 +1362,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['start_time_stamp'], strtotime($date_stamp.' 8:00AM') );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['end_time_stamp'], strtotime($date_stamp.' 8:00PM') );
@@ -1461,7 +1476,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (8.5 * 3600) );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['start_time_stamp'], strtotime($date_stamp.' 8:00AM') );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['end_time_stamp'], strtotime($date_stamp.' 5:00PM') );
@@ -1593,7 +1608,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (9.5 * 3600) );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['start_time_stamp'], strtotime($date_stamp.' 8:00AM') );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['end_time_stamp'], strtotime($date_stamp.' 6:00PM') );
@@ -1769,7 +1784,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -1800,7 +1815,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		$udt_arr = $this->getUserDateTotalArray( $date_epoch, $date_epoch );
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -1832,7 +1847,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		$udt_arr = $this->getUserDateTotalArray( $date_epoch, $date_epoch );
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -1865,7 +1880,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -1902,7 +1917,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Overtime 1
 		$this->assertEquals( $udt_arr[$date_epoch][2]['object_type_id'], 30 ); //OverTime
@@ -1939,7 +1954,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Overtime 1
 		$this->assertEquals( $udt_arr[$date_epoch][2]['object_type_id'], 30 ); //OverTime
@@ -2016,7 +2031,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -2047,7 +2062,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		$udt_arr = $this->getUserDateTotalArray( $date_epoch, $date_epoch );
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -2079,7 +2094,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		$udt_arr = $this->getUserDateTotalArray( $date_epoch, $date_epoch );
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -2112,7 +2127,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -2154,7 +2169,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Overtime 1
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 30 ); //OverTime
@@ -2187,7 +2202,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Overtime 2
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 30 ); //OverTime
@@ -2280,7 +2295,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (10.5 * 3600) );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['start_time_stamp'], strtotime($date_stamp.' 8:00AM') );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['end_time_stamp'], strtotime($date_stamp.' 6:30PM') );
@@ -2381,7 +2396,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (16 * 3600) );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['start_time_stamp'], strtotime($date_stamp.' 4:00AM') );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['end_time_stamp'], strtotime($date_stamp.' 8:00PM') );
@@ -2500,7 +2515,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (16 * 3600) );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['start_time_stamp'], strtotime($date_stamp.' 4:00AM') );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['end_time_stamp'], strtotime($date_stamp.' 8:00PM') );
@@ -2603,7 +2618,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//$this->assertEquals( $udt_arr[$date_epoch][0]['start_time_stamp'], 	strtotime($date_stamp.' 8:00AM') );
 		//$this->assertEquals( $udt_arr[$date_epoch][0]['end_time_stamp'], 	strtotime($date_stamp.' 8:00PM') );
@@ -2703,7 +2718,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (7 * 3600) );
 		//$this->assertEquals( $udt_arr[$date_epoch][0]['start_time_stamp'], 	strtotime($date_stamp.' 8:00AM') );
 		//$this->assertEquals( $udt_arr[$date_epoch][0]['end_time_stamp'], 	strtotime($date_stamp.' 8:00PM') );
@@ -2781,7 +2796,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//$this->assertEquals( $udt_arr[$date_epoch][0]['start_time_stamp'], 	strtotime($date_stamp.' 8:00AM') );
 		//$this->assertEquals( $udt_arr[$date_epoch][0]['end_time_stamp'], 	strtotime($date_stamp.' 8:00PM') );
@@ -2878,7 +2893,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (4 * 3600) );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['hourly_rate'], 0 );
 		//Regular Time
@@ -2954,7 +2969,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -2979,7 +2994,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Absence Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 25 ); //Absence Time
@@ -3011,7 +3026,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		$udt_arr = $this->getUserDateTotalArray( $date_epoch, $date_epoch );
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -3044,7 +3059,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -3081,7 +3096,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Overtime 1
 		$this->assertEquals( $udt_arr[$date_epoch][2]['object_type_id'], 30 ); //OverTime
@@ -3118,7 +3133,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Overtime 1
 		$this->assertEquals( $udt_arr[$date_epoch][2]['object_type_id'], 30 ); //OverTime
@@ -3189,7 +3204,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Absence Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 25 ); //Absence Time
@@ -3222,7 +3237,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -3256,7 +3271,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		$udt_arr = $this->getUserDateTotalArray( $date_epoch, $date_epoch );
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -3289,7 +3304,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -3326,7 +3341,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Overtime 1
 		$this->assertEquals( $udt_arr[$date_epoch][2]['object_type_id'], 30 ); //OverTime
@@ -3363,7 +3378,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Overtime 1
 		$this->assertEquals( $udt_arr[$date_epoch][2]['object_type_id'], 30 ); //OverTime
@@ -3444,7 +3459,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -3478,7 +3493,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		$udt_arr = $this->getUserDateTotalArray( $date_epoch, $date_epoch );
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -3511,7 +3526,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -3535,7 +3550,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Absence Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 25 ); //Absence Time
@@ -3564,7 +3579,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Overtime 2
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 30 ); //Over Time
@@ -3591,7 +3606,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Overtime 2
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 30 ); //Over Time
@@ -3680,7 +3695,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -3714,7 +3729,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		$udt_arr = $this->getUserDateTotalArray( $date_epoch, $date_epoch );
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -3747,7 +3762,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -3780,7 +3795,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Absence Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 25 ); //Absence Time
@@ -3817,7 +3832,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Overtime 2
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 30 ); //Over Time
@@ -3852,7 +3867,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Overtime 2
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 30 ); //Over Time
@@ -3941,7 +3956,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -3974,7 +3989,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		$udt_arr = $this->getUserDateTotalArray( $date_epoch, $date_epoch );
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -4006,7 +4021,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		$udt_arr = $this->getUserDateTotalArray( $date_epoch, $date_epoch );
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -4039,7 +4054,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Overtime 1
 		$this->assertEquals( $udt_arr[$date_epoch][2]['object_type_id'], 30 ); //OverTime
@@ -4067,7 +4082,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Absence Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 25 ); //Absence Time
@@ -4100,7 +4115,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Overtime 2
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 30 ); //OverTime
@@ -4179,7 +4194,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -4204,7 +4219,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Absence Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 25 ); //Absence Time
@@ -4236,7 +4251,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		$udt_arr = $this->getUserDateTotalArray( $date_epoch, $date_epoch );
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -4273,7 +4288,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Overtime 1
 		$this->assertEquals( $udt_arr[$date_epoch][2]['object_type_id'], 30 ); //OverTime
@@ -4310,7 +4325,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Overtime 1
 		$this->assertEquals( $udt_arr[$date_epoch][2]['object_type_id'], 30 ); //OverTime
@@ -4347,7 +4362,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Overtime 2
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 30 ); //OverTime
@@ -4913,7 +4928,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -4944,7 +4959,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		$udt_arr = $this->getUserDateTotalArray( $date_epoch, $date_epoch );
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -4976,7 +4991,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		$udt_arr = $this->getUserDateTotalArray( $date_epoch, $date_epoch );
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -5009,7 +5024,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -5042,7 +5057,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -5077,7 +5092,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -5110,7 +5125,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -5147,7 +5162,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 
 		//Overtime policies are sorted by id desc, so the we have to reverse the order.
@@ -5186,7 +5201,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 
 		//Overtime policies are sorted by id desc, so the we have to reverse the order.
@@ -5268,7 +5283,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (14 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -5300,7 +5315,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		$udt_arr = $this->getUserDateTotalArray( $date_epoch, $date_epoch );
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (14 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -5332,7 +5347,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		$udt_arr = $this->getUserDateTotalArray( $date_epoch, $date_epoch );
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (14 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -5365,7 +5380,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (14 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -5398,7 +5413,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (14 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -5431,7 +5446,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (14 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -5469,7 +5484,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (14 * 3600) );
 		//Overtime 2
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 30 ); //OverTime
@@ -5507,7 +5522,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (14 * 3600) );
 		//Overtime 3
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 30 ); //OverTime
@@ -5540,7 +5555,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (14 * 3600) );
 		//Overtime 3
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 30 ); //OverTime
@@ -5573,7 +5588,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (14 * 3600) );
 		//Overtime 3
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 30 ); //OverTime
@@ -5653,7 +5668,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (16 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -5685,7 +5700,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		$udt_arr = $this->getUserDateTotalArray( $date_epoch, $date_epoch );
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (16 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -5717,7 +5732,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		$udt_arr = $this->getUserDateTotalArray( $date_epoch, $date_epoch );
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (16 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -5750,7 +5765,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (16 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -5783,7 +5798,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (16 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -5816,7 +5831,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (16 * 3600) );
 		//Overtime 1
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 30 ); //OverTime
@@ -5857,7 +5872,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (16 * 3600) );
 		//Overtime 2
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 30 ); //OverTime
@@ -5938,7 +5953,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -5982,7 +5997,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		$udt_arr = $this->getUserDateTotalArray( $date_epoch, $date_epoch );
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -6026,7 +6041,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		$udt_arr = $this->getUserDateTotalArray( $date_epoch, $date_epoch );
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -6071,7 +6086,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -6120,7 +6135,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Weekly Overtime1 >39
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 30 ); //Overtime
@@ -6170,7 +6185,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Weekly Overtime1 >47
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 30 ); //Overtime
@@ -6267,7 +6282,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -6303,7 +6318,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		$udt_arr = $this->getUserDateTotalArray( $date_epoch, $date_epoch );
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -6339,7 +6354,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		$udt_arr = $this->getUserDateTotalArray( $date_epoch, $date_epoch );
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -6389,7 +6404,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -6476,7 +6491,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -6516,7 +6531,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		$udt_arr = $this->getUserDateTotalArray( $date_epoch, $date_epoch );
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -6557,7 +6572,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		$udt_arr = $this->getUserDateTotalArray( $date_epoch, $date_epoch );
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -6599,7 +6614,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -6658,7 +6673,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (9 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -6745,7 +6760,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -6785,7 +6800,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		$udt_arr = $this->getUserDateTotalArray( $date_epoch, $date_epoch );
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -6826,7 +6841,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		$udt_arr = $this->getUserDateTotalArray( $date_epoch, $date_epoch );
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -6868,7 +6883,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -6927,7 +6942,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (9 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -7012,7 +7027,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -7052,7 +7067,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		$udt_arr = $this->getUserDateTotalArray( $date_epoch, $date_epoch );
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -7093,7 +7108,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		$udt_arr = $this->getUserDateTotalArray( $date_epoch, $date_epoch );
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -7135,7 +7150,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -7194,7 +7209,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (9 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -7282,7 +7297,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (10 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -7318,7 +7333,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		$udt_arr = $this->getUserDateTotalArray( $date_epoch, $date_epoch );
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (10 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -7355,7 +7370,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		$udt_arr = $this->getUserDateTotalArray( $date_epoch, $date_epoch );
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (10 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -7393,7 +7408,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (5 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -7444,7 +7459,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (10 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -7461,6 +7476,445 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 
 		//Make sure no other hours
 		$this->assertEquals( count($udt_arr[$date_epoch]), 4 );
+
+		return TRUE;
+	}
+
+	/**
+	 * @group OvertimePolicy_testDailyAndWeeklyOverTimePolicyE2
+	 */
+	function testDailyAndWeeklyOverTimePolicyE2() {
+		//Test Daily and Weekly OT policies using the same pay code, as this causes problems for calculating weekly OT properly.
+		// Also have the Weekly OT trigger on the same day that Daily OT, but after 10hrs.
+		global $dd;
+
+		$policy_ids['pay_formula_policy'][]  = $this->createPayFormulaPolicy( $this->company_id, 200 ); //OT1.5
+
+		$policy_ids['pay_code'][]  = $this->createPayCode( $this->company_id, 100, $policy_ids['pay_formula_policy'][0] ); //OT
+
+		$policy_ids['overtime'][] = $this->createOverTimePolicy( $this->company_id, 100, $this->policy_ids['contributing_shift_policy'][12], $policy_ids['pay_code'][0] ); //Daily
+		$policy_ids['overtime'][] = $this->createOverTimePolicy( $this->company_id, 242, $this->policy_ids['contributing_shift_policy'][12], $policy_ids['pay_code'][0] ); //Weekly
+
+		//Create Policy Group
+		$dd->createPolicyGroup( 	$this->company_id,
+								   NULL, //Meal
+								   NULL, //Exception
+								   NULL, //Holiday
+								   $policy_ids['overtime'], //OT
+								   NULL, //Premium
+								   NULL, //Round
+								   array($this->user_id), //Users
+								   NULL, //Break
+								   NULL, //Accrual
+								   NULL, //Expense
+								   NULL, //Absence
+								   array($this->policy_ids['regular'][12]) //Regular
+		);
+
+
+		$date_epoch = TTDate::getBeginWeekEpoch( time() );
+		$date_stamp = TTDate::getDate('DATE', $date_epoch );
+
+		//
+		//Day of Week: 1
+		//
+		$dd->createPunchPair( 	$this->user_id,
+								 strtotime($date_stamp.' 8:00AM'),
+								 strtotime($date_stamp.' 2:00PM'),
+								 array(
+										 'in_type_id' => 10,
+										 'out_type_id' => 10,
+										 'branch_id' => 0,
+										 'department_id' => 0,
+										 'job_id' => 0,
+										 'job_item_id' => 0,
+								 ),
+								 TRUE
+		);
+
+		$udt_arr = $this->getUserDateTotalArray( $date_epoch, $date_epoch );
+		//print_r($udt_arr);
+		//Total Time
+		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (6 * 3600) );
+		//Regular Time
+		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
+		$this->assertEquals( $udt_arr[$date_epoch][1]['pay_code_id'], $this->policy_ids['pay_code'][100] ); //Regular Time
+		$this->assertEquals( $udt_arr[$date_epoch][1]['total_time'], (6 * 3600) );
+		//Make sure no other hours
+		$this->assertEquals( count($udt_arr[$date_epoch]), 2 );
+
+		//
+		//Day of Week: 2
+		//
+		$date_epoch = TTDate::getBeginDayEpoch( TTDate::getBeginWeekEpoch( time() ) + (1 * 86400 + 3601) );
+		$date_stamp = TTDate::getDate('DATE', $date_epoch );
+
+		$dd->createPunchPair( 	$this->user_id,
+								 strtotime($date_stamp.' 8:00AM'),
+								 strtotime($date_stamp.' 6:00PM'),
+								 array(
+										 'in_type_id' => 10,
+										 'out_type_id' => 10,
+										 'branch_id' => 0,
+										 'department_id' => 0,
+										 'job_id' => 0,
+										 'job_item_id' => 0,
+								 ),
+								 TRUE
+		);
+
+		$udt_arr = $this->getUserDateTotalArray( $date_epoch, $date_epoch );
+		//Total Time
+		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (10 * 3600) );
+		//Regular Time
+		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
+		$this->assertEquals( $udt_arr[$date_epoch][1]['pay_code_id'], $this->policy_ids['pay_code'][100] ); //Regular Time
+		$this->assertEquals( $udt_arr[$date_epoch][1]['total_time'], (8 * 3600) );
+		//Overtime2
+		$this->assertEquals( $udt_arr[$date_epoch][2]['object_type_id'], 30 ); //Overtime
+		$this->assertEquals( $udt_arr[$date_epoch][2]['pay_code_id'], $policy_ids['pay_code'][0] );
+		$this->assertEquals( $udt_arr[$date_epoch][2]['total_time'], (2 * 3600) );
+		//Make sure no other hours
+		$this->assertEquals( count($udt_arr[$date_epoch]), 3 );
+
+
+		//
+		//Day of Week: 3
+		//
+		$date_epoch = TTDate::getBeginDayEpoch( TTDate::getBeginWeekEpoch( time() ) + (2 * 86400 + 3601) );
+		$date_stamp = TTDate::getDate('DATE', $date_epoch );
+
+		$dd->createPunchPair( 	$this->user_id,
+								 strtotime($date_stamp.' 8:00AM'),
+								 strtotime($date_stamp.' 6:00PM'),
+								 array(
+										 'in_type_id' => 10,
+										 'out_type_id' => 10,
+										 'branch_id' => 0,
+										 'department_id' => 0,
+										 'job_id' => 0,
+										 'job_item_id' => 0,
+								 ),
+								 TRUE
+		);
+
+		$udt_arr = $this->getUserDateTotalArray( $date_epoch, $date_epoch );
+		//Total Time
+		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (10 * 3600) );
+		//Regular Time
+		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
+		$this->assertEquals( $udt_arr[$date_epoch][1]['pay_code_id'], $this->policy_ids['pay_code'][100] ); //Regular Time
+		$this->assertEquals( $udt_arr[$date_epoch][1]['total_time'], (8 * 3600) );
+		//Overtime2
+		$this->assertEquals( $udt_arr[$date_epoch][2]['object_type_id'], 30 ); //Overtime
+		$this->assertEquals( $udt_arr[$date_epoch][2]['pay_code_id'], $policy_ids['pay_code'][0] );
+		$this->assertEquals( $udt_arr[$date_epoch][2]['total_time'], (2 * 3600) );
+		//Make sure no other hours
+		$this->assertEquals( count($udt_arr[$date_epoch]), 3 );
+
+
+		//
+		//Day of Week: 4
+		//
+		$date_epoch = TTDate::getBeginDayEpoch( TTDate::getBeginWeekEpoch( time() ) + (3 * 86400 + 3601)) ;
+		$date_stamp = TTDate::getDate('DATE', $date_epoch );
+
+		$dd->createPunchPair( 	$this->user_id,
+								 strtotime($date_stamp.' 8:00AM'),
+								 strtotime($date_stamp.' 6:00PM'),
+								 array(
+										 'in_type_id' => 10,
+										 'out_type_id' => 10,
+										 'branch_id' => 0,
+										 'department_id' => 0,
+										 'job_id' => 0,
+										 'job_item_id' => 0,
+								 ),
+								 TRUE
+		);
+
+		$udt_arr = $this->getUserDateTotalArray( $date_epoch, $date_epoch );
+		//Total Time
+		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (10 * 3600) );
+		//Regular Time
+		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
+		$this->assertEquals( $udt_arr[$date_epoch][1]['pay_code_id'], $this->policy_ids['pay_code'][100] ); //Regular Time
+		$this->assertEquals( $udt_arr[$date_epoch][1]['total_time'], (8 * 3600) );
+		//Overtime2
+		$this->assertEquals( $udt_arr[$date_epoch][2]['object_type_id'], 30 ); //Overtime
+		$this->assertEquals( $udt_arr[$date_epoch][2]['pay_code_id'], $policy_ids['pay_code'][0] );
+		$this->assertEquals( $udt_arr[$date_epoch][2]['total_time'], (2 * 3600) );
+		//Make sure no other hours
+		$this->assertEquals( count($udt_arr[$date_epoch]), 3 );
+
+
+		//
+		//Day of Week: 5
+		//
+		$date_epoch = TTDate::getBeginDayEpoch( TTDate::getBeginWeekEpoch( time() ) + (4 * 86400 + 3601)) ;
+		$date_stamp = TTDate::getDate('DATE', $date_epoch );
+
+		$dd->createPunchPair( 	$this->user_id,
+								 strtotime($date_stamp.' 8:00AM'),
+								 strtotime($date_stamp.' 8:00PM'),
+								 array(
+										 'in_type_id' => 10,
+										 'out_type_id' => 10,
+										 'branch_id' => 0,
+										 'department_id' => 0,
+										 'job_id' => 0,
+										 'job_item_id' => 0,
+								 ),
+								 TRUE
+		);
+
+		$udt_arr = $this->getUserDateTotalArray( $date_epoch, $date_epoch );
+		//Total Time
+		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
+		//Regular Time
+		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
+		$this->assertEquals( $udt_arr[$date_epoch][1]['pay_code_id'], $this->policy_ids['pay_code'][100] ); //Regular Time
+		$this->assertEquals( $udt_arr[$date_epoch][1]['total_time'], (8 * 3600) );
+		//Overtime2
+		$this->assertEquals( $udt_arr[$date_epoch][2]['object_type_id'], 30 ); //Overtime
+		$this->assertEquals( $udt_arr[$date_epoch][2]['pay_code_id'], $policy_ids['pay_code'][0] );
+		$this->assertEquals( $udt_arr[$date_epoch][2]['total_time'], (4 * 3600) );
+		//Make sure no other hours
+		$this->assertEquals( count($udt_arr[$date_epoch]), 3 );
+
+		return TRUE;
+	}
+
+	/**
+	 * @group OvertimePolicy_testDailyAndWeeklyOverTimePolicyE3
+	 */
+	function testDailyAndWeeklyOverTimePolicyE3() {
+		//Test Daily and Weekly OT policies using the same pay code, as this causes problems for calculating weekly OT properly.
+		// Also have the Weekly OT trigger on the same day that Daily OT, but after 10hrs.
+		global $dd;
+
+		$policy_ids['pay_formula_policy'][]  = $this->createPayFormulaPolicy( $this->company_id, 200 ); //OT1.5
+//		$policy_ids['pay_formula_policy'][]  = $this->createPayFormulaPolicy( $this->company_id, 210 ); //OT1.5
+//		$policy_ids['pay_formula_policy'][]  = $this->createPayFormulaPolicy( $this->company_id, 220 ); //OT2.5
+
+		//Daily
+		$policy_ids['pay_code'][]  = $this->createPayCode( $this->company_id, 100, $policy_ids['pay_formula_policy'][0] );
+
+		//Weekly
+		//$policy_ids['pay_code'][]  = $this->createPayCode( $this->company_id, 240, $policy_ids['pay_formula_policy'][1] );
+
+		$policy_ids['overtime'][] = $this->createOverTimePolicy( $this->company_id, 100, $this->policy_ids['contributing_shift_policy'][12], $policy_ids['pay_code'][0] ); //Daily
+		$policy_ids['overtime'][] = $this->createOverTimePolicy( $this->company_id, 1000, $this->policy_ids['contributing_shift_policy'][12], $policy_ids['pay_code'][0] ); //Daily - Differential
+
+		$policy_ids['overtime'][] = $this->createOverTimePolicy( $this->company_id, 242, $this->policy_ids['contributing_shift_policy'][12], $policy_ids['pay_code'][0] ); //Weekly
+		$policy_ids['overtime'][] = $this->createOverTimePolicy( $this->company_id, 1250, $this->policy_ids['contributing_shift_policy'][12], $policy_ids['pay_code'][0] ); //Weekly - Differential
+
+		//Create Policy Group
+		$dd->createPolicyGroup( 	$this->company_id,
+								   NULL, //Meal
+								   NULL, //Exception
+								   NULL, //Holiday
+								   $policy_ids['overtime'], //OT
+								   NULL, //Premium
+								   NULL, //Round
+								   array($this->user_id), //Users
+								   NULL, //Break
+								   NULL, //Accrual
+								   NULL, //Expense
+								   NULL, //Absence
+								   array($this->policy_ids['regular'][12]) //Regular
+		);
+
+
+		$date_epoch = TTDate::getBeginWeekEpoch( time() );
+		$date_stamp = TTDate::getDate('DATE', $date_epoch );
+
+		//
+		//Day of Week: 1
+		//
+		$dd->createPunchPair( 	$this->user_id,
+								 strtotime($date_stamp.' 8:00AM'),
+								 strtotime($date_stamp.' 2:00PM'),
+								 array(
+										 'in_type_id' => 10,
+										 'out_type_id' => 10,
+										 'branch_id' => 0,
+										 'department_id' => 0,
+										 'job_id' => 0,
+										 'job_item_id' => 0,
+								 ),
+								 TRUE
+		);
+
+		$udt_arr = $this->getUserDateTotalArray( $date_epoch, $date_epoch );
+		//print_r($udt_arr);
+		//Total Time
+		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (6 * 3600) );
+		//Regular Time
+		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
+		$this->assertEquals( $udt_arr[$date_epoch][1]['pay_code_id'], $this->policy_ids['pay_code'][100] ); //Regular Time
+		$this->assertEquals( $udt_arr[$date_epoch][1]['total_time'], (6 * 3600) );
+		//Make sure no other hours
+		$this->assertEquals( count($udt_arr[$date_epoch]), 2 );
+
+		//
+		//Day of Week: 2
+		//
+		$date_epoch = TTDate::getBeginDayEpoch( TTDate::getBeginWeekEpoch( time() ) + (1 * 86400 + 3601) );
+		$date_stamp = TTDate::getDate('DATE', $date_epoch );
+
+		$dd->createPunchPair( 	$this->user_id,
+								 strtotime($date_stamp.' 8:00AM'),
+								 strtotime($date_stamp.' 6:00PM'),
+								 array(
+										 'in_type_id' => 10,
+										 'out_type_id' => 10,
+										 'branch_id' => 0,
+										 'department_id' => 0,
+										 'job_id' => 0,
+										 'job_item_id' => 0,
+								 ),
+								 TRUE
+		);
+
+		$udt_arr = $this->getUserDateTotalArray( $date_epoch, $date_epoch );
+		//Total Time
+		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (10 * 3600) );
+		//Regular Time
+		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
+		$this->assertEquals( $udt_arr[$date_epoch][1]['pay_code_id'], $this->policy_ids['pay_code'][100] ); //Regular Time
+		$this->assertEquals( $udt_arr[$date_epoch][1]['total_time'], (8 * 3600) );
+		//Overtime2
+		$this->assertEquals( $udt_arr[$date_epoch][2]['object_type_id'], 30 ); //Overtime
+		$this->assertEquals( $udt_arr[$date_epoch][2]['pay_code_id'], $policy_ids['pay_code'][0] );
+		$this->assertEquals( $udt_arr[$date_epoch][2]['total_time'], (2 * 3600) );
+		//Make sure no other hours
+		$this->assertEquals( count($udt_arr[$date_epoch]), 3 );
+
+
+		//
+		//Day of Week: 3
+		//
+		$date_epoch = TTDate::getBeginDayEpoch( TTDate::getBeginWeekEpoch( time() ) + (2 * 86400 + 3601) );
+		$date_stamp = TTDate::getDate('DATE', $date_epoch );
+
+		$dd->createPunchPair( 	$this->user_id,
+								 strtotime($date_stamp.' 8:00AM'),
+								 strtotime($date_stamp.' 6:00PM'),
+								 array(
+										 'in_type_id' => 10,
+										 'out_type_id' => 10,
+										 'branch_id' => 0,
+										 'department_id' => 0,
+										 'job_id' => 0,
+										 'job_item_id' => 0,
+								 ),
+								 TRUE
+		);
+
+		$udt_arr = $this->getUserDateTotalArray( $date_epoch, $date_epoch );
+		//Total Time
+		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (10 * 3600) );
+		//Regular Time
+		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
+		$this->assertEquals( $udt_arr[$date_epoch][1]['pay_code_id'], $this->policy_ids['pay_code'][100] ); //Regular Time
+		$this->assertEquals( $udt_arr[$date_epoch][1]['total_time'], (8 * 3600) );
+		//Overtime2
+		$this->assertEquals( $udt_arr[$date_epoch][2]['object_type_id'], 30 ); //Overtime
+		$this->assertEquals( $udt_arr[$date_epoch][2]['pay_code_id'], $policy_ids['pay_code'][0] );
+		$this->assertEquals( $udt_arr[$date_epoch][2]['total_time'], (2 * 3600) );
+		//Make sure no other hours
+		$this->assertEquals( count($udt_arr[$date_epoch]), 3 );
+
+
+		//
+		//Day of Week: 4
+		//
+		$date_epoch = TTDate::getBeginDayEpoch( TTDate::getBeginWeekEpoch( time() ) + (3 * 86400 + 3601)) ;
+		$date_stamp = TTDate::getDate('DATE', $date_epoch );
+
+		$dd->createPunchPair( 	$this->user_id,
+								 strtotime($date_stamp.' 8:00AM'),
+								 strtotime($date_stamp.' 6:00PM'),
+								 array(
+										 'in_type_id' => 10,
+										 'out_type_id' => 10,
+										 'branch_id' => 0,
+										 'department_id' => 0,
+										 'job_id' => 0,
+										 'job_item_id' => 0,
+								 ),
+								 TRUE
+		);
+
+		$udt_arr = $this->getUserDateTotalArray( $date_epoch, $date_epoch );
+		//Total Time
+		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (10 * 3600) );
+		//Regular Time
+		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
+		$this->assertEquals( $udt_arr[$date_epoch][1]['pay_code_id'], $this->policy_ids['pay_code'][100] ); //Regular Time
+		$this->assertEquals( $udt_arr[$date_epoch][1]['total_time'], (8 * 3600) );
+		//Overtime2
+		$this->assertEquals( $udt_arr[$date_epoch][2]['object_type_id'], 30 ); //Overtime
+		$this->assertEquals( $udt_arr[$date_epoch][2]['pay_code_id'], $policy_ids['pay_code'][0] );
+		$this->assertEquals( $udt_arr[$date_epoch][2]['total_time'], (2 * 3600) );
+		//Make sure no other hours
+		$this->assertEquals( count($udt_arr[$date_epoch]), 3 );
+
+
+		//
+		//Day of Week: 5
+		//
+		$date_epoch = TTDate::getBeginDayEpoch( TTDate::getBeginWeekEpoch( time() ) + (4 * 86400 + 3601)) ;
+		$date_stamp = TTDate::getDate('DATE', $date_epoch );
+
+		$dd->createPunchPair( 	$this->user_id,
+								 strtotime($date_stamp.' 8:00AM'),
+								 strtotime($date_stamp.' 7:00PM'),
+								 array(
+										 'in_type_id' => 10,
+										 'out_type_id' => 10,
+										 'branch_id' => 0,
+										 'department_id' => 0,
+										 'job_id' => 0,
+										 'job_item_id' => 0,
+								 ),
+								 TRUE
+		);
+
+		$udt_arr = $this->getUserDateTotalArray( $date_epoch, $date_epoch );
+		//Total Time
+		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (11 * 3600) );
+		//Regular Time
+		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
+		$this->assertEquals( $udt_arr[$date_epoch][1]['pay_code_id'], $this->policy_ids['pay_code'][100] ); //Regular Time
+		$this->assertEquals( $udt_arr[$date_epoch][1]['total_time'], (8 * 3600) );
+		//Overtime2
+		$this->assertEquals( $udt_arr[$date_epoch][2]['object_type_id'], 30 ); //Overtime
+		$this->assertEquals( $udt_arr[$date_epoch][2]['pay_code_id'], $policy_ids['pay_code'][0] );
+		$this->assertEquals( $udt_arr[$date_epoch][2]['total_time'], (3 * 3600) );
+		//Make sure no other hours
+		$this->assertEquals( count($udt_arr[$date_epoch]), 3 );
 
 		return TRUE;
 	}
@@ -7529,7 +7983,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -7569,7 +8023,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		$udt_arr = $this->getUserDateTotalArray( $date_epoch, $date_epoch );
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -7610,7 +8064,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		$udt_arr = $this->getUserDateTotalArray( $date_epoch, $date_epoch );
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -7652,7 +8106,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -7711,7 +8165,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (9 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -7757,7 +8211,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Overtime2
 		$this->assertEquals( $udt_arr[$date_epoch][2]['object_type_id'], 30 ); //Overtime
@@ -7851,7 +8305,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 
 		//Since the Holiday OT rate is 4.0x, its higher than any other OT rate, so the employee should stay on holiday OT for the entire day.
@@ -7903,7 +8357,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		$udt_arr = $this->getUserDateTotalArray( $date_epoch, $date_epoch );
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -7947,7 +8401,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		$udt_arr = $this->getUserDateTotalArray( $date_epoch, $date_epoch );
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -7992,7 +8446,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -8037,7 +8491,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -8086,7 +8540,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Weekly Overtime1 >39
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 30 ); //Overtime
@@ -8135,7 +8589,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Weekly Overtime 2 >47
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 30 ); //Overtime
@@ -8233,7 +8687,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['start_time_stamp'], strtotime($date_stamp.' 8:00AM') );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['end_time_stamp'], strtotime($date_stamp.' 8:00PM') );
@@ -8333,7 +8787,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['start_time_stamp'], strtotime($date_stamp.' 8:00AM') );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['end_time_stamp'], strtotime($date_stamp.' 8:30PM') );
@@ -8452,7 +8906,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['start_time_stamp'], strtotime($date_stamp.' 8:00AM') );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['end_time_stamp'], strtotime($date_stamp.' 9:00PM') );
@@ -8551,7 +9005,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 
 		//Holiday OT: This is daily OT at 1.5x, so other OT at same or higher rates should still kick in after this.
@@ -8645,7 +9099,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 
 		//Holiday OT
@@ -8745,7 +9199,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['quantity'], 0 );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['bad_quantity'], 0 );
@@ -8809,7 +9263,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], 43500 );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['quantity'], 0 );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['bad_quantity'], 0 );
@@ -8909,7 +9363,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (7 * 3600) ); //Unless meal/break time is deducted from Regular Time, the total should be the same as worked time.
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -8985,7 +9439,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (9 * 3600) ); //Unless meal/break time is deducted from Regular Time, the total should be the same as worked time.
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -9062,7 +9516,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (6 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -9139,7 +9593,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (8 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -9215,7 +9669,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (9.5 * 3600) ); //Unless meal/break time is deducted from Regular Time, the total should be the same as worked time.
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -9297,7 +9751,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (10.5 * 3600) ); //Unless meal/break time is deducted from Regular Time, the total should be the same as worked time.
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -9382,7 +9836,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (8.5 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -9465,7 +9919,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (9.5 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -9563,7 +10017,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (9.5 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -9668,7 +10122,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (6 * 3600) ); //Unless meal/break time is added to Regular Time, the total should be the same as worked time.
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -9768,7 +10222,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -9877,7 +10331,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (8 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -9961,7 +10415,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (8.5 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -10060,7 +10514,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//OverTime as Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 30 ); //Overtime
@@ -10144,7 +10598,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//OverTime as Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 30 ); //Overtime
@@ -10228,7 +10682,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (8 * 3600) );
 		//OverTime as Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 30 ); //Overtime
@@ -10250,9 +10704,9 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 										 'in_type_id' => 10,
 										 'out_type_id' => 10,
 										 'branch_id' => $this->branch_ids[0],
-										 'department_id' => 0,
-										 'job_id' => 0,
-										 'job_item_id' => 0,
+										 'department_id' => TTUUID::getZeroID(),
+										 'job_id' => TTUUID::getZeroID(),
+										 'job_item_id' => TTUUID::getZeroID(),
 								 ),
 								 TRUE
 		);
@@ -10262,7 +10716,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (8 * 3600) );
 		//OverTime as Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 30 ); //Overtime
@@ -10284,9 +10738,9 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 										 'in_type_id' => 10,
 										 'out_type_id' => 10,
 										 'branch_id' => $this->branch_ids[0],
-										 'department_id' => 0,
-										 'job_id' => 0,
-										 'job_item_id' => 0,
+										 'department_id' => TTUUID::getZeroID(),
+										 'job_id' => TTUUID::getZeroID(),
+										 'job_item_id' => TTUUID::getZeroID(),
 								 ),
 								 TRUE
 		);
@@ -10296,7 +10750,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (8 * 3600) );
 		//OverTime as Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 30 ); //Overtime
@@ -10318,9 +10772,9 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 										 'in_type_id' => 10,
 										 'out_type_id' => 10,
 										 'branch_id' => $this->branch_ids[0],
-										 'department_id' => 0,
-										 'job_id' => 0,
-										 'job_item_id' => 0,
+										 'department_id' => TTUUID::getZeroID(),
+										 'job_id' => TTUUID::getZeroID(),
+										 'job_item_id' => TTUUID::getZeroID(),
 								 ),
 								 TRUE
 		);
@@ -10330,7 +10784,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (8 * 3600) );
 		//OverTime as Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 30 ); //Overtime
@@ -10353,9 +10807,9 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 										 'in_type_id' => 10,
 										 'out_type_id' => 10,
 										 'branch_id' => $this->branch_ids[0],
-										 'department_id' => 0,
-										 'job_id' => 0,
-										 'job_item_id' => 0,
+										 'department_id' => TTUUID::getZeroID(),
+										 'job_id' => TTUUID::getZeroID(),
+										 'job_item_id' => TTUUID::getZeroID(),
 								 ),
 								 TRUE
 		);
@@ -10367,9 +10821,9 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 										 'in_type_id' => 10,
 										 'out_type_id' => 10,
 										 'branch_id' => $this->branch_ids[0],
-										 'department_id' => 0,
-										 'job_id' => 0,
-										 'job_item_id' => 0,
+										 'department_id' => TTUUID::getZeroID(),
+										 'job_id' => TTUUID::getZeroID(),
+										 'job_item_id' => TTUUID::getZeroID(),
 								 ),
 								 TRUE
 		);
@@ -10381,9 +10835,9 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 										 'in_type_id' => 10,
 										 'out_type_id' => 20,
 										 'branch_id' => $this->branch_ids[0],
-										 'department_id' => 0,
-										 'job_id' => 0,
-										 'job_item_id' => 0,
+										 'department_id' => TTUUID::getZeroID(),
+										 'job_id' => TTUUID::getZeroID(),
+										 'job_item_id' => TTUUID::getZeroID(),
 								 ),
 								 TRUE
 		);
@@ -10395,9 +10849,9 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 										 'in_type_id' => 20,
 										 'out_type_id' => 10,
 										 'branch_id' => $this->branch_ids[0],
-										 'department_id' => 0,
-										 'job_id' => 0,
-										 'job_item_id' => 0,
+										 'department_id' => TTUUID::getZeroID(),
+										 'job_id' => TTUUID::getZeroID(),
+										 'job_item_id' => TTUUID::getZeroID(),
 								 ),
 								 TRUE
 		);
@@ -10407,7 +10861,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (8 * 3600) );
 		//OverTime
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 30 ); //Overtime
@@ -10503,7 +10957,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (8 * 3600) );
 		//OverTime as Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 30 ); //Overtime
@@ -10537,7 +10991,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (8 * 3600) );
 		//OverTime as Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 30 ); //Overtime
@@ -10571,7 +11025,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (8 * 3600) );
 		//OverTime as Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 30 ); //Overtime
@@ -10605,7 +11059,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (11 * 3600) );
 		//OverTime as Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 30 ); //Overtime
@@ -10682,7 +11136,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (8 * 3600) );
 		//OverTime
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 30 ); //Overtime
@@ -10776,7 +11230,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -10858,7 +11312,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -10983,7 +11437,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -11120,7 +11574,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -11261,7 +11715,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -11390,7 +11844,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -11494,7 +11948,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (8 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -11527,7 +11981,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (8 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -11561,7 +12015,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (8 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -11595,7 +12049,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (6 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -11642,7 +12096,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (8 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -11733,7 +12187,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -11770,7 +12224,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -11807,7 +12261,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -11844,7 +12298,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -11885,7 +12339,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Weekly Overtime1
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 30 ); //Overtime
@@ -11922,7 +12376,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Weekly Overtime1
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 30 ); //Overtime
@@ -12008,7 +12462,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -12045,7 +12499,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -12082,7 +12536,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -12119,7 +12573,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -12160,7 +12614,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Weekly Overtime1
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 30 ); //Overtime
@@ -12197,7 +12651,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Weekly Overtime1
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 30 ); //Overtime
@@ -12283,7 +12737,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -12320,7 +12774,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -12357,7 +12811,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -12394,7 +12848,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -12435,7 +12889,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Weekly Overtime1
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 30 ); //Overtime
@@ -12472,7 +12926,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Weekly Overtime1
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 30 ); //Overtime
@@ -12558,7 +13012,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -12595,7 +13049,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -12632,7 +13086,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -12669,7 +13123,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -12710,7 +13164,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Weekly Overtime1
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 30 ); //Overtime
@@ -12747,7 +13201,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Weekly Overtime1
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 30 ); //Overtime
@@ -12846,7 +13300,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -12896,7 +13350,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -12946,7 +13400,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -12996,7 +13450,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -13050,7 +13504,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Weekly Overtime1
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 30 ); //Overtime
@@ -13099,7 +13553,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Weekly Overtime1
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 30 ); //Overtime
@@ -13198,7 +13652,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -13248,7 +13702,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -13298,7 +13752,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -13348,7 +13802,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -13402,7 +13856,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Weekly Overtime1
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 30 ); //Overtime
@@ -13451,7 +13905,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Weekly Overtime1
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 30 ); //Overtime
@@ -13550,7 +14004,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -13600,7 +14054,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -13655,7 +14109,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -13711,7 +14165,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -13766,7 +14220,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Weekly Overtime1
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 30 ); //Overtime
@@ -13821,7 +14275,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Weekly Overtime1
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 30 ); //Overtime
@@ -13945,7 +14399,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($policy_ids['pay_code']);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -14004,7 +14458,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($policy_ids['pay_code']);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -14064,7 +14518,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($policy_ids['pay_code']);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -14124,7 +14578,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($policy_ids['pay_code']);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -14184,7 +14638,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($policy_ids['pay_code']);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -14244,7 +14698,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($policy_ids['pay_code']);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -14303,7 +14757,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($policy_ids['pay_code']);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -14362,7 +14816,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($policy_ids['pay_code']);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -14421,7 +14875,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($policy_ids['pay_code']);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -14480,7 +14934,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($policy_ids['pay_code']);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -14539,7 +14993,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($policy_ids['pay_code']);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//BiWeekly >86
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 30 ); //Overtime
@@ -14610,7 +15064,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($policy_ids['pay_code']);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//BiWeekly >86
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 30 ); //Overtime
@@ -14673,7 +15127,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($policy_ids['pay_code']);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//BiWeekly >86
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 30 ); //Overtime
@@ -14805,7 +15259,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['hourly_rate'], 0 );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['hourly_rate_with_burden'], 0 );
@@ -14862,7 +15316,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Regular Time B1
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -14915,7 +15369,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Regular Time B1
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -14970,7 +15424,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Regular Time B1
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -15022,7 +15476,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Regular Time B1
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -15092,7 +15546,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Weekly Overtime1 B1
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 30 ); //Overtime
@@ -15129,7 +15583,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		$udt_arr = $this->getUserDateTotalArray( $date_epoch, $date_epoch );
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Regular Time B1
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -15149,7 +15603,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		$udt_arr = $this->getUserDateTotalArray( $date_epoch, $date_epoch );
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Regular Time B1
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -15169,7 +15623,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		$udt_arr = $this->getUserDateTotalArray( $date_epoch, $date_epoch );
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Regular Time B1
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -15189,7 +15643,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		$udt_arr = $this->getUserDateTotalArray( $date_epoch, $date_epoch );
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Regular Time B1
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -15209,7 +15663,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		$udt_arr = $this->getUserDateTotalArray( $date_epoch, $date_epoch );
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Regular Time B1
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -15360,7 +15814,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['start_time_stamp'], FALSE );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['end_time_stamp'], FALSE );
@@ -15450,7 +15904,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (13 * 3600) );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['start_time_stamp'], FALSE );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['end_time_stamp'], FALSE );
@@ -15562,7 +16016,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (13 * 3600) );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['start_time_stamp'], strtotime($date_stamp.' 8:00AM') ); //Punch Start time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['end_time_stamp'], strtotime($date_stamp.' 10:00AM') ); //Punch End Time
@@ -15662,7 +16116,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['start_time_stamp'], FALSE );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['end_time_stamp'], FALSE );
@@ -15671,7 +16125,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		$this->assertEquals( $udt_arr[$date_epoch][1]['pay_code_id'], $this->policy_ids['pay_code'][100] ); //Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['total_time'], (12 * 3600) );
 		$this->assertEquals( $udt_arr[$date_epoch][1]['start_time_stamp'], strtotime($date_stamp.' 12:00AM') ); //Punch Start time
-		$this->assertEquals( $udt_arr[$date_epoch][1]['end_time_stamp'], strtotime($date_stamp.' 12:00PM') ); //Punch End Time
+		$this->assertEquals( $udt_arr[$date_epoch][1]['end_time_stamp'], strtotime($date_stamp.' 12:00PM') + TTDate::getDSTOffset( strtotime($date_stamp.' 12:00AM'), strtotime($date_stamp.' 12:00PM') ) ); //Punch End Time - Account for DST change as well.
 		//Make sure no other hours
 		$this->assertEquals( count($udt_arr[$date_epoch]), 2 );
 
@@ -15686,7 +16140,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		$udt_arr = $this->getUserDateTotalArray( $date_epoch, $date_epoch );
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['start_time_stamp'], FALSE );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['end_time_stamp'], FALSE );
@@ -15710,7 +16164,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		$udt_arr = $this->getUserDateTotalArray( $date_epoch, $date_epoch );
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['start_time_stamp'], FALSE );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['end_time_stamp'], FALSE );
@@ -15735,7 +16189,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['start_time_stamp'], FALSE );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['end_time_stamp'], FALSE );
@@ -15766,7 +16220,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['start_time_stamp'], FALSE );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['end_time_stamp'], FALSE );
@@ -15798,7 +16252,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['start_time_stamp'], FALSE );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['end_time_stamp'], FALSE );
@@ -15880,7 +16334,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['start_time_stamp'], strtotime($date_stamp.' 8:00AM') ); //Punch Start time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['end_time_stamp'], strtotime($date_stamp.' 8:00PM') ); //Punch End Time
@@ -15916,7 +16370,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		$udt_arr = $this->getUserDateTotalArray( $date_epoch, $date_epoch );
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['start_time_stamp'], strtotime($date_stamp.' 8:00AM') ); //Punch Start time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['end_time_stamp'], strtotime($date_stamp.' 8:00PM') ); //Punch End Time
@@ -15953,7 +16407,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		$udt_arr = $this->getUserDateTotalArray( $date_epoch, $date_epoch );
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['start_time_stamp'], strtotime($date_stamp.' 8:00AM') ); //Punch Start time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['end_time_stamp'], strtotime($date_stamp.' 8:00PM') ); //Punch End Time
@@ -15991,7 +16445,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['start_time_stamp'], strtotime($date_stamp.' 8:00AM') ); //Punch Start time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['end_time_stamp'], strtotime($date_stamp.' 8:00PM') ); //Punch End Time
@@ -16035,7 +16489,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['start_time_stamp'], strtotime($date_stamp.' 8:00AM') ); //Punch Start time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['end_time_stamp'], strtotime($date_stamp.' 8:00PM') ); //Punch End Time
@@ -16079,7 +16533,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['start_time_stamp'], strtotime($date_stamp.' 8:00AM') ); //Punch Start time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['end_time_stamp'], strtotime($date_stamp.' 8:00PM') ); //Punch End Time
@@ -16119,7 +16573,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['start_time_stamp'], strtotime($date_stamp.' 8:00AM') ); //Punch Start time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['end_time_stamp'], strtotime($date_stamp.' 8:00PM') ); //Punch End Time
@@ -16140,7 +16594,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		$udt_arr = $this->getUserDateTotalArray( $date_epoch, $date_epoch );
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['start_time_stamp'], strtotime($date_stamp.' 8:00AM') ); //Punch Start time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['end_time_stamp'], strtotime($date_stamp.' 8:00PM') ); //Punch End Time
@@ -16162,7 +16616,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		$udt_arr = $this->getUserDateTotalArray( $date_epoch, $date_epoch );
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['start_time_stamp'], strtotime($date_stamp.' 8:00AM') ); //Punch Start time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['end_time_stamp'], strtotime($date_stamp.' 8:00PM') ); //Punch End Time
@@ -16185,7 +16639,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['start_time_stamp'], strtotime($date_stamp.' 8:00AM') ); //Punch Start time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['end_time_stamp'], strtotime($date_stamp.' 8:00PM') ); //Punch End Time
@@ -16214,7 +16668,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['start_time_stamp'], strtotime($date_stamp.' 8:00AM') ); //Punch Start time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['end_time_stamp'], strtotime($date_stamp.' 8:00PM') ); //Punch End Time
@@ -16243,7 +16697,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['start_time_stamp'], strtotime($date_stamp.' 8:00AM') ); //Punch Start time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['end_time_stamp'], strtotime($date_stamp.' 8:00PM') ); //Punch End Time
@@ -16326,7 +16780,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -16358,7 +16812,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		$udt_arr = $this->getUserDateTotalArray( $date_epoch, $date_epoch );
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Overtime 1
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 30 ); //OverTime
@@ -16390,7 +16844,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		$udt_arr = $this->getUserDateTotalArray( $date_epoch, $date_epoch );
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Overtime 1
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 30 ); //OverTime
@@ -16423,7 +16877,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Overtime 1
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 30 ); //OverTime
@@ -16456,7 +16910,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Overtime 1
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 30 ); //OverTime
@@ -16489,7 +16943,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Overtime 1
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 30 ); //OverTime
@@ -16522,7 +16976,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Overtime 1
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 30 ); //OverTime
@@ -16555,7 +17009,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -16626,7 +17080,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -16658,7 +17112,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		$udt_arr = $this->getUserDateTotalArray( $date_epoch, $date_epoch );
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -16690,7 +17144,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		$udt_arr = $this->getUserDateTotalArray( $date_epoch, $date_epoch );
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -16723,7 +17177,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -16756,7 +17210,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -16789,7 +17243,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -16822,7 +17276,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Overtime 1
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 30 ); //OverTime
@@ -16855,7 +17309,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -16926,7 +17380,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -16958,7 +17412,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		$udt_arr = $this->getUserDateTotalArray( $date_epoch, $date_epoch );
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Overtime 1
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 30 ); //OverTime
@@ -16990,7 +17444,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		$udt_arr = $this->getUserDateTotalArray( $date_epoch, $date_epoch );
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Overtime 1
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 30 ); //OverTime
@@ -17023,7 +17477,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Overtime 1
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 30 ); //OverTime
@@ -17056,7 +17510,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Overtime 1
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 30 ); //OverTime
@@ -17089,7 +17543,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Overtime 1
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 30 ); //OverTime
@@ -17122,7 +17576,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Overtime 1
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 30 ); //OverTime
@@ -17155,7 +17609,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Overtime 1
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 30 ); //OverTime
@@ -17226,7 +17680,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -17258,7 +17712,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		$udt_arr = $this->getUserDateTotalArray( $date_epoch, $date_epoch );
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -17290,7 +17744,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		$udt_arr = $this->getUserDateTotalArray( $date_epoch, $date_epoch );
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -17323,7 +17777,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -17356,7 +17810,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -17389,7 +17843,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -17422,7 +17876,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Overtime 1
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 30 ); //OverTime
@@ -17455,7 +17909,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Overtime 1
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 30 ); //OverTime
@@ -17527,7 +17981,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -17559,7 +18013,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 //		$udt_arr = $this->getUserDateTotalArray( $date_epoch, $date_epoch );
 //		//Total Time
 //		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-//		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+//		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 //		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 //		//Regular Time
 //		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -17591,7 +18045,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		$udt_arr = $this->getUserDateTotalArray( $date_epoch, $date_epoch );
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Overtime 1
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 30 ); //OverTime
@@ -17624,7 +18078,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Overtime 1
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 30 ); //OverTime
@@ -17657,7 +18111,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Overtime 1
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 30 ); //OverTime
@@ -17690,7 +18144,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Overtime 1
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 30 ); //OverTime
@@ -17723,7 +18177,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Overtime 1
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 30 ); //OverTime
@@ -17756,7 +18210,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -17827,7 +18281,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -17859,7 +18313,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 //		$udt_arr = $this->getUserDateTotalArray( $date_epoch, $date_epoch );
 //		//Total Time
 //		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-//		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+//		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 //		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 //		//Regular Time
 //		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -17891,7 +18345,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		$udt_arr = $this->getUserDateTotalArray( $date_epoch, $date_epoch );
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -17924,7 +18378,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -17957,7 +18411,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -17990,7 +18444,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time
@@ -18023,7 +18477,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Overtime 1
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 30 ); //OverTime
@@ -18056,7 +18510,7 @@ class OverTimePolicyTest extends PHPUnit_Framework_TestCase {
 		//print_r($udt_arr);
 		//Total Time
 		$this->assertEquals( $udt_arr[$date_epoch][0]['object_type_id'], 5 ); //5=System Total
-		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], 0 );
+		$this->assertEquals( $udt_arr[$date_epoch][0]['pay_code_id'], TTUUID::getZeroID() );
 		$this->assertEquals( $udt_arr[$date_epoch][0]['total_time'], (12 * 3600) );
 		//Regular Time
 		$this->assertEquals( $udt_arr[$date_epoch][1]['object_type_id'], 20 ); //Regular Time

@@ -35,7 +35,7 @@ var PermissionManager = (function() {
 			PermissionManager.validate( 'recurring_schedule', 'enabled' ) ||
 			PermissionManager.validate( 'recurring_schedule_template', 'enabled' )
 		) {
-			return true;
+				return true;
 		}
 
 		return false;
@@ -120,14 +120,10 @@ var PermissionManager = (function() {
 					result = true;
 				}
 				break;
-			case 'CompanyBankAccount':
-			case 'LoginUserBankAccount':
-				if ( !PermissionManager.validate( permission_section, 'enabled' ) ) {
-					result = false;
-				} else if ( PermissionManager.validate( permission_section, 'edit_own_bank' ) ) {
-					result = true;
-				}
-				break;
+			case 'LegalEntity':
+			case 'PayrollRemittanceAgency':
+			case 'RemittanceSourceAccount':
+			case 'RemittanceDestinationAccount':
 			case 'UserTitle':
 			case 'UserGroup':
 			case 'UserDefault':
@@ -409,6 +405,7 @@ var PermissionManager = (function() {
 					result = false;
 				}
 				break;
+			case 'PayStubTransactionSummaryReport':
 			case 'PayStubSummaryReport':
 				if ( PermissionManager.validate( 'report', 'view_pay_stub_summary' ) ) {
 					result = true;
@@ -636,6 +633,15 @@ var PermissionManager = (function() {
 					result = true;
 				}
 				break;
+			case 'GeneratePayStubs':
+				if ( PermissionManager.validate( 'pay_period_schedule', 'enabled' )
+					&& ( PermissionManager.validate( 'pay_period_schedule', 'edit' ) || PermissionManager.validate( 'pay_period_schedule', 'edit_own' ) )
+					&& ( PermissionManager.validate( 'pay_stub', 'view' ) || PermissionManager.validate( 'pay_stub', 'view_child' ) ) ) {
+					result = true;
+				} else {
+					result = false;
+				}
+				break;
 			default :
 				if ( !PermissionManager.validate( permission_section, 'enabled' ) ) {
 					result = false;
@@ -726,6 +732,12 @@ var PermissionManager = (function() {
 			case 'Product':
 				permission_section = 'product';
 				break;
+			case 'RemittanceSourceAccount':
+				permission_section = 'remittance_source_account';
+				break;
+			case 'RemittanceDestinationAccount':
+				permission_section = 'remittance_destination_account';
+				break;
 			case 'ScheduleShift':
 			case 'Schedule':
 				permission_section = 'schedule';
@@ -798,12 +810,14 @@ var PermissionManager = (function() {
 			case 'UserGroup':
 			case 'EthnicGroup':
 			case 'LoginUserContact':
-			case 'LoginUserBankAccount':
 			case 'ChangePassword':
 				permission_section = 'user';
 				break;
-			case 'CompanyBankAccount':
-				permission_section = 'company';
+			case 'LegalEntity':
+				permission_section = 'legal_entity';
+				break;
+			case 'PayrollRemittanceAgency':
+				permission_section = 'payroll_remittance_agency';
 				break;
 			case 'MessageControl':
 				permission_section = 'message';
@@ -864,6 +878,7 @@ var PermissionManager = (function() {
 			case 'RecurringPayStubAmendment':
 				permission_section = 'pay_stub_amendment';
 				break;
+			case 'PayStubTransactionSummaryReport':
 			case 'PayStub':
 				permission_section = 'pay_stub';
 				break;

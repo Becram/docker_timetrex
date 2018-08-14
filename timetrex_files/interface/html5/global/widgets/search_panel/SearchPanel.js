@@ -50,15 +50,15 @@
 
 			var hasFilter = false;
 			for ( var key in filter ) {
-				if ( key === 'country' && filter[key].value === -1 ) {
+				if ( key === 'country' && filter[key].value == TTUUID.not_exist_id ) {
 					continue;
 				}
 				//For Documents view
-				if ( key === 'template' && filter[key].value === false ) {
+				if ( key === 'template' && filter[key].value == false ) {
 					continue;
 				}
 				// For Authorizations views
-				if ( key === 'hierarchy_level' && (filter[key].value === 1 || filter[key].value.value === 1) ) {
+				if ( key === 'hierarchy_level' && (filter[key].value == 1 || filter[key].value.value == 1) ) {
 					continue;
 				}
 				hasFilter = true
@@ -210,12 +210,12 @@
 			$( layout_selector ).change( $.proxy( function() {
 
 				$( layout_selector ).find( 'option:selected' ).each( function() {
-					var selectId = parseInt( $( this ).attr( 'value' ) );
+					var selectId = $( this ).attr( 'value' );
 					var len = layouts_array.length;
 					for ( var i = 0; i < len; i++ ) {
 						var item = layouts_array[i];
 
-						if ( item.id === selectId ) {
+						if ( item.id == selectId ) {
 							related_view_controller.select_layout = item;
 							related_view_controller.setSelectLayout();
 							related_view_controller.search();

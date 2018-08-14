@@ -2,6 +2,11 @@ ScheduleViewController = BaseViewController.extend( {
 
 	el: '#schedule_view_container', //Must set el here and can only set string, so events can work
 
+	_required_files: {
+		10: ['APISchedule', 'APICurrency', 'APIUserTitle', 'APIRecurringScheduleTemplateControl', 'APIBranch', 'APIDepartment', 'APIAbsencePolicy', 'APIUserGroup'],
+		20: ['APIJob', 'APIJobItem']
+	},
+
 	user_group_api: null,
 
 	status_array: null,
@@ -84,9 +89,9 @@ ScheduleViewController = BaseViewController.extend( {
 
 	year_mode_original_date: null, //set this when search for yer mode with use_date_picker true, so Keep select date in ritict mode
 
-	initialize: function( options ) {
+	init: function( options ) {
 
-		this._super( 'initialize', options );
+		//this._super('initialize', options );
 		this.permission_id = 'schedule';
 		this.script_name = 'ScheduleView';
 		this.viewId = 'Schedule';
@@ -116,6 +121,7 @@ ScheduleViewController = BaseViewController.extend( {
 		this.initPermission();
 		this.render();
 		this.buildContextMenu();
+
 		this.initData();
 		this.setSelectRibbonMenuIfNecessary();
 
@@ -243,9 +249,11 @@ ScheduleViewController = BaseViewController.extend( {
 
 	setToggleButtonValue: function( val ) {
 
-		this.toggle_button.setValue( val );
+		if ( this.toggle_button ) {
+			this.toggle_button.setValue(val);
 
-		this.setToggleButtonUrl();
+			this.setToggleButtonUrl();
+		}
 	},
 
 	setToggleButtonUrl: function() {
@@ -349,7 +357,7 @@ ScheduleViewController = BaseViewController.extend( {
 		var len = this.select_all_shifts_array.length;
 		for ( var i = 0; i < len; i++ ) {
 			var item = this.select_all_shifts_array[i];
-			if ( item.id ) {
+			if ( item.id && item.id != TTUUID.zero_id && item.id != TTUUID.not_exist_id ) {
 				result.push( item.id );
 			}
 
@@ -419,7 +427,8 @@ ScheduleViewController = BaseViewController.extend( {
 
 					var result_data = result.getResult();
 
-					if ( !result_data ) {
+					//#2571 - result_data is undefined (when result_data === true there is no result[0])
+					if ( !result_data || result_data === true ) {
 						TAlertManager.showAlert( $.i18n._( 'Record does not exist' ) );
 						$this.onCancelClick();
 						return;
@@ -514,7 +523,6 @@ ScheduleViewController = BaseViewController.extend( {
 
 	onMassEditClick: function() {
 		var $this = this;
-
 		var filter = {};
 		var grid_selected_id_array = [];
 		LocalCacheData.current_doing_context_action = 'mass_edit';
@@ -597,7 +605,7 @@ ScheduleViewController = BaseViewController.extend( {
 			selectedId = editId;
 		} else {
 			if ( this.is_viewing ) {
-				if ( this.current_edit_record.id ) {
+				if ( this.current_edit_record.id && this.current_edit_record.id != TTUUID.zero_id ) {
 				selectedId = this.current_edit_record.id;
 				} else {
 					$this.current_edit_record = this.current_edit_record;
@@ -660,10 +668,10 @@ ScheduleViewController = BaseViewController.extend( {
 		'Are you sure you wish to continue?' ), null, function( result ) {
 
 			var remove_ids = [];
-			if ( $this.edit_view ) {
+			//#2571 - $this.current_edit_record is null
+			if ( $this.edit_view && $this.current_edit_record ) {
 				remove_ids.push( $this.current_edit_record.id );
 			} else {
-
 				remove_ids = $this.getGridSelectIdArray();
 			}
 
@@ -1172,7 +1180,7 @@ ScheduleViewController = BaseViewController.extend( {
 		}
 
 		if ( first_shift ) {
-			if ( first_shift.shift && first_shift.shift.status_id == 10 && first_shift.shift.user_id && first_shift.shift.user_id != 0 ) {
+			if ( first_shift.shift && first_shift.shift.status_id == 10 && first_shift.shift.user_id && first_shift.shift.user_id != TTUUID.zero_id ) {
 				shift_status = 20;
 				type_id = 30;
 			}
@@ -1215,7 +1223,7 @@ ScheduleViewController = BaseViewController.extend( {
 			request.job_item_id = first_shift.job_item_id;
 		}
 
-		IndexViewController.openEditView( this, 'Request', request );
+		IndexViewController.openEditView( this, 'Request', request, 'openAddView' );
 	},
 
 	addPunchesFromScheduledShifts: function ( id ) {
@@ -1237,9 +1245,14 @@ ScheduleViewController = BaseViewController.extend( {
 
 		for ( var i = 0; i < shift_array.length; i++ ) {
 			if ( shift_array[i].shift != undefined ) { //avoid when no user scheduled.
-				if ( shift_array[i].shift.id && shift_array[i].shift.id > 0 ) {
+				if ( shift_array[i].shift.id
+					&& shift_array[i].shift.id != TTUUID.zero_id
+					&& shift_array[i].shift.id != TTUUID.not_exist_id
+				) {
 					schedules.schedule.push( shift_array[i].shift.id );
-				} else if ( shift_array[i].shift.recurring_schedule_id && shift_array[i].shift.recurring_schedule_id > 0 ) {
+				} else if ( shift_array[i].shift.recurring_schedule_id
+							&& shift_array[i].shift.recurring_schedule_id != TTUUID.not_exist_id
+				) {
 					schedules.recurring.push( shift_array[i].shift.recurring_schedule_id );
 				}
 				users.push( shift_array[i].shift.user_id );
@@ -1261,9 +1274,9 @@ ScheduleViewController = BaseViewController.extend( {
 		var shift = this.select_cells_Array[0];
 
 		//Error: Uncaught TypeError: Cannot read property 'user_id' of undefined in /interface/html5/#!m=Schedule&date=20141117&mode=week&a=new&tab=Schedule line 1116
-		if ( !shift || shift.user_id == 0 ) {
+		if ( !shift || shift.user_id == TTUUID.zero_id ) {
 			shift = {user_id: LocalCacheData.getLoginUser().id};
-		} else if ( shift.user_id && shift.user_id != 0 ) {
+		} else if ( shift.user_id && shift.user_id != TTUUID.zero_id ) {
 			shift = {user_id: shift.user_id};
 		}
 
@@ -1286,22 +1299,7 @@ ScheduleViewController = BaseViewController.extend( {
 		var len = this.select_all_shifts_array.length;
 		for ( var i = 0; i < len; i++ ) {
 			var item = this.select_all_shifts_array[i];
-			var new_item = {};
-			new_item.id = item.id;
-			new_item.date_stamp = item.date_stamp;
-			new_item.user_id = item.user_id;
-			new_item.start_time = item.start_time;
-			new_item.end_time = item.end_time;
-			new_item.branch_id = item.branch_id;
-			new_item.department_id = item.department_id;
-			new_item.job_id = item.job_id;
-			new_item.job_item_id = item.job_item_id;
-			new_item.schedule_policy_id = item.schedule_policy_id;
-			new_item.note = item.note;
-			new_item.group_id = item.group_id;
-			new_item.title_id = item.title_id;
-			new_item.start_date_stamp = item.start_date_stamp;
-			args.selected.push( new_item );
+			args.selected.push( item );
 		}
 
 		LocalCacheData.extra_filter_for_next_open_view = {};
@@ -1392,7 +1390,8 @@ ScheduleViewController = BaseViewController.extend( {
 	},
 
 	doFormIFrameCall: function( postData ) {
-		this.sendIframeCall('APIScheduleSummaryReport','getScheduleSummaryReport', postData);
+		Global.APIFileDownload( 'APIScheduleSummaryReport','getScheduleSummaryReport', postData );
+
 	},
 
 	setScheduleGridDragAble: function() {
@@ -1486,7 +1485,7 @@ ScheduleViewController = BaseViewController.extend( {
 				var shift = $this.select_all_shifts_array[i];
 				var span = $( "<span class='drag-span'></span>" );
 
-				if ( shift.status_id === 20 ) {
+				if ( shift.status_id == 20 ) {
 					span.text( $this.getAbsenceCellValue( shift ) );
 				} else {
 					span.text( shift.start_time + ' - ' + shift.end_time );
@@ -1575,7 +1574,7 @@ ScheduleViewController = BaseViewController.extend( {
 					var target_data = $this.getDataByCellIndex( target_row_index, target_cell_index );
 					var target_row = $this.schedule_source[target_row_index];
 
-					if ( !target_row.user_id ) {
+					if ( !target_row || !target_row.user_id ) {
 						target_empty_row = true;
 					}
 					continue;
@@ -1596,7 +1595,7 @@ ScheduleViewController = BaseViewController.extend( {
 				target_data = $this.getDataByCellIndex( target_row_index, target_cell_index );
 				target_row = $this.schedule_source[target_row_index];
 
-				if ( !target_row.user_id ) {
+				if ( !target_row || !target_row.user_id ) {
 					target_empty_row = true;
 				}
 
@@ -1668,14 +1667,14 @@ ScheduleViewController = BaseViewController.extend( {
 					}
 
 					new_shifts_array.push( new_shift );
-					if ( shift.id ) {
+					if ( shift.id && shift.id != TTUUID.zero_id) {
 						delete_shifts_array.push( shift.id );
-					} else if ( shift.user_id > 0 ) {
+					} else if ( shift.user_id != TTUUID.zero_id && shift.user_id != TTUUID.not_exist_id ) {
 						//If dragging (move) a recurring shift assigned to a user and dropping on another user, switch the source shift to Absent in the process, otherwise both shifts will exist as being worked.
 						//  However when dragging from a OPEN shift as the source, that isn't required, as the OPEN shift will automatically be filled.
 						shift.status_id = '20';
 						recurring_delete_shifts_array.push( shift );
-					} else if ( shift.user_id == 0 ) {
+					} else if ( shift.user_id == TTUUID.zero_id ) {
 						delete_old_items = false; //Never delete old items when the source is a OPEN shift.
 					}
 
@@ -2118,7 +2117,7 @@ ScheduleViewController = BaseViewController.extend( {
 					record.push( commonRecord );
 				} );
 				$.each( this.select_all_shifts_array, function( index, value ) {
-					if ( !value.id ) {
+					if ( !value.id || value.id == TTUUID.zero_id ) {
 						var commonRecord = Global.clone( value );
 						for ( var key in checkFields ) {
 							commonRecord[key] = checkFields[key];
@@ -2131,7 +2130,7 @@ ScheduleViewController = BaseViewController.extend( {
 			} else {
 				var record_array = [];
 				$.each( this.select_all_shifts_array, function( index, value ) {
-					if ( !value.id ) {
+					if ( !value.id || value.id == TTUUID.zero_id ) {
 						var commonRecord = Global.clone( value );
 						for ( var key in record ) {
 							commonRecord[key] = record[key];
@@ -2201,8 +2200,8 @@ ScheduleViewController = BaseViewController.extend( {
 				}
 			} else {
 
-				if ( ( !this.current_edit_record || !this.current_edit_record.id ) && !this.is_mass_editing ) {
-					common_record.user_id = 0;
+				if ( ( !this.current_edit_record || !this.current_edit_record.id || this.current_edit_record.id == TTUUID.zero_id ) && !this.is_mass_editing ) {
+					common_record.user_id = TTUUID.zero_id;
 				}
 
 				result.push( common_record );
@@ -2292,7 +2291,7 @@ ScheduleViewController = BaseViewController.extend( {
 			record = this.getRecordsFromUserIDs( record );
 		}
 
-		this.api['set' + this.api.key_name]( record, false, false, ignoreWarning, {
+		this.api['set' + this.api.key_name]( record, false, ignoreWarning, {
 			onResult: function( result ) {
 				$this.onSaveAndNewResult( result );
 			}
@@ -2366,7 +2365,7 @@ ScheduleViewController = BaseViewController.extend( {
 			record = this.getRecordsFromUserIDs( [record] );
 		}
 
-		this.api['set' + this.api.key_name]( record, false, false, ignoreWarning, {
+		this.api['set' + this.api.key_name]( record, false, ignoreWarning, {
 			onResult: function( result ) {
 				this.previous_absence_policy_id = false;
 				$this.onSaveAndContinueResult( result );
@@ -2424,7 +2423,7 @@ ScheduleViewController = BaseViewController.extend( {
 			} );
 
 			$.each( this.select_all_shifts_array, function( index, value ) {
-				if ( !value.id ) {
+				if ( !value.id || value.id == TTUUID.zero_id ) {
 					var commonRecord = Global.clone( value );
 					for ( var key in checkFields ) {
 						commonRecord[key] = checkFields[key];
@@ -2460,13 +2459,14 @@ ScheduleViewController = BaseViewController.extend( {
 
 		}
 
-		this.api['set' + this.api.key_name]( record, false, false, ignoreWarning, {
+		this.api['set' + this.api.key_name]( record, false, ignoreWarning, {
 			onResult: function( result ) {
 				if ( result.isValid() ) {
 					var result_data = result.getResult();
-					if ( result_data === true ) {
+					//#2571 - Cannot read property 'id' of null
+					if ( result_data === true && $this.current_edit_record ) {
 						$this.refresh_id = $this.current_edit_record.id;
-					} else if ( result_data > 0 ) {
+					} else if ( TTUUID.isUUID( result_data ) && result_data != TTUUID.zero_id && result_data != TTUUID.not_exist_id ) {
 						$this.refresh_id = result_data
 					}
 					$this.search();
@@ -2501,13 +2501,13 @@ ScheduleViewController = BaseViewController.extend( {
 
 	isMassEmployeeOrDate: function() {
 
-		if ( this.current_edit_record.start_date_stamps && (this.current_edit_record.start_date_stamps.indexOf( ' - ' ) > 0 ||
+		if ( this.current_edit_record && this.current_edit_record.start_date_stamps && (this.current_edit_record.start_date_stamps.indexOf( ' - ' ) > 0 ||
 			$.type( this.current_edit_record.start_date_stamps ) === 'array' && this.current_edit_record.start_date_stamps.length > 1
 			) ) {
 			return true;
 		}
 
-		if ( this.current_edit_record.user_ids && this.current_edit_record.user_ids.length > 1 ) {
+		if ( this.current_edit_record && this.current_edit_record.user_ids && this.current_edit_record.user_ids.length > 1 ) {
 			return true;
 		}
 
@@ -2531,93 +2531,8 @@ ScheduleViewController = BaseViewController.extend( {
 		}
 	},
 
-//	  setEditMenu: function() {
-//		  this._super( 'setEditMenu' );
-//
-//		  var len = this.context_menu_array.length;
-//
-//		  for ( var i = 0; i < len; i++ ) {
-//			  var contextBtn = this.context_menu_array[i];
-//			  var id = $( contextBtn.find( '.ribbon-sub-menu-icon' ) ).attr( 'id' );
-//
-//			  switch ( id ) {
-//
-//				  case ContextMenuIconName.save_and_continue:
-//
-//					  this.saveAndContinueValidate( contextBtn );
-//
-//					  if ( !this.current_edit_record || !this.current_edit_record.id ) {
-//						  contextBtn.addClass( 'disable-image' );
-//					  }
-//					  break;
-//				  case ContextMenuIconName.save_and_new:
-//
-//					  this.saveAndNewValidate( contextBtn );
-//
-//					  if ( !this.current_edit_record || !this.current_edit_record.id ) {
-//						  contextBtn.addClass( 'disable-image' );
-//					  }
-//					  break;
-//
-//				  case ContextMenuIconName.save_and_copy:
-//
-//					  this.saveAndContinueValidate( contextBtn );
-//
-//					  if ( !this.current_edit_record || !this.current_edit_record.id ) {
-//						  contextBtn.addClass( 'disable-image' );
-//					  }
-//					  break;
-//
-//			  }
-//
-//		  }
-//	  },
-
-//	  setEditingMenu: function() {
-//
-//		  this._super( 'setEditingMenu' ); //Set Navigation
-//
-//		  var len = this.context_menu_array.length;
-//
-//		  for ( var i = 0; i < len; i++ ) {
-//			  var contextBtn = this.context_menu_array[i];
-//			  var id = $( contextBtn.find( '.ribbon-sub-menu-icon' ) ).attr( 'id' );
-//
-//			  switch ( id ) {
-//
-//				  case ContextMenuIconName.save_and_continue:
-//
-//					  this.saveAndContinueValidate( contextBtn );
-//
-//					  if ( !this.current_edit_record || !this.current_edit_record.id ) {
-//						  contextBtn.addClass( 'disable-image' );
-//					  }
-//					  break;
-//				  case ContextMenuIconName.save_and_new:
-//
-//					  this.saveAndNewValidate( contextBtn );
-//
-//					  if ( !this.current_edit_record || !this.current_edit_record.id ) {
-//						  contextBtn.addClass( 'disable-image' );
-//					  }
-//					  break;
-//
-//				  case ContextMenuIconName.save_and_copy:
-//
-//					  this.saveAndContinueValidate( contextBtn );
-//
-//					  if ( !this.current_edit_record || !this.current_edit_record.id ) {
-//						  contextBtn.addClass( 'disable-image' );
-//					  }
-//					  break;
-//
-//			  }
-//
-//		  }
-//	  },
-
 	onTypeChange: function( getRate ) {
-		if ( parseInt( this.current_edit_record.status_id ) === 20 ) {
+		if ( this.current_edit_record.status_id == 20 ) {
 			this.attachElement( 'absence_policy_id' );
 		} else {
 			this.detachElement( 'absence_policy_id' );
@@ -2833,8 +2748,9 @@ ScheduleViewController = BaseViewController.extend( {
 			addition_source_function: (function( target, source_data ) {
 				return $this.onSourceDataCreate( target, source_data );
 			}),
+			//FIXME: Follow -2 to the API do not switch to UUID unless absolutely necessary?
 			added_items: [
-				{value: '-1', label: Global.default_item},
+				{value: TTUUID.not_exist_id, label: Global.default_item},
 				{value: '-2', label: Global.selected_item}
 			]
 		} );
@@ -2859,7 +2775,7 @@ ScheduleViewController = BaseViewController.extend( {
 				return $this.onSourceDataCreate( target, source_data );
 			}),
 			added_items: [
-				{value: '-1', label: Global.default_item},
+				{value: TTUUID.not_exist_id, label: Global.default_item},
 				{value: '-2', label: Global.selected_item}
 			]
 		} );
@@ -2889,7 +2805,7 @@ ScheduleViewController = BaseViewController.extend( {
 					return $this.onSourceDataCreate( target, source_data );
 				}),
 				added_items: [
-					{value: '-1', label: Global.default_item},
+					{value: TTUUID.not_exist_id, label: Global.default_item},
 					{value: '-2', label: Global.selected_item}
 				]
 			} );
@@ -2926,7 +2842,7 @@ ScheduleViewController = BaseViewController.extend( {
 					return $this.onSourceDataCreate( target, source_data );
 				}),
 				added_items: [
-					{value: '-1', label: Global.default_item},
+					{value: TTUUID.not_exist_id, label: Global.default_item},
 					{value: '-2', label: Global.selected_item}
 				]
 			} );
@@ -3085,7 +3001,7 @@ ScheduleViewController = BaseViewController.extend( {
 
 			}
 
-			if ( ( !this.current_edit_record || !this.current_edit_record.id ) && !this.is_mass_editing ) {
+			if ( ( !this.current_edit_record || !this.current_edit_record.id || this.current_edit_record.id == TTUUID.zero_id ) && !this.is_mass_editing ) {
 
 				if ( this.current_edit_record.user_ids.length < 1 || this.current_edit_record.user_ids.length > 1 ) {
 					this.detachElement( 'available_balance' );
@@ -3218,7 +3134,7 @@ ScheduleViewController = BaseViewController.extend( {
 		} else {
 			this.detachElement( 'start_dates' );
 
-			if ( this.current_edit_record.id || this.is_mass_editing ) {
+			if ( (this.current_edit_record.id && this.current_edit_record.id != TTUUID.zero_id) || this.is_mass_editing ) {
 				this.attachElement( 'start_date_stamp' );
 				this.detachElement( 'start_date_stamps' );
 				this.detachElement( 'user_ids' );
@@ -3258,7 +3174,7 @@ ScheduleViewController = BaseViewController.extend( {
 						break;
 					case 'total_time':
 						//Don't set when copy as new
-						if ( this.current_edit_record.id ) {
+						if ( this.current_edit_record.id && this.current_edit_record.id != TTUUID.zero_id ) {
 							this.pre_total_time = this.current_edit_record[key];
 						}
 						var startTime = this.current_edit_record['date_stamp'] + ' ' + this.current_edit_record['start_time'];
@@ -3313,7 +3229,7 @@ ScheduleViewController = BaseViewController.extend( {
 
 		if ( !this.is_mass_editing ) {
 
-			if ( !this.current_edit_record || !this.current_edit_record.id ) {
+			if ( !this.current_edit_record || !this.current_edit_record.id || this.current_edit_record.id == TTUUID.zero_id ) {
 				filter.filter_data.user_id = this.current_edit_record.user_ids;
 			} else {
 				filter.filter_data.user_id = this.current_edit_record.user_id;
@@ -3683,7 +3599,7 @@ ScheduleViewController = BaseViewController.extend( {
 
 	setDefaultMenuEditTimesheetIcon: function( context_btn, grid_selected_length, pId ) {
 
-		if ( this.select_cells_Array.length === 1 && this.select_cells_Array[0].user_id != 0 ) {
+		if ( this.select_cells_Array.length === 1 && TTUUID.isUUID( this.select_cells_Array[0].user_id ) && this.select_cells_Array[0].user_id != TTUUID.zero_id ) {
 			context_btn.removeClass( 'disable-image' );
 		} else {
 			context_btn.addClass( 'disable-image' );
@@ -3696,7 +3612,7 @@ ScheduleViewController = BaseViewController.extend( {
 			context_btn.addClass( 'invisible-image' );
 		}
 
-		if ( this.select_cells_Array.length === 1 && this.select_cells_Array[0].user_id != 0 ) {
+		if ( this.select_cells_Array.length === 1 && TTUUID.isUUID( this.select_cells_Array[0].user_id ) && this.select_cells_Array[0].user_id != TTUUID.zero_id ) {
 			context_btn.removeClass( 'disable-image' );
 		} else {
 			context_btn.addClass( 'disable-image' );
@@ -3962,9 +3878,12 @@ ScheduleViewController = BaseViewController.extend( {
 
 		this.setSearchPanelFilter( true );
 
-		this.search( false, true );
+		var $this = this;
+		TTPromise.wait( 'BaseViewController', 'initialize', function() {
+			$this.search( false, true );
 
-		this.setDefaultMenu( true );
+			$this.setDefaultMenu( true );
+		});
 
 	},
 
@@ -4224,7 +4143,11 @@ ScheduleViewController = BaseViewController.extend( {
 		if ( this.schedule_source.length === 1 && this.schedule_source[0].user_id != '' ) {
 			//case where only one user has a schedule on the sheet
 			default_user_id = this.schedule_source[0].user_id;
-		} else if ( this.schedule_source.length === 1 && this.filter_data && this.filter_data.include_user_ids && this.filter_data.include_user_ids.value.length === 1 ) {
+		} else if ( this.schedule_source.length === 1
+			&& typeof this.filter_data == 'object' // #2571 - Uncaught TypeError: This.filter_data.include_user_id is undefined
+			&& typeof this.filter_data.include_user_ids == 'object' // #2571 - Uncaught TypeError: Cannot read property 'value' of undefined 
+			&& this.filter_data.include_user_ids.value
+			&& this.filter_data.include_user_ids.value.length === 1 ) {
 			//case where one user is selected in include_users but does not have a schedule attributed to them (new users for example)
 			default_user_id = this.filter_data.include_user_ids.value[0];
 		} else {
@@ -4862,7 +4785,7 @@ ScheduleViewController = BaseViewController.extend( {
 					}
 
 					if ( date_string >= 0 ) {
-						if ( shift.status_id === 20 ) {
+						if ( shift.status_id == 20 ) {
 
 							row[date_string] = $this.getAbsenceCellValue( shift );
 						} else {
@@ -4892,7 +4815,7 @@ ScheduleViewController = BaseViewController.extend( {
 						} else {
 
 							if ( date_string >= 0 ) {
-								if ( shift.status_id === 20 ) {
+								if ( shift.status_id == 20 ) {
 
 									row[date_string] = $this.getAbsenceCellValue( shift );
 								} else {
@@ -4926,7 +4849,7 @@ ScheduleViewController = BaseViewController.extend( {
 						}
 
 						if ( date_string >= 0 ) {
-							if ( shift.status_id === 20 ) {
+							if ( shift.status_id == 20 ) {
 
 								row[date_string] = $this.getAbsenceCellValue( shift );
 							} else {
@@ -5026,7 +4949,7 @@ ScheduleViewController = BaseViewController.extend( {
 				}
 
 				if ( date_string ) {
-					row[date_string] = shift.status_id === 10 ? 'S' : 'A';
+					row[date_string] = shift.status_id == 10 ? 'S' : 'A';
 					row[date_string + '_data'] = shift;
 				}
 
@@ -5043,7 +4966,7 @@ ScheduleViewController = BaseViewController.extend( {
 					} else {
 
 						if ( date_string ) {
-							row[date_string] = shift.status_id === 10 ? 'S' : 'A';
+							row[date_string] = shift.status_id == 10 ? 'S' : 'A';
 							row[date_string + '_data'] = shift;
 						}
 
@@ -5072,7 +4995,7 @@ ScheduleViewController = BaseViewController.extend( {
 					}
 
 					if ( date_string ) {
-						row[date_string] = shift.status_id === 10 ? 'S' : 'A';
+						row[date_string] = shift.status_id == 10 ? 'S' : 'A';
 						row[date_string + '_data'] = shift;
 					}
 
@@ -5245,7 +5168,7 @@ ScheduleViewController = BaseViewController.extend( {
 				}
 
 				if ( date_string ) {
-					if ( shift.status_id === 20 ) {
+					if ( shift.status_id == 20 ) {
 
 						row[date_string] = $this.getAbsenceCellValue( shift );
 					} else {
@@ -5268,7 +5191,7 @@ ScheduleViewController = BaseViewController.extend( {
 					} else {
 
 						if ( date_string ) {
-							if ( shift.status_id === 20 ) {
+							if ( shift.status_id == 20 ) {
 
 								row[date_string] = $this.getAbsenceCellValue( shift );
 							} else {
@@ -5303,7 +5226,7 @@ ScheduleViewController = BaseViewController.extend( {
 					}
 
 					if ( date_string ) {
-						if ( shift.status_id === 20 ) {
+						if ( shift.status_id == 20 ) {
 
 							row[date_string] = $this.getAbsenceCellValue( shift );
 						} else {
@@ -5375,7 +5298,7 @@ ScheduleViewController = BaseViewController.extend( {
 
 				if ( date_string ) {
 
-					if ( shift.status_id === 20 ) {
+					if ( shift.status_id == 20 ) {
 
 						row[date_string] = $this.getAbsenceCellValue( shift );
 					} else {
@@ -5399,7 +5322,7 @@ ScheduleViewController = BaseViewController.extend( {
 					} else {
 
 						if ( date_string ) {
-							if ( shift.status_id === 20 ) {
+							if ( shift.status_id == 20 ) {
 
 								row[date_string] = $this.getAbsenceCellValue( shift );
 							} else {
@@ -5434,7 +5357,7 @@ ScheduleViewController = BaseViewController.extend( {
 
 					if ( date_string ) {
 
-						if ( shift.status_id === 20 ) {
+						if ( shift.status_id == 20 ) {
 
 							row[date_string] = $this.getAbsenceCellValue( shift );
 						} else {
@@ -5851,15 +5774,15 @@ ScheduleViewController = BaseViewController.extend( {
 			default:
 				if ( Global.isSet( item ) ) {
 
-					if ( (!Global.isSet( item.id ) || !item.id) ) {
+					if ( !Global.isSet( item.id ) || !item.id || ( item.id && item.id == TTUUID.zero_id) ) {
 						time_span.addClass( 'no-id' );
 					}
 
-					if ( item.status_id === 20 ) {
+					if ( item.status_id == 20 ) {
 						time_span.addClass( 'red' );
 					}
 
-					if ( item.user_id === 0 ) {
+					if ( item.user_id === TTUUID.zero_id ) {
 						content_div.addClass( 'yellow-outline' );
 					}
 
@@ -5909,7 +5832,7 @@ ScheduleViewController = BaseViewController.extend( {
 
 					if ( cell_value === 'A' ) {
 						time_span.addClass( 'absence-cell' )
-					} else if ( item && (!Global.isSet( item.id ) || !item.id) ) {
+					} else if ( item && (!Global.isSet( item.id ) || !item.id || (item.id && item.id == TTUUID.zero_id) ) ) {
 						time_span.addClass( 'no-id' );
 					}
 
@@ -5926,7 +5849,7 @@ ScheduleViewController = BaseViewController.extend( {
 				}
 
 				if ( Global.isSet( item ) ) {
-					if (item.user_id === 0) {
+					if (item.user_id === TTUUID.zero_id) {
 						content_div.addClass('yellow-outline');
 					}
 				}
@@ -5983,15 +5906,13 @@ ScheduleViewController = BaseViewController.extend( {
 					time_span = $( "<span class='schedule-time total'></span>" );
 					time_span.text( cell_value );
 					content_div.prepend( time_span );
-				} else if ( Global.strToDate( col_model.index ) ) {
-
+				} else if ( col_model.display_total_column == true ) {
 					currency = LocalCacheData.getCurrentCurrencySymbol();
-					time_span = $( "<span class='schedule-time total'></span>" );
-					time_span.text( 'S: 0 A: 0 00:00 = ' + currency + '0.00' );
+					time_span = $("<span class='schedule-time total'></span>");
+					time_span.text('S: 0 A: 0 00:00 = ' + currency + '0.00');
 
-					content_div.prepend( time_span );
-					content_div.css( 'height', 'auto' );
-
+					content_div.prepend(time_span);
+					content_div.css('height', 'auto');
 				}
 
 				break;
@@ -6019,16 +5940,16 @@ ScheduleViewController = BaseViewController.extend( {
 					time_span.width( $this.getDayShiftWidth( item ) );
 					time_span.css( 'left', $this.getDayShiftOffset( item ) );
 //
-					if ( !Global.isSet( item.id ) || !item.id ) {
+					if ( !Global.isSet( item.id ) || !item.id || item.id == TTUUID.zero_id ) {
 						time_span.addClass( 'no-day-id' )
 					}
 
-					if ( item.status_id === 20 ) {
+					if ( item.status_id == 20 ) {
 						time_span.removeClass( 'even' );
 						time_span.addClass( 'red-bg' );
 					}
 
-					if ( item.user_id === 0 ) {
+					if ( item.user_id === TTUUID.zero_id ) {
 						content_div.addClass( 'yellow-outline' );
 					}
 				}
@@ -6121,18 +6042,16 @@ ScheduleViewController = BaseViewController.extend( {
 
 				break;
 			default:
-
 				if ( Global.isSet( item ) ) {
-
-					if ( (!Global.isSet( item.id ) || !item.id) ) {
+					if ( !Global.isSet( item.id ) || !item.id || (item.id && item.id == TTUUID.zero_id) ) {
 						time_span.addClass( 'no-id' );
 					}
 
-					if ( item.status_id === 20 ) {
+					if ( item.status_id == 20 ) {
 						time_span.addClass( 'red' );
 					}
 
-					if ( item.user_id === 0 ) {
+					if ( item.user_id === TTUUID.zero_id ) {
 						content_div.addClass( 'yellow-outline' );
 					}
 
@@ -6223,7 +6142,7 @@ ScheduleViewController = BaseViewController.extend( {
 				this.select_all_shifts_array.push( info.shift );
 				this.select_cellls_and_shifts_array.push( info );
 
-				if ( info.shift.id ) {
+				if ( info.shift.id && info.shift_id != TTUUID.zero_id ) {
 					this.select_shifts_array.push( info.shift )
 				} else {
 					this.select_recurring_shifts_array.push( info.shift )
@@ -6439,7 +6358,7 @@ ScheduleViewController = BaseViewController.extend( {
 
 			//If the click is inside the existing selection, truncate the existing selection to the click.
 			//Check in TimeSheetViewController.js for related change
-			if ( cells_array[cells_array.length - 1].cell_index >= cell_index && cells_array[0].cell_index <= cell_index &&  cells_array[cells_array.length - 1].row_id >= row_id && cells_array[0].row_id <= row_id ) {
+			if ( cells_array[cells_array.length - 1] && cells_array[0] && cells_array[cells_array.length - 1].cell_index >= cell_index && cells_array[0].cell_index <= cell_index &&  cells_array[cells_array.length - 1].row_id >= row_id && cells_array[0].row_id <= row_id ) {
 				end_row_index = row_id;
 				end_cell_index = cell_index;
 			}
@@ -6792,25 +6711,25 @@ ScheduleViewController = BaseViewController.extend( {
 		var day;
 		switch ( day ) {
 			case 0:
-				day = 'S';
+				day = $.i18n._('S');
 				break;
 			case 1:
-				day = 'M';
+				day = $.i18n._('M');
 				break;
 			case 2:
-				day = 'T';
+				day = $.i18n._('T');
 				break;
 			case 3:
-				day = 'W';
+				day = $.i18n._('W');
 				break;
 			case 4:
-				day = 'S';
+				day = $.i18n._('T');
 				break;
 			case 5:
-				day = 'F';
+				day = $.i18n._('F');
 				break;
 			case 6:
-				day = 'S';
+				day = $.i18n._('S');
 				break;
 		}
 
@@ -6860,7 +6779,6 @@ ScheduleViewController = BaseViewController.extend( {
 	},
 
 	buildDayColumns: function() {
-
 		var $this = this;
 		this.schedule_columns = [];
 
@@ -6879,6 +6797,7 @@ ScheduleViewController = BaseViewController.extend( {
 			width: 122,
 			sortable: false,
 			title: false,
+			display_total_column: true,
 			formatter: function() {
 
 				return $this.onCellFormat( arguments[0], arguments[1], arguments[2], arguments[3] )
@@ -7156,38 +7075,6 @@ ScheduleViewController = BaseViewController.extend( {
 
 				}
 
-//				var removed_cells = $this.grid.find( '.need-remove' );
-//				var len_1 = removed_cells.length;
-//
-//				var removed_start = len_1 - 1;
-
-//				removeRows();
-
-//				function removeRows() {
-//
-//					for ( var y = removed_start; y >= 0; y-- ) {
-//						var removed_cell = removed_cells[y];
-//
-//						if ( removed_cell ) {
-//							removed_cell.style.display = 'none';
-//						}
-//
-////						if ( y > 0 && y % 10 === 0 ) {
-////							removed_start = y - 1;
-////							sleep();
-////							break;
-////
-////						}
-//
-//					}
-//				}
-
-//				function sleep() {
-//					setTimeout( function() {
-//						removeRows()
-//					}, 100 )
-//				}
-
 			}
 
 		}
@@ -7263,7 +7150,7 @@ ScheduleViewController = BaseViewController.extend( {
 
 			var mode = this.getMode();
 
-			if ( this.current_edit_record && this.current_edit_record.id ) {
+			if ( this.current_edit_record && this.current_edit_record.id && this.current_edit_record.id != TTUUID.zero_id) {
 				if ( a ) {
 
 					//Global.setURLToBrowser( Global.getBaseURL() + '#!m=' + this.viewId + '&date=' + this.start_date_picker.getDefaultFormatValue() + '&mode=' + mode + '&a=' + a + '&id=' + this.current_edit_record.id +
@@ -7302,6 +7189,14 @@ ScheduleViewController = BaseViewController.extend( {
 
 	},
 
+	clearSelection: function(){
+		this.grid.jqGrid('resetSelection');
+		this.select_cells_Array = [];
+		this.select_cellls_and_shifts_array = [];
+		this.select_all_shifts_array = [],
+		this.setDefaultMenu();
+	},
+
 	render: function() {
 		var $this = this;
 		this._super( 'render' );
@@ -7327,9 +7222,10 @@ ScheduleViewController = BaseViewController.extend( {
 		date_left_arrow.bind( 'click', function() {
 
 			var mode = $this.getMode();
-
-			var select_date = $this.start_date;
 			var new_date;
+			var select_date = $this.start_date;
+
+			$this.clearSelection();
 
 			if ( !select_date ) {
 				return;
@@ -7339,16 +7235,16 @@ ScheduleViewController = BaseViewController.extend( {
 				case ScheduleViewControllerMode.DAY:
 					new_date = new Date( new Date( select_date.getTime() ).setDate( select_date.getDate() - 1 ) );
 					break;
-				case ScheduleViewControllerMode.WEEK:
-					new_date = new Date( new Date( select_date.getTime() ).setDate( select_date.getDate() - 7 ) );
-					break;
 				case ScheduleViewControllerMode.MONTH:
 					new_date = new Date( new Date( select_date.getTime() ).setDate( select_date.getDate() - 1 ) );
 					break;
 				case ScheduleViewControllerMode.YEAR:
 					new_date = new Date( new Date( select_date.getTime() ).setDate( select_date.getDate() - 32 ) );
 					break;
-
+				case ScheduleViewControllerMode.WEEK:
+				default:
+					new_date = new Date( new Date( select_date.getTime() ).setDate( select_date.getDate() - 7 ) );
+					break;
 			}
 			$this.setDatePickerValue( new_date.format() );
 			//$this.setDateUrl();
@@ -7366,17 +7262,20 @@ ScheduleViewController = BaseViewController.extend( {
 				return;
 			}
 
+			$this.clearSelection();
+
 			switch ( mode ) {
 				case ScheduleViewControllerMode.DAY:
-					new_date = new Date( new Date( select_date.getTime() ).setDate( select_date.getDate() + 1 ) );
-					break;
-				case ScheduleViewControllerMode.WEEK:
 					new_date = new Date( new Date( select_date.getTime() ).setDate( select_date.getDate() + 1 ) );
 					break;
 				case ScheduleViewControllerMode.MONTH:
 					new_date = new Date( new Date( select_date.getTime() ).setDate( select_date.getDate() + 1 ) );
 					break;
 				case ScheduleViewControllerMode.YEAR:
+					new_date = new Date( new Date( select_date.getTime() ).setDate( select_date.getDate() + 1 ) );
+					break;
+				case ScheduleViewControllerMode.WEEK:
+				default:
 					new_date = new Date( new Date( select_date.getTime() ).setDate( select_date.getDate() + 1 ) );
 					break;
 
@@ -7391,6 +7290,7 @@ ScheduleViewController = BaseViewController.extend( {
 
 		this.start_date_picker.bind( 'formItemChange', function() {
 			//$this.setDateUrl();
+			$this.clearSelection();
 			$this.search( false, true );
 		} );
 
@@ -7540,6 +7440,7 @@ ScheduleViewController = BaseViewController.extend( {
 
 			for ( var key in row ) {
 
+				//As data comes from the grid, we can't be sure of the types of any data within it. (Same goes for item below)
 				var data = Global.isSet( row[key] ) ? row[key] : '';
 
 				if ( Global.isSet( data.user_id ) || (Global.isArray( data ) && mode === ScheduleViewControllerMode.YEAR) ) {
@@ -7548,32 +7449,39 @@ ScheduleViewController = BaseViewController.extend( {
 						var data_len = data.length;
 						for ( var j = 0; j < data_len; j++ ) {
 							var item = data[j];
+							item.total_time_wage = parseFloat(item.total_time_wage);
+							item.total_time = parseFloat(item.total_time);
 
 							if ( Global.isSet( item.user_id ) ) {
-								total_wage = parseFloat( item.total_time_wage ) + total_wage;
-								if ( item.status_id === 10 ) {
-									total_time = item.total_time + total_time;
+								total_wage = (item.total_time_wage + total_wage);
+								if ( item.status_id == 10 ) {
+									total_time = ( item.total_time + total_time);
 									shifts = shifts + 1;
-								} else if ( data.status_id === 20 && data.absence_policy_id > 0 ) { //&& data.total_time_wage != 0
-									total_time = item.total_time + total_time;
+								} else if ( data.status_id == 20 && data.absence_policy_id != TTUUID.zero_id && data.absence_policy_id != TTUUID.not_exist_id  ) { //&& data.total_time_wage != 0
+									total_time = ( item.total_time + total_time);
 									absences = absences + 1;
 								}
 							}
 						}
 					} else {
-						total_wage = parseFloat( data.total_time_wage ) + total_wage;
-						if ( data.status_id === 10 ) {
-							total_time = data.total_time + total_time;
+						data.total_time_wage = parseFloat(data.total_time_wage);
+						data.total_time = parseFloat(data.total_time);
+						total_wage = ( data.total_time_wage + total_wage);
+						if ( data.status_id == 10 ) {
+							total_time = ( data.total_time + total_time );
 							shifts = shifts + 1;
-						} else if ( data.status_id === 20 && data.absence_policy_id > 0 ) { //&& data.total_time_wage != 0
-							total_time = data.total_time + total_time;
+						} else if ( data.status_id == 20 && data.absence_policy_id != TTUUID.zero_id && data.absence_policy_id != TTUUID.not_exist_id ) { //&& data.total_time_wage != 0
+							total_time = ( data.total_time + total_time );
 							absences = absences + 1;
 						}
 					}
 
 				} else if ( Global.isSet( data.shifts ) ) {
-					total_time = data.total_time + total_time;
-					total_wage = parseFloat( data.total_time_wage ) + total_wage;
+					data.total_time_wage = parseFloat(data.total_time_wage);
+					data.total_time = parseFloat(data.total_time);
+
+					total_time = ( data.total_time + total_time );
+					total_wage = ( data.total_time_wage + total_wage );
 
 					shifts = shifts + data.shifts;
 					absences = absences + data.absences;
@@ -7749,6 +7657,9 @@ ScheduleViewController = BaseViewController.extend( {
 							total_row_key_data = total_row[no_data_key];
 							total_row_key_data.total_time = 0;
 							total_row_key_data.total_shifts_dic = Global.clone( this.total_shifts_dic );
+						} else {
+							//#2381 - total_time can be a string from the API
+							total_row_key_data.total_time = parseInt( total_row_key_data.total_time );
 						}
 
 						if ( !Global.isSet( total_row_key_data.shifts ) ) {
@@ -7764,16 +7675,18 @@ ScheduleViewController = BaseViewController.extend( {
 						}
 
 						var row_data = row[no_data_key + '_data'];
+						//#2381 - total_time can be a string from the API
+						row_data.total_time = parseInt(row_data.total_time);
 
 						total_row_key_data.total_time_wage = parseFloat( parseFloat( row_data.total_time_wage ) + parseFloat( total_row_key_data.total_time_wage ) ).toFixed( 2 );
-						if ( row_data.status_id === 10 ) {
-							total_row_key_data.total_time = row_data.total_time + total_row_key_data.total_time;
+						if ( row_data.status_id == 10 ) {
+							total_row_key_data.total_time = parseFloat(row_data.total_time) + parseFloat(total_row_key_data.total_time);
 							total_row_key_data.shifts = total_row_key_data.shifts + 1;
 							if ( this.getMode() === ScheduleViewControllerMode.DAY ) {
 								this.buildTotalShiftsValues( total_row_key_data.total_shifts_dic, row[key] );
 							}
-						} else if ( row_data.status_id === 20 && row_data.absence_policy_id > 0 ) { //&& row_data.total_time_wage != 0
-							total_row_key_data.total_time = row_data.total_time + total_row_key_data.total_time;
+						} else if ( row_data.status_id == 20 && row_data.absence_policy_id != TTUUID.zero_id && row_data.absence_policy_id != TTUUID.not_exist_id ) { //&& row_data.total_time_wage != 0
+							total_row_key_data.total_time = parseFloat(row_data.total_time) + parseFloat(total_row_key_data.total_time);
 							total_row_key_data.absences = total_row_key_data.absences + 1;
 						}
 
@@ -7811,14 +7724,14 @@ ScheduleViewController = BaseViewController.extend( {
 					row_data = row[no_data_key + '_data'];
 
 					total_row_key_data.total_time_wage = parseFloat( parseFloat( row_data.total_time_wage ) + parseFloat( total_row_key_data.total_time_wage ) ).toFixed( 2 );
-					if ( row_data.status_id === 10 ) {
-						total_row_key_data.total_time = row_data.total_time + total_row_key_data.total_time;
+					if ( row_data.status_id == 10 ) {
+						total_row_key_data.total_time = parseFloat(row_data.total_time) + parseFloat(total_row_key_data.total_time);
 						total_row_key_data.shifts = total_row_key_data.shifts + 1;
 						if ( this.getMode() === ScheduleViewControllerMode.DAY ) {
 							this.buildTotalShiftsValues( total_row_key_data.total_shifts_dic, row[key] );
 						}
-					} else if ( row_data.status_id === 20 && row_data.absence_policy_id > 0 ) { //&& row_data.total_time_wage != 0
-						total_row_key_data.total_time = row_data.total_time + total_row_key_data.total_time;
+					} else if ( row_data.status_id == 20 && row_data.absence_policy_id != TTUUID.zero_id && row_data.absence_policy_id != TTUUID.not_exist_id ) { //&& row_data.total_time_wage != 0
+						total_row_key_data.total_time = parseFloat(row_data.total_time) + parseFloat(total_row_key_data.total_time);
 						total_row_key_data.absences = total_row_key_data.absences + 1;
 					}
 
@@ -8025,8 +7938,11 @@ ScheduleViewController = BaseViewController.extend( {
 		var display_columns = target.getDisplayColumns();
 		var first_item = {};
 		var second_item = {};
+
+		//FIXME: what should we do about -2?
+
 		$.each( display_columns, function( index, content ) {
-			first_item.id = '-1';
+			first_item.id = TTUUID.not_exist_id;
 			first_item[content.name] = Global.default_item;
 			if ( $this.select_cells_Array.length > 0 && !$this.is_mass_editing ) {
 				second_item.id = '-2';
@@ -8058,7 +7974,7 @@ ScheduleViewController = BaseViewController.extend( {
 		var first_item = {};
 		$.each( display_columns, function( index, content ) {
 
-			first_item.id = '0';
+			first_item.id = TTUUID.zero_id;
 			first_item[content.name] = Global.open_item;
 
 			return false;

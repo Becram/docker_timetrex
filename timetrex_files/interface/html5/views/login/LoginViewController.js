@@ -1,6 +1,9 @@
 LoginViewController = BaseViewController.extend( {
 
 	el: '#loginViewContainer', //Must set el here and can only set string, so events can work
+
+	_required_files: ['APICurrentUser', 'APICurrency', 'APIUserPreference', 'APIPermission', 'APIDate' , 'APIAuthentication'],
+
 	authentication_api: null,
 	currentUser_api: null,
 	currency_api: null,
@@ -13,8 +16,8 @@ LoginViewController = BaseViewController.extend( {
 
 	lan_selector: null,
 
-	initialize: function( options ) {
-		this._super( 'initialize', options );
+	init: function( options ) {
+		//this._super('initialize', options );
 		var $this = this;
 		this.authentication_api = new (APIFactory.getAPIClass( 'APIAuthentication' ))();
 		this.currentUser_api = new (APIFactory.getAPIClass( 'APICurrentUser' ))();
@@ -377,6 +380,18 @@ LoginViewController = BaseViewController.extend( {
 			} );
 		} else {
 			if (Global.getDeepLink() != false){
+
+				//Catch users coming back from a masquerade, and prevent deeplink override after returning them to the view that they started masquerading from.
+				var previous_session_cookie = decodeURIComponent( getCookie('AlternateSessionData') );
+				if ( previous_session_cookie ) {
+					 //The user has been masquerading.
+					previous_session_cookie = JSON.parse(previous_session_cookie);
+					if ( typeof previous_session_cookie.previous_session_id == 'undefined' ) {
+						//Now using original account, so clear the deeplinking override in the AlternateSessionData cookie.
+						setCookie( 'AlternateSessionData','{}',-1 , APIGlobal.pre_login_data.cookie_base_url, Global.getHost());
+					}
+				}
+
 				TopMenuManager.goToView(Global.getDeepLink());
 			}else if ( LocalCacheData.getLoginUserPreference().default_login_screen ) {
 				TopMenuManager.goToView( LocalCacheData.getLoginUserPreference().default_login_screen );

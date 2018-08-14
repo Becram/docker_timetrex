@@ -1,7 +1,7 @@
 <?php
 /*********************************************************************************
  * TimeTrex is a Workforce Management program developed by
- * TimeTrex Software Inc. Copyright (C) 2003 - 2017 TimeTrex Software Inc.
+ * TimeTrex Software Inc. Copyright (C) 2003 - 2018 TimeTrex Software Inc.
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Affero General Public License version 3 as published by
@@ -40,6 +40,9 @@
  */
 class PayrollExportReport extends TimesheetSummaryReport {
 
+	/**
+	 * PayrollExportReport constructor.
+	 */
 	function __construct() {
 		$this->title = TTi18n::getText('Payroll Export Report');
 		$this->file_name = 'payroll_export';
@@ -50,6 +53,11 @@ class PayrollExportReport extends TimesheetSummaryReport {
 		return TRUE;
 	}
 
+	/**
+	 * @param string $user_id UUID
+	 * @param string $company_id UUID
+	 * @return bool
+	 */
 	protected function _checkPermissions( $user_id, $company_id ) {
 		if ( $this->getPermissionObject()->Check('report', 'enabled', $user_id, $company_id )
 				AND $this->getPermissionObject()->Check('report', 'view_payroll_export', $user_id, $company_id ) ) {
@@ -59,17 +67,25 @@ class PayrollExportReport extends TimesheetSummaryReport {
 		return FALSE;
 	}
 
+	/**
+	 * @return bool
+	 */
 	protected function _validateConfig() {
 		$config = $this->getConfig();
 
 		//Make sure some time period is selected.
-		if ( !isset($config['filter']['time_period']) AND !isset($config['filter']['pay_period_id']) ) {
+		if ( ( !isset($config['filter']['time_period']) AND !isset($config['filter']['pay_period_id']) ) OR ( isset($config['filter']['time_period']) AND isset($config['filter']['time_period']['time_period']) AND $config['filter']['time_period']['time_period'] == TTUUID::getZeroId() ) ) {
 			$this->validator->isTrue( 'time_period', FALSE, TTi18n::gettext('No time period defined for this report') );
 		}
 
 		return TRUE;
 	}
 
+	/**
+	 * @param $name
+	 * @param null $params
+	 * @return array|bool|mixed|null
+	 */
 	protected function _getOptions( $name, $params = NULL ) {
 		$retval = NULL;
 		switch( $name ) {
@@ -128,7 +144,7 @@ class PayrollExportReport extends TimesheetSummaryReport {
 				if ( $pclf->getRecordCount() > 0 ) {
 					foreach( $pclf as $pc_obj ) {
 						//Collect PAID pay codes so we can create PAID TIME columns.
-						$retval['-3190-pay_code-'.$pc_obj->getId()] = $pc_obj->getName();
+						$retval['-3190-pay_code:'.$pc_obj->getId()] = $pc_obj->getName();
 					}
 				}
 				break;
@@ -145,7 +161,7 @@ class PayrollExportReport extends TimesheetSummaryReport {
 								continue;
 							}
 
-							$retval[$type]['columns']['pay_code-'.$pc_obj->getId()]['hour_code'] = $pc_obj->getCode();
+							$retval[$type]['columns']['pay_code:'.$pc_obj->getId()]['hour_code'] = $pc_obj->getCode();
 						}
 					}
 				}
@@ -522,6 +538,11 @@ class PayrollExportReport extends TimesheetSummaryReport {
 		return $retval;
 	}
 
+	/**
+	 * @param $config
+	 * @param $format
+	 * @return array|mixed
+	 */
 	function getExportTypeTemplate( $config, $format ) {
 		$config = Misc::trimSortPrefix( $config );
 
@@ -762,6 +783,11 @@ class PayrollExportReport extends TimesheetSummaryReport {
 	}
 
 	//Short circuit this function, as no postprocessing is required for exporting the data.
+
+	/**
+	 * @param null $format
+	 * @return bool
+	 */
 	function _postProcess( $format = NULL ) {
 		if ( $format == 'payroll_export' ) {
 			return TRUE;
@@ -770,6 +796,10 @@ class PayrollExportReport extends TimesheetSummaryReport {
 		}
 	}
 
+	/**
+	 * @param null $format
+	 * @return array|bool|null|string
+	 */
 	function _outputPayrollExport( $format = NULL ) {
 		$setup_data = $this->getFormConfig();
 
@@ -873,7 +903,7 @@ class PayrollExportReport extends TimesheetSummaryReport {
 				}
 
 				$file_name = 'EPI000000.csv';
-				if ( isset( $tmp_rows) ) {
+				if ( isset( $tmp_rows[0] ) ) {
 					//File format supports multiple entries per employee (file #) all using the same columns. No need to jump through nasty hoops to fit everyone one row.
 					$file_name = 'EPI'. $tmp_rows[0]['company_code'] . $tmp_rows[0]['batch_id'] .'.csv';
 
@@ -1296,7 +1326,7 @@ class PayrollExportReport extends TimesheetSummaryReport {
 				foreach($rows as $row) {
 					if ( $i == 0 ) {
 						//Include header.
-						$tmp_row['employee_number'] = 'Employee Number';
+						$tmp_row['employee_number'] = 'Employee ID';
 						foreach($earnings as $value) {
 							$tmp_row[$value] = $value . ' Hours';
 						}
@@ -1496,7 +1526,7 @@ class PayrollExportReport extends TimesheetSummaryReport {
 					foreach( $aplf as $ap_obj ) {
 						$pay_code_obj = $ap_obj->getPayCodeObject();
 						if ( is_object( $pay_code_obj ) ) {
-							$absence_policy_data['pay_code-'.$pay_code_obj->getId()] = $pay_code_obj;
+							$absence_policy_data['pay_code:'.$pay_code_obj->getId()] = $pay_code_obj;
 						}
 					}
 				}
@@ -1552,7 +1582,7 @@ class PayrollExportReport extends TimesheetSummaryReport {
 					foreach( $aplf as $ap_obj ) {
 						$pay_code_obj = $ap_obj->getPayCodeObject();
 						if ( is_object( $pay_code_obj ) AND in_array( $pay_code_obj->getType(), array(10,12) ) ) {
-							$absence_policy_data['pay_code-'.$pay_code_obj->getId()] = $pay_code_obj;
+							$absence_policy_data['pay_code:'.$pay_code_obj->getId()] = $pay_code_obj;
 						}
 					}
 				}
@@ -1634,7 +1664,7 @@ class PayrollExportReport extends TimesheetSummaryReport {
 				$jar->calculateCustomColumnFilters( 31 );
 				$jar->sort();
 
-				$columns = Misc::trimSortPrefix( $jar->getOptions('columns') );
+				//$columns = Misc::trimSortPrefix( $jar->getOptions('columns') );
 
 				$rows = $jar->data;
 				//Debug::Arr($rows, 'Raw Rows: ', __FILE__, __LINE__, __METHOD__, 10);
@@ -2081,6 +2111,11 @@ class PayrollExportReport extends TimesheetSummaryReport {
 				unset($rows); //Ignore any existing timesheet summary data, we will be using our own job data below.
 				//Debug::Arr($setup_data, 'Meditech Setup Data: ', __FILE__, __LINE__, __METHOD__, 10);
 
+				/**
+				 * @param $value
+				 * @param int $pad
+				 * @return string
+				 */
 				function meditechNumericFormat( $value, $pad = 5 ) {
 					$negative = FALSE;
 					if ( $value < 0 ) {
@@ -2098,6 +2133,12 @@ class PayrollExportReport extends TimesheetSummaryReport {
 					return $retval;
 				}
 
+				/**
+				 * @param int $date_stamp EPOCH
+				 * @param int $first_pay_period_start_date EPOCH
+				 * @param int $start_week_day_id
+				 * @return bool
+				 */
 				function isSecondBiWeeklyWeek( $date_stamp, $first_pay_period_start_date, $start_week_day_id = 0 ) {
 					//This must be based on an "anchor" date, or first_pay_period_start_date, otherwise when there are 53 weeks in a year
 					//it will throw off the odd/even calculation.
@@ -2256,7 +2297,6 @@ class PayrollExportReport extends TimesheetSummaryReport {
 					);
 
 					foreach( $setup_data['meditech']['columns'] as $column_id => $column_data ) {
-						//Debug::Arr( $column_data, 'zzzMeditech Column ID: '. $column_id, __FILE__, __LINE__, __METHOD__, 10);
 
 						if ( isset( $row[$column_id.'_time'] ) AND trim($column_data['hour_code']) != '' ) {
 							$tmp_row['employee_number'] = str_pad( ( isset($row[$employee_number_column]) ) ? substr( $row[$employee_number_column], 0, 14) : NULL, 14, ' ', STR_PAD_RIGHT);
@@ -2465,23 +2505,26 @@ class PayrollExportReport extends TimesheetSummaryReport {
 					//Combine all hours from the same code together.
 					foreach( $setup_data['csv_advanced']['columns'] as $column_id => $column_data ) {
 						$hour_code = trim($column_data['hour_code']);
+						$hourly_rate = ( isset($row[$column_id.'_hourly_rate']) ) ? $row[$column_id.'_hourly_rate'] : NULL;
+						$hour_code_key = $hour_code .':'. $hourly_rate; //Support for multiple rates of pay with the same hour code.
 						if ( isset( $row[$column_id.'_time'] ) AND $hour_code != '' ) {
-							if ( !isset($tmp_hour_codes[$hour_code]) ) {
-								$tmp_hour_codes[$hour_code]['hours'] = 0;
+							if ( !isset($tmp_hour_codes[$hour_code_key]) ) {
+								$tmp_hour_codes[$hour_code_key]['hour_code'] = $hour_code;
+								$tmp_hour_codes[$hour_code_key]['hours'] = 0;
 							}
 
-							//FIXME: Change array so the key is $hour_code.$hourly_rate, then put hour_code in the array value part.
-							//That way we can loop through each hour_code/hourly_rate combination and make duplicate lines if multiple rates exist.
-							$tmp_hour_codes[$hour_code]['hours'] = bcadd( $tmp_hour_codes[$column_data['hour_code']]['hours'], $row[$column_id.'_time'] ); //Use seconds for math here.
-							$tmp_hour_codes[$hour_code]['rate'] = ( isset($row[$column_id.'_hourly_rate']) ) ? $row[$column_id.'_hourly_rate'] : NULL;
+							$tmp_hour_codes[$hour_code_key]['hour_code'] = $hour_code;
+							$tmp_hour_codes[$hour_code_key]['hours'] = bcadd( $tmp_hour_codes[$hour_code_key]['hours'], $row[$column_id.'_time'] ); //Use seconds for math here.
+							$tmp_hour_codes[$hour_code_key]['rate'] = $hourly_rate;
 						}
 					}
+					unset($hour_code, $hourly_rate, $hour_code_key);
 
 					if ( isset($tmp_hour_codes) ) {
 						foreach($tmp_hour_codes as $hour_code => $hour_code_arr ) {
 							foreach( $setup_data['csv_advanced']['export_columns'] as $export_column ) {
 								$tmp_rows[$i][$export_column] = ( isset($row[$export_column]) ) ? ( is_array($row[$export_column]) AND isset($row[$export_column]['display']) ) ? $row[$export_column]['display'] : $row[$export_column] : NULL;
-								$tmp_rows[$i]['hour_code'] = $hour_code;
+								$tmp_rows[$i]['hour_code'] = $hour_code_arr['hour_code'];
 								$tmp_rows[$i]['hours'] = $hour_code_arr['hours']; //_postProcess() already converts this.
 								$tmp_rows[$i]['hourly_rate'] = $hour_code_arr['rate'];
 							}
@@ -2510,6 +2553,10 @@ class PayrollExportReport extends TimesheetSummaryReport {
 		return array( 'file_name' => $file_name, 'mime_type' => $mime_type, 'data' => $data );
 	}
 
+	/**
+	 * @param null $format
+	 * @return array|bool|null|string
+	 */
 	function _output( $format = NULL ) {
 		//Get Form Config data, which can use for the export config.
 		if ( $format == 'payroll_export' ) {

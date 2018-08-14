@@ -1,7 +1,7 @@
 <?php
 /*********************************************************************************
  * TimeTrex is a Workforce Management program developed by
- * TimeTrex Software Inc. Copyright (C) 2003 - 2017 TimeTrex Software Inc.
+ * TimeTrex Software Inc. Copyright (C) 2003 - 2018 TimeTrex Software Inc.
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Affero General Public License version 3 as published by
@@ -41,6 +41,16 @@
 class PayrollDeduction_US_IL extends PayrollDeduction_US {
 
 	var $state_options = array(
+			20180101 => array( // 01-Jan-2018
+							   'rate'             => 4.95,
+							   'line_1_allowance' => 2000,
+							   'line_2_allowance' => 1000,
+			),
+			20170701 => array( // 01-Jul-2017
+							   'rate'             => 4.95,
+							   'line_1_allowance' => 2175,
+							   'line_2_allowance' => 1000,
+			),
 			20160101 => array( // 01-Jan-2016
 							   'rate'             => 3.75,
 							   'line_1_allowance' => 2175,

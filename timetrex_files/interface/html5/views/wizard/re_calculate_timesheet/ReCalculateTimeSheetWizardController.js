@@ -2,8 +2,8 @@ ReCalculateTimeSheetWizardController = BaseWizardController.extend( {
 
 	el: '.wizard',
 
-	initialize: function( options ) {
-		this._super( 'initialize', options );
+	init: function( options ) {
+		//this._super('initialize', options );
 
 		this.title = $.i18n._( 'TimeSheet ReCalculation Wizard' );
 		this.steps = 3;
@@ -70,20 +70,24 @@ ReCalculateTimeSheetWizardController = BaseWizardController.extend( {
 		var $this = this;
 		this._super( 'onDoneClick' );
 		this.saveCurrentStep();
-		var pay_period_ids = this.stepsDataDic[2].pay_period_id;
-		var user_ids = this.stepsDataDic[3].user_id;
+		if ( this.stepsDataDic && this.stepsDataDic[2] && this.stepsDataDic[3] ) {
+			var pay_period_ids = this.stepsDataDic[2].pay_period_id;
+			var user_ids = this.stepsDataDic[3].user_id;
 
-		var timesheet_api = new (APIFactory.getAPIClass( 'APITimeSheet' ))();
+			var timesheet_api = new (APIFactory.getAPIClass('APITimeSheet'))();
 
-		//this is outside the callback to prevent hammer-clicking which was causing problems.
-		this.onCloseClick();
-		timesheet_api.reCalculateTimeSheet( pay_period_ids, user_ids, {onResult: function( result ) {
+			//this is outside the callback to prevent hammer-clicking which was causing problems.
+			this.onCloseClick();
+			timesheet_api.reCalculateTimeSheet(pay_period_ids, user_ids, {
+				onResult: function (result) {
 
-			if ( $this.call_back ) {
-				$this.call_back();
-			}
+					if ($this.call_back) {
+						$this.call_back();
+					}
 
-		}} );
+				}
+			});
+		}
 	},
 
 	setCurrentStepValues: function() {

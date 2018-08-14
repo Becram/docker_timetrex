@@ -1,7 +1,7 @@
 <?php
 /*********************************************************************************
  * TimeTrex is a Workforce Management program developed by
- * TimeTrex Software Inc. Copyright (C) 2003 - 2017 TimeTrex Software Inc.
+ * TimeTrex Software Inc. Copyright (C) 2003 - 2018 TimeTrex Software Inc.
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Affero General Public License version 3 as published by
@@ -51,6 +51,44 @@ class PayrollDeduction_US_NY_NYC extends PayrollDeduction_US_NY {
 	*/
 
 	var $district_income_tax_rate_options = array(
+			20180101 => array(
+					10 => array(
+							array('income' => 8000, 'rate' => 2.05, 'constant' => 0),
+							array('income' => 8700, 'rate' => 2.80, 'constant' => 164),
+							array('income' => 15000, 'rate' => 3.25, 'constant' => 184),
+							array('income' => 25000, 'rate' => 3.95, 'constant' => 388),
+							array('income' => 60000, 'rate' => 4.15, 'constant' => 783),
+							array('income' => 60000, 'rate' => 4.25, 'constant' => 2236),
+					),
+					20 => array(
+							array('income' => 8000, 'rate' => 2.05, 'constant' => 0),
+							array('income' => 8700, 'rate' => 2.80, 'constant' => 164),
+							array('income' => 15000, 'rate' => 3.25, 'constant' => 184),
+							array('income' => 25000, 'rate' => 3.95, 'constant' => 388),
+							array('income' => 60000, 'rate' => 4.15, 'constant' => 783),
+							array('income' => 60000, 'rate' => 4.25, 'constant' => 2236),
+					),
+			),
+			20170701 => array(
+					10 => array(
+							array('income' => 8000, 'rate' => 2.25, 'constant' => 0),
+							array('income' => 8700, 'rate' => 3.00, 'constant' => 180),
+							array('income' => 15000, 'rate' => 3.45, 'constant' => 201),
+							array('income' => 25000, 'rate' => 4.15, 'constant' => 418),
+							array('income' => 60000, 'rate' => 4.35, 'constant' => 833),
+							array('income' => 500000, 'rate' => 4.45, 'constant' => 2356),
+							array('income' => 500000, 'rate' => 4.25, 'constant' => 20828), //Just the constant changed by the looks of it.
+					),
+					20 => array(
+							array('income' => 8000, 'rate' => 2.25, 'constant' => 0),
+							array('income' => 8700, 'rate' => 3.00, 'constant' => 180),
+							array('income' => 15000, 'rate' => 3.45, 'constant' => 201),
+							array('income' => 25000, 'rate' => 4.15, 'constant' => 418),
+							array('income' => 60000, 'rate' => 4.35, 'constant' => 833),
+							array('income' => 500000, 'rate' => 4.45, 'constant' => 2356),
+							array('income' => 500000, 'rate' => 4.25, 'constant' => 20828), //Just the constant changed by the looks of it.
+					),
+			),
 			20160101 => array(
 					10 => array(
 							array('income' => 8000, 'rate' => 1.9, 'constant' => 0),

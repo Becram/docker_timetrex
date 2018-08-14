@@ -1,7 +1,7 @@
 <?php
 /*********************************************************************************
  * TimeTrex is a Workforce Management program developed by
- * TimeTrex Software Inc. Copyright (C) 2003 - 2017 TimeTrex Software Inc.
+ * TimeTrex Software Inc. Copyright (C) 2003 - 2018 TimeTrex Software Inc.
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Affero General Public License version 3 as published by
@@ -51,10 +51,10 @@ $offset = 86400*2; //48hrs
 $ppslf = new PayPeriodScheduleListFactory();
 
 $clf = new CompanyListFactory();
-$clf->getByStatusID( array(10,20,23), NULL, array('a.id' => 'asc') );
+$clf->getByStatusID( array(10, 20, 23), NULL, array('a.id' => 'asc') ); //10=Active, 20=Hold, 23=Expired
 if ( $clf->getRecordCount() > 0 ) {
 	foreach ( $clf as $c_obj ) {
-		if ( $c_obj->getStatus() != 30 ) {
+		if ( in_array( $c_obj->getStatus(), array(10, 20, 23) ) ) { //10=Active, 20=Hold, 23=Expired
 			//Get all pay period schedules.
 			$ppslf->getByCompanyId( $c_obj->getId() );
 			foreach ($ppslf as $pay_period_schedule) {

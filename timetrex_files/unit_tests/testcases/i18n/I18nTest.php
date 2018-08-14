@@ -1,7 +1,7 @@
 <?php
 /*********************************************************************************
  * TimeTrex is a Workforce Management program developed by
- * TimeTrex Software Inc. Copyright (C) 2003 - 2017 TimeTrex Software Inc.
+ * TimeTrex Software Inc. Copyright (C) 2003 - 2018 TimeTrex Software Inc.
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Affero General Public License version 3 as published by
@@ -228,10 +228,16 @@ class i18nTest extends PHPUnit_Framework_TestCase {
 		$this->assertEquals( TTI18n::parseFloat('0.00'), '0' );
 		$this->assertEquals( TTI18n::parseFloat('0'), '0' );
 		$this->assertEquals( TTI18n::parseFloat(0), '0' );
+
 		$this->assertEquals( TTI18n::parseFloat(''), '0' );
 		$this->assertEquals( TTI18n::parseFloat( TRUE ), '0' );
 		$this->assertEquals( TTI18n::parseFloat( FALSE ), '0' );
 		$this->assertEquals( TTI18n::parseFloat( NULL ), '0' );
+
+		$this->assertEquals( TTI18n::parseFloat( INF ), '0' );
+		$this->assertEquals( TTI18n::parseFloat( -INF ), '0' );
+		$this->assertEquals( TTI18n::parseFloat( +INF ), '0' );
+		$this->assertEquals( TTI18n::parseFloat( acos(8) ), '0' ); //acos(8) = NaN
 
 		TTi18n::setLocale( 'fr_CA' );
 		$this->assertEquals( TTI18n::parseFloat('1 234,123'), '1234.123' );
@@ -295,7 +301,8 @@ class i18nTest extends PHPUnit_Framework_TestCase {
 		TTi18n::setLocale( 'yi_US' );
 		$this->assertEquals( TTi18n::getText( 'Employee' ), 'Z' );
 		TTi18n::setLocale( 'fr_CA' );
-		$this->assertEquals( TTi18n::getText( 'Saved Reports' ), 'Rapports sauvs' );
+		//$this->assertEquals( TTi18n::getText( 'Saved Reports' ), 'Rapports sauvs' );
+		$this->assertEquals( TTi18n::getText( 'Saved Reports' ), 'Rapports enregistrés' );
 		TTi18n::setLocale( 'fr_FR' );
 		$this->assertEquals( TTi18n::getText( 'Saved Reports' ), 'Enregistrer le rapport' );
 

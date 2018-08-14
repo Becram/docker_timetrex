@@ -31,7 +31,7 @@ services:
       - timetrex-network
      # command: ./run_db.sh
     volumes:
-      - ./db_backup:/pg_backups
+      - ./db_dump:/pg_backups
       - ./src:/src
     expose:
       - "5432"

@@ -1,7 +1,7 @@
 <?php
 /*********************************************************************************
  * TimeTrex is a Workforce Management program developed by
- * TimeTrex Software Inc. Copyright (C) 2003 - 2017 TimeTrex Software Inc.
+ * TimeTrex Software Inc. Copyright (C) 2003 - 2018 TimeTrex Software Inc.
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Affero General Public License version 3 as published by
@@ -212,7 +212,7 @@ class PayrollDeduction_Base {
 		if ( $value <= 0 ) {
 			$value = 1; //Make sure current pay period can never be less than 1.
 		}
-		
+
 		$this->data['current_pay_period'] = $value;
 
 		return TRUE;
@@ -224,6 +224,36 @@ class PayrollDeduction_Base {
 
 		return 1; //Always default to 1 to avoid division by 0 errors.
 	}
+
+	function setHireAdjustedAnnualPayPeriods($value) {
+		$this->data['hire_adjusted_annual_pay_periods'] = $value;
+
+		return TRUE;
+	}
+	function getHireAdjustedAnnualPayPeriods() {
+		if ( isset($this->data['hire_adjusted_annual_pay_periods']) ) {
+			return $this->data['hire_adjusted_annual_pay_periods'];
+		}
+
+		return $this->getAnnualPayPeriods(); //Default to the regular annual pay period.
+	}
+	function setHireAdjustedCurrentPayPeriod($value) {
+		if ( $value <= 0 ) {
+			$value = 1; //Make sure current pay period can never be less than 1.
+		}
+
+		$this->data['hire_adjusted_current_pay_period'] = $value;
+
+		return TRUE;
+	}
+	function getHireAdjustedCurrentPayPeriod() {
+		if ( isset($this->data['hire_adjusted_current_pay_period']) ) {
+			return $this->data['hire_adjusted_current_pay_period'];
+		}
+
+		return $this->getCurrentPayPeriod(); //Default to the regular current pay period.
+	}
+
 
 	function setCurrentPayrollRunID($value) {
 		$this->data['current_payroll_run_id'] = $value;
@@ -237,9 +267,8 @@ class PayrollDeduction_Base {
 
 		return 1; //Always default to 1.
 	}
-	
+
 	function getRemainingPayPeriods() {
-		//$retval = ( $this->getAnnualPayPeriods() - $this->getCurrentPayPeriod() );
 		$retval = bcsub( $this->getAnnualPayPeriods(), bcsub( $this->getCurrentPayPeriod(), 1 ) ); //Current pay period is considered a remaining one.
 		Debug::Text('Pay Periods Remaining: '. $retval .' Annual PPs: '. $this->getAnnualPayPeriods() .' Current PP: '. $this->getCurrentPayPeriod(), __FILE__, __LINE__, __METHOD__, 10 );
 
@@ -257,7 +286,7 @@ class PayrollDeduction_Base {
 	function getCountryPrimaryCurrencyID() {
 		$iso_code = $this->getCountryPrimaryCurrency(); //ISO Code
 
-		if ( $iso_code != '' AND is_numeric( $this->getCompany() ) ) {
+		if ( $iso_code != '' AND TTUUID::isUUID( $this->getCompany() ) ) {
 			$clf = new CurrencyListFactory();
 			$clf->getByCompanyIdAndISOCode( $this->getCompany(), $iso_code );
 			if ( $clf->getRecordCount() > 0 ) {
@@ -380,17 +409,16 @@ class PayrollDeduction_Base {
 	}
 
 	function getAnnualizingFactor( $reverse = FALSE ) {
-		$retval = bcdiv( $this->getAnnualPayPeriods(), $this->getCurrentPayPeriod() );
+		$retval = bcdiv( $this->getHireAdjustedAnnualPayPeriods(), $this->getHireAdjustedCurrentPayPeriod() );
 		if ( $reverse == TRUE ) {
 			$retval = bcdiv( 1, $retval);
 		}
-		Debug::text('Annualizing Factor (S1): '. $retval .' Annual PP: '. $this->getAnnualPayPeriods() .' Current PP: '. $this->getCurrentPayPeriod() .' Reverse: '. (int)$reverse, __FILE__, __LINE__, __METHOD__, 10);
+		Debug::text('Annualizing Factor (S1): '. $retval .' Hire Adjusted: Annual PP: '. $this->getHireAdjustedAnnualPayPeriods() .'('. $this->getAnnualPayPeriods() .') Current PP: '. $this->getHireAdjustedCurrentPayPeriod() .'('. $this->getCurrentPayPeriod() .') Reverse: '. (int)$reverse, __FILE__, __LINE__, __METHOD__, 10);
 		return $retval;
 	}
 
 	function calcNonPeriodicIncome( $ytd_gross_income, $gross_pp_income ) {
 		$retval = bcmul( bcadd( $ytd_gross_income, $gross_pp_income ), $this->getAnnualizingFactor() );
-		//$retval = bcdiv( bcmul( bcadd( $ytd_gross_income, $gross_pp_income ), $this->getAnnualPayPeriods() ), $this->getCurrentPayPeriod() );
 		if ( $retval < 0 ) {
 			$retval = 0;
 		}
@@ -399,7 +427,6 @@ class PayrollDeduction_Base {
 	}
 	function calcNonPeriodicDeduction( $annual_tax_payable, $ytd_deduction ) {
 		$retval = bcsub( bcmul( $annual_tax_payable, $this->getAnnualizingFactor( TRUE ) ), $ytd_deduction );
-		//$retval = bcsub( bcmul( bcdiv( $annual_tax_payable, $this->getAnnualPayPeriods() ), $this->getCurrentPayPeriod() ), $ytd_deduction );
 		if ( $retval < 0 ) {
 			$retval = 0;
 		}

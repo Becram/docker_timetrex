@@ -1,7 +1,7 @@
 <?php
 /*********************************************************************************
  * TimeTrex is a Workforce Management program developed by
- * TimeTrex Software Inc. Copyright (C) 2003 - 2017 TimeTrex Software Inc.
+ * TimeTrex Software Inc. Copyright (C) 2003 - 2018 TimeTrex Software Inc.
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Affero General Public License version 3 as published by
@@ -88,8 +88,11 @@ class GovernmentForms_CA_T619 extends GovernmentForms_CA {
 	function filterPhone( $value ) {
 		//Strip non-digits.
 		$value = $this->stripNonNumeric( $value );
+		if ( $value != '' ) {
+			return array(substr( $value, 0, 3 ), substr( $value, 3, 3 ), substr( $value, 6, 4 ));
+		}
 
-		return array(substr( $value, 0, 3 ), substr( $value, 3, 3 ), substr( $value, 6, 4 ));
+		return FALSE;
 	}
 
 	function _outputXML() {
@@ -129,7 +132,13 @@ class GovernmentForms_CA_T619 extends GovernmentForms_CA {
 		//Contact
 		$xml->T619->addChild( 'CNTC' );
 		$xml->T619->CNTC->addChild( 'cntc_nm', $this->contact_name );
-		$phone_arr = $this->filterPhone( $this->contact_phone );
+
+		if ( $this->contact_phone != '' ) {
+			$phone_arr = $this->filterPhone( $this->contact_phone );
+		} else {
+			$phone_arr = $this->filterPhone( '000-000-0000' );
+		}
+
 		if ( is_array( $phone_arr ) ) {
 			$xml->T619->CNTC->addChild( 'cntc_area_cd', $phone_arr[0] );
 			$xml->T619->CNTC->addChild( 'cntc_phn_nbr', $phone_arr[1] . '-' . $phone_arr[2] );

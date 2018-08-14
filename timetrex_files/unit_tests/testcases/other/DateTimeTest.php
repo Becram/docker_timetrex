@@ -1,7 +1,7 @@
 <?php
 /*********************************************************************************
  * TimeTrex is a Workforce Management program developed by
- * TimeTrex Software Inc. Copyright (C) 2003 - 2017 TimeTrex Software Inc.
+ * TimeTrex Software Inc. Copyright (C) 2003 - 2018 TimeTrex Software Inc.
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Affero General Public License version 3 as published by
@@ -456,10 +456,7 @@ class DateTimeTest extends PHPUnit_Framework_TestCase {
 		Debug::text('Testing Date Format: m-d-y', __FILE__, __LINE__, __METHOD__, 10);
 
 		TTDate::setDateFormat('m-d-y');
-		//Debug::text('zzz1: ', date_default_timezone_get(), __FILE__, __LINE__, __METHOD__, 10);
-
 		TTDate::setTimeZone('PST8PDT'); //Force to non-DST timezone. 'PST' isnt actually valid.
-		//Debug::text('zzz2: ', date_default_timezone_get(), __FILE__, __LINE__, __METHOD__, 10);
 
 		TTDate::setTimeFormat('g:i A');
 		$this->assertEquals( TTDate::parseDateTime('02-25-2005'), 1109318400 );
@@ -1429,7 +1426,7 @@ class DateTimeTest extends PHPUnit_Framework_TestCase {
 
 		foreach( $zones as $zone => $name ) {
 			$retval = TTDate::setTimeZone( Misc::trimSortPrefix( $zone ), TRUE, TRUE );
-			$this->assertEquals( $retval, TRUE );
+			$this->assertEquals( $retval, TRUE, 'Failed TZ: '. $name );
 		}
 	}
 
@@ -1474,7 +1471,6 @@ class DateTimeTest extends PHPUnit_Framework_TestCase {
 
 
 	function testsplitDateRange() {
-
 		$split_range_arr = TTDate::splitDateRangeAtMidnight( strtotime('01-Jan-2016 8:00AM'), strtotime('02-Jan-2016 8:00AM') );
 		$this->assertEquals( $split_range_arr[0]['start_time_stamp'], strtotime('01-Jan-2016 8:00AM') );
 		$this->assertEquals( $split_range_arr[0]['end_time_stamp'], strtotime('02-Jan-2016 12:00AM') );
@@ -1774,6 +1770,74 @@ class DateTimeTest extends PHPUnit_Framework_TestCase {
 		$this->assertEquals( $split_range_arr[6804]['end_time_stamp'], strtotime('2016-08-30 05:00:00pm') );
 		$this->assertEquals( count($split_range_arr), 6805 );
 
+		//#2329 <24 hrs between with midnight filter provided.
+		$split_range_arr = TTDate::splitDateRangeAtMidnight( strtotime('04-Jul-17 9:55 PM'), strtotime('05-Jul-17 1:00 AM'), strtotime('04-Jul-17 12:00 AM'), strtotime('04-Jul-17 10:00 PM') );
+		$this->assertEquals( $split_range_arr[0]['start_time_stamp'], strtotime('04-Jul-17 9:55 PM') );
+		$this->assertEquals( $split_range_arr[0]['end_time_stamp'], strtotime('04-Jul-17 10:00 PM') );
+		$this->assertEquals( $split_range_arr[1]['start_time_stamp'], strtotime('04-Jul-17 10:00 PM') );
+		$this->assertEquals( $split_range_arr[1]['end_time_stamp'], strtotime('05-Jul-17 12:00 AM') );
+		$this->assertEquals( $split_range_arr[2]['start_time_stamp'], strtotime('05-Jul-17 12:00 AM') );
+		$this->assertEquals( $split_range_arr[2]['end_time_stamp'], strtotime('05-Jul-17 1:00 AM') );
+		$this->assertEquals( count($split_range_arr), 3 );
+
+		//same day
+		$split_range_arr = TTDate::splitDateRangeAtMidnight( strtotime('04-Jul-17 9:55 PM'), strtotime('04-Jul-17 11:00 PM'), strtotime('04-Jul-17 10:00 PM'), strtotime('04-Jul-17 10:50 PM') );
+		$this->assertEquals( $split_range_arr[0]['start_time_stamp'], strtotime('04-Jul-17 9:55 PM') );
+		$this->assertEquals( $split_range_arr[0]['end_time_stamp'], strtotime('04-Jul-17 10:00 PM') );
+		$this->assertEquals( $split_range_arr[1]['start_time_stamp'], strtotime('04-Jul-17 10:00 PM') );
+		$this->assertEquals( $split_range_arr[1]['end_time_stamp'], strtotime('04-Jul-17 10:50 PM') );
+		$this->assertEquals( $split_range_arr[2]['start_time_stamp'], strtotime('04-Jul-17 10:50 PM') );
+		$this->assertEquals( $split_range_arr[2]['end_time_stamp'], strtotime('04-Jul-17 11:00 PM') );
+		$this->assertEquals( count($split_range_arr), 3 );
+
+		//next day < 24hrs between
+		$split_range_arr = TTDate::splitDateRangeAtMidnight( strtotime('04-Jul-17 9:55 PM'), strtotime('05-Jul-17 8:00 PM'), strtotime('04-Jul-17 10:00 PM'), strtotime('04-Jul-17 10:50 PM') );
+		$this->assertEquals( $split_range_arr[0]['start_time_stamp'], strtotime('04-Jul-17 9:55 PM') );
+		$this->assertEquals( $split_range_arr[0]['end_time_stamp'], strtotime('04-Jul-17 10:00 PM') );
+		$this->assertEquals( $split_range_arr[1]['start_time_stamp'], strtotime('04-Jul-17 10:00 PM') );
+		$this->assertEquals( $split_range_arr[1]['end_time_stamp'], strtotime('04-Jul-17 10:50 PM') );
+		$this->assertEquals( $split_range_arr[2]['start_time_stamp'], strtotime('04-Jul-17 10:50 PM') );
+		$this->assertEquals( $split_range_arr[2]['end_time_stamp'], strtotime('05-Jul-17 12:00 AM') );
+		$this->assertEquals( $split_range_arr[3]['start_time_stamp'], strtotime('05-Jul-17 12:00 AM') );
+		$this->assertEquals( $split_range_arr[3]['end_time_stamp'], strtotime('05-Jul-17 8:00 PM') );
+		$this->assertEquals( count($split_range_arr), 4 );
+
+
+		//next day < 24hrs between reversed filters (greater, then less.)
+		$split_range_arr = TTDate::splitDateRangeAtMidnight( strtotime('04-Jul-17 9:55 PM'), strtotime('05-Jul-17 8:00 PM'), strtotime('04-Jul-17 10:50 PM'), strtotime('04-Jul-17 10:00 PM') );
+		$this->assertEquals( $split_range_arr[0]['start_time_stamp'], strtotime('04-Jul-17 9:55 PM') );
+		$this->assertEquals( $split_range_arr[0]['end_time_stamp'], strtotime('04-Jul-17 10:00 PM') );
+		$this->assertEquals( $split_range_arr[1]['start_time_stamp'], strtotime('04-Jul-17 10:00 PM') );
+		$this->assertEquals( $split_range_arr[1]['end_time_stamp'], strtotime('04-Jul-17 10:50 PM') );
+		$this->assertEquals( $split_range_arr[2]['start_time_stamp'], strtotime('04-Jul-17 10:50 PM') );
+		$this->assertEquals( $split_range_arr[2]['end_time_stamp'], strtotime('05-Jul-17 12:00 AM') );
+		$this->assertEquals( $split_range_arr[3]['start_time_stamp'], strtotime('05-Jul-17 12:00 AM') );
+		$this->assertEquals( $split_range_arr[3]['end_time_stamp'], strtotime('05-Jul-17 8:00 PM') );
+		$this->assertEquals( count($split_range_arr), 4 );
+
+
+		//very small window
+		$split_range_arr = TTDate::splitDateRangeAtMidnight( strtotime('04-Jul-17 9:55 PM'), strtotime('04-Jul-17 09:58 PM'), strtotime('04-Jul-17 09:56 PM'), strtotime('04-Jul-17 09:57 PM') );
+		$this->assertEquals( $split_range_arr[0]['start_time_stamp'], strtotime('04-Jul-17 9:55 PM') );
+		$this->assertEquals( $split_range_arr[0]['end_time_stamp'], strtotime('04-Jul-17 09:56 PM') );
+		$this->assertEquals( $split_range_arr[1]['start_time_stamp'], strtotime('04-Jul-17 09:56 PM') );
+		$this->assertEquals( $split_range_arr[1]['end_time_stamp'], strtotime('04-Jul-17 09:57 PM') );
+		$this->assertEquals( $split_range_arr[2]['start_time_stamp'], strtotime('04-Jul-17 09:57 PM') );
+		$this->assertEquals( $split_range_arr[2]['end_time_stamp'], strtotime('04-Jul-17 09:58 PM') );
+		$this->assertEquals( count($split_range_arr), 3 );
+
+		//with filter dates after the end time
+		$split_range_arr = TTDate::splitDateRangeAtMidnight( strtotime('01-Jan-17 08:00AM'), strtotime('01-Jan-17 05:00 PM'), strtotime('02-Jan-17 06:00 PM'), strtotime('02-Jan-17 07:00 PM') );
+		$this->assertEquals( $split_range_arr[0]['start_time_stamp'], strtotime('01-Jan-17 08:00AM') );
+		$this->assertEquals( $split_range_arr[0]['end_time_stamp'], strtotime('01-Jan-17 05:00 PM') );
+		$this->assertEquals( count($split_range_arr), 1 );
+
+		//with filter dates before the start time.
+		$split_range_arr = TTDate::splitDateRangeAtMidnight( strtotime('01-Jan-17 08:00AM'), strtotime('01-Jan-17 05:00 PM'), strtotime('02-Jan-17 03:00 AM'), strtotime('02-Jan-17 05:00 am') );
+		$this->assertEquals( $split_range_arr[0]['start_time_stamp'], strtotime('01-Jan-17 08:00AM') );
+		$this->assertEquals( $split_range_arr[0]['end_time_stamp'], strtotime('01-Jan-17 05:00 PM') );
+		$this->assertEquals( count($split_range_arr), 1 );
+
 	}
 
 	/**
@@ -1887,6 +1951,60 @@ class DateTimeTest extends PHPUnit_Framework_TestCase {
 		$this->assertEquals( $date_arr[2], strtotime('17-Dec-2016'));
 		$this->assertEquals( $date_arr[3], strtotime('24-Dec-2016'));
 		$this->assertEquals( $date_arr[4], strtotime('31-Dec-2016'));
+	}
+
+	function testIsConsecutiveDays() {
+		//Use timezone that observes DST.
+		TTDate::setTimeZone('PST8PDT', TRUE); //Due to being a singleton and PHPUnit resetting the state, always force the timezone to be set.
+
+		//Spring DST change
+		$date_array = array(
+				strtotime('Fri, 10 Mar 2017 00:00:00 -0800'),
+				strtotime('Sat, 11 Mar 2017 00:00:00 -0800'),
+				strtotime('Sun, 12 Mar 2017 00:00:00 -0700'),
+		);
+		$this->assertEquals( TTDate::isConsecutiveDays( $date_array ), TRUE );
+
+
+		$date_array = array(
+				strtotime('Thu, 09 Mar 2017 00:00:00 -0800'),
+				strtotime('Sat, 10 Mar 2017 00:00:00 -0800'),
+				strtotime('Sun, 12 Mar 2017 00:00:00 -0700'),
+		);
+		$this->assertEquals( TTDate::isConsecutiveDays( $date_array ), FALSE );
+
+
+		$date_array = array(
+				strtotime('Thu, 09 Mar 2017 00:00:00 -0800'),
+				strtotime('Sat, 11 Mar 2017 00:00:00 -0800'),
+				strtotime('Sun, 12 Mar 2017 00:00:00 -0700'),
+		);
+		$this->assertEquals( TTDate::isConsecutiveDays( $date_array ), FALSE );
+
+		//FALL DST change.
+		$date_array = array(
+				1509692400, //strtotime('Fri, 03 Nov 2017 00:00:00 -0700'), //1509692400=Fri, 03 Nov 2017 00:00:00 -0700
+				1509778800, //strtotime('Sat, 04 Nov 2017 00:00:00 -0700'), //1509778800=Sat, 04 Nov 2017 00:00:00 -0700
+				//1509865200, //strtotime('Sun, 05 Nov 2017 00:00:00 -0800'), //1509912000=Sun, 05 Nov 2017 00:00:00 -0800
+				1509912000, //strtotime('Sun, 05 Nov 2017 00:00:00 -0800'), //1509912000=Sun, 05 Nov 2017 12:00:00 -0800
+		);
+		$this->assertEquals( TTDate::isConsecutiveDays( $date_array ), TRUE );
+
+		$date_array = array(
+				1509692400, //strtotime('Fri, 03 Nov 2017 00:00:00 -0700'), //1509692400=Fri, 03 Nov 2017 00:00:00 -0700
+				1509778800, //strtotime('Sat, 04 Nov 2017 00:00:00 -0700'), //1509778800=Sat, 04 Nov 2017 00:00:00 -0700
+				1509865200, //strtotime('Sun, 05 Nov 2017 00:00:00 -0800'), //1509912000=Sun, 05 Nov 2017 00:00:00 -0800
+				//1509912000, //strtotime('Sun, 05 Nov 2017 00:00:00 -0800'), //1509912000=Sun, 05 Nov 2017 12:00:00 -0800
+		);
+		$this->assertEquals( TTDate::isConsecutiveDays( $date_array ), TRUE );
+
+
+		$date_array = array(
+				strtotime('Fri, 03 Nov 2017 00:00:00 -0700'), //1509692400=Fri, 03 Nov 2017 00:00:00 -0700
+				strtotime('Sat, 04 Nov 2017 00:00:00 -0700'), //1509778800=Sat, 04 Nov 2017 00:00:00 -0700
+				strtotime('Sun, 05 Nov 2017 00:00:00 -0800'), //1509912000=Sun, 05 Nov 2017 00:00:00 -0800
+		);
+		$this->assertEquals( TTDate::isConsecutiveDays( $date_array ), TRUE );
 	}
 }
 ?>

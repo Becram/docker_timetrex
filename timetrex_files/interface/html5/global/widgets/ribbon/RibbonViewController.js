@@ -8,8 +8,10 @@ RibbonViewController = Backbone.View.extend( {
 	initialize: function( options ) {
 		// TopMenuManager should be initialized before render to avoid possible race condition.
 		// Error: TypeError: TopMenuManager.ribbon_view_controller is null in /interface/html5/framework/jquery.min.js?v=10.5.0-20170331-081453 line 2 > eval line 218
+
 		TopMenuManager.ribbon_view_controller = this;
-		this.render();
+		var $this = this;
+		$this.render();
 	},
 
 	onMenuSelect: function( e, ui ) {
@@ -55,13 +57,16 @@ RibbonViewController = Backbone.View.extend( {
 		}
 
 	},
-	onReportMenuClick: function( id ) {
 
-		if ( id === 'AffordableCareReport' && !(LocalCacheData.getCurrentCompany().product_edition_id > 10) ) {
-			TAlertManager.showAlert( Global.getUpgradeMessage() );
-		} else {
-			IndexViewController.openReport( LocalCacheData.current_open_primary_controller, id );
-		}
+	onReportMenuClick: function( id ) {
+		Global.closeEditViews( function( ) {
+			if ( id === 'AffordableCareReport' && !(LocalCacheData.getCurrentCompany().product_edition_id > 10) ) {
+				TAlertManager.showAlert(Global.getUpgradeMessage());
+			} else {
+				var parent_view = LocalCacheData.current_open_edit_only_controller ? LocalCacheData.current_open_edit_only_controller : LocalCacheData.current_open_primary_controller;
+				IndexViewController.openReport( parent_view, id);
+			}
+		});
 
 	},
 
@@ -69,35 +74,12 @@ RibbonViewController = Backbone.View.extend( {
 	//Does not trigger on Report menu items with dropdowns (see the right event)
 	onSubMenuClick: function( id ) {
 		var $this = this;
-		if ( (LocalCacheData.current_open_primary_controller &&
-			LocalCacheData.current_open_primary_controller.edit_view &&
-			LocalCacheData.current_open_primary_controller.is_changed) ||
-			(LocalCacheData.current_open_report_controller &&
-			LocalCacheData.current_open_report_controller.is_changed) ||
-			(LocalCacheData.current_open_edit_only_controller &&
-			LocalCacheData.current_open_edit_only_controller.is_changed) ||
-			(LocalCacheData.current_open_sub_controller &&
-			LocalCacheData.current_open_sub_controller.edit_view &&
-			LocalCacheData.current_open_sub_controller.is_changed) ) {
-			TAlertManager.showConfirmAlert( Global.modify_alert_message, null, function( flag ) {
-				if ( flag === true ) {
-					doNext();
-				}
+		//#2342 see onCancelClick in BaseViewController and Gloabl.closeEditViews.
 
-			} );
-			return;
-		} else if ( LocalCacheData.current_open_primary_controller &&
-			LocalCacheData.current_open_primary_controller.viewId === 'TimeSheet' &&
-			LocalCacheData.current_open_primary_controller.getPunchMode() === 'manual' ) {
-			LocalCacheData.current_open_primary_controller.doNextIfNoValueChangeInManualGrid( doNext )
-		} else {
-			doNext();
-		}
-
-		function doNext() {
+		Global.closeEditViews( function() {
 			$this.setSelectSubMenu( id );
 			$this.openSelectView( id );
-		}
+		})
 	},
 
 	buildRibbonMenus: function() {
@@ -231,17 +213,10 @@ RibbonViewController = Backbone.View.extend( {
 
 		if ( LocalCacheData.getLoginUserPreference() ) {
 			$( '#leftLogo' ).unbind( 'click' ).bind( 'click', function() {
-				if ( LocalCacheData.current_open_primary_controller.viewId !== 'Home' ) {
-					TopMenuManager.goToView( 'Home' );
-				} else {
-					LocalCacheData.current_open_primary_controller.setDefaultMenu();
-					if ( LocalCacheData.current_open_edit_only_controller ) {
-						LocalCacheData.current_open_edit_only_controller.onCancelClick();
-					}
-					if ( LocalCacheData.current_open_report_controller ) {
-						LocalCacheData.current_open_report_controller.removeEditView();
-					}
-				}
+				Global.closeEditViews( function() {
+					TopMenuManager.goToView('Home')
+				});
+
 			} );
 		}
 	},
@@ -270,15 +245,19 @@ RibbonViewController = Backbone.View.extend( {
 			case 'InOut':
 			case 'UserDefault':
 			case 'Company':
-			case 'CompanyBankAccount':
 			case 'LoginUserContact':
-			case 'LoginUserBankAccount':
 			case 'LoginUserPreference':
 			case 'ChangePassword':
 			case 'InvoiceConfig':
 			case 'RecruitmentPortalConfig':
 			case 'About':
-				IndexViewController.openEditView( LocalCacheData.current_open_primary_controller, name );
+				if ( LocalCacheData.current_open_edit_only_controller && LocalCacheData.current_open_edit_only_controller.viewId == name ) { //#2557 - A - Ensure that opening edit only views on top of same edit only view just resets the edit menu
+					LocalCacheData.current_open_edit_only_controller.setEditMenu();
+				} else if ( LocalCacheData.current_open_edit_only_controller ) { //#2557 - B - Ensure that opening edit only views on top of different edit only  view sets the parent to the existing edit only view
+					IndexViewController.openEditView(LocalCacheData.current_open_edit_only_controller, name);
+				} else {
+					IndexViewController.openEditView(LocalCacheData.current_open_primary_controller, name); //#2557 - C - Ensure that opening edit views as normal works as before
+				}
 				break;
 			case 'Logout':
 				this.doLogout();
@@ -287,15 +266,15 @@ RibbonViewController = Backbone.View.extend( {
 				this.doPortalLogout();
 				break;
 			case 'AdminGuide':
-				var url = 'https://www.timetrex.com/h.php?id=admin_guide&v=' + LocalCacheData.getLoginData().application_version +'&e='+ LocalCacheData.getCurrentCompany().product_edition_id;
+				var url = 'https://www.timetrex.com/h?id=admin_guide&v=' + LocalCacheData.getLoginData().application_version +'&e='+ LocalCacheData.getCurrentCompany().product_edition_id;
 				window.open( url, '_blank' );
 				break;
 			case 'FAQS':
-				url = 'https://www.timetrex.com/h.php?id=faq&v=' + LocalCacheData.getLoginData().application_version +'&e='+ LocalCacheData.getCurrentCompany().product_edition_id;
+				url = 'https://www.timetrex.com/h?id=faq&v=' + LocalCacheData.getLoginData().application_version +'&e='+ LocalCacheData.getCurrentCompany().product_edition_id;
 				window.open( url, '_blank' );
 				break;
 			case 'WhatsNew':
-				url = 'https://www.timetrex.com/h.php?id=changelog&v=' + LocalCacheData.getLoginData().application_version +'&e='+ LocalCacheData.getCurrentCompany().product_edition_id;
+				url = 'https://www.timetrex.com/h?id=changelog&v=' + LocalCacheData.getLoginData().application_version +'&e='+ LocalCacheData.getCurrentCompany().product_edition_id;
 				window.open( url, '_blank' );
 				break;
 			case 'EmailHelp':
@@ -304,10 +283,16 @@ RibbonViewController = Backbone.View.extend( {
 					url = 'mailto:support@timetrex.com?subject=Company: ' + LocalCacheData.getCurrentCompany().name + '&body=Company: ' + LocalCacheData.getCurrentCompany().name + '  ' +
 					'Registration Key: ' + LocalCacheData.getLoginData().registration_key;
 				} else {
-					url = 'https://www.timetrex.com/r.php?id=29';
+					url = 'https://www.timetrex.com/r?id=29';
 				}
 
 				window.open( url, '_blank' );
+				break;
+			case 'Sandbox':
+				if ( APIGlobal.pre_login_data['sandbox_url'] && APIGlobal.pre_login_data['sandbox_url'].length > 0 ) {
+					var user = LocalCacheData.getLoginUser();
+					Global.NewSession( user.user_name, 'SANDBOX', true );
+				}
 				break;
 			case 'ProcessPayrollWizard':
 				IndexViewController.openWizard( 'ProcessPayrollWizard', null, function() {
@@ -317,8 +302,39 @@ RibbonViewController = Backbone.View.extend( {
 					}
 				} );
 				break;
+			case 'PayrollRemittanceAgencyEventWizard':
+				IndexViewController.openWizardController( 'PayrollRemittanceAgencyEventWizardController', null, function() {
+					//Error: TypeError: LocalCacheData.current_open_primary_controller.search is not a function in interface/html5/framework/jquery.min.js?v=9.0.0-20151016-110437 line 2 > eval line 248
+					if ( LocalCacheData.current_open_primary_controller && typeof LocalCacheData.current_open_primary_controller.search === 'function' ) {
+						LocalCacheData.current_open_primary_controller.search();
+					}
+				} );
+				break;
+			case 'ProcessTransactionsWizard':
+				IndexViewController.openWizardController( 'ProcessTransactionsWizard', null, function() {
+					//Error: TypeError: LocalCacheData.current_open_primary_controller.search is not a function in interface/html5/framework/jquery.min.js?v=9.0.0-20151016-110437 line 2 > eval line 248
+					if ( LocalCacheData.current_open_primary_controller && typeof LocalCacheData.current_open_primary_controller.search === 'function' ) {
+						LocalCacheData.current_open_primary_controller.search();
+					}
+				} );
+				break;
+			case 'LegalEntity':
+				if (LocalCacheData.getCurrentCompany().product_edition_id > 10) {
+					TopMenuManager.goToView( TopMenuManager.selected_sub_menu_id );
+				} else {
+					IndexViewController.openEditView( LocalCacheData.current_open_primary_controller, name, false );
+				}
+				break;
 			default:
-				TopMenuManager.goToView( TopMenuManager.selected_sub_menu_id );
+				//#2557 - When opening a view from the submenus, ensure that similarily named edit only views are cancelled (with confirm) first.
+				if ( LocalCacheData.current_open_edit_only_controller && LocalCacheData.current_open_edit_only_controller.viewId == name ) {
+					LocalCacheData.current_open_edit_only_controller.onCancelClick();
+					TTPromise.wait('base','onCancelClick', function(){
+						TopMenuManager.goToView( TopMenuManager.selected_sub_menu_id );
+					});
+				} else {
+					TopMenuManager.goToView( TopMenuManager.selected_sub_menu_id );
+				}
 		}
 	},
 
@@ -327,9 +343,7 @@ RibbonViewController = Backbone.View.extend( {
 			case 'InOut':
 			case 'UserDefault':
 			case 'Company':
-			case 'CompanyBankAccount':
 			case 'LoginUserContact':
-			case 'LoginUserBankAccount':
 			case 'ImportCSV':
 			case 'QuickStartWizard':
 			case 'InvoiceConfig':
@@ -347,6 +361,7 @@ RibbonViewController = Backbone.View.extend( {
 			case 'EmailHelp':
 				break;
 			case 'ProcessPayrollWizard':
+			case 'PayrollRemittanceAgencyWizard':
 				break;
 			default:
 				if ( TopMenuManager.selected_sub_menu_id ) {
@@ -385,6 +400,7 @@ RibbonViewController = Backbone.View.extend( {
 			clearTimeout(lh_inst.timeoutStatuscheck);
 		}
 
+		//This code is duplicated at LocalCacheData.getRequiredLocalCache()
 		Global.clearSessionCookie();
 		LocalCacheData.current_open_view_id = ''; //#1528  -  Logout icon not working.
 		LocalCacheData.setLoginUser(null);

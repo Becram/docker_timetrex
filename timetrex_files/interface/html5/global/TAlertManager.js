@@ -5,13 +5,21 @@ var TAlertManager = (function() {
 	var isShownNetworkAlert = false;
 
 	var showNetworkErrorAlert = function( jqXHR, textStatus, errorThrown ) {
+		//#2514 - status 0 is caused by browser cancelling the request. There is no status because there was no request.
+		if ( jqXHR.status == 0 ) {
+			if ( APIGlobal.pre_login_data.production !== true ) {
+				console.error('Browser cancelled request... jqXHR: Status=0')
+			}
+			return;
+		}
+
 		if ( textStatus == "parsererror" ) {
-			Global.sendErrorReport(textStatus + ': ' + errorThrown + " ~FROM TAlertManager::showNetworkErrorAlert()~", false, false, jqXHR);
+			Global.sendErrorReport(textStatus + ' ('+ jqXHR.status +'): ' + errorThrown + " ~FROM TAlertManager::showNetworkErrorAlert()~", false, false, jqXHR);
 			return;
 		}
 
 		if ( !isShownNetworkAlert ) {
-			TAlertManager.showAlert( Global.network_lost_msg + "<br><br>" + "Error: " + textStatus + ': <br>"'+ errorThrown +'"' + '<br><hr>' + (jqXHR.responseText ? jqXHR.responseText : 'N/A') + " (" + jqXHR.status + ")", 'Error', function() {
+			TAlertManager.showAlert( Global.network_lost_msg + "<br><br>" + "Error: " + textStatus + ' ('+ jqXHR.status +'): <br>"'+ errorThrown +'"' + '<br><hr>' + (jqXHR.responseText ? jqXHR.responseText : 'N/A') + " (" + jqXHR.status + ")", 'Error', function() {
 				isShownNetworkAlert = false;
 			} );
 			isShownNetworkAlert = true;
@@ -41,37 +49,32 @@ var TAlertManager = (function() {
 
 			var host = Global.getHost();
 
-			$.cookie( 'PreviousSessionID', null, {expires: 30, path: LocalCacheData.cookie_path, domain: host} );
-			$.cookie( 'PreviousSessionIDURL', null, {expires: 30, path: LocalCacheData.cookie_path, domain: host} );
-			$.cookie( 'PreviousSessionType', null, {expires: 30, path: LocalCacheData.cookie_path, domain: host} );
-			$.cookie( 'PreviousSessionIDHOST', null, {expires: 30, path: LocalCacheData.cookie_path, domain: host} );
-			$.cookie( 'NewSessionID', null, {expires: 30, path: LocalCacheData.cookie_path, domain: host} );
+			$.cookie( 'AlternateSessionData', null, {expires: 1, path: LocalCacheData.cookie_path, domain: host} );
 		}
 
 		function backToPreSession() {
-
 			var host = Global.getHost();
+			var alternate_session_data = JSON.parse( $.cookie( 'AlternateSessionData' ) );
+			if ( !alternate_session_data ) {
+				Debug.Text( 'No alternate_session_data exists.' , 'TAlertManager.js', 'TAlertManager', 'backToPreSession', 10);
+				return;
+			}
+			var url = alternate_session_data.previous_session_url;
+			var previous_cookie_path = alternate_session_data.previous_cookie_path;
 
-			var url = $.cookie( 'PreviousSessionIDURL' );
+			alternate_session_data = {
+				new_session_id: alternate_session_data.previous_session_id,
+				previous_session_view: alternate_session_data.previous_session_view,
+			};
 
-			$.cookie( 'NewSessionID', $.cookie( 'PreviousSessionID' ), {
-				expires: 30,
-				path: LocalCacheData.cookie_path,
-				domain: host
-			} );
+			$.cookie( 'AlternateSessionData', JSON.stringify( alternate_session_data ), {expires: 1, path: previous_cookie_path, domain: host}  );
 
-			$.cookie( 'PreviousSessionID', null, {expires: 30, path: LocalCacheData.cookie_path, domain: host} );
-			$.cookie( 'PreviousSessionIDURL', null, {expires: 30, path: LocalCacheData.cookie_path, domain: host} );
-			$.cookie( 'PreviousSessionIDHOST', null, {expires: 30, path: LocalCacheData.cookie_path, domain: host} );
-
-			window.location = url;
+			window.location = url +'#!m=Login';
 			Global.needReloadBrowser = true;
 
 			result.remove();
 			result = null;
-
 		}
-
 	};
 
 	var closeBrowserBanner = function() {
@@ -79,7 +82,7 @@ var TAlertManager = (function() {
 	};
 
 	var showBrowserTopBanner = function() {
-		var div = $( '<div class="browser-banner"><a href="https://www.timetrex.com/supported_web_browsers.php" target="_blank"><span class="label"></span></a></div>' );
+		var div = $( '<div class="browser-banner"><a href="https://www.timetrex.com/supported-web-browsers" target="_blank"><span class="label"></span></a></div>' );
 		div.find( 'span' ).text( $.i18n._( LocalCacheData.getLoginData().application_name + ' requires a modern HTML5 standards compatible web browser, click here for more information.' ) );
 
 		$( 'body' ).append( div );

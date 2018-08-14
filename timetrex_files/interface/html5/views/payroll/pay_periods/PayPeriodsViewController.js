@@ -1,11 +1,14 @@
 PayPeriodsViewController = BaseViewController.extend( {
 	el: '#pay_periods_view_container',
+
+	_required_files: ['APIPayPeriod','APIPayPeriodSchedule'],
+
 	status_array: null,
 	type_array: null,
 	pay_period_schedule_api: null,
-	initialize: function( options ) {
+	init: function( options ) {
 
-		this._super( 'initialize', options );
+		//this._super('initialize', options );
 		this.edit_view_tpl = 'PayPeriodsEditView.html';
 		this.permission_id = 'pay_period_schedule';
 		this.script_name = 'PayPeriodsView';
@@ -33,6 +36,7 @@ PayPeriodsViewController = BaseViewController.extend( {
 		}
 
 		//call init data in parent view
+
 		if ( !this.sub_view_mode ) {
 			this.initData();
 		}
@@ -43,12 +47,13 @@ PayPeriodsViewController = BaseViewController.extend( {
 
 	},
 
-	removeEditView: function() {
+	removeEditView: function( is_cancel ) {
 
 		this._super( 'removeEditView' );
 
-		if ( this.parent_view_controller && this.parent_view_controller.viewId === 'TimeSheet' ) {
-			this.parent_view_controller.onSubViewRemoved()
+		if ( this.parent_view_controller &&
+			( this.parent_view_controller.viewId === 'TimeSheet' || this.parent_view_controller.viewId === 'PayStub' ) ) {
+			this.parent_view_controller.onSubViewRemoved( is_cancel )
 		}
 	},
 
@@ -723,6 +728,11 @@ PayPeriodsViewController = BaseViewController.extend( {
 		this.setMassEditingFieldsWhenFormChange( target );
 		var key = target.getField();
 		var c_value = target.getValue();
+
+		if ( !this.current_edit_record ) {
+			this.current_edit_record = {};
+		}
+
 		this.current_edit_record[key] = c_value;
 
 		if ( key === 'status_id' ) {
@@ -736,18 +746,20 @@ PayPeriodsViewController = BaseViewController.extend( {
 	},
 
 	setDateColumnStatus: function( value, disabled ) {
-
-		if ( disabled ) {
-			this.edit_view_ui_dic[value].find( 'input' ).attr( 'disabled', 'disabled' );
-			this.edit_view_ui_dic[value].find( 'img' ).unbind( 'click' );
-		} else {
-			this.edit_view_ui_dic[value].find( 'input' ).removeAttr( 'disabled' );
-			this.edit_view_ui_dic[value].find( 'img' ).bind( 'click' );
+		if ( this.edit_view_ui_dic[value] ) {
+			if (disabled) {
+				this.edit_view_ui_dic[value].find('input').attr('disabled', 'disabled');
+				this.edit_view_ui_dic[value].find('img').unbind('click');
+			} else {
+				this.edit_view_ui_dic[value].find('input').removeAttr('disabled');
+				this.edit_view_ui_dic[value].find('img').bind('click');
+			}
 		}
 	},
 
 	onStatusChange: function() {
-		if ( this.current_edit_record['status_id'] === 20 ) {
+		//TypeError: Cannot read property 'status_id' of undefined
+		if ( this.current_edit_record && this.current_edit_record['status_id'] == 20 ) {
 			this.setDateColumnStatus( 'start_date', true );
 			this.setDateColumnStatus( 'end_date', true );
 			this.setDateColumnStatus( 'transaction_date', true );
@@ -759,7 +771,7 @@ PayPeriodsViewController = BaseViewController.extend( {
 	},
 
 	isEditChange: function() {
-		if ( this.current_edit_record.id ) {
+		if ( this.current_edit_record &&  this.current_edit_record.id ) {
 			this.attachElement( 'pay_period_schedule' );
 			this.detachElement( 'pay_period_schedule_id' );
 		} else if ( this.is_mass_editing ) {
@@ -795,8 +807,11 @@ PayPeriodsViewController.loadSubView = function( container, beforeViewLoadedFun,
 
 		if ( Global.isSet( container ) ) {
 			container.html( template( args ) );
+
 			if ( Global.isSet( afterViewLoadedFun ) ) {
-				afterViewLoadedFun( sub_pay_periods_view_controller );
+				TTPromise.wait('BaseViewController', 'initialize',function(){
+					afterViewLoadedFun( sub_pay_periods_view_controller );
+				});
 			}
 
 		}

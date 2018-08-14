@@ -1,7 +1,7 @@
 <?php
 /*********************************************************************************
  * TimeTrex is a Workforce Management program developed by
- * TimeTrex Software Inc. Copyright (C) 2003 - 2017 TimeTrex Software Inc.
+ * TimeTrex Software Inc. Copyright (C) 2003 - 2018 TimeTrex Software Inc.
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Affero General Public License version 3 as published by
@@ -37,48 +37,24 @@
 require_once( dirname(__FILE__) . DIRECTORY_SEPARATOR .'..'. DIRECTORY_SEPARATOR .'includes'. DIRECTORY_SEPARATOR .'global.inc.php');
 require_once( dirname(__FILE__) . DIRECTORY_SEPARATOR .'..'. DIRECTORY_SEPARATOR .'includes'. DIRECTORY_SEPARATOR .'CLI.inc.php');
 
-//
 /*
-
-*******************************************************************************
-************** WARNING: THIS IS NOT FULLY TESTED OR SUPPORTED *****************
-*******************************************************************************
-
  Proceedure to Convert MySQL to PostgreSQL:
 
- 1. Upgrade to latest version of TimeTrex still using MySQL.
-
- 2. Run: convert_mysql_to_postgresql.php sequence > update_sequences.sql
- 3. Run: convert_mysql_to_postgresql.php truncate > delete_all_data.sql
-
- 4. Dump MySQL database with the following command:
-	mysqldump -t --skip-add-locks --compatible=postgresql --complete-insert <TimeTrex_Database_Name> > timetrex_mysql.sql
-
- 5. Install a fresh copy of TimeTrex on PostgreSQL, make sure its the latest version of TimeTrex and it matches the version
-	currently installed and running on MySQL.
-
- 6. Run: psql <TimeTrex_Database_Name> < delete_all_data.sql
- 7. Run: psql <TimeTrex_Database_Name> < timetrex_mysql.sql.
-		- There will be a few errors because it will try to update non-existant *_seq tables.
-			This is fine because the next step handles this.
- 8. Run: psql <TimeTrex_Database_Name> < update_sequences.sql
-
- 9. Done!
-
+ For instructions, please see: https://forums.timetrex.com/viewtopic.php?f=6&t=7519&p=23173
 */
 
 
 if ( $argc < 2 OR in_array ($argv[1], array('--help', '-help', '-h', '-?') ) ) {
 	$help_output = "Usage: convert_mysql_to_postgresql.php [data]\n";
-	$help_output .= " [data] = 'sequence' or 'truncate'\n";
+	$help_output .= " [data] = 'truncate'\n";
 	echo $help_output;
 } else {
 	//Handle command line arguments
 	$last_arg = count($argv)-1;
 
-	if ( isset($db) AND is_object($db) AND strncmp($db->databaseType,'mysql',5) == 0) {
-		echo "This script must be run on MySQL only!";
-		exit;
+	if ( isset($db) AND is_object($db) AND strncmp($db->databaseType,'mysql',5) != 0) {
+		echo "ERROR: This script must be run on MySQL only!";
+		exit(255);
 	}
 
 	if ( isset($argv[$last_arg]) AND $argv[$last_arg] != '' ) {
@@ -91,23 +67,12 @@ if ( $argc < 2 OR in_array ($argv[1], array('--help', '-help', '-h', '-?') ) ) {
 
 		$out = NULL;
 		foreach( $tables as $table ) {
-			if ( strpos($table, '_seq') !== FALSE ) {
-				if ( $type == 'sequence' ) {
-					//echo "Found Sequence Table: ". $table ."<br>\n";
-					$query = 'select id from '. $table;
-					$last_sequence_value = $db->GetOne($query) + $sequence_modifier;
-					echo 'ALTER SEQUENCE '. $table .' RESTART WITH '. $last_sequence_value .';'."\n";
-				}
-			} else {
-				if ( $type == 'truncate' ) {
-					echo 'TRUNCATE '. $table .';'."\n";
-				}
+			if ( $type == 'truncate' ) {
+				echo 'TRUNCATE '. $table .';'."\n";
 			}
 		}
 	}
 }
-
-//echo "WARNING: Clear TimeTrex cache after running this.\n";
 
 //Debug::Display();
 ?>

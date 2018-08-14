@@ -1,13 +1,13 @@
 Form941ReportViewController = ReportBaseViewController.extend( {
 
+	_required_files: ['APIForm941Report', 'APIPayStubEntryAccount'],
 
 	return_type_array: null,
 	exempt_payment_array: null,
 	state_array: null,
 	province_array: null,
 
-	initialize: function( options ) {
-		this.__super( 'initialize', options );
+	initReport: function( options ) {
 		this.script_name = 'Form941Report';
 		this.viewId = 'Form941Report';
 		this.context_menu_name = $.i18n._( 'Form 941' );
@@ -15,9 +15,6 @@ Form941ReportViewController = ReportBaseViewController.extend( {
 		this.view_file = 'Form941ReportView.html';
 		this.api = new (APIFactory.getAPIClass( 'APIForm941Report' ))();
 		this.include_form_setup = true;
-
-		this.buildContextMenu();
-
 	},
 
 	initOptions: function( callBack ) {
@@ -142,14 +139,14 @@ Form941ReportViewController = ReportBaseViewController.extend( {
 			permission: null
 		} );
 
-		var print_form = new RibbonSubMenu( {
-			label: $.i18n._( 'Print' ),
-			id: ContextMenuIconName.print_form,
-			group: form_setup_group,
-			icon: Icons.print,
-			permission_result: true,
-			permission: null
-		} );
+		// var print_form = new RibbonSubMenu( {
+		// 	label: $.i18n._( 'Print' ),
+		// 	id: ContextMenuIconName.print_form,
+		// 	group: form_setup_group,
+		// 	icon: Icons.print,
+		// 	permission_result: true,
+		// 	permission: null
+		// } );
 
 		var save_setup = new RibbonSubMenu( {
 			label: $.i18n._( 'Save Setup' ),
@@ -182,13 +179,15 @@ Form941ReportViewController = ReportBaseViewController.extend( {
 
 		switch ( id ) {
 			case ContextMenuIconName.view:
+				ProgressBar.showOverlay();
 				this.onViewClick();
 				break;
 			case ContextMenuIconName.view_html:
-
+				ProgressBar.showOverlay();
 				this.onViewClick('html');
 				break;
 			case ContextMenuIconName.view_html_new_window:
+				ProgressBar.showOverlay();
 				this.onViewClick('html', true);
 				break;
 			case ContextMenuIconName.export_excel:
@@ -366,6 +365,7 @@ Form941ReportViewController = ReportBaseViewController.extend( {
 
 		this.addEditFieldToColumn( $.i18n._( 'Taxable Social Security Wages (Line 5a)' ), [form_item_input, form_item_input_1], tab3_column1, '', v_box, false, true );
 
+
 		//Social Security Taxes Withheld
 		v_box = $( "<div class='v-box'></div>" );
 
@@ -402,6 +402,43 @@ Form941ReportViewController = ReportBaseViewController.extend( {
 		v_box.append( form_item );
 
 		this.addEditFieldToColumn( $.i18n._( 'Social Security Taxes Withheld' ), [form_item_input, form_item_input_1], tab3_column1, '', v_box, false, true );
+
+		//Social Security Taxes - Employer
+		v_box = $( "<div class='v-box'></div>" );
+
+		//Selection Type
+		form_item_input = Global.loadWidgetByName( FormItemType.AWESOME_BOX );
+		form_item_input.AComboBox( {
+			api_class: (APIFactory.getAPIClass( 'APIPayStubEntryAccount' )),
+			allow_multiple_selection: true,
+			layout_name: ALayoutIDs.PAY_STUB_ACCOUNT,
+			show_search_inputs: true,
+			set_empty: true,
+			field: 'social_security_tax_employer_include_pay_stub_entry_account'
+		} );
+
+		form_item = this.putInputToInsideFormItem( form_item_input, $.i18n._( 'Include' ) );
+
+		v_box.append( form_item );
+		v_box.append( "<div class='clear-both-div'></div>" );
+
+		//Selection
+		form_item_input_1 = Global.loadWidgetByName( FormItemType.AWESOME_BOX );
+
+		form_item_input_1.AComboBox( {
+			api_class: (APIFactory.getAPIClass( 'APIPayStubEntryAccount' )),
+			allow_multiple_selection: true,
+			layout_name: ALayoutIDs.PAY_STUB_ACCOUNT,
+			show_search_inputs: true,
+			set_empty: true,
+			field: 'social_security_tax_employer_exclude_pay_stub_entry_account'
+		} );
+
+		form_item = this.putInputToInsideFormItem( form_item_input_1, $.i18n._( 'Exclude' ) );
+
+		v_box.append( form_item );
+
+		this.addEditFieldToColumn( $.i18n._( 'Social Security Employer' ), [form_item_input, form_item_input_1], tab3_column1, '', v_box, false, true );
 
 		//Taxable Social Security Tips (Line 5b)
 		v_box = $( "<div class='v-box'></div>" );
@@ -515,6 +552,45 @@ Form941ReportViewController = ReportBaseViewController.extend( {
 
 		this.addEditFieldToColumn( $.i18n._( 'Medicare Taxes Withheld' ), [form_item_input, form_item_input_1], tab3_column1, '', v_box, false, true );
 
+		//Medicare Taxes - Employer
+		v_box = $( "<div class='v-box'></div>" );
+
+		//Selection Type
+		form_item_input = Global.loadWidgetByName( FormItemType.AWESOME_BOX );
+		form_item_input.AComboBox( {
+			api_class: (APIFactory.getAPIClass( 'APIPayStubEntryAccount' )),
+			allow_multiple_selection: true,
+			layout_name: ALayoutIDs.PAY_STUB_ACCOUNT,
+			show_search_inputs: true,
+			set_empty: true,
+			field: 'medicare_tax_employer_include_pay_stub_entry_account'
+		} );
+
+		form_item = this.putInputToInsideFormItem( form_item_input, $.i18n._( 'Include' ) );
+
+		v_box.append( form_item );
+		v_box.append( "<div class='clear-both-div'></div>" );
+
+		//Selection
+		form_item_input_1 = Global.loadWidgetByName( FormItemType.AWESOME_BOX );
+
+		form_item_input_1.AComboBox( {
+			api_class: (APIFactory.getAPIClass( 'APIPayStubEntryAccount' )),
+			allow_multiple_selection: true,
+			layout_name: ALayoutIDs.PAY_STUB_ACCOUNT,
+			show_search_inputs: true,
+			set_empty: true,
+			field: 'medicare_tax_employer_exclude_pay_stub_entry_account'
+
+		} );
+
+		form_item = this.putInputToInsideFormItem( form_item_input_1, $.i18n._( 'Exclude' ) );
+
+		v_box.append( form_item );
+
+		this.addEditFieldToColumn( $.i18n._( 'Medicare Employer' ), [form_item_input, form_item_input_1], tab3_column1, '', v_box, false, true );
+
+
 		//Sick Pay Adjustments (Line 8)
 		v_box = $( "<div class='v-box'></div>" );
 
@@ -551,48 +627,6 @@ Form941ReportViewController = ReportBaseViewController.extend( {
 		v_box.append( form_item );
 
 		this.addEditFieldToColumn( $.i18n._( 'Sick Pay Adjustments (Line 8)' ), [form_item_input, form_item_input_1], tab3_column1, '', v_box, false, true );
-
-		//Name
-		form_item_input = Global.loadWidgetByName( FormItemType.TEXT_INPUT );
-
-		form_item_input.TTextInput( {field: 'name', width: '100%'} );
-		this.addEditFieldToColumn( $.i18n._( 'Name' ), form_item_input, tab3_column1 );
-		form_item_input.parent().width( '45%' );
-
-		//Company Name
-		form_item_input = Global.loadWidgetByName( FormItemType.TEXT_INPUT );
-
-		form_item_input.TTextInput( {field: 'company_name', width: '100%'} );
-		this.addEditFieldToColumn( $.i18n._( 'Company Name' ), form_item_input, tab3_column1 );
-
-		form_item_input.parent().width( '45%' );
-
-		//Address
-		form_item_input = Global.loadWidgetByName( FormItemType.TEXT_INPUT );
-
-		form_item_input.TTextInput( {field: 'address1', width:'100%'} );
-		this.addEditFieldToColumn( $.i18n._( 'Address' ), form_item_input, tab3_column1 );
-		form_item_input.parent().width( '45%' );
-
-		//City
-		form_item_input = Global.loadWidgetByName( FormItemType.TEXT_INPUT );
-
-		form_item_input.TTextInput( {field: 'city'} );
-		this.addEditFieldToColumn( $.i18n._( 'City' ), form_item_input, tab3_column1 );
-
-		//State
-
-		form_item_input = Global.loadWidgetByName( FormItemType.COMBO_BOX );
-		form_item_input.TComboBox( {field: 'province', set_empty: true} );
-		form_item_input.setSourceData( Global.addFirstItemToArray( $this.province_array ) );
-		this.addEditFieldToColumn( $.i18n._( 'State' ), form_item_input, tab3_column1 );
-
-		//ZIP Code
-		form_item_input = Global.loadWidgetByName( FormItemType.TEXT_INPUT );
-
-		form_item_input.TTextInput( {field: 'postal_code'} );
-		this.addEditFieldToColumn( $.i18n._( 'ZIP Code' ), form_item_input, tab3_column1, '' );
-
 	},
 
 	getFormSetupData: function() {
@@ -609,6 +643,9 @@ Form941ReportViewController = ReportBaseViewController.extend( {
 		other.social_security_tax = {include_pay_stub_entry_account: this.current_edit_record.social_security_tax_include_pay_stub_entry_account,
 			exclude_pay_stub_entry_account: this.current_edit_record.social_security_tax_exclude_pay_stub_entry_account};
 
+		other.social_security_tax_employer = {include_pay_stub_entry_account: this.current_edit_record.social_security_tax_employer_include_pay_stub_entry_account,
+			exclude_pay_stub_entry_account: this.current_edit_record.social_security_tax_employer_exclude_pay_stub_entry_account};
+
 		other.social_security_tips = {include_pay_stub_entry_account: this.current_edit_record.social_security_tips_include_pay_stub_entry_account,
 			exclude_pay_stub_entry_account: this.current_edit_record.social_security_tips_exclude_pay_stub_entry_account};
 
@@ -618,17 +655,14 @@ Form941ReportViewController = ReportBaseViewController.extend( {
 		other.medicare_tax = {include_pay_stub_entry_account: this.current_edit_record.medicare_tax_include_pay_stub_entry_account,
 			exclude_pay_stub_entry_account: this.current_edit_record.medicare_tax_exclude_pay_stub_entry_account};
 
+		other.medicare_tax_employer = {include_pay_stub_entry_account: this.current_edit_record.medicare_tax_employer_include_pay_stub_entry_account,
+			exclude_pay_stub_entry_account: this.current_edit_record.medicare_tax_employer_exclude_pay_stub_entry_account};
+
 		other.sick_wages = {include_pay_stub_entry_account: this.current_edit_record.sick_wages_include_pay_stub_entry_account,
 			exclude_pay_stub_entry_account: this.current_edit_record.sick_wages_exclude_pay_stub_entry_account};
-		
+
 		other.deposit_schedule = this.current_edit_record.deposit_schedule;
 		other.quarter_deposit = this.current_edit_record.quarter_deposit;
-		other.name = this.current_edit_record.name;
-		other.company_name = this.current_edit_record.company_name;
-		other.city = this.current_edit_record.city;
-		other.province = this.current_edit_record.province;
-		other.postal_code = this.current_edit_record.postal_code;
-		other.address1 = this.current_edit_record.address1;
 
 		return other;
 	},
@@ -673,6 +707,14 @@ Form941ReportViewController = ReportBaseViewController.extend( {
 				this.current_edit_record.social_security_tax_exclude_pay_stub_entry_account = res_Data.social_security_tax.exclude_pay_stub_entry_account;
 			}
 
+			if ( res_Data.social_security_tax_employer ) {
+				this.edit_view_ui_dic.social_security_tax_employer_exclude_pay_stub_entry_account.setValue( res_Data.social_security_tax_employer.exclude_pay_stub_entry_account );
+				this.edit_view_ui_dic.social_security_tax_employer_include_pay_stub_entry_account.setValue( res_Data.social_security_tax_employer.include_pay_stub_entry_account );
+
+				this.current_edit_record.social_security_tax_employer_include_pay_stub_entry_account = res_Data.social_security_tax_employer.include_pay_stub_entry_account;
+				this.current_edit_record.social_security_tax_employer_exclude_pay_stub_entry_account = res_Data.social_security_tax_employer.exclude_pay_stub_entry_account;
+			}
+
 			if ( res_Data.social_security_tips ) {
 				this.edit_view_ui_dic.social_security_tips_exclude_pay_stub_entry_account.setValue( res_Data.social_security_tips.exclude_pay_stub_entry_account );
 				this.edit_view_ui_dic.social_security_tips_include_pay_stub_entry_account.setValue( res_Data.social_security_tips.include_pay_stub_entry_account );
@@ -697,6 +739,14 @@ Form941ReportViewController = ReportBaseViewController.extend( {
 				this.current_edit_record.medicare_tax_exclude_pay_stub_entry_account = res_Data.medicare_tax.exclude_pay_stub_entry_account;
 			}
 
+			if ( res_Data.medicare_tax_employer ) {
+				this.edit_view_ui_dic.medicare_tax_employer_exclude_pay_stub_entry_account.setValue( res_Data.medicare_tax_employer.exclude_pay_stub_entry_account );
+				this.edit_view_ui_dic.medicare_tax_employer_include_pay_stub_entry_account.setValue( res_Data.medicare_tax_employer.include_pay_stub_entry_account );
+
+				this.current_edit_record.medicare_tax_employer_include_pay_stub_entry_account = res_Data.medicare_tax_employer.include_pay_stub_entry_account;
+				this.current_edit_record.medicare_tax_employer_exclude_pay_stub_entry_account = res_Data.medicare_tax_employer.exclude_pay_stub_entry_account;
+			}
+
 			if ( res_Data.sick_wages ) {
 				this.edit_view_ui_dic.sick_wages_exclude_pay_stub_entry_account.setValue( res_Data.sick_wages.exclude_pay_stub_entry_account );
 				this.edit_view_ui_dic.sick_wages_include_pay_stub_entry_account.setValue( res_Data.sick_wages.include_pay_stub_entry_account );
@@ -716,43 +766,6 @@ Form941ReportViewController = ReportBaseViewController.extend( {
 
 				this.current_edit_record.deposit_schedule = res_Data.deposit_schedule;
 			}
-
-			if ( res_Data.name ) {
-				this.edit_view_ui_dic.name.setValue( res_Data.name );
-
-				this.current_edit_record.name = res_Data.name;
-			}
-
-			if ( res_Data.company_name ) {
-				this.edit_view_ui_dic.company_name.setValue( res_Data.company_name );
-
-				this.current_edit_record.company_name = res_Data.company_name;
-			}
-
-			if ( res_Data.address1 ) {
-				this.edit_view_ui_dic.address1.setValue( res_Data.address1 );
-
-				this.current_edit_record.address1 = res_Data.address1;
-			}
-
-			if ( res_Data.city ) {
-				this.edit_view_ui_dic.city.setValue( res_Data.city );
-
-				this.current_edit_record.city = res_Data.city;
-			}
-
-			if ( res_Data.province ) {
-				this.edit_view_ui_dic.province.setValue( res_Data.province );
-
-				this.current_edit_record.province = res_Data.province;
-			}
-
-			if ( res_Data.postal_code ) {
-				this.edit_view_ui_dic.postal_code.setValue( res_Data.postal_code );
-
-				this.current_edit_record.postal_code = res_Data.postal_code;
-			}
-
 		}
 	}
 	/* jshint ignore:end */

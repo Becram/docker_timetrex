@@ -90,11 +90,12 @@ verbosity = 10
 
 
 [other]
+uuid_seed = ca4b4bab203b
 default_interface = html5
 ; Force all clients to use SSL.
 force_ssl = FALSE
 installer_enabled = FALSE
-primary_company_id = 2
+primary_company_id = ca4b4bab-20ce-0957-bfc4-000000000002
 
 ;Specify the URL hostname to be used to access TimeTrex. The BASE_URL specified above will be appended on to this automatically.
 ; This should be a fully qualified domain name only, do not include http:// or any trailing directories.

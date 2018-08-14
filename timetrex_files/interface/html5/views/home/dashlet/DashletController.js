@@ -1,5 +1,4 @@
 DashletController = Backbone.View.extend( {
-
 	data: null,
 	api_dashboard: null,
 	api_user_report: null,
@@ -54,11 +53,11 @@ DashletController = Backbone.View.extend( {
 		if ( Global.isScrolledIntoView( $( $this.el ) ) ) {
 			doInit();
 		}
-		// remove first
-		interact( '#' + $( this.el ).attr( 'id' ) ).unset();
 
 		//BUG#2070 - Break resizable for mobile because it negatively impacts usability
 		if ( Global.detectMobileBrowser() == false ) {
+			// interact will not be available on mobile now.
+			interact( '#' + $( this.el ).attr( 'id' ) ).unset();
 			interact('#' + $(this.el).attr('id'))
 				.resizable({
 				edges: {left: true, right: true, bottom: true, top: true}
@@ -376,10 +375,10 @@ DashletController = Backbone.View.extend( {
 
 	//Error: Uncaught TypeError: Cannot read property 'contentDocument' of undefined in/interface/html5/#!m=MessageControl line 359
 	setIframeData: function( iframe_data ) {
-		if ( $( this.el ).find( '#iframe' ).length > 0 ) {
-			$( this.el ).find( '#iframe' )[0].contentDocument.open();
-			$( this.el ).find( '#iframe' )[0].contentDocument.writeln( this.iframe_data );
-			$( this.el ).find( '#iframe' )[0].contentDocument.close();
+		if ( $( this.el ).find( '#iframe' ).length > 0 && $( this.el ).find( '#iframe' )[0].contentWindow.document ) {
+			$( this.el ).find( '#iframe' )[0].contentWindow.document.open();
+			$( this.el ).find( '#iframe' )[0].contentWindow.document.writeln( this.iframe_data );
+			$( this.el ).find( '#iframe' )[0].contentWindow.document.close();
 		}
 	},
 
@@ -635,7 +634,7 @@ DashletController = Backbone.View.extend( {
 		};
 		columns.push( column_1 );
 		columns.push( column_2 );
-		if ( !this.grid ) {
+		if ( !this.grid && grid ) { //#2571 - this.grid.jqGrid is not a function
 			this.grid = grid;
 			this.grid.jqGrid( {
 				altRows: true,
@@ -960,7 +959,7 @@ DashletController = Backbone.View.extend( {
 			len = data.length;
 			for ( i = 0; i < len; i++ ) {
 				item = data[i];
-				if ( item.status_id === 10 ) {
+				if ( item.status_id == 10 ) {
 					$( this.el ).find( "tr[id='" + item.id + "'] td" ).css( 'font-weight', 'bold' );
 				}
 			}
@@ -973,7 +972,7 @@ DashletController = Backbone.View.extend( {
 			len = data.length;
 			for ( i = 0; i < len; i++ ) {
 				item = data[i];
-				if ( item.status_id === 30 ) {
+				if ( item.status_id == 30 ) {
 					$( this.el ).find( "tr[id='" + item.id + "']" ).addClass( 'bolder-request' );
 				}
 			}
@@ -986,7 +985,7 @@ DashletController = Backbone.View.extend( {
 			len = data.length;
 			for ( i = 0; i < len; i++ ) {
 				item = data[i];
-				if ( item._status_id === 10 ) {
+				if ( item._status_id == 10 ) {
 					$( this.el ).find( "tr[id='" + (i + 1) + "']" ).addClass( 'light-green' );
 				} else if ( item.status === 'Out' ) {
 					$( this.el ).find( "tr[id='" + (i + 1) + "']" ).addClass( 'light-red' );
@@ -1002,8 +1001,8 @@ DashletController = Backbone.View.extend( {
 			len = data.length;
 			for ( i = 0; i < len; i++ ) {
 				item = data[i];
-				if ( item.status_id === 20 ) {
-					$( this.el ).find( "tr[id='" + item.id + "']" ).addClass( 'red-absence' );
+				if ( item.status_id == 20 ) {
+					$( $( this.el ).find( "tr" )[ i + 2 ] ).addClass( 'red-absence' ); //Do not use ids or coloring gets broken by recurring schedules without ids
 				}
 			}
 		}
@@ -1119,7 +1118,7 @@ DashletController = Backbone.View.extend( {
 			column_info_array.push( column_info );
 		}
 
-		if ( !this.grid ) {
+		if ( !this.grid && grid ) { // #2571 -this.grid.jqGrid is not a function
 			this.grid = grid;
 			this.grid = this.grid.jqGrid( {
 				altRows: true,
@@ -1240,17 +1239,19 @@ DashletController = Backbone.View.extend( {
 
 	getAllColumns: function( callBack ) {
 		var $this = this;
-		this.api.getOptions( 'columns', {
-			onResult: function( columns_result ) {
-				var columns_result_data = columns_result.getResult();
-				$this.all_columns = Global.buildColumnArray( columns_result_data );
-				if ( callBack ) {
-					callBack();
+
+		if ( this.api ) { // #2571 - Cannot read property 'getOptions' of null
+			this.api.getOptions( 'columns', {
+				onResult: function( columns_result ) {
+					var columns_result_data = columns_result.getResult();
+					$this.all_columns = Global.buildColumnArray( columns_result_data );
+					if ( callBack ) {
+						callBack();
+					}
+
 				}
-
-			}
-		} );
-
+			} );
+		}
 	},
 
 	getDefaultDisplayColumns: function( callBack ) {

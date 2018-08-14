@@ -1,7 +1,7 @@
 <?php
 /*********************************************************************************
  * TimeTrex is a Workforce Management program developed by
- * TimeTrex Software Inc. Copyright (C) 2003 - 2017 TimeTrex Software Inc.
+ * TimeTrex Software Inc. Copyright (C) 2003 - 2018 TimeTrex Software Inc.
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Affero General Public License version 3 as published by
@@ -64,11 +64,11 @@ function getSessionID( $authentication_type_id = 800 ) {
 	$session_name = $authentication->getName( $authentication_type_id );
 
 	if ( isset($_COOKIE[$session_name]) AND $_COOKIE[$session_name] != '' ) {
-		$session_id = $_COOKIE[$session_name];
+		$session_id = (string)$_COOKIE[$session_name];
 	} elseif ( isset($_POST[$session_name]) AND $_POST[$session_name] != '' ) {
-		$session_id = $_POST[$session_name];
+		$session_id = (string)$_POST[$session_name];
 	} elseif ( isset($_GET[$session_name]) AND $_GET[$session_name] != '' ) {
-		$session_id = $_GET[$session_name];
+		$session_id = (string)$_GET[$session_name];
 	} else {
 		$session_id = FALSE;
 	}

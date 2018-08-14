@@ -1,7 +1,7 @@
 <?php
 /*********************************************************************************
  * TimeTrex is a Workforce Management program developed by
- * TimeTrex Software Inc. Copyright (C) 2003 - 2017 TimeTrex Software Inc.
+ * TimeTrex Software Inc. Copyright (C) 2003 - 2018 TimeTrex Software Inc.
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Affero General Public License version 3 as published by
@@ -33,7 +33,6 @@
  * feasible for technical reasons, the Appropriate Legal Notices must display
  * the words "Powered by TimeTrex".
  ********************************************************************************/
-
 if ( isset($_GET['disable_db']) AND $_GET['disable_db'] == 1 ) {
 	$disable_database_connection = TRUE;
 }
@@ -54,7 +53,8 @@ $system_settings = array();
 $primary_company = FALSE;
 $clf = new CompanyListFactory();
 if ( ( !isset($disable_database_connection) OR ( isset($disable_database_connection) AND $disable_database_connection != TRUE ) )
-	AND ( !isset($config_vars['other']['installer_enabled']) OR ( isset($config_vars['other']['installer_enabled']) AND $config_vars['other']['installer_enabled'] != TRUE ) )) {
+	AND ( !isset($config_vars['other']['installer_enabled']) OR ( isset($config_vars['other']['installer_enabled']) AND $config_vars['other']['installer_enabled'] != TRUE ) )
+	AND ( ( !isset($config_vars['other']['down_for_maintenance']) OR isset($config_vars['other']['down_for_maintenance']) AND $config_vars['other']['down_for_maintenance'] != TRUE ) ) ) {
 	//Get all system settings, so they can be used even if the user isn't logged in, such as the login page.
 	try {
 		$sslf = new SystemSettingListFactory();
@@ -106,18 +106,14 @@ if ( $authentication->getHTTPAuthenticationUsername() == FALSE ) {
 	}
 }
 unset($authentication);
-?>
-	<!DOCTYPE html>
+?><!DOCTYPE html>
 	<html>
 		<head>
 			<meta http-equiv="X-UA-Compatible" content="IE=edge" />
 			<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
-			<meta name="Keywords" content="workforce management, time and attendance, payroll software, online timesheet software, open source payroll, online employee scheduling software, employee time clock software, online job costing software, workforce management, flexible scheduling solutions, easy scheduling solutions, track employee attendance, monitor employee attendance, employee time clock, employee scheduling, true real-time time sheets, accruals and time banks, payroll system, time management system" />
-			<meta name="Description" content="Workforce Management Software for tracking employee time and attendance, employee time clock software, employee scheduling software and payroll software all in a single package. Also calculate complex over time and premium time business policies and can identify labor costs attributed to branches and departments. Managers can now track and monitor their workforce easily." />
-			<script src="global/Debug.js?v=<?php echo APPLICATION_BUILD?>"></script>
+			<meta name="Description" content="Employee Login | TimeTrex Workforce Management Software"/>
 			<title><?php echo APPLICATION_NAME .' Workforce Management';?></title>
 			<link rel="shortcut icon" type="image/ico" href="<?php echo Environment::getBaseURL();?>../favicon.ico">
-			<script src="global/RateLimit.js?v=<?php echo APPLICATION_BUILD?>"></script>
 			<?php if ( file_exists('theme/default/css/login.composite.css') ) { //See tools/compile/Gruntfile.js to configure which files are included in the composites... ?>
 				<link rel="stylesheet" type="text/css" href="theme/default/css/login.composite.css?v=<?php echo APPLICATION_BUILD?>">
 				<script>
@@ -148,32 +144,23 @@ unset($authentication);
 				</script>
 			<?php } ?>
 
-			<?php if ( file_exists('login.composite.js') ) { //See tools/compile/Gruntfile.js to configure which files are included in the composites... ?>
-				<script src="global/CookieSetting.js?v=<?php echo APPLICATION_BUILD?>"></script>
-				<script src="global/APIGlobal.js.php?v=<?php echo APPLICATION_BUILD?><?php if ( isset($disable_database_connection) AND $disable_database_connection == TRUE ) { echo '&disable_db=1'; }?>"></script>
-				<script src="login.composite.js?v=<?php echo APPLICATION_BUILD?>"></script>
-				<!-- <script async src="base.composite.js?v=<?php echo APPLICATION_BUILD?>"></script> -->
-				<script>
-					use_composite_js_files = true;
-					//Global.addCss( "universe.composite.css" );
-				</script>
-			<?php } else { ?>
-				<script src="global/CookieSetting.js?v=<?php echo APPLICATION_BUILD?>"></script>
-				<script src="global/APIGlobal.js.php?v=<?php echo APPLICATION_BUILD?><?php if ( isset($disable_database_connection) AND $disable_database_connection == TRUE ) { echo '&disable_db=1'; }?>"></script>
-				<script src="framework/jquery.min.js?v=<?php echo APPLICATION_BUILD?>"></script>
-				<script src="framework/jquery.form.min.js?v=<?php echo APPLICATION_BUILD?>"></script>
-				<script src="framework/backbone/underscore-min.js?v=<?php echo APPLICATION_BUILD?>"></script>
-				<script src="framework/backbone/backbone-min.js?v=<?php echo APPLICATION_BUILD?>"></script>
-				<script src="framework/jquery.masonry.min.js?v=<?php echo APPLICATION_BUILD?>"></script>
-				<script src="framework/interact.min.js?v=<?php echo APPLICATION_BUILD?>"></script>
-				<script src="framework/tinymce/tinymce.min.js?v=<?php echo APPLICATION_BUILD?>"></script>
-				<script src="global/Global.js?v=<?php echo APPLICATION_BUILD?>"></script>
-				<script src="global/LocalCacheData.js?v=<?php echo APPLICATION_BUILD?>"></script>
-				<script src="framework/widgets/color-picker/color-picker.js?v=<?php echo APPLICATION_BUILD?>"></script>
-				<script>
-					use_composite_js_files = false;
-				</script>
-			<?php } ?>
+			<script>
+				APPLICATION_BUILD = '<?php echo APPLICATION_BUILD; ?>';
+				DISABLE_DB = <?php if ( isset($disable_database_connection) AND $disable_database_connection == TRUE ) { echo '1'; } else { echo '0'; }?>;
+
+				//polyfill to fix IE<=9 console is undefined.
+				//added here because we need it before ANYTHING is loaded.
+				if(!(window.console && console.log)) {
+					console = {
+						log: function(){},
+						debug: function(){},
+						info: function(){},
+						warn: function(){},
+						error: function(){}
+					};
+				}
+			</script>
+			<script src="global/Debug.js?v=<?php echo APPLICATION_BUILD?>"></script>
 		</head>
 	<?php
 	/*
@@ -198,9 +185,7 @@ unset($authentication);
 	*/
 	?>
 	<body class="login-bg" oncontextmenu="return true;">
-
-
-	<div class="need-hidden-element" ><a href="https://www.timetrex.com">Workforce Management Software</a><a href="https://www.timetrex.com/time_and_attendance.php">Time and Attendance</a></div>
+	<div class="need-hidden-element"><h1><a href="https://www.timetrex.com/time-and-attendance">TimeTrex Time and Attendance</a> Software</h1> - Web-based Time And Attendance suite which offers Employee Time and Attendance (timeclock, timecard, timesheet) and Payroll all in single tightly integrated package. With the ability to interface with biometric facial recognition tablets and cell phones employees are able to efficiently track their time at the office or on the road. Automatically calculate complex over time and premium time business policies and immediately be able to identify labor costs attributed to branches, and departments. Finally TimeTrex can process your payroll by calculating withholding taxes, generate detailed electronic pay stubs and even print paychecks or direct deposit funds.</div>
 	<div id="topContainer" class="top-container"></div>
 	<div id="contentContainer" class="content-container">
 		<div class="loading-view">
@@ -214,7 +199,6 @@ unset($authentication);
 			<!--<![endif]-->
 		</div>
 	</div>
-	<div class="need-hidden-element"><a href="https://www.timetrex.com/download.php">Download Time and Attendance Software</a></div>
 	<div id="bottomContainer" class="bottom-container" ondragstart="return false;">
 		<ul class="signal-strength">
 			<li class="signal-strength-very-weak"><div></div></li>
@@ -225,7 +209,7 @@ unset($authentication);
 		<div class="copyright-container">
 			<a id="copy_right_logo_link" class="copy-right-logo-link" target="_blank"><img id="copy_right_logo" class="copy-right-logo"></a>
 			<a id="copy_right_info" class="copy-right-info" target="_blank" style="display: none"></a>
-			<span id="copy_right_info_1" class="copy-right-info" style="display: none">&nbsp;&nbsp;<?php /*REMOVING OR CHANGING THIS COPYRIGHT NOTICE IS IN STRICT VIOLATION OF THE LICENSE AND COPYRIGHT AGREEMENT*/ echo COPYRIGHT_NOTICE;?></span>
+			<span id="copy_right_info_1" class="copy-right-info" style="display: none"><?php /*REMOVING OR CHANGING THIS COPYRIGHT NOTICE IS IN STRICT VIOLATION OF THE LICENSE AND COPYRIGHT AGREEMENT*/ echo COPYRIGHT_NOTICE;?></span>
 		</div>
 		<div id="feedbackContainer" class="feedback-container">
 			<span>Overall, how are you feeling about <?php echo APPLICATION_NAME; ?>?</span>
@@ -234,56 +218,10 @@ unset($authentication);
 			<img class="filter grr-filter" title="Grr!" data-feedback = -1 alt="sad" >
 		</div>
 	</div>
-
 	<div id="overlay" class=""></div>
-
 	</body>
 
 	<iframe style="display: none" id="hideReportIFrame" name="hideReportIFrame"></iframe>
-	<script>
-		//Hide elements that show hidden link for search friendly
-		hideElements();
-
-		//Don't not show loading bar if refresh
-		if ( Global.isSet( LocalCacheData.getLoginUser() ) ) {
-			$( ".loading-view" ).hide();
-		} else {
-			setProgress()
-		}
-
-		function setProgress() {
-			loading_bar_time = setInterval( function() {
-				var progress_bar = $( ".progress-bar" );
-				var c_value = progress_bar.attr( "value" );
-
-				if ( c_value < 90 ) {
-					progress_bar.attr( "value", c_value + 10 );
-				}
-			}, 1000 );
-		}
-
-		function cleanProgress() {
-			if ( $( ".loading-view" ).is( ":visible" ) ) {
-
-				var progress_bar = $( ".progress-bar" );
-				progress_bar.attr( "value", 100 );
-				clearInterval( loading_bar_time );
-
-				loading_bar_time = setInterval( function() {
-					$( ".progress-bar-div" ).hide();
-					clearInterval( loading_bar_time );
-				}, 50 );
-			}
-		}
-
-		function hideElements(){
-			var elements = document.getElementsByClassName( 'need-hidden-element' );
-
-			for ( var i = 0; i < elements.length; i++ ) {
-				elements[i].style.display = 'none';
-			}
-		}
-	</script>
 
 	<script src="framework/require.js?v=<?php echo APPLICATION_BUILD?>" data-main="main.js?v=<?php echo APPLICATION_BUILD?>"></script>
 	<!-- <?php echo Misc::getInstanceIdentificationString( $primary_company, $system_settings );?>  -->

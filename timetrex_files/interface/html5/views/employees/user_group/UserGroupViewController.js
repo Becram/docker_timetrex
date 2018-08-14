@@ -1,11 +1,13 @@
 UserGroupViewController = BaseViewController.extend( {
 	el: '#user_group_view_container',
+	_required_files: ['APIUserGroup'],
+
 	tree_mode: null,
 	grid_table_name: null,
 	grid_select_id_array: null,
 	//Must set el here and can only set string, so events can work
-	initialize: function( options ) {
-		this._super( 'initialize', options );
+	init: function( options ) {
+		//this._super('initialize', options );
 		this.edit_view_tpl = 'UserGroupEditView.html';
 		this.permission_id = 'user';
 		this.viewId = 'UserGroup';
@@ -329,15 +331,22 @@ UserGroupViewController = BaseViewController.extend( {
 			'tab_audit': $.i18n._( 'Audit' )
 		} );
 
-
 		this.navigation.AComboBox( {
 			id: this.script_name + '_navigation',
 			tree_mode: true,
 			allow_multiple_selection: false,
 			layout_name: ALayoutIDs.TREE_COLUMN,
 			navigation_mode: true,
-			show_search_inputs: false
+			show_search_inputs: false,
+			on_tree_grid_row_select: function( id, tree_mode_collapse) {
+				$this.onTreeGridNavigationRowSelect( id, tree_mode_collapse );
+			}
 		} );
+
+		var left_click = navigation_div.find('.left-click');
+		var right_click = navigation_div.find('.right-click');
+		left_click.attr('src', Global.getRealImagePath('images/left_arrow.png'));
+		right_click.attr('src', Global.getRealImagePath('images/right_arrow.png'));
 
 		this.setNavigation();
 

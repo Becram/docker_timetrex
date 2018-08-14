@@ -1,7 +1,7 @@
 <?php
 /*********************************************************************************
  * TimeTrex is a Workforce Management program developed by
- * TimeTrex Software Inc. Copyright (C) 2003 - 2017 TimeTrex Software Inc.
+ * TimeTrex Software Inc. Copyright (C) 2003 - 2018 TimeTrex Software Inc.
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Affero General Public License version 3 as published by
@@ -58,8 +58,8 @@ if ( ini_get('max_execution_time') < 1800 ) {
 //Check: http://ca3.php.net/manual/en/security.magicquotes.php#61188 for disabling magic_quotes_gpc
 ini_set( 'magic_quotes_runtime', 0 );
 
-define('APPLICATION_VERSION', '10.6.2' );
-define('APPLICATION_VERSION_DATE', 1496991600 ); //Release date of version. CMD: php -r 'echo "\n". strtotime("17-May-2017")."\n\n";'
+define('APPLICATION_VERSION', '11.2.2' );
+define('APPLICATION_VERSION_DATE', 1525244400 ); //Release date of version. CMD: php -r 'echo "\n". strtotime("02-May-2018")."\n\n";'
 
 if ( strtoupper( substr(PHP_OS, 0, 3) ) == 'WIN' ) {
 	define('OPERATING_SYSTEM', 'WIN' );
@@ -114,8 +114,8 @@ if ( isset($config_vars['other']['deployment_on_demand']) AND $config_vars['othe
 	define('DEPLOYMENT_ON_DEMAND', FALSE);
 }
 
-if ( isset($config_vars['other']['primary_company_id']) AND $config_vars['other']['primary_company_id'] > 0 ) {
-	define('PRIMARY_COMPANY_ID', (int)$config_vars['other']['primary_company_id']);
+if ( isset($config_vars['other']['primary_company_id']) AND $config_vars['other']['primary_company_id'] != '') {
+	define('PRIMARY_COMPANY_ID', (string)$config_vars['other']['primary_company_id']);
 } else {
 	define('PRIMARY_COMPANY_ID', FALSE);
 }
@@ -376,9 +376,8 @@ set_include_path(
 require_once(Environment::getBasePath() .'classes'. DIRECTORY_SEPARATOR .'modules'. DIRECTORY_SEPARATOR .'core'. DIRECTORY_SEPARATOR .'Exception.class.php');
 require_once(Environment::getBasePath() .'classes'. DIRECTORY_SEPARATOR .'modules'. DIRECTORY_SEPARATOR .'core'. DIRECTORY_SEPARATOR .'Debug.class.php');
 																																																							//**REMOVING OR CHANGING THIS COPYRIGHT NOTICE IS IN STRICT VIOLATION OF THE LICENSE AND COPYRIGHT AGREEMENT**//
-																																																							if ( getTTProductEdition() == TT_PRODUCT_COMMUNITY ) { define( 'COPYRIGHT_NOTICE', 'Copyright &copy; '. date('Y') .' <a href="http://'. ORGANIZATION_URL .'" class="footerLink">'. ORGANIZATION_NAME .'</a>. The Program is free software provided AS IS, without warranty. Licensed under <a href="http://www.fsf.org/licensing/licenses/agpl-3.0.html" class="footerLink" target="_blank">AGPLv3.</a>' ); } else { define( 'COPYRIGHT_NOTICE', 'Copyright &copy; '. date('Y') .' <a href="https://'. ORGANIZATION_URL .'" class="footerLink">'. ORGANIZATION_NAME .'</a>. All Rights Reserved.' ); }
+																																																							if ( getTTProductEdition() == TT_PRODUCT_COMMUNITY ) { define( 'COPYRIGHT_NOTICE', 'Copyright &copy; '. date('Y') .' <a href="https://'. ORGANIZATION_URL .'" class="footerLink">'. ORGANIZATION_NAME .'</a>. The Program is free software provided AS IS, without warranty. Licensed under <a href="http://www.fsf.org/licensing/licenses/agpl-3.0.html" class="footerLink" target="_blank">AGPLv3.</a>' ); } else { define( 'COPYRIGHT_NOTICE', 'Copyright &copy; '. date('Y') .' <a href="https://'. ORGANIZATION_URL .'" class="footerLink">'. ORGANIZATION_NAME .'</a>. All Rights Reserved.' ); }
 Debug::setEnable( (bool)$config_vars['debug']['enable'] );
-Debug::setEnableTidy( FALSE );
 Debug::setEnableDisplay( (bool)$config_vars['debug']['enable_display'] );
 Debug::setBufferOutput( (bool)$config_vars['debug']['buffer_output'] );
 Debug::setEnableLog( (bool)$config_vars['debug']['enable_log'] );
@@ -399,9 +398,7 @@ if ( PHP_SAPI != 'cli' AND isset($config_vars['other']['request_metrics_log']) A
 }
 set_error_handler( array('Debug','ErrorHandler') );
 
-if ( isset($_SERVER['REQUEST_URI']) ) {
-	Debug::Text('URI: '. $_SERVER['REQUEST_URI'] .' IP Address: '. Misc::getRemoteIPAddress(), __FILE__, __LINE__, __METHOD__, 10);
-}
+Debug::Text('URI: '. ( isset($_SERVER['REQUEST_URI']) ? $_SERVER['REQUEST_URI'] : 'N/A' ) .' IP Address: '. Misc::getRemoteIPAddress(), __FILE__, __LINE__, __METHOD__, 10);
 Debug::Text('USER-AGENT: '. ( isset($_SERVER['HTTP_USER_AGENT']) ? $_SERVER['HTTP_USER_AGENT'] : 'N/A' ), __FILE__, __LINE__, __METHOD__, 10);
 Debug::Text('Version: '. APPLICATION_VERSION .' (PHP: v'. phpversion() .') Edition: '. getTTProductEdition() .' Production: '. (int)PRODUCTION .' Server: '. ( isset($_SERVER['SERVER_ADDR']) ? $_SERVER['SERVER_ADDR'] : 'N/A' ) .' OS: '. OPERATING_SYSTEM .' Database: Type: '. ( isset($config_vars['database']['type']) ? $config_vars['database']['type'] : 'N/A' ) .' Name: '. ( isset($config_vars['database']['database_name']) ? $config_vars['database']['database_name'] : 'N/A' ) .' Config: '. CONFIG_FILE .' Demo Mode: '. (int)DEMO_MODE, __FILE__, __LINE__, __METHOD__, 10);
 

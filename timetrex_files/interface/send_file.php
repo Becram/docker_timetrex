@@ -1,7 +1,7 @@
 <?php
 /*********************************************************************************
  * TimeTrex is a Workforce Management program developed by
- * TimeTrex Software Inc. Copyright (C) 2003 - 2017 TimeTrex Software Inc.
+ * TimeTrex Software Inc. Copyright (C) 2003 - 2018 TimeTrex Software Inc.
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Affero General Public License version 3 as published by
@@ -211,6 +211,20 @@ switch ($object_type) {
 			$params['cache'] = TRUE;
 		}
 		break;
+	case 'legal_entity_logo':
+		Debug::Text('Legal Entity Logo ['. $object_id .']...', __FILE__, __LINE__, __METHOD__, 10);
+
+		$lef = TTnew( 'LegalEntityFactory' );
+		$file_name = $lef->getLogoFileName( $object_id );
+		Debug::Text('File Name: '. $file_name, __FILE__, __LINE__, __METHOD__, 10);
+		if ( $file_name != '' AND file_exists($file_name) ) {
+			$params['file'] = $file_name;
+			$params['ContentType'] = Misc::getMimeType( $file_name );
+			//$params['ContentType'] = 'image/'. strtolower( pathinfo($file_name, PATHINFO_EXTENSION) );
+			$params['ContentDisposition'] = array( HTTP_DOWNLOAD_INLINE, basename( $file_name ) );
+			$params['cache'] = TRUE;
+		}
+		break;
 	case 'primary_company_logo':
 		Debug::Text('Primary Company Logo...', __FILE__, __LINE__, __METHOD__, 10);
 
@@ -261,6 +275,47 @@ switch ($object_type) {
 					}
 				} else {
 					Debug::text('bPhoto Downloads Failed! Attempt: '. $rl->getAttempts(), __FILE__, __LINE__, __METHOD__, 10);
+					sleep( ($rl->getAttempts() * 0.5) );
+				}
+			}
+		}
+		break;
+	case 'remittance_source_account':
+		Debug::Text('Remittance Source Account Signature...', __FILE__, __LINE__, __METHOD__, 10);
+
+		//RateLimit failed download attempts to prevent brute force.
+		$rl = TTNew('RateLimit');
+		$rl->setID( 'remittance_source_account_'. Misc::getRemoteIPAddress() );
+		$rl->setAllowedCalls( 25 );
+		$rl->setTimeFrame( 900 ); //15 minutes
+		if ( $rl->check() == FALSE ) {
+			Debug::Text('Excessive document download attempts... Preventing downloads from: '. Misc::getRemoteIPAddress() .' for up to 15 minutes...', __FILE__, __LINE__, __METHOD__, 10);
+			sleep(5); //Excessive download attempts, sleep longer.
+		} else {
+			if ( $permission->Check('remittance_source_account', 'view')
+					OR $permission->Check('remittance_source_account', 'view_own')
+					OR $permission->Check('remittance_source_account', 'view_child') ) {
+
+				$api_f = TTNew('APIRemittanceSourceAccount');
+				$result = $api_f->stripReturnHandler( $api_f->getRemittanceSourceAccount( array('filter_data' => array( 'id' => $object_id ) ) ) );
+				if ( isset($result[0]) AND count($result[0]) > 0 ) {
+					$rsaf = TTnew( 'RemittanceSourceAccountFactory' );
+					$file_name = $rsaf->getSignatureFileName( $current_company->getId(), $object_id );
+					Debug::Text('File Name: '. $file_name, __FILE__, __LINE__, __METHOD__, 10);
+					if ( $file_name != '' AND file_exists($file_name) ) {
+						$rl->delete(); //Clear download rate limit upon successful download.
+
+						$params['file'] = $file_name;
+						$params['ContentType'] = Misc::getMimeType( $file_name );
+						//$params['ContentType'] = 'image/'. strtolower( pathinfo($file_name, PATHINFO_EXTENSION) );
+						$params['ContentDisposition'] = array( HTTP_DOWNLOAD_INLINE, basename( $file_name ) );
+						$params['cache'] = TRUE;
+					} else {
+						Debug::text('aSignature Download Failed! Attempt: '. $rl->getAttempts(), __FILE__, __LINE__, __METHOD__, 10);
+						sleep( ($rl->getAttempts() * 0.5) );
+					}
+				} else {
+					Debug::text('bSignature Downloads Failed! Attempt: '. $rl->getAttempts(), __FILE__, __LINE__, __METHOD__, 10);
 					sleep( ($rl->getAttempts() * 0.5) );
 				}
 			}

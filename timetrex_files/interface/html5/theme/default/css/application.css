@@ -15,6 +15,10 @@ html, body {
     -moz-user-select: none;
     -ms-user-select: none;
     user-select: none;
+
+    /** #1187 fix bold-looking text caused by mac text smoothing **/
+    -webkit-font-smoothing: antialiased; /* This needs to be set or some normal faced fonts look bold on Mac in Chrome/Webkit based browsers. */
+    -moz-osx-font-smoothing: grayscale; /* Fixes font bold issue in Firefox version 25+ on Mac */
 }
 input,select,textarea {
     font-family: Lucida Grande, Lucida Sans, Arial, sans-serif;
@@ -1215,7 +1219,9 @@ progress::-moz-progress-bar {
 
 .edit-view .widget-h-box .a-combobox {
     position: relative;
-    top: -2px;
+    top: 0px;
+    /** #2339 - fixing bad awesomebox alignment on in/out screen when Home View is the parent view controller. **/
+    display: inline-block;
 }
 
 .edit-view .widget-h-box > span {
@@ -2754,9 +2760,191 @@ progress::-moz-progress-bar {
     margin-right: 0px;
 }
 
+#tinymce{
+    background:#fff;
+    padding:3px;
+    overflow: auto;
+}
+
 
 .UNIT_TEST_MODE * {
     font-smooth: never;
     -webkit-font-smoothing : none;
     image-rendering: pixelated;
+}
+
+.job-vacancy-summary-description {
+    width: (100% - 2px);
+    margin:0 auto;
+}
+
+.job-vacancy-summary-description .edit-view-form-item-label-div {
+    margin-left:1px;
+    border-radius:0 !important;
+}
+
+.payroll_remittance_agency_event_wizard_event_details .label{
+    font-weight:bolder;
+    text-align:right;
+}
+.payroll_remittance_agency_event_wizard_event_details table .label.col2{
+    padding-left:10pt;
+}
+.payroll_remittance_agency_event_wizard_event_details table .value{
+    text-align:left;
+}
+
+.payroll_remittance_agency_event_wizard_event_details table{
+    margin: 0 auto;
+    border: 1px solid #000;
+    padding:10pt;
+    margin-bottom:15pt;
+}
+
+.tax_wizard #cards{
+    margin-bottom:5pt;
+}
+
+.tax_wizard .wizard_icon_card {
+    display:block;
+    border: 1px solid #000;
+    text-align:left;
+    clear:both;
+    cursor:pointer;
+    background: #fff;
+    padding-left:15pt;
+    margin:10pt;
+    margin-top:0;
+    margin-bottom:5pt;
+    padding-bottom:8pt;
+    min-height:50pt;
+}
+.tax_wizard .wizard_icon_card img {
+    margin-left:0;
+    margin-right:10pt;
+    display:inline-block;
+}
+
+.tax_wizard .description{
+    font-size: 14px;
+}
+
+
+.tax_wizard .instructions {
+    font-weight:bolder;
+}
+
+.tax_wizard .wizard_icon_card .button_title{
+    display:block;
+    color:#000;
+}
+
+.tax_wizard .wizard_icon_card div{
+    text-align:left;
+}
+
+.tax_wizard .wizard_icon_card .right_container {
+    margin-left:10pt;
+    display:inline-block;
+    max-width: 650pt;
+}
+
+.wizard_icon_card.clicked_wizard_icon{
+    border: 1px dashed #ccc;
+}
+
+.wizard #cards{
+    border:none;
+}
+
+
+.sandbox_container {
+    border: 5px solid red;
+    width: (100vw - 10px) !important;
+}
+
+#tab_pay_stub .t-text-input-readonly{
+    background-color:#fff;
+}
+
+.wizard.process_transactions_wizard{
+    min-width: 550pt;
+    width:fit-content;
+    font-size:14px;
+    display:none;
+}
+
+#process_transactions_wizard_source_account_table{
+    margin: 0 auto;
+    text-align:left;
+}
+
+
+#process_transactions_wizard_source_account_table th{
+    text-align:center;
+}
+#process_transactions_wizard_source_account_table td{
+    font-weight:normal;
+    padding-right:10pt;
+    padding-left:3pt;
+}
+
+#process_transactions_wizard_source_account_table td input{
+    text-align:right;
+}
+
+.wizard.process_transactions_wizard .progress-bar{
+    display:none;
+}
+.wizard.process_transactions_wizard .confirm-buttons-div {
+    position:relative;
+    right:auto;
+}
+
+.wizard.process_transactions_wizard input[type="text"] {
+    width: 100px;
+    border: 1px solid #aaa;
+    font-size:14px;
+}
+
+.process_transactions_wizard .content{
+    width:100%;
+    height: calc(100% - 85px) !important;
+    overflow-y:scroll;
+    overflow-x:hidden;
+    border:#444;
+    top:8px !important;
+}
+
+.process_transactions_wizard {
+    height: 300px !important;
+    width: 400px !important;
+}
+
+.process_transactions_wizard .bottom-actions {
+    bottom: 10px !important;
+}
+
+.process_transactions_wizard input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    padding: 0;
+    margin: 0;s
+}
+
+.process_transactions_wizard .download_warning {
+    position: absolute;
+    bottom:40px;
+    text-align:center;
+    width:550pt;
+    margin-bottom:8pt;
+    margin-bottom:5pt;
+    height:20pt;
+}
+
+.process_transactions_wizard .download_warning button {
+    height: 22px;
+    width: 22px;
+    background-size: contain;
+    background-repeat: no-repeat;
 }

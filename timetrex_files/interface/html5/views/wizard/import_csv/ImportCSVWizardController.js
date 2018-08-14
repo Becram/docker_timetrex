@@ -16,8 +16,10 @@ ImportCSVWizardController = BaseWizardController.extend( {
 
 	column_map_data: null, //Used to build grid data
 
-	initialize: function( options ) {
-		this._super( 'initialize', options );
+	_required_files: ['TImageBrowser', 'APIImport'],
+
+	init: function( options ) {
+		//this._super('initialize', options );
 
 		this.title = $.i18n._( 'Import Wizard' );
 		this.steps = 6;
@@ -221,7 +223,6 @@ ImportCSVWizardController = BaseWizardController.extend( {
 		}
 
 		this.last_id = id;
-
 		select_data = this.setSampleRowBaseOnImportFile( select_data );
 
 		grid.clearGridData();
@@ -242,9 +243,9 @@ ImportCSVWizardController = BaseWizardController.extend( {
 			for ( var j = 0; j < this.import_data.length; j++ ) {
 				var import_data = this.import_data[j];
 				//#2132 - match based on map_column_name
-				if ( item.map_column_name === import_data.map_column_name ) {
+				if ( item.map_column_name.trim() === import_data.map_column_name.trim() ) {
 					item.row_1 = import_data.row_1;
-					continue;
+					break;
 				}
 			}
 		}
@@ -292,7 +293,7 @@ ImportCSVWizardController = BaseWizardController.extend( {
 	getLayoutById: function( select_id ) {
 		var len = this.saved_layout_array.length;
 
-		select_id = parseInt( select_id );
+		select_id = select_id;
 
 		for ( var i = 0; i < len; i++ ) {
 			var layout = this.saved_layout_array[i];
@@ -363,33 +364,35 @@ ImportCSVWizardController = BaseWizardController.extend( {
 	setSavedMappingOptions: function( array, select_layout_id ) {
 		var $this = this;
 
-		var selector = $this.stepsWidgetDic[$this.current_step]['saved_mapping'];
+		if ( Global.isSet( $this.stepsWidgetDic[$this.current_step]['saved_mapping'] ) == true ) {
+			var selector = $this.stepsWidgetDic[$this.current_step]['saved_mapping'];
 
-		selector.setSourceData( array );
+			selector.setSourceData( array );
 
-		if ( select_layout_id ) {
-			selector.setValue( select_layout_id );
+			if ( select_layout_id ) {
+				selector.setValue( select_layout_id );
+			}
+	//		selector.empty();
+	//		var len = array.length;
+	//		for ( var i = 0; i < len; i++ ) {
+	//			var item = array[i];
+	//			selector.append( '<option value="' + item.id + '">' + item.name + '</option>' );
+	//		}
+	//
+	//		if ( select_layout_id ) {
+	//			$( selector.find( 'option' ) ).filter(function() {
+	//
+	//				if ( !select_layout_id ) {
+	//					return false;
+	//				}
+	//
+	//				return $( this ).attr( 'value' ) === select_layout_id.toString();
+	//			} ).attr( 'selected', true );
+	//		} else {
+	//			$( selector.find( 'option' )[0] ).attr( 'selected', true );
+	//		}
+
 		}
-//		selector.empty();
-//		var len = array.length;
-//		for ( var i = 0; i < len; i++ ) {
-//			var item = array[i];
-//			selector.append( '<option value="' + item.id + '">' + item.name + '</option>' );
-//		}
-//
-//		if ( select_layout_id ) {
-//			$( selector.find( 'option' ) ).filter(function() {
-//
-//				if ( !select_layout_id ) {
-//					return false;
-//				}
-//
-//				return $( this ).attr( 'value' ) === select_layout_id.toString();
-//			} ).attr( 'selected', true );
-//		} else {
-//			$( selector.find( 'option' )[0] ).attr( 'selected', true );
-//		}
-
 		$this.saved_layout_array = array;
 	},
 
@@ -887,36 +890,24 @@ ImportCSVWizardController = BaseWizardController.extend( {
 				if ( !error_info.hasOwnProperty( error_key ) ) {
 					continue;
 				}
-				var found = false;
 
+				error_row = {};
+				// #2345 - we always want the row and column name to show in the error report.
+				error_row.rowIndex = parseInt( key ) + 2;
+				error_row.row = $.i18n._('Unknown');
+				error_row.column = error_key;
+				error_row.message = error_info[error_key][0];
+
+				// Try to get more specific error info.
 				for ( var import_key in import_data ) {
-
-					if ( !import_data.hasOwnProperty( import_key ) ) {
-						continue;
-					}
-
-					if ( import_key === error_key ) {
-						error_row = {};
-						error_row.rowIndex = parseInt( key ) + 1; //Make sure we are adding to an integer.
+					if ( import_key == error_key ) {  // #2345 - This won't match in cases where the csv columns do not match the object properties being validated. For example 'branch' != 'branch_id'
 						error_row.row = import_data[import_key].map_column_name;
 						error_row.column = import_data[import_key].field_name;
-						error_row.message = error_info[error_key][0];
-						result.push( error_row );
-						found = true;
 						break;
 					}
-
 				}
 
-				if ( !found ) {
-					error_row = {};
-					error_row.rowIndex = "Unknown";
-					error_row.row = "Not Defined";
-					error_row.column = error_key;
-					error_row.message = error_info[error_key][0];
-					result.push( error_row );
-				}
-
+				result.push( error_row );
 			}
 		}
 
@@ -1243,9 +1234,9 @@ ImportCSVWizardController = BaseWizardController.extend( {
 						this.api_import.className = 'APIImportAccrual';
 						this.api_import.key_name = 'ImportAccrual';
 						break;
-					case 'bank_account':
-						this.api_import.className = 'APIImportBankAccount';
-						this.api_import.key_name = 'ImportBankAccount';
+					case 'remittance_destination_account':
+						this.api_import.className = 'APIImportRemittanceDestinationAccount';
+						this.api_import.key_name = 'ImportRemittanceDestinationAccount';
 						break;
 					case 'department':
 						this.api_import.className = 'APIImportDepartment';
